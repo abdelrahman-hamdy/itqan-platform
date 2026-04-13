@@ -42,7 +42,7 @@
         <article class="group bg-white rounded-lg overflow-hidden flex flex-col md:flex-row transition-shadow duration-300 hover:shadow-xl" style="box-shadow: 0 1px 12px rgba(0,0,0,0.05);">
 
           {{-- Image / colored panel --}}
-          <div class="relative md:w-[320px] lg:w-[360px] shrink-0 overflow-hidden">
+          <div class="relative md:w-[340px] lg:w-[400px] shrink-0 overflow-hidden">
             @if($courseImage)
             <img src="{{ $courseImage }}" alt="{{ $course->title }}" class="w-full h-52 md:h-full md:min-h-[280px] object-cover transition-transform duration-500 group-hover:scale-105">
             @else
@@ -108,12 +108,12 @@
                 {{ $course->gradeLevel->getDisplayName() }}
               </span>
               @endif
-              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md bg-gray-50 text-gray-500 border border-gray-100">
-                <i class="ri-play-circle-line text-sm text-gray-400"></i>
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md bg-amber-50 text-amber-700 border border-amber-100">
+                <i class="ri-vidicon-line text-sm text-amber-500"></i>
                 {{ __('academy.cards.sessions', ['count' => $course->total_sessions ?? 0]) }}
               </span>
-              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md bg-gray-50 text-gray-500 border border-gray-100">
-                <i class="ri-time-line text-sm text-gray-400"></i>
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
+                <i class="ri-calendar-check-line text-sm text-emerald-500"></i>
                 {{ __('academy.cards.weeks', ['count' => $course->duration_weeks ?? 0]) }}
               </span>
             </div>
@@ -161,7 +161,13 @@
       </div>
 
       @if($interactiveCourses->count() > 0)
-      <div class="mt-6"><a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain]) }}" class="text-sm font-bold transition-all hover:gap-3 inline-flex items-center gap-2" style="color: {{ $gradientFromHex }};">{{ __('academy.actions.view_more') }} <i class="ri-arrow-left-line ltr:rotate-180"></i></a></div>
+      <div class="mt-8 text-center">
+        <a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain]) }}"
+           class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg border-2 border-blue-200 text-blue-600 transition-all duration-200 hover:border-blue-600 hover:gap-3">
+          {{ __('academy.actions.view_more') }}
+          <i class="ri-arrow-left-line ltr:rotate-180"></i>
+        </a>
+      </div>
       @endif
       @else
       <p class="text-sm text-gray-400 py-8 text-center">{{ __('academy.academic_section.no_courses_title') }}</p>
@@ -220,7 +226,14 @@
       </div>
 
       @if($academicTeachers->count() > 0)
-      <div class="mt-5"><a href="{{ route('academic-teachers.index', ['subdomain' => $academy->subdomain]) }}" class="text-sm font-bold transition-all hover:gap-3 inline-flex items-center gap-2" style="color: {{ $gradientToHex }};">{{ __('academy.actions.view_more') }} <i class="ri-arrow-left-line ltr:rotate-180"></i></a></div>
+      <div class="mt-8 text-center">
+        <a href="{{ route('academic-teachers.index', ['subdomain' => $academy->subdomain]) }}"
+           class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg border-2 transition-all duration-200 hover:gap-3"
+           style="color: {{ $gradientToHex }}; border-color: {{ $gradientToHex }}20;" onmouseover="this.style.borderColor='{{ $gradientToHex }}'" onmouseout="this.style.borderColor='{{ $gradientToHex }}20'">
+          {{ __('academy.actions.view_more') }}
+          <i class="ri-arrow-left-line ltr:rotate-180"></i>
+        </a>
+      </div>
       @endif
       @else
       <p class="text-sm text-gray-400 py-8 text-center">{{ __('academy.academic_section.no_teachers_title') }}</p>
