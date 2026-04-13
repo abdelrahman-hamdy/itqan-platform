@@ -39,22 +39,19 @@ class FixPostRecoveryPaymentStatus extends Command
         $this->info('Scanning for subscriptions affected by April 7 data recovery...');
         $this->newLine();
 
-        // Find subscriptions in the recovery window
-        $recoveryTargets = QuranSubscription::withoutGlobalScopes()
-            ->where('status', SessionSubscriptionStatus::ACTIVE)
-            ->where('payment_status', SubscriptionPaymentStatus::PENDING)
-            ->whereBetween('starts_at', [self::RECOVERY_WINDOW_START, self::RECOVERY_WINDOW_END])
-            ->get();
-
-        // Find ALL active+pending (for reporting purposes)
+        // Single query for all active+pending, then split by date window
         $allActivePending = QuranSubscription::withoutGlobalScopes()
             ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->where('payment_status', SubscriptionPaymentStatus::PENDING)
             ->get();
 
-        $outsideWindow = $allActivePending->filter(function ($sub) use ($recoveryTargets) {
-            return ! $recoveryTargets->contains('id', $sub->id);
-        });
+        $recoveryTargets = $allActivePending->filter(
+            fn ($sub) => $sub->starts_at
+                && $sub->starts_at->gte(self::RECOVERY_WINDOW_START)
+                && $sub->starts_at->lte(self::RECOVERY_WINDOW_END)
+        );
+
+        $outsideWindow = $allActivePending->diff($recoveryTargets);
 
         // Report targets
         $this->info("Found {$recoveryTargets->count()} subscriptions in recovery window (March 31 – April 5):");
@@ -102,39 +99,38 @@ class FixPostRecoveryPaymentStatus extends Command
         foreach ($recoveryTargets as $subscription) {
             try {
                 DB::transaction(function () use ($subscription, $timestamp) {
-                    $subscription = QuranSubscription::withoutGlobalScopes()
+                    $locked = QuranSubscription::withoutGlobalScopes()
                         ->lockForUpdate()
                         ->find($subscription->id);
 
                     $note = sprintf(
                         "[%s] payment_status fixed from 'pending' to 'paid' by post-recovery command. Original state: status=%s, payment=%s, starts=%s",
                         $timestamp,
-                        $subscription->status->value,
-                        $subscription->payment_status->value,
-                        $subscription->starts_at,
+                        $locked->status->value,
+                        $locked->payment_status->value,
+                        $locked->starts_at,
                     );
 
-                    $subscription->update([
+                    $locked->update([
                         'payment_status' => SubscriptionPaymentStatus::PAID,
-                        'last_payment_date' => $subscription->last_payment_date ?? $subscription->starts_at ?? now(),
-                        'admin_notes' => $subscription->admin_notes
-                            ? $subscription->admin_notes."\n\n".$note
+                        'last_payment_date' => $locked->last_payment_date ?? $locked->starts_at ?? now(),
+                        'admin_notes' => $locked->admin_notes
+                            ? $locked->admin_notes."\n\n".$note
                             : $note,
                     ]);
 
-                    // Also settle the current cycle if one exists
-                    $subscription->ensureCurrentCycle();
-                    if ($subscription->current_cycle_id) {
-                        $cycle = SubscriptionCycle::find($subscription->current_cycle_id);
+                    $locked->ensureCurrentCycle();
+                    if ($locked->current_cycle_id) {
+                        $cycle = SubscriptionCycle::find($locked->current_cycle_id);
                         $cycle?->update([
                             'payment_status' => SubscriptionCycle::PAYMENT_PAID,
                         ]);
                     }
 
                     Log::info('Post-recovery payment status fixed', [
-                        'subscription_id' => $subscription->id,
-                        'student_id' => $subscription->student_id,
-                        'starts_at' => $subscription->starts_at,
+                        'subscription_id' => $locked->id,
+                        'student_id' => $locked->student_id,
+                        'starts_at' => $locked->starts_at,
                     ]);
                 });
 
