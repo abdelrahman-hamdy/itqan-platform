@@ -19,6 +19,19 @@ enum GradientPalette: string
     case FOREST_MIST = 'forest_mist';
     case PURPLE_DREAM = 'purple_dream';
     case WARM_FLAME = 'warm_flame';
+    case ROYAL_BLUE = 'royal_blue';
+    case GOLDEN_HOUR = 'golden_hour';
+    case CORAL_REEF = 'coral_reef';
+    case MINT_FRESH = 'mint_fresh';
+    case SKY_BLUE = 'sky_blue';
+    case LAVENDER_MIST = 'lavender_mist';
+    case TEAL_WAVE = 'teal_wave';
+    case CHERRY_BLOSSOM = 'cherry_blossom';
+    case MIDNIGHT_BLUE = 'midnight_blue';
+    case EMERALD_GOLD = 'emerald_gold';
+    case DESERT_SAND = 'desert_sand';
+    case MOSQUE_GOLD = 'mosque_gold';
+    case ARABIAN_NIGHT = 'arabian_night';
 
     /**
      * Get localized label
@@ -53,6 +66,58 @@ enum GradientPalette: string
             self::WARM_FLAME => [
                 'from' => 'red-500',
                 'to' => 'orange-600',
+            ],
+            self::ROYAL_BLUE => [
+                'from' => 'blue-500',
+                'to' => 'indigo-600',
+            ],
+            self::GOLDEN_HOUR => [
+                'from' => 'amber-400',
+                'to' => 'orange-600',
+            ],
+            self::CORAL_REEF => [
+                'from' => 'rose-400',
+                'to' => 'red-500',
+            ],
+            self::MINT_FRESH => [
+                'from' => 'green-400',
+                'to' => 'emerald-600',
+            ],
+            self::SKY_BLUE => [
+                'from' => 'sky-400',
+                'to' => 'blue-500',
+            ],
+            self::LAVENDER_MIST => [
+                'from' => 'violet-400',
+                'to' => 'purple-600',
+            ],
+            self::TEAL_WAVE => [
+                'from' => 'teal-400',
+                'to' => 'cyan-600',
+            ],
+            self::CHERRY_BLOSSOM => [
+                'from' => 'pink-400',
+                'to' => 'rose-600',
+            ],
+            self::MIDNIGHT_BLUE => [
+                'from' => 'blue-600',
+                'to' => 'indigo-800',
+            ],
+            self::EMERALD_GOLD => [
+                'from' => 'emerald-500',
+                'to' => 'amber-500',
+            ],
+            self::DESERT_SAND => [
+                'from' => 'amber-200',
+                'to' => 'emerald-500',
+            ],
+            self::MOSQUE_GOLD => [
+                'from' => 'amber-500',
+                'to' => 'yellow-600',
+            ],
+            self::ARABIAN_NIGHT => [
+                'from' => 'teal-600',
+                'to' => 'indigo-700',
             ],
         };
     }
