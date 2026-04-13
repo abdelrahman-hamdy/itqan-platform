@@ -1,99 +1,106 @@
 @php
-    $recordingType = $session->_recording_type ?? 'unknown';
-    $recordingStatus = $session->_recording_status ?? 'none';
-    $t = 'supervisor.recording.';
+    $type = $session->getAttribute('_type') ?? 'quran';
+    $recordingStatus = $session->getAttribute('_recording_status') ?? 'none';
+    $status = $session->status;
+    $isLive = in_array($status, [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING]);
+    $isTrial = method_exists($session, 'isTrial') ? $session->isTrial() : false;
 
-    $typeBadgeColors = [
-        'quran_individual' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-        'quran_group' => 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-        'academic_lesson' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-        'interactive_course' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-        'trial' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    ];
-
-    $statusBadgeColors = [
-        'recording' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-        'queued' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-        'skipped' => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-        'manual' => 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-        'none' => 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-500',
-    ];
-
-    // Get teacher name
-    $teacherName = '';
-    if ($session instanceof \App\Models\QuranSession) {
-        $teacherName = $session->quranTeacher?->name ?? '-';
-    } elseif ($session instanceof \App\Models\AcademicSession) {
-        $teacherName = $session->academicTeacher?->user?->name ?? '-';
-    } elseif ($session instanceof \App\Models\InteractiveCourseSession) {
-        $teacherName = $session->course?->assignedTeacher?->user?->name ?? '-';
-    }
-
-    $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
-    $sessionType = match(true) {
-        $session instanceof \App\Models\QuranSession => 'quran',
-        $session instanceof \App\Models\AcademicSession => 'academic',
-        $session instanceof \App\Models\InteractiveCourseSession => 'interactive',
-        default => 'unknown',
+    // Same teacher/student name resolution as sessions page
+    $teacherName = match($type) {
+        'academic' => $session->academicTeacher?->user?->name ?? '-',
+        'interactive' => $session->course?->assignedTeacher?->user?->name ?? '-',
+        default => $session->quranTeacher?->name ?? '-',
     };
-    $canObserve = $session->meeting_room_name && in_array($session->status?->value, ['ready', 'ongoing']);
+
+    $studentName = match($type) {
+        'academic' => $session->student?->name ?? '-',
+        'interactive' => $session->course?->title ?? '-',
+        default => $session->circle?->name
+            ?? $session->student?->name
+            ?? $session->trialRequest?->student?->name
+            ?? $session->trialRequest?->student_name
+            ?? '-',
+    };
+
+    // Same type config as sessions page
+    $typeConfig = match(true) {
+        $type === 'academic' => ['label' => __('supervisor.sessions.type_private_lesson'), 'icon' => 'ri-graduation-cap-line', 'bg' => 'bg-violet-50', 'text' => 'text-violet-600'],
+        $type === 'interactive' => ['label' => __('supervisor.sessions.type_interactive'), 'icon' => 'ri-video-chat-line', 'bg' => 'bg-blue-50', 'text' => 'text-blue-600'],
+        $isTrial => ['label' => __('supervisor.sessions.type_quran_trial'), 'icon' => 'ri-gift-line', 'bg' => 'bg-orange-50', 'text' => 'text-orange-600'],
+        (bool) $session->circle => ['label' => __('supervisor.sessions.type_quran_group'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
+        default => ['label' => __('supervisor.sessions.type_quran_individual'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
+    };
+
+    $showUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
+
+    $statusBadge = match($recordingStatus) {
+        'recording' => ['class' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', 'icon' => 'ri-record-circle-line', 'pulse' => true],
+        'queued' => ['class' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', 'icon' => 'ri-time-line', 'pulse' => false],
+        'manual' => ['class' => 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400', 'icon' => 'ri-user-settings-line', 'pulse' => false],
+        default => ['class' => 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-500', 'icon' => 'ri-subtract-line', 'pulse' => false],
+    };
+    $t = 'supervisor.recording.';
 @endphp
 
 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-    <!-- Session -->
+    {{-- Session --}}
     <td class="px-4 py-3">
         <div class="flex items-center gap-2">
-            @if(in_array($session->status?->value, ['ready', 'ongoing']))
+            @if($isLive)
                 <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0"></span>
             @endif
-            <div>
-                <div class="font-medium text-gray-900 dark:text-white text-sm">{{ $session->session_code ?? $session->title ?? '#'.$session->id }}</div>
-            </div>
+            <span class="font-medium text-gray-900 dark:text-white">{{ $session->session_code ?? '#'.$session->id }}</span>
         </div>
     </td>
 
-    <!-- Type -->
+    {{-- Type (same design as sessions page) --}}
     <td class="px-4 py-3">
-        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $typeBadgeColors[$recordingType] ?? 'bg-gray-100 text-gray-600' }}">
-            {{ __($t.'type_' . $recordingType) }}
-        </span>
+        <div class="flex items-center gap-1.5">
+            <span class="w-6 h-6 rounded flex items-center justify-center {{ $typeConfig['bg'] }}">
+                <i class="{{ $typeConfig['icon'] }} text-xs {{ $typeConfig['text'] }}"></i>
+            </span>
+            <span class="text-xs text-gray-600 dark:text-gray-400">{{ $typeConfig['label'] }}</span>
+        </div>
     </td>
 
-    <!-- Teacher -->
+    {{-- Teacher --}}
     <td class="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm">{{ $teacherName }}</td>
 
-    <!-- Time -->
+    {{-- Student --}}
+    <td class="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm">{{ $studentName }}</td>
+
+    {{-- Time --}}
     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm" dir="ltr">
-        {{ $session->scheduled_at ? toAcademyTimezone($session->scheduled_at)->format('H:i') : '-' }}
+        {{ $session->scheduled_at ? toAcademyTimezone($session->scheduled_at)->format('M d, H:i') : '-' }}
     </td>
 
-    <!-- Recording Status -->
+    {{-- Recording Status --}}
     <td class="px-4 py-3">
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium {{ $statusBadgeColors[$recordingStatus] ?? 'bg-gray-100 text-gray-600' }}">
-            @if($recordingStatus === 'recording')
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium {{ $statusBadge['class'] }}">
+            @if($statusBadge['pulse'] ?? false)
                 <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+            @else
+                <i class="{{ $statusBadge['icon'] }} text-xs"></i>
             @endif
             {{ __($t.'status_' . $recordingStatus) }}
         </span>
     </td>
 
-    <!-- Actions -->
+    {{-- Actions (same buttons as sessions page) --}}
     <td class="px-4 py-3">
-        <div class="flex items-center gap-2">
-            @if($canObserve)
-                <a href="{{ route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]) }}?mode=observer"
-                   class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-                   title="{{ __($t.'observe_session') }}">
-                    <i class="ri-eye-line"></i>
-                    {{ __($t.'observe_session') }}
+        @if($isLive)
+            <div class="flex items-center gap-1.5" onclick="event.stopPropagation();">
+                <a href="{{ $showUrl }}?mode=observer"
+                   class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
+                    <i class="ri-eye-2-line"></i>
+                    {{ __('supervisor.sessions.observe_meeting') }}
                 </a>
-                <a href="{{ route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]) }}"
-                   class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 hover:bg-primary-200 dark:hover:bg-primary-900/50 transition"
-                   title="{{ __($t.'join_session') }}">
+                <a href="{{ $showUrl }}?mode=participant"
+                   class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors">
                     <i class="ri-video-chat-line"></i>
-                    {{ __($t.'join_session') }}
+                    {{ __('supervisor.sessions.join_meeting') }}
                 </a>
-            @endif
-        </div>
+            </div>
+        @endif
     </td>
 </tr>

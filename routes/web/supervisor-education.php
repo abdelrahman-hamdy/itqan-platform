@@ -195,7 +195,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Recording Management
         Route::get('/recording/capacity', [SupervisorRecordingController::class, 'capacityStatus'])->name('recording.capacity');
-        Route::get('/recording/history', [SupervisorRecordingController::class, 'history'])->name('recording.history');
         Route::get('/recording/live-presence', [SupervisorRecordingController::class, 'livePresence'])->name('recording.live-presence');
         Route::get('/recording', [SupervisorRecordingController::class, 'index'])->name('recording.index');
 

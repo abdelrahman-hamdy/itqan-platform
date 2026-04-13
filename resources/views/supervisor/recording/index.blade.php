@@ -3,6 +3,12 @@
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
     $t = 'supervisor.recording.';
+
+    $filterUrl = fn(array $overrides = []) => route('manage.recording.index', array_filter(array_merge([
+        'subdomain' => $subdomain, 'tab' => $activeTab, 'session_tab' => $sessionTab,
+        'recording_status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId,
+        'search' => $search, 'date_from' => request('date_from'), 'date_to' => request('date_to'),
+    ], $overrides)));
 @endphp
 
 <!-- Header -->
@@ -16,18 +22,21 @@
 
 <!-- Capacity Dashboard -->
 <div x-data="recordingCapacity()" x-init="init()" class="mb-6">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <!-- Active Recordings -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-            <div class="flex items-center gap-2 mb-2">
-                <span class="w-2 h-2 rounded-full" :class="activeCount > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-300'"></span>
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ __($t.'capacity_active') }}</span>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 {{ ($capacityStatus['active_count'] ?? 0) > 0 ? 'ring-2 ring-red-200' : '' }}">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                    <i class="ri-record-circle-line text-lg text-red-600" :class="activeCount > 0 ? 'animate-pulse' : ''"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                        <span x-text="activeCount">{{ $capacityStatus['active_count'] }}</span>
+                        <span class="text-sm font-normal text-gray-400">/ <span x-text="maxCount">{{ $capacityStatus['max_count'] }}</span></span>
+                    </p>
+                    <p class="text-xs text-gray-500">{{ __($t.'capacity_active') }}</p>
+                </div>
             </div>
-            <div class="text-2xl font-bold text-gray-900 dark:text-white">
-                <span x-text="activeCount">{{ $capacityStatus['active_count'] }}</span>
-                <span class="text-sm font-normal text-gray-400">/ <span x-text="maxCount">{{ $capacityStatus['max_count'] }}</span></span>
-            </div>
-            <!-- Progress bar -->
             <div class="mt-2 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div class="h-full rounded-full transition-all duration-500"
                      :class="utilization >= 100 ? 'bg-red-500' : utilization >= 70 ? 'bg-amber-500' : 'bg-green-500'"
@@ -36,223 +45,363 @@
         </div>
 
         <!-- Queued -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-            <div class="flex items-center gap-2 mb-2">
-                <i class="ri-time-line text-blue-500"></i>
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ __($t.'capacity_queued') }}</span>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                    <i class="ri-time-line text-lg text-blue-600"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="queuedCount">{{ $capacityStatus['queued_count'] }}</p>
+                    <p class="text-xs text-gray-500">{{ __($t.'capacity_queued') }}</p>
+                </div>
             </div>
-            <div class="text-2xl font-bold text-gray-900 dark:text-white" x-text="queuedCount">{{ $capacityStatus['queued_count'] }}</div>
         </div>
 
         <!-- Server Status -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-            <div class="flex items-center gap-2 mb-2">
-                <i class="ri-server-line text-gray-500"></i>
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ __($t.'capacity_server_status') }}</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full"
-                      :class="serverStatus === 'healthy' ? 'bg-green-500' : serverStatus === 'at_capacity' ? 'bg-amber-500' : 'bg-red-500'"></span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white"
-                      x-text="serverStatus === 'healthy' ? '{{ __($t.'server_healthy') }}' : serverStatus === 'at_capacity' ? '{{ __($t.'server_at_capacity') }}' : '{{ __($t.'server_error') }}'">
-                    {{ __($t.'server_' . $capacityStatus['server_status']) }}
-                </span>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-700 flex items-center justify-center">
+                    <i class="ri-server-line text-lg text-gray-600"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full"
+                              :class="serverStatus === 'healthy' ? 'bg-green-500' : serverStatus === 'at_capacity' ? 'bg-amber-500' : 'bg-red-500'"></span>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white"
+                              x-text="serverStatus === 'healthy' ? '{{ __($t.'server_healthy') }}' : serverStatus === 'at_capacity' ? '{{ __($t.'server_at_capacity') }}' : '{{ __($t.'server_error') }}'"></span>
+                    </div>
+                    <p class="text-xs text-gray-500">{{ __($t.'capacity_server_status') }}</p>
+                </div>
             </div>
         </div>
 
         <!-- Recorded Today -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-            <div class="flex items-center gap-2 mb-2">
-                <i class="ri-checkbox-circle-line text-green-500"></i>
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ __($t.'capacity_recorded_today') }}</span>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
+                    <i class="ri-checkbox-circle-line text-lg text-green-600"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="recordedToday">{{ $recordedToday }}</p>
+                    <p class="text-xs text-gray-500">{{ __($t.'capacity_recorded_today') }}</p>
+                </div>
             </div>
-            <div class="text-2xl font-bold text-gray-900 dark:text-white" x-text="recordedToday">{{ $recordedToday }}</div>
         </div>
     </div>
 </div>
 
-<!-- Tabs -->
-<div class="flex gap-2 mb-4">
-    <a href="{{ route('manage.recording.index', ['subdomain' => $subdomain, 'tab' => 'live']) }}"
-       class="px-4 py-2 rounded-lg text-sm font-medium transition {{ $activeTab === 'live' ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700' }}">
-        {{ __($t.'tab_live') }}
-    </a>
-    <a href="{{ route('manage.recording.index', ['subdomain' => $subdomain, 'tab' => 'history']) }}"
-       class="px-4 py-2 rounded-lg text-sm font-medium transition {{ $activeTab === 'history' ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700' }}">
-        {{ __($t.'tab_history') }}
-    </a>
-</div>
+<!-- Main Tabs: Live / History -->
+<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
 
-<!-- Filters -->
-<div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mb-6">
-    <form method="GET" action="{{ route('manage.recording.index', ['subdomain' => $subdomain]) }}" class="flex flex-wrap gap-3 items-end">
-        <input type="hidden" name="tab" value="{{ $activeTab }}">
+    {{-- Live / History tabs --}}
+    <div class="flex border-b border-gray-200 dark:border-gray-700">
+        <a href="{{ $filterUrl(['tab' => 'live', 'session_tab' => 'all']) }}"
+           class="px-6 py-3 text-sm font-medium border-b-2 transition {{ $activeTab === 'live' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+            <i class="ri-live-line"></i> {{ __($t.'tab_live') }}
+        </a>
+        <a href="{{ $filterUrl(['tab' => 'history', 'session_tab' => 'all']) }}"
+           class="px-6 py-3 text-sm font-medium border-b-2 transition {{ $activeTab === 'history' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+            <i class="ri-history-line"></i> {{ __($t.'tab_history') }}
+        </a>
+    </div>
 
-        <!-- Session Type -->
-        <div class="flex-1 min-w-[140px]">
-            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">{{ __($t.'filter_session_type') }}</label>
-            <select name="type" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm" onchange="this.form.submit()">
-                <option value="all">{{ __($t.'filter_all_types') }}</option>
-                @foreach($allowedTypes as $type)
-                    <option value="{{ $type }}" {{ $typeFilter === $type ? 'selected' : '' }}>
-                        {{ __($t.'type_' . $type) }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <!-- Recording Status -->
-        <div class="flex-1 min-w-[140px]">
-            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">{{ __($t.'filter_recording_status') }}</label>
-            <select name="recording_status" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm" onchange="this.form.submit()">
-                <option value="">{{ __($t.'filter_all_statuses') }}</option>
-                <option value="recording" {{ $statusFilter === 'recording' ? 'selected' : '' }}>{{ __($t.'status_recording') }}</option>
-                <option value="queued" {{ $statusFilter === 'queued' ? 'selected' : '' }}>{{ __($t.'status_queued') }}</option>
-                <option value="manual" {{ $statusFilter === 'manual' ? 'selected' : '' }}>{{ __($t.'status_manual') }}</option>
-                <option value="none" {{ $statusFilter === 'none' ? 'selected' : '' }}>{{ __($t.'status_none') }}</option>
-            </select>
-        </div>
-
-        <!-- Teacher -->
-        <div class="flex-1 min-w-[140px]">
-            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">{{ __($t.'filter_teacher') }}</label>
-            <select name="teacher_id" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm" onchange="this.form.submit()">
-                <option value="">{{ __($t.'filter_all_teachers') }}</option>
-                @foreach($teachers as $teacher)
-                    <option value="{{ $teacher['id'] }}" {{ $teacherId == $teacher['id'] ? 'selected' : '' }}>
-                        {{ $teacher['name'] }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <!-- Search -->
-        <div class="flex-1 min-w-[140px]">
-            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">{{ __($t.'filter_search') }}</label>
-            <input type="text" name="search" value="{{ $search }}" placeholder="{{ __($t.'filter_search') }}"
-                   class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm">
-        </div>
-
-        <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700">
-            <i class="ri-search-line"></i>
-        </button>
-    </form>
-</div>
-
-@if($activeTab === 'live')
-    <!-- Live Sessions -->
-    @if($sessions->isEmpty())
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-12 border border-gray-200 dark:border-gray-700 text-center">
-            <i class="ri-live-line text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
-            <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300">{{ __($t.'no_live_sessions') }}</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __($t.'no_live_sessions_description') }}</p>
-        </div>
-    @else
-        <!-- Desktop Table -->
-        <div class="hidden md:block bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 dark:bg-gray-900/50">
-                    <tr>
-                        <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'session') }}</th>
-                        <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'type') }}</th>
-                        <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'teacher') }}</th>
-                        <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'time') }}</th>
-                        <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'status') }}</th>
-                        <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                    @foreach($sessions as $session)
-                        @include('supervisor.recording._recording-session-row', ['session' => $session])
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Mobile Cards -->
-        <div class="md:hidden space-y-3">
-            @foreach($sessions as $session)
-                @include('supervisor.recording._recording-session-card', ['session' => $session])
+    {{-- Session Type Sub-Tabs (same as sessions management) --}}
+    @php
+        $sessionTabs = [
+            'all' => ['label' => __('supervisor.sessions.tab_all'), 'icon' => 'ri-apps-line', 'color' => 'indigo'],
+            'quran' => ['label' => __('supervisor.sessions.tab_quran'), 'icon' => 'ri-book-read-line', 'color' => 'green'],
+            'academic' => ['label' => __('supervisor.sessions.tab_academic'), 'icon' => 'ri-graduation-cap-line', 'color' => 'violet'],
+            'interactive' => ['label' => __('supervisor.sessions.tab_interactive'), 'icon' => 'ri-video-chat-line', 'color' => 'blue'],
+        ];
+    @endphp
+    <div class="border-b border-gray-200 dark:border-gray-700">
+        <nav class="-mb-px flex gap-0 overflow-x-auto px-4" aria-label="Session Type Tabs">
+            @foreach($sessionTabs as $tabKey => $tabConfig)
+                <a href="{{ $filterUrl(['session_tab' => $tabKey]) }}"
+                   class="whitespace-nowrap border-b-2 py-3 px-3 md:px-4 text-sm font-medium transition-colors flex items-center gap-1.5
+                       {{ $sessionTab === $tabKey
+                           ? 'border-'.$tabConfig['color'].'-500 text-'.$tabConfig['color'].'-600'
+                           : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }}">
+                    <i class="{{ $tabConfig['icon'] }}"></i>
+                    <span class="hidden sm:inline">{{ $tabConfig['label'] }}</span>
+                    @if($activeTab === 'live' && isset($tabCounts[$tabKey]))
+                        <span class="text-xs px-1.5 py-0.5 rounded-full {{ $sessionTab === $tabKey ? 'bg-'.$tabConfig['color'].'-100 text-'.$tabConfig['color'].'-700' : 'bg-gray-100 text-gray-600' }}">{{ $tabCounts[$tabKey] }}</span>
+                    @elseif($activeTab === 'live' && $tabKey === 'all' && !empty($tabCounts))
+                        <span class="text-xs px-1.5 py-0.5 rounded-full {{ $sessionTab === 'all' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600' }}">{{ array_sum($tabCounts) }}</span>
+                    @endif
+                </a>
             @endforeach
-        </div>
-    @endif
+        </nav>
+    </div>
 
-@else
-    <!-- History Tab (loaded via AJAX) -->
-    <div x-data="recordingHistory()" x-init="loadHistory()">
-        <!-- Stats bar -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
-                <div class="text-lg font-bold text-green-700 dark:text-green-400" x-text="stats.total_recorded">0</div>
-                <div class="text-xs text-green-600 dark:text-green-500">{{ __($t.'history_total_recorded') }}</div>
-            </div>
-            <div class="bg-gray-50 dark:bg-gray-900/20 rounded-lg p-3 text-center">
-                <div class="text-lg font-bold text-gray-700 dark:text-gray-400" x-text="stats.total_skipped">0</div>
-                <div class="text-xs text-gray-600 dark:text-gray-500">{{ __($t.'history_total_skipped') }}</div>
-            </div>
-            <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 text-center">
-                <div class="text-lg font-bold text-red-700 dark:text-red-400" x-text="stats.total_failed">0</div>
-                <div class="text-xs text-red-600 dark:text-red-500">{{ __($t.'history_total_failed') }}</div>
-            </div>
-            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
-                <div class="text-lg font-bold text-blue-700 dark:text-blue-400" x-text="formatDuration(stats.total_duration)">00:00</div>
-                <div class="text-xs text-blue-600 dark:text-blue-500">{{ __($t.'history_total_duration') }}</div>
-            </div>
-            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center">
-                <div class="text-lg font-bold text-purple-700 dark:text-purple-400" x-text="formatBytes(stats.total_storage)">0 B</div>
-                <div class="text-xs text-purple-600 dark:text-purple-500">{{ __($t.'history_storage_used') }}</div>
+    {{-- Filters --}}
+    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex flex-wrap items-center gap-3">
+            {{-- Recording Status --}}
+            <select onchange="if(this.value !== '') { window.location.href = this.value; }"
+                class="text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500">
+                <option value="{{ $filterUrl(['recording_status' => null]) }}" {{ !$statusFilter ? 'selected' : '' }}>
+                    {{ __($t.'filter_recording_status') }}: {{ __($t.'filter_all_statuses') }}
+                </option>
+                <option value="{{ $filterUrl(['recording_status' => 'recording']) }}" {{ $statusFilter === 'recording' ? 'selected' : '' }}>{{ __($t.'status_recording') }}</option>
+                <option value="{{ $filterUrl(['recording_status' => 'queued']) }}" {{ $statusFilter === 'queued' ? 'selected' : '' }}>{{ __($t.'status_queued') }}</option>
+                @if($activeTab === 'history')
+                    <option value="{{ $filterUrl(['recording_status' => 'completed']) }}" {{ $statusFilter === 'completed' ? 'selected' : '' }}>{{ __($t.'status_completed') }}</option>
+                    <option value="{{ $filterUrl(['recording_status' => 'skipped']) }}" {{ $statusFilter === 'skipped' ? 'selected' : '' }}>{{ __($t.'status_skipped') }}</option>
+                    <option value="{{ $filterUrl(['recording_status' => 'failed']) }}" {{ $statusFilter === 'failed' ? 'selected' : '' }}>{{ __($t.'status_failed') }}</option>
+                @else
+                    <option value="{{ $filterUrl(['recording_status' => 'manual']) }}" {{ $statusFilter === 'manual' ? 'selected' : '' }}>{{ __($t.'status_manual') }}</option>
+                    <option value="{{ $filterUrl(['recording_status' => 'none']) }}" {{ $statusFilter === 'none' ? 'selected' : '' }}>{{ __($t.'status_none') }}</option>
+                @endif
+            </select>
+
+            {{-- Teacher searchable select --}}
+            @if(!empty($teachers))
+            <x-ui.searchable-select
+                name="teacher_id"
+                :options="$teachers"
+                :selected="$teacherId"
+                :placeholder="__('supervisor.common.all_teachers')"
+                :showGenderFilter="true"
+                :showTypeFilter="false"
+            />
+            @endif
+
+            {{-- Student searchable select --}}
+            @if(!empty($students))
+            <x-ui.searchable-select
+                name="student_id"
+                :options="$students"
+                :selected="$studentId"
+                :placeholder="__('supervisor.sessions.all_students')"
+                :showGenderFilter="true"
+                :showTypeFilter="false"
+            />
+            @endif
+
+            {{-- Search --}}
+            <div class="relative">
+                <i class="ri-search-line absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <form method="GET" action="{{ route('manage.recording.index', ['subdomain' => $subdomain]) }}">
+                    <input type="hidden" name="tab" value="{{ $activeTab }}">
+                    <input type="hidden" name="session_tab" value="{{ $sessionTab }}">
+                    @if($statusFilter)<input type="hidden" name="recording_status" value="{{ $statusFilter }}">@endif
+                    @if($teacherId)<input type="hidden" name="teacher_id" value="{{ $teacherId }}">@endif
+                    @if($studentId)<input type="hidden" name="student_id" value="{{ $studentId }}">@endif
+                    <input type="text" name="search" value="{{ $search }}"
+                        placeholder="{{ __($t.'filter_search') }}"
+                        class="w-full ps-9 pe-3 py-2 text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
+                        onkeydown="if(event.key==='Enter') this.form.submit()">
+                </form>
             </div>
         </div>
+    </div>
 
-        <!-- History list -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <template x-if="loading">
-                <div class="p-12 text-center">
-                    <i class="ri-loader-4-line animate-spin text-2xl text-gray-400"></i>
+    {{-- Content --}}
+    <div class="p-0">
+    @if($activeTab === 'live')
+        @if($sessions->isEmpty())
+            <div class="p-12 text-center">
+                <i class="ri-live-line text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300">{{ __($t.'no_live_sessions') }}</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __($t.'no_live_sessions_description') }}</p>
+            </div>
+        @else
+            {{-- Desktop Table --}}
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 dark:bg-gray-900/50">
+                        <tr>
+                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'session') }}</th>
+                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'type') }}</th>
+                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'teacher') }}</th>
+                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_student') }}</th>
+                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'time') }}</th>
+                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'status') }}</th>
+                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        @foreach($sessions as $session)
+                            @include('supervisor.recording._recording-session-row', ['session' => $session, 'subdomain' => $subdomain])
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            {{-- Mobile Cards --}}
+            <div class="md:hidden divide-y divide-gray-100 dark:divide-gray-700">
+                @foreach($sessions as $session)
+                    @include('supervisor.recording._recording-session-card', ['session' => $session, 'subdomain' => $subdomain])
+                @endforeach
+            </div>
+        @endif
+
+    @else
+        {{-- History Tab --}}
+        @if($historyData)
+            {{-- Stats (same card design as capacity dashboard) --}}
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center"><i class="ri-checkbox-circle-line text-lg text-green-600"></i></div>
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($historyData['stats']->total_recorded) }}</p>
+                                <p class="text-xs text-gray-500">{{ __($t.'history_total_recorded') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-700 flex items-center justify-center"><i class="ri-skip-forward-line text-lg text-gray-600"></i></div>
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($historyData['stats']->total_skipped) }}</p>
+                                <p class="text-xs text-gray-500">{{ __($t.'history_total_skipped') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center"><i class="ri-error-warning-line text-lg text-red-600"></i></div>
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($historyData['stats']->total_failed) }}</p>
+                                <p class="text-xs text-gray-500">{{ __($t.'history_total_failed') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center"><i class="ri-time-line text-lg text-blue-600"></i></div>
+                            <div>
+                                @php $dur = $historyData['stats']->total_duration; $h = intval($dur/3600); $m = intval(($dur%3600)/60); @endphp
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $h > 0 ? $h.'h '.$m.'m' : $m.'m' }}</p>
+                                <p class="text-xs text-gray-500">{{ __($t.'history_total_duration') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center"><i class="ri-hard-drive-2-line text-lg text-purple-600"></i></div>
+                            <div>
+                                @php
+                                    $bytes = $historyData['stats']->total_storage; $units = ['B','KB','MB','GB'];
+                                    $i = 0; $val = $bytes; while ($val > 1024 && $i < 3) { $val /= 1024; $i++; }
+                                @endphp
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ round($val, 1) }} {{ $units[$i] }}</p>
+                                <p class="text-xs text-gray-500">{{ __($t.'history_storage_used') }}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </template>
-            <template x-if="!loading && recordings.length === 0">
+            </div>
+
+            {{-- History Table --}}
+            @if($historyData['recordings']->isEmpty())
                 <div class="p-12 text-center">
                     <i class="ri-history-line text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                     <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300">{{ __($t.'no_history') }}</h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __($t.'no_history_description') }}</p>
                 </div>
-            </template>
-            <template x-if="!loading && recordings.length > 0">
-                <div>
+            @else
+                <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-900/50">
                             <tr>
                                 <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'session') }}</th>
+                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'type') }}</th>
+                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'teacher') }}</th>
                                 <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'time') }}</th>
                                 <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'status') }}</th>
+                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.recording.history_total_duration') }}</th>
+                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.recording.history_storage_used') }}</th>
+                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'actions') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                            <template x-for="rec in recordings" :key="rec.id">
+                            @foreach($historyData['recordings'] as $recording)
+                                @php
+                                    $rec = $recording;
+                                    $sess = $rec->recordable;
+                                    $recType = match(true) {
+                                        $sess instanceof \App\Models\AcademicSession => 'academic',
+                                        $sess instanceof \App\Models\InteractiveCourseSession => 'interactive',
+                                        default => 'quran',
+                                    };
+                                    $recTeacher = match($recType) {
+                                        'academic' => $sess?->academicTeacher?->user?->name ?? '-',
+                                        'interactive' => $sess?->course?->assignedTeacher?->user?->name ?? '-',
+                                        default => $sess?->quranTeacher?->name ?? '-',
+                                    };
+                                    $isTrial = $recType === 'quran' && $sess && method_exists($sess, 'isTrial') && $sess->isTrial();
+                                    $typeConfig = match(true) {
+                                        $recType === 'academic' => ['label' => __('supervisor.sessions.type_private_lesson'), 'icon' => 'ri-graduation-cap-line', 'bg' => 'bg-violet-50', 'text' => 'text-violet-600'],
+                                        $recType === 'interactive' => ['label' => __('supervisor.sessions.type_interactive'), 'icon' => 'ri-video-chat-line', 'bg' => 'bg-blue-50', 'text' => 'text-blue-600'],
+                                        $isTrial => ['label' => __('supervisor.sessions.type_quran_trial'), 'icon' => 'ri-gift-line', 'bg' => 'bg-orange-50', 'text' => 'text-orange-600'],
+                                        $sess && $sess->circle => ['label' => __('supervisor.sessions.type_quran_group'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
+                                        default => ['label' => __('supervisor.sessions.type_quran_individual'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
+                                    };
+                                @endphp
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $sess?->session_code ?? $rec->display_name }}</td>
                                     <td class="px-4 py-3">
-                                        <span x-text="rec.display_name" class="font-medium text-gray-900 dark:text-white"></span>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="w-6 h-6 rounded flex items-center justify-center {{ $typeConfig['bg'] }}">
+                                                <i class="{{ $typeConfig['icon'] }} text-xs {{ $typeConfig['text'] }}"></i>
+                                            </span>
+                                            <span class="text-xs text-gray-600 dark:text-gray-400">{{ $typeConfig['label'] }}</span>
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400" x-text="rec.created_at"></td>
+                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $recTeacher }}</td>
+                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400" dir="ltr">{{ $rec->created_at ? toAcademyTimezone($rec->created_at)->format('M d, H:i') : '-' }}</td>
                                     <td class="px-4 py-3">
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                                              :class="{
-                                                  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': rec.status === 'completed',
-                                                  'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300': rec.status === 'skipped',
-                                                  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': rec.status === 'failed',
-                                              }"
-                                              x-text="rec.status_label"></span>
+                                        @php
+                                            $sBadge = match($rec->status) {
+                                                \App\Enums\RecordingStatus::COMPLETED => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                                \App\Enums\RecordingStatus::SKIPPED => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+                                                \App\Enums\RecordingStatus::FAILED => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                                                default => 'bg-gray-100 text-gray-600',
+                                            };
+                                        @endphp
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $sBadge }}">
+                                            <i class="{{ $rec->status->icon() }} me-1"></i>
+                                            {{ $rec->status->label() }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400" dir="ltr">{{ $rec->formatted_duration }}</td>
+                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400" dir="ltr">{{ $rec->formatted_file_size }}</td>
+                                    <td class="px-4 py-3">
+                                        @if($rec->isCompleted() && $rec->isAvailable())
+                                            <div class="flex items-center gap-1.5">
+                                                @if($rec->getStreamUrl())
+                                                    <a href="{{ $rec->getStreamUrl() }}" target="_blank"
+                                                       class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
+                                                        <i class="ri-play-circle-line"></i>
+                                                    </a>
+                                                @endif
+                                                @if($rec->getDownloadUrl())
+                                                    <a href="{{ $rec->getDownloadUrl() }}" target="_blank"
+                                                       class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 transition-colors">
+                                                        <i class="ri-download-line"></i>
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="text-xs text-gray-400">-</span>
+                                        @endif
                                     </td>
                                 </tr>
-                            </template>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
-            </template>
-        </div>
+                <div class="p-4">
+                    {{ $historyData['recordings']->links() }}
+                </div>
+            @endif
+        @endif
+    @endif
     </div>
-@endif
+</div>
 
 <script>
 function recordingCapacity() {
@@ -263,13 +412,11 @@ function recordingCapacity() {
         utilization: {{ $capacityStatus['utilization_percentage'] }},
         serverStatus: '{{ $capacityStatus['server_status'] }}',
         recordedToday: {{ $recordedToday }},
-
         init() {
             setInterval(() => {
                 if (!document.hidden) this.refresh();
             }, 15000);
         },
-
         async refresh() {
             try {
                 const res = await fetch('{{ route('manage.recording.capacity', ['subdomain' => $subdomain]) }}');
@@ -280,46 +427,7 @@ function recordingCapacity() {
                 this.utilization = data.utilization_percentage;
                 this.serverStatus = data.server_status;
                 this.recordedToday = data.recorded_today ?? this.recordedToday;
-            } catch (e) {
-                console.error('Failed to refresh capacity:', e);
-            }
-        }
-    };
-}
-
-function recordingHistory() {
-    return {
-        recordings: [],
-        stats: { total_recorded: 0, total_skipped: 0, total_failed: 0, total_duration: 0, total_storage: 0 },
-        loading: true,
-
-        async loadHistory() {
-            try {
-                const res = await fetch('{{ route('manage.recording.history', ['subdomain' => $subdomain]) }}');
-                const data = await res.json();
-                this.recordings = data.recordings?.data ?? [];
-                this.stats = data.stats ?? this.stats;
-            } catch (e) {
-                console.error('Failed to load history:', e);
-            } finally {
-                this.loading = false;
-            }
-        },
-
-        formatDuration(seconds) {
-            if (!seconds) return '00:00';
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            if (h > 0) return h + 'h ' + m + 'm';
-            return m + 'm';
-        },
-
-        formatBytes(bytes) {
-            if (!bytes) return '0 B';
-            const units = ['B', 'KB', 'MB', 'GB'];
-            let i = 0;
-            while (bytes > 1024 && i < units.length - 1) { bytes /= 1024; i++; }
-            return Math.round(bytes * 100) / 100 + ' ' + units[i];
+            } catch (e) {}
         }
     };
 }
