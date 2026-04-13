@@ -1565,6 +1565,27 @@ function completeSession(sessionId) {
 
 <!-- Meeting Container -->
 <div id="meetingContainer" class="bg-white rounded-lg shadow-md overflow-hidden mt-8" style="display: none;">
+    <!-- iOS Safari Audio Hint -->
+    <div id="iosAudioHint" style="display: none;" class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between text-sm" dir="auto">
+        <div class="flex items-center gap-2 text-amber-800">
+            <i class="ri-headphone-line text-lg"></i>
+            <span>{{ __('meetings.ios_audio_hint') }}</span>
+        </div>
+        <button onclick="this.parentElement.style.display='none'" class="text-amber-600 hover:text-amber-800 p-1">
+            <i class="ri-close-line"></i>
+        </button>
+    </div>
+    <script>
+        (function() {
+            var ua = navigator.userAgent;
+            var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            var isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|Chrome/.test(ua);
+            if (isIOS && isSafari) {
+                var hint = document.getElementById('iosAudioHint');
+                if (hint) hint.style.display = '';
+            }
+        })();
+    </script>
     <!-- LiveKit Meeting Interface - Dynamic Height -->
     <div id="livekitMeetingInterface" class="bg-gray-900 relative" style="min-height: 400px;">
         <!-- Loading Overlay - ENHANCED WITH SMOOTH TRANSITIONS -->

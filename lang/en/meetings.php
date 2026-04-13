@@ -558,4 +558,6 @@ return [
         'super_admin' => 'Super Administrator',
         'participant' => 'Participant',
     ],
+
+    'ios_audio_hint' => 'For best audio quality, use headphones or the Itqan mobile app',
 ];

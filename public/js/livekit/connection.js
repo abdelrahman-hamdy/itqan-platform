@@ -148,6 +148,10 @@ class LiveKitConnection {
 
         // Local track events - important for local participant
         this.room.on(window.LiveKit.RoomEvent.LocalTrackPublished, (publication, participant) => {
+            // Apply noise suppression to outbound audio (RNNoise WASM)
+            if (publication.source === window.LiveKit.Track.Source.Microphone && publication.track) {
+                this.applyNoiseSuppression(publication.track);
+            }
             if (this.config.onTrackPublished) {
                 this.config.onTrackPublished(publication, participant);
             }
@@ -397,9 +401,35 @@ class LiveKitConnection {
 
 
     /**
+     * Apply RNNoise-based noise suppression to the local audio track.
+     * Uses @shiguredo/noise-suppression (WASM, runs client-side, ~2ms latency).
+     * Fails silently on unsupported browsers — audio works without suppression.
+     */
+    async applyNoiseSuppression(localAudioTrack) {
+        try {
+            const { NoiseSuppressionProcessor } = await import('/js/livekit/noise-suppression/noise_suppression.js');
+            if (!NoiseSuppressionProcessor.isSupported()) {
+                if (window.MT) window.MT.event('audio', 'noise_suppression_unsupported', {});
+                return;
+            }
+            this.noiseProcessor = new NoiseSuppressionProcessor();
+            const mediaTrack = localAudioTrack.mediaStreamTrack;
+            const processedTrack = await this.noiseProcessor.startProcessing(mediaTrack);
+            await localAudioTrack.replaceTrack(processedTrack);
+            if (window.MT) window.MT.event('audio', 'noise_suppression_enabled', {});
+        } catch (e) {
+            console.warn('Noise suppression not available:', e.message);
+        }
+    }
+
+    /**
      * Disconnect from the room
      */
     async disconnect() {
+        if (this.noiseProcessor) {
+            this.noiseProcessor.stopProcessing();
+            this.noiseProcessor = null;
+        }
         if (this.room && this.isConnected) {
             this.intentionalDisconnect = true;
             await this.room.disconnect();
