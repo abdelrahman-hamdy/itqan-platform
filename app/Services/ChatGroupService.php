@@ -308,7 +308,7 @@ class ChatGroupService
      */
     public function addMember(ChatGroup $group, User $user, string $role = ChatGroup::ROLE_MEMBER, bool $canSendMessages = true): ChatGroupMember
     {
-        return ChatGroupMember::firstOrCreate(
+        $member = ChatGroupMember::updateOrCreate(
             [
                 'group_id' => $group->id,
                 'user_id' => $user->id,
@@ -316,9 +316,14 @@ class ChatGroupService
             [
                 'role' => $role,
                 'can_send_messages' => $canSendMessages,
-                'joined_at' => now(),
             ]
         );
+
+        if ($member->wasRecentlyCreated) {
+            $member->update(['joined_at' => now()]);
+        }
+
+        return $member;
     }
 
     /**

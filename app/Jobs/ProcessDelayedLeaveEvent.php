@@ -94,36 +94,16 @@ class ProcessDelayedLeaveEvent implements ShouldQueue
             return;
         }
 
-        // Try to find the matching join event
+        // Find the matching join event (regardless of closure state)
         $joinEvent = MeetingAttendanceEvent::where('session_id', $this->sessionId)
             ->where('session_type', $this->sessionType)
             ->where('user_id', $this->userId)
             ->where('participant_sid', $this->participantSid)
             ->where('event_type', MeetingEventType::JOINED)
-            ->whereNull('left_at')
             ->latest('event_timestamp')
             ->first();
 
         if (! $joinEvent) {
-            // Check if the join was already closed by the main webhook handler
-            $alreadyClosed = MeetingAttendanceEvent::where('session_id', $this->sessionId)
-                ->where('session_type', $this->sessionType)
-                ->where('user_id', $this->userId)
-                ->where('participant_sid', $this->participantSid)
-                ->where('event_type', MeetingEventType::JOINED)
-                ->whereNotNull('left_at')
-                ->exists();
-
-            if ($alreadyClosed) {
-                Log::info('[ProcessDelayedLeaveEvent] Join already closed by main handler', [
-                    'session_id' => $this->sessionId,
-                    'user_id' => $this->userId,
-                    'participant_sid' => $this->participantSid,
-                ]);
-
-                return;
-            }
-
             Log::warning('[ProcessDelayedLeaveEvent] Join event still not found', [
                 'session_id' => $this->sessionId,
                 'user_id' => $this->userId,
@@ -146,7 +126,17 @@ class ProcessDelayedLeaveEvent implements ShouldQueue
             return;
         }
 
-        // Found the join event - close it
+        // Already closed by main webhook handler — nothing to do
+        if ($joinEvent->left_at !== null) {
+            Log::info('[ProcessDelayedLeaveEvent] Join already closed by main handler', [
+                'session_id' => $this->sessionId,
+                'user_id' => $this->userId,
+                'participant_sid' => $this->participantSid,
+            ]);
+
+            return;
+        }
+
         $leftAt = Carbon::parse($this->leftAt);
         $this->closeJoinEvent($joinEvent, $leftAt);
 
