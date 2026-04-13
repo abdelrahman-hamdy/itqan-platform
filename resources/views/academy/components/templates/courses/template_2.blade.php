@@ -36,7 +36,7 @@
           @php
             $thumbnail = $course->getFirstMediaUrl('thumbnails') ?: ($course->thumbnail_url ?? null);
           @endphp
-          <div class="flex-shrink-0 w-[260px] sm:w-[300px] scroll-snap-align-start">
+          <div class="flex-shrink-0 w-[260px] sm:w-[300px] snap-start">
             <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md hover:border-gray-200 h-full flex flex-col">
               {{-- Thumbnail --}}
               <div class="relative h-40 sm:h-44 overflow-hidden">
@@ -161,9 +161,6 @@
 </section>
 
 <style>
-  .scroll-snap-align-start {
-    scroll-snap-align: start;
-  }
   #recorded-courses-scroll .overflow-x-auto::-webkit-scrollbar {
     height: 6px;
   }
@@ -179,44 +176,34 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var container = document.getElementById('recorded-courses-scroll');
-    if (!container) return;
+    function initHorizontalScroll(containerId, amount) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        var scrollEl = container.querySelector('.overflow-x-auto');
+        if (!scrollEl) return;
+        var prevBtn = container.querySelector('.scroll-prev');
+        var nextBtn = container.querySelector('.scroll-next');
+        var isRTL = document.documentElement.dir === 'rtl';
 
-    var scrollEl = container.querySelector('.overflow-x-auto');
-    var prevBtn = container.querySelector('.scroll-prev');
-    var nextBtn = container.querySelector('.scroll-next');
-
-    if (!scrollEl) return;
-
-    var scrollAmount = 320;
-    var isRTL = document.documentElement.dir === 'rtl';
-
-    if (prevBtn) {
-        prevBtn.addEventListener('click', function() {
-            scrollEl.scrollBy({ left: isRTL ? scrollAmount : -scrollAmount, behavior: 'smooth' });
+        if (prevBtn) prevBtn.addEventListener('click', function() {
+            scrollEl.scrollBy({ left: isRTL ? amount : -amount, behavior: 'smooth' });
         });
-    }
-    if (nextBtn) {
-        nextBtn.addEventListener('click', function() {
-            scrollEl.scrollBy({ left: isRTL ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+        if (nextBtn) nextBtn.addEventListener('click', function() {
+            scrollEl.scrollBy({ left: isRTL ? -amount : amount, behavior: 'smooth' });
         });
-    }
 
-    // Touch swipe
-    var touchStartX = 0;
-    scrollEl.addEventListener('touchstart', function(e) {
-        touchStartX = e.changedTouches[0].screenX;
-    }, { passive: true });
-
-    scrollEl.addEventListener('touchend', function(e) {
-        var diff = touchStartX - e.changedTouches[0].screenX;
-        if (Math.abs(diff) > 50) {
-            if ((diff > 0 && !isRTL) || (diff < 0 && isRTL)) {
-                scrollEl.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-            } else {
-                scrollEl.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        var touchStartX = 0;
+        scrollEl.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        scrollEl.addEventListener('touchend', function(e) {
+            var diff = touchStartX - e.changedTouches[0].screenX;
+            if (Math.abs(diff) > 50) {
+                scrollEl.scrollBy({ left: ((diff > 0 && !isRTL) || (diff < 0 && isRTL)) ? amount : -amount, behavior: 'smooth' });
             }
-        }
-    }, { passive: true });
+        }, { passive: true });
+    }
+
+    initHorizontalScroll('recorded-courses-scroll', 320);
 });
 </script>

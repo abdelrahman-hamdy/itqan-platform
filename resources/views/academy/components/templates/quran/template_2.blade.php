@@ -213,12 +213,10 @@
                 <span class="text-sm font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($circle->monthly_fee, 2) }} {{ getCurrencySymbol() }}</span>
                 <span class="text-[10px] text-gray-400">/ {{ __('academy.cards.per_month') }}</span>
               </div>
-              @else
-              <div></div>
               @endif
 
               <a href="{{ route('quran-circles.show', ['subdomain' => $academy->subdomain, 'circleId' => $circle->id]) }}"
-                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all duration-200 hover:opacity-90"
+                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all duration-200 hover:opacity-90 ms-auto"
                  style="background-color: {{ $gradientFromHex }};">
                 {{ __('academy.cards.view_details') }}
                 <i class="ri-arrow-left-s-line text-sm ltr:rotate-180"></i>

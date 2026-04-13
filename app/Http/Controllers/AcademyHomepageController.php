@@ -51,6 +51,7 @@ class AcademyHomepageController extends Controller
         $interactiveCourses = InteractiveCourse::withoutGlobalScope('academy')
             ->where('academy_id', $academy->id)
             ->where('is_published', true)
+            ->with(['assignedTeacher', 'subject', 'gradeLevel'])
             ->take(4)
             ->get();
 
@@ -58,6 +59,7 @@ class AcademyHomepageController extends Controller
         $academicTeachers = AcademicTeacherProfile::withoutGlobalScope('academy')
             ->where('academy_id', $academy->id)
             ->whereHas('user', fn ($q) => $q->where('active_status', true))
+            ->with(['user', 'subjects'])
             ->take(4)
             ->get();
 
@@ -72,6 +74,7 @@ class AcademyHomepageController extends Controller
         $recordedCourses = RecordedCourse::withoutGlobalScope('academy')
             ->where('academy_id', $academy->id)
             ->where('is_published', true)
+            ->with(['media'])
             ->take(3)
             ->get();
 
