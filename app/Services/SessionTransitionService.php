@@ -254,6 +254,15 @@ class SessionTransitionService
             ];
         }
 
+        // Guard: remove orphan MA rows from recycled session IDs (DB restore scenario).
+        // If an MA row was created before this session existed, it belongs to an old
+        // deleted session that happened to have the same ID.
+        if ($session->created_at) {
+            MeetingAttendance::where('session_id', $session->id)
+                ->where('created_at', '<', $session->created_at)
+                ->delete();
+        }
+
         // Remove stale teacher rows left by a previous teacher assignment.
         // Only deletes empty rows (total_duration_minutes = 0) so real
         // attendance data from a teacher who actually taught is preserved.

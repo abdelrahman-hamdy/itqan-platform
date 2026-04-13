@@ -425,6 +425,18 @@ class LiveKitWebhookController extends Controller
             return;
         }
 
+        // Guard: reject joins >24h from the session's scheduled time.
+        // Prevents stale data from DB restore / binlog replay scenarios.
+        if ($session->scheduled_at && abs(now()->diffInHours($session->scheduled_at)) > 24) {
+            Log::channel('webhook')->warning('Rejected stale participant join: too far from scheduled_at', [
+                'session_id' => $session->id,
+                'scheduled_at' => $session->scheduled_at,
+                'room_name' => $roomName,
+            ]);
+
+            return;
+        }
+
         // Set tenant context for multi-tenancy support in queued jobs
         if ($session->academy_id) {
             $academy = Academy::find($session->academy_id);

@@ -172,6 +172,12 @@ trait AttendanceCalculatorTrait
         $lastJoinTime = null;
 
         foreach ($cycles as $cycle) {
+            // Skip cycles >24h outside the session window (stale data from DB restore)
+            $cycleTs = $cycle['timestamp'] ?? $cycle['joined_at'] ?? null;
+            if ($cycleTs && abs(Carbon::parse($cycleTs)->diffInHours($windowStart)) > 24) {
+                continue;
+            }
+
             if (isset($cycle['type'])) {
                 if ($cycle['type'] === 'join') {
                     $lastJoinTime = $cycle['timestamp'];
