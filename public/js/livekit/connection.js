@@ -407,6 +407,14 @@ class LiveKitConnection {
      */
     async applyNoiseSuppression(localAudioTrack) {
         try {
+            // Skip on low-end devices — WASM AudioWorklet causes jitter on <4GB RAM
+            const mem = navigator.deviceMemory || 8; // defaults to 8 if unsupported (desktop)
+            const cores = navigator.hardwareConcurrency || 4;
+            if (mem < 4 || cores < 4) {
+                if (window.MT) window.MT.event('audio', 'noise_suppression_skipped_low_end', { mem, cores });
+                return;
+            }
+
             if (this.noiseProcessor) {
                 this.noiseProcessor.stopProcessing();
                 this.noiseProcessor = null;
@@ -420,7 +428,7 @@ class LiveKitConnection {
             const mediaTrack = localAudioTrack.mediaStreamTrack;
             const processedTrack = await this.noiseProcessor.startProcessing(mediaTrack);
             await localAudioTrack.replaceTrack(processedTrack);
-            if (window.MT) window.MT.event('audio', 'noise_suppression_enabled', {});
+            if (window.MT) window.MT.event('audio', 'noise_suppression_enabled', { mem, cores });
         } catch (e) {
             console.warn('Noise suppression not available:', e.message);
         }
