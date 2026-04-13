@@ -43,16 +43,6 @@
 @endphp
 
 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-    {{-- Session --}}
-    <td class="px-4 py-3">
-        <div class="flex items-center gap-2">
-            @if($isLive)
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0"></span>
-            @endif
-            <span class="font-medium text-gray-900 dark:text-white">{{ $session->session_code ?? '#'.$session->id }}</span>
-        </div>
-    </td>
-
     {{-- Type (same design as sessions page) --}}
     <td class="px-4 py-3">
         <div class="flex items-center gap-1.5">
@@ -72,6 +62,20 @@
     {{-- Time --}}
     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm" dir="ltr">
         {{ $session->scheduled_at ? toAcademyTimezone($session->scheduled_at)->format('M d, H:i') : '-' }}
+    </td>
+
+    {{-- Duration --}}
+    <td class="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm">
+        @if($session->duration_minutes)
+            {{ $session->duration_minutes }} {{ __('supervisor.sessions.minutes_short') }}
+        @else
+            -
+        @endif
+    </td>
+
+    {{-- Session Status --}}
+    <td class="px-4 py-3">
+        <x-sessions.status-badge :status="$status" size="sm" />
     </td>
 
     {{-- Recording Status --}}

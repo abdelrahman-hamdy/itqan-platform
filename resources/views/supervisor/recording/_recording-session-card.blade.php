@@ -47,13 +47,13 @@
                 <i class="{{ $typeConfig['icon'] }} {{ $typeConfig['text'] }}"></i>
             </span>
             <div>
-                <div class="flex items-center gap-1.5">
-                    @if($isLive)
-                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0"></span>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $typeConfig['label'] }}</p>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <x-sessions.status-badge :status="$status" size="sm" />
+                    @if($session->duration_minutes)
+                        <span class="text-xs text-gray-400">{{ $session->duration_minutes }} {{ __('supervisor.sessions.minutes_short') }}</span>
                     @endif
-                    <span class="font-medium text-gray-900 dark:text-white text-sm">{{ $session->session_code ?? '#'.$session->id }}</span>
                 </div>
-                <p class="text-xs text-gray-500">{{ $typeConfig['label'] }}</p>
             </div>
         </div>
         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium {{ $statusBadge['class'] }}">

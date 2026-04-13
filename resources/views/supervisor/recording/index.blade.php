@@ -212,11 +212,12 @@
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-gray-900/50">
                         <tr>
-                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'session') }}</th>
                             <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'type') }}</th>
                             <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'teacher') }}</th>
                             <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_student') }}</th>
                             <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'time') }}</th>
+                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_duration') }}</th>
+                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_status') }}</th>
                             <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'status') }}</th>
                             <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'actions') }}</th>
                         </tr>
