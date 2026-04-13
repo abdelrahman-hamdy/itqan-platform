@@ -226,9 +226,9 @@ class SupervisorRecordingController extends BaseSupervisorWebController
                             RecordingStatus::QUEUED->value,
                         ]),
                     ])
-                    ->when($type === 'quran_individual', fn ($q) => $q->where('session_type', 'individual')->where('is_trial', false))
+                    ->when($type === 'quran_individual', fn ($q) => $q->where('session_type', 'individual'))
                     ->when($type === 'quran_group', fn ($q) => $q->whereIn('session_type', ['group', 'circle']))
-                    ->when($type === 'trial', fn ($q) => $q->where('is_trial', true)),
+                    ->when($type === 'trial', fn ($q) => $q->where('session_type', 'trial')),
 
                 'academic_lesson' => AcademicSession::query()
                     ->whereIn('status', $liveStatuses)

@@ -365,7 +365,7 @@ class RecordingOrchestratorService
         }
 
         if ($session instanceof \App\Models\QuranSession) {
-            if ($session->is_trial) {
+            if ($session->session_type === 'trial') {
                 return 'trial';
             }
 
