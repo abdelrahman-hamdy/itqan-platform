@@ -20,20 +20,30 @@
 <section id="hero-section" class="relative overflow-hidden" role="main"
          style="background: linear-gradient(160deg, {{ $brandHex50 }}, white 50%, {{ $brandHex50 }});">
 
-  {{-- Islamic geometric pattern --}}
+  {{-- Islamic arabesque pattern --}}
   <div class="absolute inset-0">
     <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <pattern id="t2-islamic" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-          <polygon points="50,5 61,27 85,15 73,38 95,50 73,62 85,85 61,73 50,95 39,73 15,85 27,62 5,50 27,38 15,15 39,27"
-                   fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.8" opacity="0.2"/>
-          <polygon points="50,25 75,50 50,75 25,50"
-                   fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.6" opacity="0.14"/>
-          <circle cx="50" cy="50" r="6" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.6" opacity="0.16"/>
-          <circle cx="0" cy="0" r="4" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.5" opacity="0.1"/>
-          <circle cx="100" cy="0" r="4" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.5" opacity="0.1"/>
-          <circle cx="0" cy="100" r="4" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.5" opacity="0.1"/>
-          <circle cx="100" cy="100" r="4" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.5" opacity="0.1"/>
+        <pattern id="t2-islamic" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+          {{-- Interlocking arches (mashrabiya motif) --}}
+          <path d="M0 40 Q20 0 40 40 Q60 0 80 40" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.7" opacity="0.15"/>
+          <path d="M0 40 Q20 80 40 40 Q60 80 80 40" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.7" opacity="0.15"/>
+          {{-- Vertical arches --}}
+          <path d="M40 0 Q0 20 40 40 Q0 60 40 80" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.7" opacity="0.12"/>
+          <path d="M40 0 Q80 20 40 40 Q80 60 40 80" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.7" opacity="0.12"/>
+          {{-- Center rosette --}}
+          <circle cx="40" cy="40" r="8" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.5" opacity="0.18"/>
+          <circle cx="40" cy="40" r="3" fill="{{ $brandHex500 }}" opacity="0.06"/>
+          {{-- Corner diamonds --}}
+          <path d="M0 0 L8 0 L0 8 Z" fill="{{ $brandHex500 }}" opacity="0.04"/>
+          <path d="M80 0 L72 0 L80 8 Z" fill="{{ $brandHex500 }}" opacity="0.04"/>
+          <path d="M0 80 L8 80 L0 72 Z" fill="{{ $brandHex500 }}" opacity="0.04"/>
+          <path d="M80 80 L72 80 L80 72 Z" fill="{{ $brandHex500 }}" opacity="0.04"/>
+          {{-- Junction dots --}}
+          <circle cx="0" cy="40" r="2" fill="{{ $brandHex500 }}" opacity="0.1"/>
+          <circle cx="80" cy="40" r="2" fill="{{ $brandHex500 }}" opacity="0.1"/>
+          <circle cx="40" cy="0" r="2" fill="{{ $brandHex500 }}" opacity="0.1"/>
+          <circle cx="40" cy="80" r="2" fill="{{ $brandHex500 }}" opacity="0.1"/>
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#t2-islamic)"/>

@@ -1,9 +1,11 @@
 @php
-    // Get gradient palette
     $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
     $hexColors = $gradientPalette->getHexColors();
     $gradientFromHex = $hexColors['from'];
     $gradientToHex = $hexColors['to'];
+
+    $brandColor  = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
+    $brandHex500 = $brandColor->getHexValue(500);
 @endphp
 
 <!-- Features Section - Template 2: Clean Icon-Based Cards with Gradient Background -->
@@ -28,7 +30,7 @@
            onmouseleave="this.style.borderColor=''; this.style.boxShadow='';">
         <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center mb-4 sm:mb-5"
              style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}33, {{ $gradientToHex }}33); border: 1px solid {{ $gradientFromHex }}4d;">
-          <i class="ri-user-star-line text-2xl sm:text-3xl" style="color: {{ $gradientFromHex }};"></i>
+          <i class="ri-user-star-line text-2xl sm:text-3xl" style="color: {{ $brandHex500 }};"></i>
         </div>
         <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">{{ __('academy.features.specialized_teachers.title') }}</h3>
         <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
@@ -42,7 +44,7 @@
            onmouseleave="this.style.borderColor=''; this.style.boxShadow='';">
         <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center mb-4 sm:mb-5"
              style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}33, {{ $gradientToHex }}33); border: 1px solid {{ $gradientFromHex }}4d;">
-          <i class="ri-calendar-check-line text-2xl sm:text-3xl" style="color: {{ $gradientFromHex }};"></i>
+          <i class="ri-calendar-check-line text-2xl sm:text-3xl" style="color: {{ $brandHex500 }};"></i>
         </div>
         <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">{{ __('academy.features.flexible_schedules.title') }}</h3>
         <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
@@ -56,7 +58,7 @@
            onmouseleave="this.style.borderColor=''; this.style.boxShadow='';">
         <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center mb-4 sm:mb-5"
              style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}33, {{ $gradientToHex }}33); border: 1px solid {{ $gradientFromHex }}4d;">
-          <i class="ri-video-line text-2xl sm:text-3xl" style="color: {{ $gradientFromHex }};"></i>
+          <i class="ri-video-line text-2xl sm:text-3xl" style="color: {{ $brandHex500 }};"></i>
         </div>
         <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">{{ __('academy.features.interactive_learning.title') }}</h3>
         <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
@@ -70,7 +72,7 @@
            onmouseleave="this.style.borderColor=''; this.style.boxShadow='';">
         <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center mb-4 sm:mb-5"
              style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}33, {{ $gradientToHex }}33); border: 1px solid {{ $gradientFromHex }}4d;">
-          <i class="ri-file-text-line text-2xl sm:text-3xl" style="color: {{ $gradientFromHex }};"></i>
+          <i class="ri-file-text-line text-2xl sm:text-3xl" style="color: {{ $brandHex500 }};"></i>
         </div>
         <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">{{ __('academy.features.regular_followup.title') }}</h3>
         <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
@@ -84,7 +86,7 @@
            onmouseleave="this.style.borderColor=''; this.style.boxShadow='';">
         <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center mb-4 sm:mb-5"
              style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}33, {{ $gradientToHex }}33); border: 1px solid {{ $gradientFromHex }}4d;">
-          <i class="ri-shield-check-line text-2xl sm:text-3xl" style="color: {{ $gradientFromHex }};"></i>
+          <i class="ri-shield-check-line text-2xl sm:text-3xl" style="color: {{ $brandHex500 }};"></i>
         </div>
         <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">{{ __('academy.features.safe_environment.title') }}</h3>
         <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
@@ -98,7 +100,7 @@
            onmouseleave="this.style.borderColor=''; this.style.boxShadow='';">
         <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center mb-4 sm:mb-5"
              style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}33, {{ $gradientToHex }}33); border: 1px solid {{ $gradientFromHex }}4d;">
-          <i class="ri-customer-service-2-line text-2xl sm:text-3xl" style="color: {{ $gradientFromHex }};"></i>
+          <i class="ri-customer-service-2-line text-2xl sm:text-3xl" style="color: {{ $brandHex500 }};"></i>
         </div>
         <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">{{ __('academy.features.technical_support.title') }}</h3>
         <p class="text-sm sm:text-base text-gray-600 leading-relaxed">

@@ -132,7 +132,7 @@
             <div class="flex-grow"></div>
 
             {{-- Price + CTA --}}
-            <div class="flex items-center justify-between gap-4 pt-5 border-t border-gray-100">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-5 border-t border-gray-100">
               @if($course->student_price > 0)
               <div>
                 @if($course->hasDiscount())
@@ -150,7 +150,7 @@
               @endif
 
               <a href="{{ route('interactive-courses.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id]) }}"
-                 class="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 text-blue-600 border-2 border-blue-600 hover:bg-blue-600 hover:text-white">
+                 class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 text-blue-600 border-2 border-blue-600 hover:bg-blue-600 hover:text-white">
                 {{ __('academy.cards.view_details') }}
                 <i class="ri-arrow-left-s-line text-base ltr:rotate-180"></i>
               </a>
