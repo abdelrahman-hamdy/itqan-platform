@@ -624,13 +624,27 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                 'student_id' => $attendance->user_id,
             ]);
 
-            $teacherId = $session->teacher_id ?? $session->quran_teacher_id ?? null;
+            $teacherId = match (true) {
+                $session instanceof QuranSession => $session->quran_teacher_id,
+                $session instanceof AcademicSession => $session->academicTeacher?->user_id,
+                $session instanceof InteractiveCourseSession => $session->course?->academicTeacher?->user_id,
+                default => $session->teacher_id ?? null,
+            };
             $academyId = $session->academy_id
                 ?? $session->course?->academy_id
                 ?? $session->quran_circle?->academy_id;
 
             if (! $academyId) {
                 Log::error('CalculateSessionForAttendance: Cannot determine academy_id for report', [
+                    'session_id' => $session->id,
+                    'session_type' => get_class($session),
+                ]);
+
+                return;
+            }
+
+            if (! $teacherId) {
+                Log::warning('CalculateSessionForAttendance: Cannot determine teacher_id for report', [
                     'session_id' => $session->id,
                     'session_type' => get_class($session),
                 ]);

@@ -61,8 +61,8 @@ class LiveKitRecordingManager
                 // Audio encoding options (128kbps Opus at 48kHz — good speech quality)
                 $payload['advanced'] = [
                     'audio_codec' => 'OPUS',
-                    'audio_bitrate' => $options['audio_bitrate'] ?? 128000,
-                    'audio_frequency' => $options['audio_frequency'] ?? 48000,
+                    'audio_bitrate' => $options['audio_bitrate'] ?? config('livekit.audio.recording_bitrate', 128000),
+                    'audio_frequency' => $options['audio_frequency'] ?? config('livekit.audio.recording_frequency', 48000),
                 ];
             } else {
                 // Video options

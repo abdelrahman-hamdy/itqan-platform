@@ -66,6 +66,20 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Audio Quality Settings
+    |--------------------------------------------------------------------------
+    */
+
+    'audio' => [
+        'default_codec' => 'opus',
+        'recording_bitrate' => (int) env('LIVEKIT_AUDIO_RECORDING_BITRATE', 128000),
+        'recording_frequency' => (int) env('LIVEKIT_AUDIO_RECORDING_FREQUENCY', 48000),
+        'dtx_enabled' => true,
+        'red_enabled' => true,
+    ],
+
     'recordings' => [
         // Base URL where recordings are accessible (served by nginx on LiveKit server)
         // SECURITY: No default URL - must be explicitly configured per environment
