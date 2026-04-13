@@ -14,12 +14,7 @@
 
     $heroHeading    = $heading ?? __('academy.hero.default_heading');
     $heroSubheading = $subheading ?? __('academy.hero.default_subheading');
-    $heroImage      = null;
-    if ($academy?->hero_image) {
-        $heroImage = \Illuminate\Support\Facades\Storage::disk('public')->exists($academy->hero_image)
-            ? \Illuminate\Support\Facades\Storage::disk('public')->url($academy->hero_image)
-            : asset('storage/' . $academy->hero_image);
-    }
+    $heroImage = $academy?->hero_image ? asset('storage/' . $academy->hero_image) : null;
 @endphp
 
 <section id="hero-section" class="relative overflow-hidden" role="main"

@@ -136,13 +136,8 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->label('صورة القسم الرئيسي')
                             ->helperText('تظهر هذه الصورة بجانب المحتوى في القالب الثاني والثالث')
                             ->image()
-                            ->disk('public')
                             ->directory('academies/hero-images')
-                            ->visibility('public')
-                            ->imageResizeMode('cover')
-                            ->imageCropAspectRatio('4:3')
-                            ->imageResizeTargetWidth('800')
-                            ->imageResizeTargetHeight('600'),
+                            ->visibility('public'),
 
                         TextInput::make('hero_heading')
                             ->label('عنوان القسم')
@@ -551,17 +546,8 @@ class AcademyDesignSettings extends Page implements HasForms
 
     public function save(): void
     {
-        file_put_contents(storage_path('hero_debug.txt'), 'SAVE_CALLED_' . now()->toDateTimeString());
-
         try {
             $data = $this->form->getState();
-
-            file_put_contents(storage_path('hero_debug.txt'), json_encode([
-                'hero_image' => $data['hero_image'] ?? 'NOT_IN_DATA',
-                'type' => isset($data['hero_image']) ? gettype($data['hero_image']) : 'missing',
-                'hero_template' => $data['hero_template'] ?? null,
-                'keys' => array_keys($data),
-            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             if (! $this->selectedAcademyId) {
                 Notification::make()
