@@ -179,6 +179,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::delete('/calendar/remove-sessions', [SupervisorCalendarController::class, 'removeScheduledSessions'])->name('calendar.remove-sessions');
 
         // Sessions Management
+        Route::get('/sessions/live-presence', [SupervisorSessionsController::class, 'livePresence'])->name('sessions.live-presence');
         Route::get('/sessions', [SupervisorSessionsController::class, 'index'])->name('sessions.index');
         Route::get('/sessions/{sessionType}/{sessionId}', [SupervisorSessionsController::class, 'show'])
             ->name('sessions.show')->whereIn('sessionType', ['quran', 'academic', 'interactive']);

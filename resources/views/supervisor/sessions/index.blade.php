@@ -309,30 +309,24 @@ document.addEventListener('alpine:init', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (!window.Echo) return;
-
     const liveSessions = @json($liveSessions);
     if (!liveSessions.length) return;
 
-    liveSessions.forEach(sessionId => {
-        window.Echo.join(`meeting.${sessionId}`)
-            .here(users => {
-                Alpine.store('presence').sessions[sessionId] = users.map(u => u.id);
-            })
-            .joining(user => {
-                const store = Alpine.store('presence');
-                if (!store.sessions[sessionId]) store.sessions[sessionId] = [];
-                if (!store.sessions[sessionId].includes(user.id)) {
-                    store.sessions[sessionId] = [...store.sessions[sessionId], user.id];
-                }
-            })
-            .leaving(user => {
-                const store = Alpine.store('presence');
-                if (store.sessions[sessionId]) {
-                    store.sessions[sessionId] = store.sessions[sessionId].filter(id => id !== user.id);
-                }
-            });
-    });
+    const presenceUrl = @json(route('manage.sessions.live-presence', ['subdomain' => $subdomain]));
+
+    async function fetchPresence() {
+        try {
+            const params = new URLSearchParams();
+            liveSessions.forEach(id => params.append('sessions[]', id));
+            const res = await fetch(`${presenceUrl}?${params}`);
+            if (res.ok) {
+                Alpine.store('presence').sessions = await res.json();
+            }
+        } catch (e) { /* silent */ }
+    }
+
+    fetchPresence();
+    setInterval(fetchPresence, 15000);
 });
 </script>
 

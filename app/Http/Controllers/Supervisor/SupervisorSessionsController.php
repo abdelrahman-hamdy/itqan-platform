@@ -85,6 +85,32 @@ class SupervisorSessionsController extends BaseSupervisorWebController
     }
 
     /**
+     * Return which users are currently in each live session's meeting.
+     */
+    public function livePresence(Request $request): JsonResponse
+    {
+        $sessionIds = array_map('intval', (array) $request->input('sessions', []));
+
+        if (empty($sessionIds)) {
+            return response()->json([]);
+        }
+
+        $presence = [];
+
+        $attendances = MeetingAttendance::whereIn('session_id', $sessionIds)
+            ->where('is_calculated', false)
+            ->get();
+
+        foreach ($attendances as $ma) {
+            if ($ma->isCurrentlyInMeeting()) {
+                $presence[$ma->session_id][] = $ma->user_id;
+            }
+        }
+
+        return response()->json($presence);
+    }
+
+    /**
      * Session detail page.
      */
     public function show(Request $request, $subdomain, string $sessionType, string $sessionId): View
