@@ -80,12 +80,6 @@
             </div>
         </div>
         <div class="flex items-center gap-1.5 flex-shrink-0">
-            @if($isLive)
-                <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 animate-pulse">
-                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    {{ __('supervisor.sessions.meeting_active') }}
-                </span>
-            @endif
             <x-sessions.status-badge :status="$status" size="sm" />
         </div>
     </div>
@@ -222,8 +216,8 @@
             </a>
         @endif
         @if($status->canCancel())
-            <a href="{{ $showUrl }}#cancel"
-               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors">
+            <a href="{{ $showUrl }}#cancel" @click.stop
+               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors">
                 <i class="ri-close-circle-line"></i>
                 {{ __('supervisor.sessions.cancel_session') }}
             </a>

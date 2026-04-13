@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     fetchPresence();
-    setInterval(fetchPresence, 15000);
+    setInterval(fetchPresence, 10000);
 });
 </script>
 
