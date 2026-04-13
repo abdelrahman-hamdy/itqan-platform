@@ -17,20 +17,60 @@
 @endphp
 
 <section id="hero-section" class="relative overflow-hidden" role="main">
-  {{-- ── Dark canvas ── --}}
+  {{-- ── Dark canvas with educational pattern ── --}}
   <div class="absolute inset-0" style="background: {{ $brandHex950 }};">
-    {{-- Diagonal accent stripe --}}
-    <div class="absolute inset-0 opacity-[0.07]"
-         style="background: repeating-linear-gradient(
-           -45deg,
-           transparent,
-           transparent 80px,
-           {{ $brandHex400 }} 80px,
-           {{ $brandHex400 }} 81px
-         );"></div>
-    {{-- Radial glow --}}
-    <div class="absolute -top-1/4 start-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full opacity-[0.12]"
-         style="background: radial-gradient(circle, {{ $brandHex500 }}, transparent 70%);"></div>
+    {{-- Educational icons pattern --}}
+    <div class="absolute inset-0 opacity-[0.05]">
+      <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="t2-edu-icons" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
+            {{-- Open book --}}
+            <g transform="translate(20,20)" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 4c0-1.1.9-2 2-2h6l2 2 2-2h6c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2h-7l-1 1-1-1H4c-1.1 0-2-.9-2-2V4z"/>
+              <path d="M12 6v14"/>
+              <path d="M6 8h4"/>
+              <path d="M6 11h4"/>
+              <path d="M14 8h4"/>
+              <path d="M14 11h4"/>
+            </g>
+            {{-- Graduation cap --}}
+            <g transform="translate(100,30)" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+            </g>
+            {{-- Pencil --}}
+            <g transform="translate(155,110) rotate(-30)" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+            </g>
+            {{-- Lightbulb --}}
+            <g transform="translate(30,120)" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18h6"/>
+              <path d="M10 22h4"/>
+              <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+            </g>
+            {{-- Atom / science --}}
+            <g transform="translate(100,130)" fill="none" stroke="white" stroke-width="1" stroke-linecap="round">
+              <ellipse cx="10" cy="10" rx="3" ry="10"/>
+              <ellipse cx="10" cy="10" rx="10" ry="3"/>
+              <ellipse cx="10" cy="10" rx="3" ry="10" transform="rotate(60 10 10)"/>
+              <ellipse cx="10" cy="10" rx="10" ry="3" transform="rotate(60 10 10)"/>
+              <circle cx="10" cy="10" r="1.5" fill="white"/>
+            </g>
+            {{-- Small decorative dots --}}
+            <circle cx="70" cy="80" r="1.5" fill="white" opacity="0.4"/>
+            <circle cx="160" cy="60" r="1" fill="white" opacity="0.3"/>
+            <circle cx="50" cy="170" r="1" fill="white" opacity="0.3"/>
+            <circle cx="180" cy="180" r="1.5" fill="white" opacity="0.4"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#t2-edu-icons)"/>
+      </svg>
+    </div>
+    {{-- Color glow --}}
+    <div class="absolute -top-1/4 start-1/3 w-[800px] h-[800px] rounded-full opacity-[0.1]"
+         style="background: radial-gradient(circle, {{ $brandHex500 }}, transparent 65%);"></div>
+    <div class="absolute bottom-0 end-0 w-[500px] h-[500px] rounded-full opacity-[0.06]"
+         style="background: radial-gradient(circle, {{ $brandHex400 }}, transparent 65%);"></div>
   </div>
 
   <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
