@@ -275,25 +275,18 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
         $hours = $validated['schedule_hours'] ?? [];
         $minutes = $validated['schedule_minutes'] ?? [];
         $periods = $validated['schedule_periods'] ?? [];
-        $schedule = [];
+        $repeaterEntries = [];
         foreach ($days as $index => $day) {
-            if (empty($day)) {
-                continue;
+            if (! empty($day)) {
+                $repeaterEntries[] = [
+                    'day' => $day,
+                    'hour' => $hours[$index] ?? 12,
+                    'minute' => $minutes[$index] ?? '00',
+                    'period' => $periods[$index] ?? 'pm',
+                ];
             }
-            $hour = (int) ($hours[$index] ?? 12);
-            $minute = $minutes[$index] ?? '00';
-            $period = $periods[$index] ?? 'pm';
-            // Convert 12h to 24h
-            if ($period === 'am' && $hour === 12) {
-                $hour24 = 0;
-            } elseif ($period === 'pm' && $hour !== 12) {
-                $hour24 = $hour + 12;
-            } else {
-                $hour24 = $hour;
-            }
-            $schedule[] = ['day' => $day, 'time' => sprintf('%02d:%s', $hour24, $minute)];
         }
-        $validated['schedule'] = ! empty($schedule) ? $schedule : null;
+        $validated['schedule'] = ! empty($repeaterEntries) ? BaseInteractiveCourseResource::dehydrateScheduleFromRepeater($repeaterEntries) : null;
         unset($validated['schedule_days'], $validated['schedule_hours'], $validated['schedule_minutes'], $validated['schedule_periods']);
 
         $course->update($validated);

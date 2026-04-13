@@ -383,28 +383,28 @@ abstract class BaseInteractiveCourseResource extends Resource
                     ]),
 
                 Repeater::make('schedule')
-                    ->label('الجدول الأسبوعي')
+                    ->label(__('supervisor.interactive_courses.schedule'))
                     ->schema([
                         Grid::make(4)->schema([
                             Select::make('day')
-                                ->label('اليوم')
+                                ->label(__('supervisor.interactive_courses.schedule_day'))
                                 ->options(WeekDays::options())
                                 ->required(),
                             Select::make('hour')
-                                ->label('الساعة')
+                                ->label(__('supervisor.interactive_courses.schedule_hour'))
                                 ->options(array_combine(range(1, 12), range(1, 12)))
                                 ->required(),
                             Select::make('minute')
-                                ->label('الدقيقة')
+                                ->label(__('supervisor.interactive_courses.schedule_minute'))
                                 ->options(['00' => '00', '15' => '15', '30' => '30', '45' => '45'])
                                 ->required(),
                             Select::make('period')
-                                ->label('الفترة')
+                                ->label(__('supervisor.interactive_courses.schedule_period'))
                                 ->options(['am' => __('common.am'), 'pm' => __('common.pm')])
                                 ->required(),
                         ]),
                     ])
-                    ->default([['day' => 'sunday', 'hour' => 4, 'minute' => '00', 'period' => 'pm']])
+                    ->default([self::DEFAULT_SCHEDULE_ENTRY])
                     ->addActionLabel('إضافة يوم')
                     ->afterStateHydrated(function ($component, $state) {
                         $component->state(static::hydrateScheduleForRepeater($state));
@@ -634,14 +634,16 @@ abstract class BaseInteractiveCourseResource extends Resource
     // Schedule Hydration / Dehydration
     // ========================================
 
+    private const DEFAULT_SCHEDULE_ENTRY = ['day' => 'sunday', 'hour' => '4', 'minute' => '00', 'period' => 'pm'];
+
     /**
      * Convert any stored schedule format into repeater-compatible entries.
-     * Returns: [['day' => 'sunday', 'hour' => 4, 'minute' => '00', 'period' => 'pm'], ...]
+     * Returns: [['day' => 'sunday', 'hour' => '4', 'minute' => '00', 'period' => 'pm'], ...]
      */
     public static function hydrateScheduleForRepeater(mixed $state): array
     {
         if (! is_array($state) || empty($state)) {
-            return [['day' => 'sunday', 'hour' => 4, 'minute' => '00', 'period' => 'pm']];
+            return [self::DEFAULT_SCHEDULE_ENTRY];
         }
 
         $arabicToDayValue = collect(WeekDays::cases())
@@ -654,7 +656,6 @@ abstract class BaseInteractiveCourseResource extends Resource
         if (array_is_list($state) && isset($state[0]['day'])) {
             foreach ($state as $item) {
                 $dayValue = strtolower($item['day'] ?? '');
-                // Validate it's a known WeekDays value
                 if (! WeekDays::tryFrom($dayValue)) {
                     $dayValue = $arabicToDayValue[$dayValue] ?? $dayValue;
                 }
@@ -662,7 +663,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                 $entries[] = array_merge(['day' => $dayValue], self::parseTimeTo12h($time));
             }
 
-            return $entries ?: [['day' => 'sunday', 'hour' => 4, 'minute' => '00', 'period' => 'pm']];
+            return $entries ?: [self::DEFAULT_SCHEDULE_ENTRY];
         }
 
         // Key-value: {"الأحد": "16:00 - 17:00"} or {"monday": "10:00"}
@@ -670,14 +671,13 @@ abstract class BaseInteractiveCourseResource extends Resource
             $lowerKey = strtolower($key);
             $dayValue = WeekDays::tryFrom($lowerKey)?->value ?? ($arabicToDayValue[mb_strtolower($key)] ?? $lowerKey);
             $time = is_string($value) ? $value : '16:00';
-            // For range format, use start time only
             if (str_contains($time, ' - ')) {
                 $time = trim(explode(' - ', $time)[0]);
             }
             $entries[] = array_merge(['day' => $dayValue], self::parseTimeTo12h($time));
         }
 
-        return $entries ?: [['day' => 'sunday', 'hour' => 4, 'minute' => '00', 'period' => 'pm']];
+        return $entries ?: [self::DEFAULT_SCHEDULE_ENTRY];
     }
 
     /**
@@ -694,22 +694,11 @@ abstract class BaseInteractiveCourseResource extends Resource
             if (empty($entry['day'])) {
                 continue;
             }
-            $hour = (int) ($entry['hour'] ?? 12);
-            $minute = $entry['minute'] ?? '00';
-            $period = $entry['period'] ?? 'pm';
-
-            // Convert 12h to 24h
-            if ($period === 'am' && $hour === 12) {
-                $hour24 = 0;
-            } elseif ($period === 'pm' && $hour !== 12) {
-                $hour24 = $hour + 12;
-            } else {
-                $hour24 = $hour;
-            }
+            $hour24 = self::convertTo24h((int) ($entry['hour'] ?? 12), $entry['period'] ?? 'pm');
 
             $result[] = [
                 'day' => $entry['day'],
-                'time' => sprintf('%02d:%s', $hour24, $minute),
+                'time' => sprintf('%02d:%s', $hour24, $entry['minute'] ?? '00'),
             ];
         }
 
@@ -717,13 +706,29 @@ abstract class BaseInteractiveCourseResource extends Resource
     }
 
     /**
+     * Convert 12-hour to 24-hour format.
+     */
+    public static function convertTo24h(int $hour, string $period): int
+    {
+        if ($period === 'am' && $hour === 12) {
+            return 0;
+        }
+        if ($period === 'pm' && $hour !== 12) {
+            return $hour + 12;
+        }
+
+        return $hour;
+    }
+
+    /**
      * Parse a 24h time string into [hour, minute, period] for the repeater.
+     * Returns hour as string to match HTML option values for Alpine.js x-model binding.
      */
     private static function parseTimeTo12h(string $time): array
     {
         $time = trim($time);
         if (! preg_match('/^(\d{1,2}):(\d{2})$/', $time, $matches)) {
-            return ['hour' => 4, 'minute' => '00', 'period' => 'pm'];
+            return ['hour' => '4', 'minute' => '00', 'period' => 'pm'];
         }
         $h = (int) $matches[1];
         $m = $matches[2];
@@ -741,53 +746,7 @@ abstract class BaseInteractiveCourseResource extends Resource
         $period = $h >= 12 ? 'pm' : 'am';
         $h12 = $h % 12 ?: 12;
 
-        return ['hour' => $h12, 'minute' => $m, 'period' => $period];
-    }
-
-    // ========================================
-    // Schedule Normalization (Legacy)
-    // ========================================
-
-    /**
-     * Normalize schedule state from various stored formats into a localized key-value map.
-     *
-     * Handles: array-of-objects [{"day":"monday","time":"10:00"}],
-     * key-value with English keys {"monday":"10:00"}, and already-Arabic keys.
-     */
-    public static function normalizeScheduleState(mixed $state): array
-    {
-        if (! is_array($state) || empty($state)) {
-            return $state ?? [];
-        }
-
-        $dayTranslations = collect(WeekDays::cases())
-            ->mapWithKeys(fn (WeekDays $day) => [strtolower($day->value) => $day->label()])
-            ->toArray();
-
-        // Array-of-objects format: [{"day":"monday","time":"10:00"}, ...]
-        if (array_is_list($state) && isset($state[0]['day'])) {
-            $normalized = [];
-            foreach ($state as $item) {
-                $dayKey = strtolower($item['day'] ?? '');
-                $label = $dayTranslations[$dayKey] ?? $item['day'];
-                $time = $item['time'] ?? $item['start_time'] ?? '';
-                if (isset($item['end_time'])) {
-                    $time .= ' - '.$item['end_time'];
-                }
-                $normalized[$label] = $time;
-            }
-
-            return $normalized;
-        }
-
-        // Key-value format with potentially English keys: {"monday":"10:00"}
-        $normalized = [];
-        foreach ($state as $key => $value) {
-            $lowerKey = strtolower($key);
-            $normalized[$dayTranslations[$lowerKey] ?? $key] = $value;
-        }
-
-        return $normalized;
+        return ['hour' => (string) $h12, 'minute' => $m, 'period' => $period];
     }
 
     // ========================================

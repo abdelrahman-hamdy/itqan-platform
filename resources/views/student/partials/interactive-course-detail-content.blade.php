@@ -316,14 +316,15 @@
                 @endif
 
                 <!-- Course Schedule -->
-                @if(count($course->formatted_schedule) > 0)
+                @php $formattedSchedule = $course->formatted_schedule; @endphp
+                @if(count($formattedSchedule) > 0)
                 <div>
                     <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
                         <i class="ri-calendar-2-line text-purple-600"></i>
                         {{ __('student.interactive_course.schedule_title') }}
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
-                        @foreach($course->formatted_schedule as $entry)
+                        @foreach($formattedSchedule as $entry)
                         <div class="flex items-center justify-between p-3 md:p-4 bg-gradient-to-l from-purple-50 to-white rounded-xl border border-purple-100">
                             <span class="font-semibold text-gray-900 text-sm md:text-base">{{ $entry['day'] }}</span>
                             <span class="text-purple-600 font-bold text-sm md:text-base">{{ $entry['time'] }}</span>
