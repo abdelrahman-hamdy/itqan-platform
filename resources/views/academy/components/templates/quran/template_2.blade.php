@@ -55,12 +55,12 @@
             <div class="flex items-center justify-between gap-2">
               <span class="text-sm font-bold text-gray-900 truncate">{{ $tName }}</span>
               @if($rating > 0)
-              <span class="shrink-0 text-[11px] font-black px-1.5 py-0.5 rounded-sm" style="background: {{ $gradientToHex }}12; color: {{ $gradientToHex }};">{{ number_format($rating, 1) }}</span>
+              <span class="shrink-0 text-[11px] font-black px-1.5 py-0.5 rounded-lg" style="background: {{ $gradientToHex }}12; color: {{ $gradientToHex }};">{{ number_format($rating, 1) }}</span>
               @endif
             </div>
             <div class="flex items-center gap-1.5 mt-1 flex-wrap">
               @if($qualLabel)
-              <span class="text-[10px] font-semibold px-1.5 py-0.5 bg-gray-200/60 text-gray-500 rounded-sm">{{ $qualLabel }}</span>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 bg-gray-200/60 text-gray-500 rounded-lg">{{ $qualLabel }}</span>
               @endif
               @if($teacher->teaching_experience_years)
               <span class="text-[10px] text-gray-400">{{ __('academy.cards.experience_years', ['years' => $teacher->teaching_experience_years]) }}</span>
@@ -97,11 +97,11 @@
           $fillPct     = $circle->max_students > 0 ? round($circle->students_count / $circle->max_students * 100) : 0;
           $statusColor = $isEnrolled ? '#22C55E' : ($isOpen ? $gradientFromHex : ($isFull ? '#F59E0B' : '#9CA3AF'));
         @endphp
-        <div class="group rounded-sm overflow-hidden transition-shadow duration-300 hover:shadow-lg" style="box-shadow: 0 1px 8px rgba(0,0,0,0.06);">
+        <div class="group rounded-lg overflow-hidden transition-shadow duration-300 hover:shadow-lg" style="box-shadow: 0 1px 8px rgba(0,0,0,0.06);">
           {{-- Dark header bar --}}
           <div class="px-5 py-3 flex items-center justify-between gap-3" style="background: {{ $brandHex950 }};">
             <h4 class="text-sm font-bold text-white truncate">{{ $circle->name }}</h4>
-            <span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-sm" style="background: {{ $statusColor }}25; color: {{ $statusColor }};">
+            <span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg" style="background: {{ $statusColor }}25; color: {{ $statusColor }};">
               @if($isEnrolled) {{ __('academy.cards.enrolled') }}
               @elseif($isOpen) {{ __('academy.cards.open') }}
               @elseif($isFull) {{ __('academy.cards.full') }}
@@ -146,7 +146,7 @@
               </div>
               @endif
               <a href="{{ route('quran-circles.show', ['subdomain' => $academy->subdomain, 'circleId' => $circle->id]) }}"
-                 class="inline-flex items-center gap-1.5 px-4 py-2 rounded-sm text-xs font-bold text-white ms-auto transition-opacity hover:opacity-80"
+                 class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white ms-auto transition-opacity hover:opacity-80"
                  style="background: {{ $gradientFromHex }};">
                 {{ __('academy.cards.view_details') }}
                 <i class="ri-arrow-left-s-line ltr:rotate-180"></i>

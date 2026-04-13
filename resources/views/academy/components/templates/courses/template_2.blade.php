@@ -35,7 +35,7 @@
           @php $thumb = $course->getFirstMediaUrl('thumbnails') ?: ($course->thumbnail_url ?? null); @endphp
           <div class="shrink-0 w-[270px] sm:w-[300px] snap-start">
             <a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}"
-               class="group block relative h-[380px] sm:h-[420px] rounded-sm overflow-hidden">
+               class="group block relative h-[380px] sm:h-[420px] rounded-lg overflow-hidden">
 
               {{-- Image / gradient fallback --}}
               @if($thumb)
@@ -54,15 +54,15 @@
               {{-- Top badges --}}
               <div class="absolute top-4 inset-x-4 flex justify-between">
                 @if($course->is_free)
-                <span class="text-[10px] font-black uppercase px-2.5 py-1 bg-green-500 text-white rounded-sm">{{ __('academy.cards.free') }}</span>
+                <span class="text-[10px] font-black uppercase px-2.5 py-1 bg-green-500 text-white rounded-lg">{{ __('academy.cards.free') }}</span>
                 @elseif($course->price > 0)
-                <span class="text-[10px] font-black uppercase px-2.5 py-1 text-white rounded-sm" style="background: {{ $brandHex600 }};">{{ number_format($course->price) }} {{ getCurrencySymbol() }}</span>
+                <span class="text-[10px] font-black uppercase px-2.5 py-1 text-white rounded-lg" style="background: {{ $brandHex600 }};">{{ number_format($course->price) }} {{ getCurrencySymbol() }}</span>
                 @else
                 <span></span>
                 @endif
 
                 @if(($course->avg_rating ?? 0) > 0)
-                <span class="flex items-center gap-1 text-[11px] font-black px-2 py-1 bg-black/50 backdrop-blur-sm text-white rounded-sm">
+                <span class="flex items-center gap-1 text-[11px] font-black px-2 py-1 bg-black/50 backdrop-blur-sm text-white rounded-lg">
                   <i class="ri-star-fill text-amber-400 text-[10px]"></i>{{ number_format($course->avg_rating, 1) }}
                 </span>
                 @endif
@@ -71,7 +71,7 @@
               {{-- Bottom content --}}
               <div class="absolute bottom-0 inset-x-0 p-5">
                 @if($course->difficulty_level)
-                <span class="inline-block text-[9px] font-black uppercase px-2 py-0.5 rounded-sm mb-3
+                <span class="inline-block text-[9px] font-black uppercase px-2 py-0.5 rounded-lg mb-3
                   {{ $course->difficulty_level === 'easy' ? 'bg-emerald-500/25 text-emerald-300' :
                      ($course->difficulty_level === 'medium' ? 'bg-amber-500/25 text-amber-300' :
                      ($course->difficulty_level === 'hard' ? 'bg-red-500/25 text-red-300' : 'bg-white/10 text-white/50')) }}">
@@ -96,7 +96,7 @@
                     <i class="ri-group-line"></i>{{ __('academy.cards.enrollments', ['count' => $course->total_enrollments]) }}
                   </span>
                   @endif
-                  <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-white text-gray-900 text-[11px] font-bold rounded-sm ms-auto transition-transform duration-200 group-hover:translate-x-0.5 ltr:group-hover:-translate-x-0.5">
+                  <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-white text-gray-900 text-[11px] font-bold rounded-lg ms-auto transition-transform duration-200 group-hover:translate-x-0.5 ltr:group-hover:-translate-x-0.5">
                     {{ __('academy.cards.view_course') }}
                     <i class="ri-arrow-left-s-line text-xs ltr:rotate-180"></i>
                   </span>
@@ -110,10 +110,10 @@
 
       {{-- Nav arrows --}}
       @if($courseList->count() > 2)
-      <button class="t2-scroll-prev hidden sm:flex absolute top-1/2 -translate-y-1/2 -start-3 lg:-start-5 w-10 h-10 bg-white/10 backdrop-blur-sm rounded-sm items-center justify-center z-10 text-white/70 transition-all hover:bg-white/20 opacity-0 group-hover/scroll:opacity-100">
+      <button class="t2-scroll-prev hidden sm:flex absolute top-1/2 -translate-y-1/2 -start-3 lg:-start-5 w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg items-center justify-center z-10 text-white/70 transition-all hover:bg-white/20 opacity-0 group-hover/scroll:opacity-100">
         <i class="ri-arrow-right-s-line text-xl ltr:rotate-180"></i>
       </button>
-      <button class="t2-scroll-next hidden sm:flex absolute top-1/2 -translate-y-1/2 -end-3 lg:-end-5 w-10 h-10 bg-white/10 backdrop-blur-sm rounded-sm items-center justify-center z-10 text-white/70 transition-all hover:bg-white/20 opacity-0 group-hover/scroll:opacity-100">
+      <button class="t2-scroll-next hidden sm:flex absolute top-1/2 -translate-y-1/2 -end-3 lg:-end-5 w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg items-center justify-center z-10 text-white/70 transition-all hover:bg-white/20 opacity-0 group-hover/scroll:opacity-100">
         <i class="ri-arrow-left-s-line text-xl ltr:rotate-180"></i>
       </button>
       @endif

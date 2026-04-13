@@ -5,7 +5,6 @@
     $gradientToHex   = $hexColors['to'];
 
     $brandColor  = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
-    $brandHex50  = $brandColor->getHexValue(50);
     $brandHex950 = $brandColor->getHexValue(950);
 
     $showCourses  = $academy->academic_show_courses ?? true;
@@ -15,7 +14,7 @@
     $teacherItems = $academicTeachers->take(6);
 @endphp
 
-<section id="academic" class="py-20 sm:py-24 lg:py-28 scroll-mt-20" style="background: {{ $brandHex50 }};">
+<section id="academic" class="py-20 sm:py-24 lg:py-28 scroll-mt-20 bg-gray-50">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
     {{-- Section header --}}
@@ -40,7 +39,7 @@
       <div class="space-y-6">
         @foreach($courseItems as $course)
         @php $courseImage = $course->featured_image ? \Illuminate\Support\Facades\Storage::url($course->featured_image) : null; @endphp
-        <article class="group bg-white rounded-sm overflow-hidden flex flex-col md:flex-row transition-shadow duration-300 hover:shadow-xl" style="box-shadow: 0 1px 12px rgba(0,0,0,0.05);">
+        <article class="group bg-white rounded-lg overflow-hidden flex flex-col md:flex-row transition-shadow duration-300 hover:shadow-xl" style="box-shadow: 0 1px 12px rgba(0,0,0,0.05);">
 
           {{-- Image / colored panel --}}
           <div class="relative md:w-[320px] lg:w-[360px] shrink-0 overflow-hidden">
@@ -58,7 +57,7 @@
             @endif
             {{-- Status badge --}}
             <div class="absolute top-3 start-3">
-              <span class="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-sm backdrop-blur-sm {{ $course->is_published ? 'bg-white/90 text-green-700' : 'bg-white/90 text-gray-500' }}">
+              <span class="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm {{ $course->is_published ? 'bg-white/90 text-green-700' : 'bg-white/90 text-gray-500' }}">
                 <span class="w-1.5 h-1.5 rounded-full {{ $course->is_published ? 'bg-green-500' : 'bg-gray-400' }}"></span>
                 {{ $course->is_published ? __('components.cards.interactive_course.status_available') : __('components.cards.interactive_course.status_unavailable') }}
               </span>
@@ -151,7 +150,7 @@
               @endif
 
               <a href="{{ route('interactive-courses.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id]) }}"
-                 class="inline-flex items-center gap-2 px-6 py-3 rounded-sm text-sm font-semibold transition-all duration-200 t2-ghost-btn"
+                 class="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 t2-ghost-btn"
                  style="color: {{ $gradientFromHex }}; border: 2px solid {{ $gradientFromHex }}; --t2-fill: {{ $gradientFromHex }};">
                 {{ __('academy.cards.view_details') }}
                 <i class="ri-arrow-left-s-line text-base ltr:rotate-180"></i>
@@ -202,12 +201,12 @@
             <div class="flex items-center justify-between gap-2">
               <span class="text-sm font-bold text-gray-900 truncate">{{ $tName }}</span>
               @if($rating > 0)
-              <span class="shrink-0 text-[11px] font-black px-1.5 py-0.5 rounded-sm" style="background: {{ $gradientToHex }}12; color: {{ $gradientToHex }};">{{ number_format($rating, 1) }}</span>
+              <span class="shrink-0 text-[11px] font-black px-1.5 py-0.5 rounded-lg" style="background: {{ $gradientToHex }}12; color: {{ $gradientToHex }};">{{ number_format($rating, 1) }}</span>
               @endif
             </div>
             <div class="flex items-center gap-1.5 mt-1 flex-wrap">
               @if($qualLabel)
-              <span class="text-[10px] font-semibold px-1.5 py-0.5 bg-gray-200/60 text-gray-500 rounded-sm">{{ $qualLabel }}</span>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 bg-gray-200/60 text-gray-500 rounded-lg">{{ $qualLabel }}</span>
               @endif
               @if($teacher->teaching_experience_years)
               <span class="text-[10px] text-gray-400">{{ __('academy.cards.experience_years', ['years' => $teacher->teaching_experience_years]) }}</span>

@@ -49,7 +49,7 @@
 
       {{-- Content column --}}
       <div class="text-center lg:text-start {{ $heroImage ? '' : 'lg:col-span-2 max-w-3xl mx-auto' }}">
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-8 rounded-md t2-hero-badge"
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-8 rounded-lg t2-hero-badge"
              style="background: {{ $brandHex500 }}12; border: 1px solid {{ $brandHex500 }}25;">
           <span class="block w-1.5 h-1.5 rounded-full t2-pulse-dot" style="background: {{ $brandHex500 }};"></span>
           <span class="text-xs font-semibold" style="color: {{ $brandHex700 }};">{{ __('academy.hero.badge_template2') }}</span>
@@ -64,7 +64,7 @@
         </p>
 
         <a href="{{ route('student.register', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"
-           class="group inline-flex items-center gap-3 px-8 py-4 text-white font-bold text-base rounded-md transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+           class="group inline-flex items-center gap-3 px-8 py-4 text-white font-bold text-base rounded-lg transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
            style="background: {{ $brandHex600 }};">
           <span>{{ __('academy.hero.cta_button') }}</span>
           <i class="ri-arrow-left-line text-lg ltr:rotate-180"></i>
@@ -81,31 +81,33 @@
       @endif
     </div>
 
-    {{-- Feature cards — full width below both columns --}}
+    {{-- Feature cards --}}
     @if($academy->hero_show_boxes ?? true)
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-16 sm:pb-20 lg:pb-24 {{ $heroImage ? '' : '-mt-4' }}">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 pb-16 sm:pb-20 lg:pb-24 {{ $heroImage ? '' : '-mt-4' }}">
       @php
         $features = [
             ['icon' => 'M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.627 48.627 0 0 1 12 20.904a48.627 48.627 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5',
              'title' => __('academy.hero.features.expert_teachers_title'),
-             'desc' => __('academy.hero.features.expert_teachers_desc'), 'num' => '01'],
+             'desc' => __('academy.hero.features.expert_teachers_desc')],
             ['icon' => 'm15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z',
              'title' => __('academy.hero.features.interactive_learning_title'),
-             'desc' => __('academy.hero.features.interactive_learning_desc'), 'num' => '02'],
+             'desc' => __('academy.hero.features.interactive_learning_desc')],
             ['icon' => 'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
              'title' => __('academy.hero.features.flexible_schedule_title'),
-             'desc' => __('academy.hero.features.flexible_schedule_desc'), 'num' => '03'],
+             'desc' => __('academy.hero.features.flexible_schedule_desc')],
         ];
       @endphp
 
       @foreach($features as $i => $f)
-      <div class="group flex items-start gap-5 p-5 rounded-md bg-white/70 backdrop-blur-sm border border-gray-100 transition-all duration-300 hover:bg-white hover:shadow-md"
-           style="border-inline-start: 3px solid {{ $brandHex500 }}; animation: t2FadeUp .5s {{ ($i * 0.1) + 0.3 }}s both;">
-        <span class="text-2xl font-black tabular-nums shrink-0" style="color: {{ $brandHex500 }}; opacity: .25;">{{ $f['num'] }}</span>
-        <div>
-          <h3 class="text-sm font-bold text-gray-900 mb-1">{{ $f['title'] }}</h3>
-          <p class="text-xs text-gray-500 leading-relaxed">{{ $f['desc'] }}</p>
+      <div class="group bg-white rounded-lg p-5 sm:p-6 border border-gray-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+           style="animation: t2FadeUp .5s {{ ($i * 0.12) + 0.3 }}s both;">
+        <div class="w-11 h-11 rounded-lg flex items-center justify-center mb-4" style="background: {{ $brandHex500 }}10;">
+          <svg class="w-5 h-5" style="color: {{ $brandHex600 }};" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="{{ $f['icon'] }}"/>
+          </svg>
         </div>
+        <h3 class="text-sm font-bold text-gray-900 mb-1.5">{{ $f['title'] }}</h3>
+        <p class="text-xs text-gray-500 leading-relaxed">{{ $f['desc'] }}</p>
       </div>
       @endforeach
     </div>
