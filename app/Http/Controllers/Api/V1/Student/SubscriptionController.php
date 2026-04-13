@@ -609,6 +609,7 @@ class SubscriptionController extends Controller
             $options = array_filter([
                 'package_id' => $request->package_id,
                 'billing_cycle' => $request->billing_cycle,
+                'payment_mode' => 'unpaid',
             ]);
 
             $new = $mode === 'resubscribe'

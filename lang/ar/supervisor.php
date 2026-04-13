@@ -1407,7 +1407,7 @@ return [
         'cycle_state_queued' => 'في الانتظار',
         'cycle_state_archived' => 'مؤرشفة',
         'cycle_payment_paid' => 'مدفوع',
-        'cycle_payment_pending' => 'قيد الدفع',
+        'cycle_payment_pending' => 'في انتظار الدفع',
         'cycle_payment_failed' => 'فاشل',
         'cycle_payment_waived' => 'متنازل',
         'grace_until' => 'حتى :date',

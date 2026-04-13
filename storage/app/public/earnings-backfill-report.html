@@ -7,42 +7,43 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Tajawal', 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; padding: 2rem; }
-        .container { max-width: 900px; margin: 0 auto; }
+        .container { max-width: 960px; margin: 0 auto; }
         h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #0f172a; }
         .subtitle { color: #64748b; margin-bottom: 2rem; font-size: 0.9rem; }
         .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
         .card { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); text-align: center; }
         .card .value { font-size: 1.75rem; font-weight: 700; color: #059669; }
         .card .label { font-size: 0.8rem; color: #64748b; margin-top: 0.25rem; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 2rem; }
         thead { background: #f1f5f9; }
         th { padding: 0.75rem 1rem; text-align: right; font-weight: 600; font-size: 0.8rem; color: #475569; border-bottom: 2px solid #e2e8f0; }
         td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
         tr:hover { background: #f8fafc; }
         .amount { font-weight: 600; }
         .positive { color: #059669; }
-        .negative { color: #dc2626; }
         .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
         .badge-green { background: #dcfce7; color: #166534; }
-        .footer { margin-top: 2rem; text-align: center; color: #94a3b8; font-size: 0.75rem; }
+        .deleted { color: #94a3b8; font-style: italic; }
+        .total-row { background: #f0fdf4; font-weight: 600; }
+        .footer { margin-top: 2rem; text-align: center; color: #94a3b8; font-size: 0.75rem; line-height: 1.8; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>تقرير تحديث مستحقات المعلمين</h1>
-    <p class="subtitle">تاريخ التحديث: 12 أبريل 2026 — إصلاح المستحقات المفقودة للجلسات المكتملة</p>
+    <p class="subtitle">تاريخ التحديث: 12 أبريل 2026 — إصلاح المستحقات المفقودة للجلسات المكتملة (تحديث نهائي)</p>
 
     <div class="summary">
         <div class="card">
-            <div class="value">21</div>
+            <div class="value">23</div>
             <div class="label">معلم متأثر</div>
         </div>
         <div class="card">
-            <div class="value">+32</div>
+            <div class="value">+36</div>
             <div class="label">جلسة مضافة</div>
         </div>
         <div class="card">
-            <div class="value positive">+2,025 ر.س</div>
+            <div class="value positive">+2,325 ر.س</div>
             <div class="label">إجمالي المبلغ المسترد</div>
         </div>
     </div>
@@ -55,166 +56,42 @@
                 <th>البريد الإلكتروني</th>
                 <th>قبل التحديث</th>
                 <th>بعد التحديث</th>
-                <th>الفرق (جلسات)</th>
-                <th>الفرق (مبلغ)</th>
+                <th>جلسات +</th>
+                <th>مبلغ +</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>1</td>
-                <td>إبراهيم سعد الحمياني</td>
-                <td>brhoomsaad2009@icloud.com</td>
-                <td class="amount">1,100.00 ر.س <small>(20 جلسة)</small></td>
-                <td class="amount">1,200.00 ر.س <small>(22 جلسة)</small></td>
-                <td><span class="badge badge-green">+2</span></td>
-                <td class="amount positive">+100.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>عائشه محمد</td>
-                <td>Aishosh1412qhtani@gmail.com</td>
-                <td class="amount">1,550.00 ر.س <small>(21 جلسة)</small></td>
-                <td class="amount">1,750.00 ر.س <small>(24 جلسة)</small></td>
-                <td><span class="badge badge-green">+3</span></td>
-                <td class="amount positive">+200.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>ايمان مؤمنة</td>
-                <td>emano212@hotmail.com</td>
-                <td class="amount">850.00 ر.س <small>(13 جلسة)</small></td>
-                <td class="amount">1,050.00 ر.س <small>(15 جلسة)</small></td>
-                <td><span class="badge badge-green">+2</span></td>
-                <td class="amount positive">+200.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>فاطمة الزهراء مروان</td>
-                <td>za006hra@gmail.com</td>
-                <td class="amount">800.00 ر.س <small>(12 جلسة)</small></td>
-                <td class="amount">950.00 ر.س <small>(14 جلسة)</small></td>
-                <td><span class="badge badge-green">+2</span></td>
-                <td class="amount positive">+150.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td>محمد سمره</td>
-                <td>mohamed.m.samra@gmail.com</td>
-                <td class="amount">850.00 ر.س <small>(15 جلسة)</small></td>
-                <td class="amount">950.00 ر.س <small>(17 جلسة)</small></td>
-                <td><span class="badge badge-green">+2</span></td>
-                <td class="amount positive">+100.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>6</td>
-                <td>امال العيسى</td>
-                <td>amalalesse@gmail.com</td>
-                <td class="amount">200.00 ر.س <small>(3 جلسة)</small></td>
-                <td class="amount">300.00 ر.س <small>(4 جلسة)</small></td>
-                <td><span class="badge badge-green">+1</span></td>
-                <td class="amount positive">+100.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>7</td>
-                <td>هنادي فالح</td>
-                <td>mokafaleh@gmail.com</td>
-                <td class="amount">450.00 ر.س <small>(9 جلسة)</small></td>
-                <td class="amount">550.00 ر.س <small>(11 جلسة)</small></td>
-                <td><span class="badge badge-green">+2</span></td>
-                <td class="amount positive">+100.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>8</td>
-                <td>امنة حمزة سالم</td>
-                <td>amena7112007@gmail.com</td>
-                <td class="amount">250.00 ر.س <small>(4 جلسة)</small></td>
-                <td class="amount">300.00 ر.س <small>(5 جلسة)</small></td>
-                <td><span class="badge badge-green">+1</span></td>
-                <td class="amount positive">+50.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>9</td>
-                <td>وسن القاضي</td>
-                <td>wasanalqadi26@gmail.com</td>
-                <td class="amount">500.00 ر.س <small>(10 جلسة)</small></td>
-                <td class="amount">550.00 ر.س <small>(11 جلسة)</small></td>
-                <td><span class="badge badge-green">+1</span></td>
-                <td class="amount positive">+50.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>10</td>
-                <td>موضي عبدالمجيد</td>
-                <td>mody012sa@gmail.com</td>
-                <td class="amount">600.00 ر.س <small>(12 جلسة)</small></td>
-                <td class="amount">650.00 ر.س <small>(13 جلسة)</small></td>
-                <td><span class="badge badge-green">+1</span></td>
-                <td class="amount positive">+50.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>11</td>
-                <td>Fatima Zahra</td>
-                <td>fa4966tima@gmail.com</td>
-                <td class="amount">350.00 ر.س <small>(7 جلسة)</small></td>
-                <td class="amount">400.00 ر.س <small>(8 جلسة)</small></td>
-                <td><span class="badge badge-green">+1</span></td>
-                <td class="amount positive">+50.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>12</td>
-                <td>عبدالرحمن ابراهيم</td>
-                <td>itaqn2076@gmail.com</td>
-                <td class="amount">350.00 ر.س <small>(7 جلسة)</small></td>
-                <td class="amount">400.00 ر.س <small>(8 جلسة)</small></td>
-                <td><span class="badge badge-green">+1</span></td>
-                <td class="amount positive">+50.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>13</td>
-                <td>اروى المشيفرب</td>
-                <td>arwa.almushefri@gmail.com</td>
-                <td class="amount">400.00 ر.س <small>(8 جلسة)</small></td>
-                <td class="amount">450.00 ر.س <small>(9 جلسة)</small></td>
-                <td><span class="badge badge-green">+1</span></td>
-                <td class="amount positive">+50.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>14</td>
-                <td>محمد الغظف السلامي</td>
-                <td>matisalami@gmail.com</td>
-                <td class="amount">250.00 ر.س <small>(5 جلسة)</small></td>
-                <td class="amount">300.00 ر.س <small>(6 جلسة)</small></td>
-                <td><span class="badge badge-green">+1</span></td>
-                <td class="amount positive">+50.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>15</td>
-                <td>أمل للقحطاني</td>
-                <td>amal.asa@hotmail.com</td>
-                <td class="amount">500.00 ر.س <small>(9 جلسة)</small></td>
-                <td class="amount">550.00 ر.س <small>(10 جلسة)</small></td>
-                <td><span class="badge badge-green">+1</span></td>
-                <td class="amount positive">+50.00 ر.س</td>
-            </tr>
-            <tr>
-                <td>16</td>
-                <td>سمر محمود</td>
-                <td>smrm14179@gmail.com</td>
-                <td class="amount">250.00 ر.س <small>(6 جلسة)</small></td>
-                <td class="amount">275.00 ر.س <small>(7 جلسة)</small></td>
-                <td><span class="badge badge-green">+1</span></td>
-                <td class="amount positive">+25.00 ر.س</td>
-            </tr>
-            <tr style="background: #f0fdf4; font-weight: 600;">
-                <td colspan="5" style="text-align: left;">الإجمالي</td>
-                <td><span class="badge badge-green">+32</span></td>
-                <td class="amount positive">+2,025.00 ر.س</td>
-            </tr>
+            <tr><td>1</td><td>إبراهيم سعد الحمياني</td><td>brhoomsaad2009@icloud.com</td><td class="amount">1,100 ر.س <small>(20)</small></td><td class="amount">1,300 ر.س <small>(23)</small></td><td><span class="badge badge-green">+3</span></td><td class="amount positive">+200 ر.س</td></tr>
+            <tr><td>2</td><td>ايمان مؤمنة</td><td>emano212@hotmail.com</td><td class="amount">850 ر.س <small>(13)</small></td><td class="amount">1,050 ر.س <small>(15)</small></td><td><span class="badge badge-green">+2</span></td><td class="amount positive">+200 ر.س</td></tr>
+            <tr><td>3</td><td>عائشه محمد</td><td>Aishosh1412qhtani@gmail.com</td><td class="amount">1,550 ر.س <small>(21)</small></td><td class="amount">1,750 ر.س <small>(24)</small></td><td><span class="badge badge-green">+3</span></td><td class="amount positive">+200 ر.س</td></tr>
+            <tr><td>4</td><td>فاطمة الزهراء مروان</td><td>za006hra@gmail.com</td><td class="amount">800 ر.س <small>(12)</small></td><td class="amount">950 ر.س <small>(14)</small></td><td><span class="badge badge-green">+2</span></td><td class="amount positive">+150 ر.س</td></tr>
+            <tr><td>5</td><td class="deleted">(حساب محذوف #11)</td><td>—</td><td class="amount">500 ر.س <small>(8)</small></td><td class="amount">650 ر.س <small>(10)</small></td><td><span class="badge badge-green">+2</span></td><td class="amount positive">+150 ر.س</td></tr>
+            <tr><td>6</td><td class="deleted">(حساب محذوف #18)</td><td>—</td><td class="amount">2,775 ر.س <small>(53)</small></td><td class="amount">2,925 ر.س <small>(56)</small></td><td><span class="badge badge-green">+3</span></td><td class="amount positive">+150 ر.س</td></tr>
+            <tr><td>7</td><td>محمد سمره</td><td>mohamed.m.samra@gmail.com</td><td class="amount">850 ر.س <small>(15)</small></td><td class="amount">950 ر.س <small>(17)</small></td><td><span class="badge badge-green">+2</span></td><td class="amount positive">+100 ر.س</td></tr>
+            <tr><td>8</td><td>امال العيسى</td><td>amalalesse@gmail.com</td><td class="amount">200 ر.س <small>(3)</small></td><td class="amount">300 ر.س <small>(4)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+100 ر.س</td></tr>
+            <tr><td>9</td><td>هنادي فالح</td><td>mokafaleh@gmail.com</td><td class="amount">450 ر.س <small>(9)</small></td><td class="amount">550 ر.س <small>(11)</small></td><td><span class="badge badge-green">+2</span></td><td class="amount positive">+100 ر.س</td></tr>
+            <tr><td>10</td><td class="deleted">(حساب محذوف #28)</td><td>—</td><td class="amount">600 ر.س <small>(11)</small></td><td class="amount">700 ر.س <small>(13)</small></td><td><span class="badge badge-green">+2</span></td><td class="amount positive">+100 ر.س</td></tr>
+            <tr><td>11</td><td class="deleted">(حساب محذوف #50)</td><td>—</td><td class="amount">650 ر.س <small>(8)</small></td><td class="amount">850 ر.س <small>(10)</small></td><td><span class="badge badge-green">+2</span></td><td class="amount positive">+200 ر.س</td></tr>
+            <tr><td>12</td><td>امنة حمزة سالم</td><td>amena7112007@gmail.com</td><td class="amount">250 ر.س <small>(4)</small></td><td class="amount">300 ر.س <small>(5)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+50 ر.س</td></tr>
+            <tr><td>13</td><td>وسن القاضي</td><td>wasanalqadi26@gmail.com</td><td class="amount">500 ر.س <small>(10)</small></td><td class="amount">550 ر.س <small>(11)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+50 ر.س</td></tr>
+            <tr><td>14</td><td>Fatima Zahra</td><td>fa4966tima@gmail.com</td><td class="amount">350 ر.س <small>(7)</small></td><td class="amount">400 ر.س <small>(8)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+50 ر.س</td></tr>
+            <tr><td>15</td><td>اروى المشيفرب</td><td>arwa.almushefri@gmail.com</td><td class="amount">400 ر.س <small>(8)</small></td><td class="amount">450 ر.س <small>(9)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+50 ر.س</td></tr>
+            <tr><td>16</td><td>محمد الغظف السلامي</td><td>matisalami@gmail.com</td><td class="amount">250 ر.س <small>(5)</small></td><td class="amount">300 ر.س <small>(6)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+50 ر.س</td></tr>
+            <tr><td>17</td><td>موضي عبدالمجيد</td><td>mody012sa@gmail.com</td><td class="amount">600 ر.س <small>(12)</small></td><td class="amount">650 ر.س <small>(13)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+50 ر.س</td></tr>
+            <tr><td>18</td><td>عبدالرحمن ابراهيم</td><td>itaqn2076@gmail.com</td><td class="amount">350 ر.س <small>(7)</small></td><td class="amount">400 ر.س <small>(8)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+50 ر.س</td></tr>
+            <tr><td>19</td><td>أمل للقحطاني</td><td>amal.asa@hotmail.com</td><td class="amount">500 ر.س <small>(9)</small></td><td class="amount">550 ر.س <small>(10)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+50 ر.س</td></tr>
+            <tr><td>20</td><td>عبدالرحمن ابراهيم</td><td>Muhanna343@gmail.com</td><td class="amount">50 ر.س <small>(1)</small></td><td class="amount">100 ر.س <small>(2)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+50 ر.س</td></tr>
+            <tr><td>21</td><td class="deleted">(حساب محذوف #13)</td><td>—</td><td class="amount">250 ر.س <small>(5)</small></td><td class="amount">300 ر.س <small>(6)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+50 ر.س</td></tr>
+            <tr><td>22</td><td class="deleted">(حساب محذوف #23)</td><td>—</td><td class="amount">3,200 ر.س <small>(59)</small></td><td class="amount">3,250 ر.س <small>(60)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+50 ر.س</td></tr>
+            <tr><td>23</td><td>سمر محمود</td><td>smrm14179@gmail.com</td><td class="amount">250 ر.س <small>(6)</small></td><td class="amount">275 ر.س <small>(7)</small></td><td><span class="badge badge-green">+1</span></td><td class="amount positive">+25 ر.س</td></tr>
+            <tr class="total-row"><td colspan="5" style="text-align: left;">الإجمالي</td><td><span class="badge badge-green">+36</span></td><td class="amount positive">+2,325 ر.س</td></tr>
         </tbody>
     </table>
 
     <div class="footer">
-        <p>ملاحظة: 5 معلمين إضافيين تأثروا لكن حساباتهم محذوفة (المعرفات: 50, 18, 28, 23, 13) — يجب التحقق يدوياً</p>
-        <p>تم إنشاء هذا التقرير تلقائياً بواسطة نظام إتقان — جميع المستحقات المضافة بحالة "معلقة" وتحتاج مراجعة قبل الصرف</p>
+        <p>جميع المستحقات المضافة بحالة "معلقة" وتحتاج مراجعة من الإدارة قبل الصرف</p>
+        <p>السبب: جلسات مكتملة حضرها المعلم ولكن لم يتم إنشاء سجل مستحقات بسبب تأخر أو فشل مهام الخلفية (queue jobs)</p>
+        <p>تم إنشاء هذا التقرير تلقائياً بواسطة نظام إتقان</p>
     </div>
 </div>
 </body>

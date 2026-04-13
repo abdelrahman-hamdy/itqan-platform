@@ -65,6 +65,22 @@ class SubscriptionRenewalService
             // in that case we materialize one from the subscription's current columns.
             $currentCycle = $this->ensureCurrentCycle($subscription);
 
+            // Guard against rapid duplicate renewals (e.g., double form submission)
+            $recentRenewalExists = SubscriptionCycle::where('subscribable_type', $subscription->getMorphClass())
+                ->where('subscribable_id', $subscription->id)
+                ->where('created_at', '>=', now()->subMinute())
+                ->whereJsonContains('metadata->created_by_renewal', true)
+                ->exists();
+
+            if ($recentRenewalExists) {
+                Log::warning('Duplicate renewal attempt blocked — cycle created <60s ago', [
+                    'subscription_id' => $subscription->id,
+                    'actor' => auth()->id(),
+                ]);
+
+                return $subscription;
+            }
+
             // Decide whether the new cycle REPLACES current immediately, or is QUEUED
             // to start when the current cycle ends.
             $replaceNow = $this->shouldReplaceImmediately($subscription, $currentCycle);

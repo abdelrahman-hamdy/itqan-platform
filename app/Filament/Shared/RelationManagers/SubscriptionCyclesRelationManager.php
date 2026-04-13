@@ -42,16 +42,17 @@ class SubscriptionCyclesRelationManager extends RelationManager
                 TextColumn::make('cycle_state')
                     ->label('الحالة')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        SubscriptionCycle::STATE_ACTIVE => 'success',
-                        SubscriptionCycle::STATE_QUEUED => 'info',
-                        SubscriptionCycle::STATE_ARCHIVED => 'gray',
+                    ->color(fn (string $state, SubscriptionCycle $record): string => match (true) {
+                        $state === SubscriptionCycle::STATE_ACTIVE && $record->payment_status === SubscriptionCycle::PAYMENT_PENDING => 'warning',
+                        $state === SubscriptionCycle::STATE_ACTIVE => 'success',
+                        $state === SubscriptionCycle::STATE_QUEUED => 'info',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        SubscriptionCycle::STATE_ACTIVE => 'نشطة',
-                        SubscriptionCycle::STATE_QUEUED => 'في الانتظار',
-                        SubscriptionCycle::STATE_ARCHIVED => 'مؤرشفة',
+                    ->formatStateUsing(fn (string $state, SubscriptionCycle $record): string => match (true) {
+                        $state === SubscriptionCycle::STATE_ACTIVE && $record->payment_status === SubscriptionCycle::PAYMENT_PENDING => 'في انتظار الدفع',
+                        $state === SubscriptionCycle::STATE_ACTIVE => 'نشطة',
+                        $state === SubscriptionCycle::STATE_QUEUED => 'في الانتظار',
+                        $state === SubscriptionCycle::STATE_ARCHIVED => 'مؤرشفة',
                         default => $state,
                     }),
 
@@ -83,7 +84,7 @@ class SubscriptionCyclesRelationManager extends RelationManager
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         SubscriptionCycle::PAYMENT_PAID => 'مدفوع',
-                        SubscriptionCycle::PAYMENT_PENDING => 'قيد الدفع',
+                        SubscriptionCycle::PAYMENT_PENDING => 'في انتظار الدفع',
                         SubscriptionCycle::PAYMENT_FAILED => 'فاشل',
                         SubscriptionCycle::PAYMENT_WAIVED => 'متنازل',
                         default => $state,
