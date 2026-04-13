@@ -94,29 +94,17 @@ class FixPostRecoveryPaymentStatus extends Command
         // Apply fixes
         $fixed = 0;
         $errors = 0;
-        $timestamp = now()->format('Y-m-d H:i');
 
         foreach ($recoveryTargets as $subscription) {
             try {
-                DB::transaction(function () use ($subscription, $timestamp) {
+                DB::transaction(function () use ($subscription) {
                     $locked = QuranSubscription::withoutGlobalScopes()
                         ->lockForUpdate()
                         ->find($subscription->id);
 
-                    $note = sprintf(
-                        "[%s] payment_status fixed from 'pending' to 'paid' by post-recovery command. Original state: status=%s, payment=%s, starts=%s",
-                        $timestamp,
-                        $locked->status->value,
-                        $locked->payment_status->value,
-                        $locked->starts_at,
-                    );
-
                     $locked->update([
                         'payment_status' => SubscriptionPaymentStatus::PAID,
                         'last_payment_date' => $locked->last_payment_date ?? $locked->starts_at ?? now(),
-                        'admin_notes' => $locked->admin_notes
-                            ? $locked->admin_notes."\n\n".$note
-                            : $note,
                     ]);
 
                     $locked->ensureCurrentCycle();
