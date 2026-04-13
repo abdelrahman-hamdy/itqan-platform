@@ -554,6 +554,12 @@ class AcademyDesignSettings extends Page implements HasForms
         try {
             $data = $this->form->getState();
 
+            \Log::info('AcademyDesignSettings save', [
+                'hero_image_value' => $data['hero_image'] ?? 'NOT_IN_DATA',
+                'hero_image_type' => isset($data['hero_image']) ? gettype($data['hero_image']) : 'missing',
+                'all_keys' => array_keys($data),
+            ]);
+
             if (! $this->selectedAcademyId) {
                 Notification::make()
                     ->title('يرجى اختيار أكاديمية')
