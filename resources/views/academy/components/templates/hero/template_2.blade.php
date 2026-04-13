@@ -3,8 +3,6 @@
     $brandHex50  = $brandColor->getHexValue(50);
     $brandHex100 = $brandColor->getHexValue(100);
     $brandHex200 = $brandColor->getHexValue(200);
-    $brandHex300 = $brandColor->getHexValue(300);
-    $brandHex400 = $brandColor->getHexValue(400);
     $brandHex500 = $brandColor->getHexValue(500);
     $brandHex600 = $brandColor->getHexValue(600);
     $brandHex700 = $brandColor->getHexValue(700);
@@ -15,70 +13,55 @@
     $heroSubheading = $subheading ?? __('academy.hero.default_subheading');
 @endphp
 
-<section id="hero-section" class="relative overflow-hidden bg-white" role="main">
-  <div class="absolute inset-0" style="background: {{ $brandHex800 }};">
-    <div class="absolute inset-0 opacity-[0.07]">
-      <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern id="t2-edu-icons" x="0" y="0" width="280" height="280" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
-            <g transform="translate(25,25) scale(1.4)" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2 4c0-1.1.9-2 2-2h6l2 2 2-2h6c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2h-7l-1 1-1-1H4c-1.1 0-2-.9-2-2V4z"/>
-              <path d="M12 6v14"/><path d="M6 8h4"/><path d="M6 11h4"/><path d="M14 8h4"/><path d="M14 11h4"/>
-            </g>
-            <g transform="translate(140,35) scale(1.4)" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-              <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-            </g>
-            <g transform="translate(210,155) rotate(-30) scale(1.3)" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-            </g>
-            <g transform="translate(35,165) scale(1.4)" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 18h6"/><path d="M10 22h4"/>
-              <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
-            </g>
-            <g transform="translate(140,180) scale(1.3)" fill="none" stroke="white" stroke-width="1.1" stroke-linecap="round">
-              <ellipse cx="10" cy="10" rx="3" ry="10"/><ellipse cx="10" cy="10" rx="10" ry="3"/>
-              <ellipse cx="10" cy="10" rx="3" ry="10" transform="rotate(60 10 10)"/><ellipse cx="10" cy="10" rx="10" ry="3" transform="rotate(60 10 10)"/>
-              <circle cx="10" cy="10" r="2" fill="white"/>
-            </g>
-            <circle cx="95" cy="110" r="2" fill="white" opacity="0.35"/>
-            <circle cx="220" cy="85" r="1.5" fill="white" opacity="0.25"/>
-            <circle cx="65" cy="240" r="1.5" fill="white" opacity="0.25"/>
-            <circle cx="250" cy="250" r="2" fill="white" opacity="0.35"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#t2-edu-icons)"/>
-      </svg>
-    </div>
-    <div class="absolute -top-1/4 start-1/3 w-[800px] h-[800px] rounded-full opacity-[0.12]"
-         style="background: radial-gradient(circle, {{ $brandHex500 }}, transparent 65%);"></div>
-    <div class="absolute bottom-0 end-0 w-[500px] h-[500px] rounded-full opacity-[0.08]"
-         style="background: radial-gradient(circle, {{ $brandHex400 }}, transparent 65%);"></div>
+<section id="hero-section" class="relative overflow-hidden" role="main"
+         style="background: linear-gradient(160deg, {{ $brandHex50 }}, white 50%, {{ $brandHex50 }});">
+
+  {{-- Islamic geometric seamless pattern --}}
+  <div class="absolute inset-0">
+    <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="t2-islamic" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+          {{-- 8-pointed star (octagram) --}}
+          <polygon points="50,5 61,27 85,15 73,38 95,50 73,62 85,85 61,73 50,95 39,73 15,85 27,62 5,50 27,38 15,15 39,27"
+                   fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.6" opacity="0.12"/>
+          {{-- Inner diamond --}}
+          <polygon points="50,25 75,50 50,75 25,50"
+                   fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.5" opacity="0.08"/>
+          {{-- Center circle --}}
+          <circle cx="50" cy="50" r="6" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.5" opacity="0.1"/>
+          {{-- Corner connections --}}
+          <circle cx="0" cy="0" r="4" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.4" opacity="0.06"/>
+          <circle cx="100" cy="0" r="4" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.4" opacity="0.06"/>
+          <circle cx="0" cy="100" r="4" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.4" opacity="0.06"/>
+          <circle cx="100" cy="100" r="4" fill="none" stroke="{{ $brandHex500 }}" stroke-width="0.4" opacity="0.06"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#t2-islamic)"/>
+    </svg>
   </div>
 
   <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center py-24 sm:py-28 lg:py-0" style="min-height: min(100vh, 56rem);">
 
       <div class="lg:col-span-7 text-center lg:text-start">
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-8 rounded-sm t2-hero-badge"
-             style="background: {{ $brandHex500 }}20; border: 1px solid {{ $brandHex500 }}35;">
-          <span class="block w-1.5 h-1.5 rounded-full t2-pulse-dot" style="background: {{ $brandHex400 }};"></span>
-          <span class="text-xs font-bold uppercase" style="color: {{ $brandHex300 }};">{{ __('academy.hero.badge_template2') }}</span>
+        {{-- Badge --}}
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-8 rounded-md t2-hero-badge"
+             style="background: {{ $brandHex500 }}12; border: 1px solid {{ $brandHex500 }}25;">
+          <span class="block w-1.5 h-1.5 rounded-full t2-pulse-dot" style="background: {{ $brandHex500 }};"></span>
+          <span class="text-xs font-semibold" style="color: {{ $brandHex700 }};">{{ __('academy.hero.badge_template2') }}</span>
         </div>
 
-        <h1 class="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-black leading-[1.08] text-white mb-6">
+        <h1 class="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-black leading-[1.08] mb-6" style="color: {{ $brandHex900 }};">
           {{ $heroHeading }}
         </h1>
 
-        <p class="text-base sm:text-lg text-white/50 leading-relaxed max-w-lg mx-auto lg:mx-0 mb-10">
+        <p class="text-base sm:text-lg text-gray-500 leading-relaxed max-w-lg mx-auto lg:mx-0 mb-10">
           {{ $heroSubheading }}
         </p>
 
         <a href="{{ route('student.register', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"
-           class="group inline-flex items-center gap-3 px-8 py-4 bg-white text-gray-900 font-bold text-base rounded-sm transition-all duration-300 hover:gap-4"
-           style="box-shadow: 0 0 0 0 {{ $brandHex500 }}00; transition: box-shadow .3s, gap .3s;"
-           onmouseover="this.style.boxShadow=(document.documentElement.dir==='rtl'?'-4px 4px':'4px 4px')+' 0 0 {{ $brandHex500 }}'"
-           onmouseout="this.style.boxShadow='0 0 0 0 {{ $brandHex500 }}00'">
+           class="group inline-flex items-center gap-3 px-8 py-4 text-white font-bold text-base rounded-md transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+           style="background: {{ $brandHex600 }};">
           <span>{{ __('academy.hero.cta_button') }}</span>
           <i class="ri-arrow-left-line text-lg ltr:rotate-180"></i>
         </a>
@@ -102,12 +85,12 @@
           @endphp
 
           @foreach($features as $i => $f)
-          <div class="group flex items-start gap-5 p-5 rounded-sm bg-white/[0.06] backdrop-blur-md border border-white/[0.08] transition-all duration-300 hover:bg-white/[0.1]"
+          <div class="group flex items-start gap-5 p-5 rounded-md bg-white/70 backdrop-blur-sm border border-gray-100 transition-all duration-300 hover:bg-white hover:shadow-md"
                style="border-inline-start: 3px solid {{ $brandHex500 }}; animation: t2FadeUp .5s {{ ($i * 0.1) + 0.3 }}s both;">
-            <span class="text-2xl font-black tabular-nums shrink-0" style="color: {{ $brandHex500 }}; opacity: .35;">{{ $f['num'] }}</span>
+            <span class="text-2xl font-black tabular-nums shrink-0" style="color: {{ $brandHex500 }}; opacity: .25;">{{ $f['num'] }}</span>
             <div>
-              <h3 class="text-sm font-bold text-white mb-1">{{ $f['title'] }}</h3>
-              <p class="text-xs text-white/40 leading-relaxed">{{ $f['desc'] }}</p>
+              <h3 class="text-sm font-bold text-gray-900 mb-1">{{ $f['title'] }}</h3>
+              <p class="text-xs text-gray-500 leading-relaxed">{{ $f['desc'] }}</p>
             </div>
           </div>
           @endforeach
@@ -117,8 +100,6 @@
 
     </div>
   </div>
-
-  <div class="absolute bottom-0 inset-x-0 h-20 sm:h-28" style="background: linear-gradient(to bottom, transparent, white);"></div>
 </section>
 
 <style>
@@ -126,7 +107,7 @@
   .t2-pulse-dot  { animation: t2DotPulse 2s ease-in-out infinite; }
   @keyframes t2BadgeGlow {
     0%,100% { box-shadow: 0 0 0 0 {{ $brandHex500 }}00; }
-    50%     { box-shadow: 0 0 20px 0 {{ $brandHex500 }}15; }
+    50%     { box-shadow: 0 0 16px 0 {{ $brandHex500 }}18; }
   }
   @keyframes t2DotPulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
   @keyframes t2FadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
