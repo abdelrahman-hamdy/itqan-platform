@@ -554,11 +554,12 @@ class AcademyDesignSettings extends Page implements HasForms
         try {
             $data = $this->form->getState();
 
-            \Log::info('AcademyDesignSettings save', [
-                'hero_image_value' => $data['hero_image'] ?? 'NOT_IN_DATA',
-                'hero_image_type' => isset($data['hero_image']) ? gettype($data['hero_image']) : 'missing',
-                'all_keys' => array_keys($data),
-            ]);
+            file_put_contents(storage_path('hero_debug.txt'), json_encode([
+                'hero_image' => $data['hero_image'] ?? 'NOT_IN_DATA',
+                'type' => isset($data['hero_image']) ? gettype($data['hero_image']) : 'missing',
+                'hero_template' => $data['hero_template'] ?? null,
+                'keys' => array_keys($data),
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             if (! $this->selectedAcademyId) {
                 Notification::make()
