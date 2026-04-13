@@ -189,7 +189,7 @@ class PaymentReconciliationService
             // If grace period was active, calculate new period from ends_at
             $metadata = $subscription->metadata ?? [];
             if (isset($metadata['grace_period_ends_at'])) {
-                $startFrom = $subscription->ends_at ?? now();
+                $startFrom = $updateData['ends_at'] ?? $subscription->ends_at ?? now();
                 $updateData['starts_at'] = $startFrom;
                 $updateData['ends_at'] = $subscription->billing_cycle
                     ? $subscription->billing_cycle->calculateEndDate($startFrom)

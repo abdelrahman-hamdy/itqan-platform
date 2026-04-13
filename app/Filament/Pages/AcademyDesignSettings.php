@@ -142,8 +142,7 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->imageResizeMode('cover')
                             ->imageCropAspectRatio('4:3')
                             ->imageResizeTargetWidth('800')
-                            ->imageResizeTargetHeight('600')
-                            ->visible(fn ($get) => in_array($get('hero_template'), ['template_2', 'template_3'])),
+                            ->imageResizeTargetHeight('600'),
 
                         TextInput::make('hero_heading')
                             ->label('عنوان القسم')

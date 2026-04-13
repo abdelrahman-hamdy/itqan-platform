@@ -265,8 +265,14 @@ class TapWebhookController extends Controller
                     }
                 });
 
+                $errorMessage = match ($tapStatus) {
+                    'CANCELLED' => __('payments.subscription.payment_cancelled'),
+                    'DECLINED' => __('payments.subscription.payment_declined'),
+                    default => __('payments.subscription.payment_failed_generic'),
+                };
+
                 return redirect()->to(route('student.subscriptions', ['subdomain' => $subdomain]))
-                    ->with('error', __('payments.subscription.payment_init_failed'));
+                    ->with('error', $errorMessage);
             }
 
             // Still pending (INITIATED, IN_PROGRESS) — webhook will handle when ready
