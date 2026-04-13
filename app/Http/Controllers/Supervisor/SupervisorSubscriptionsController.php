@@ -267,7 +267,16 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
     public function activate(Request $request, $subdomain, string $type, $id): RedirectResponse
     {
-        return $this->changeStatus($subdomain, $type, $id, SessionSubscriptionStatus::ACTIVE);
+        if (! $this->canManageSubscriptions()) {
+            abort(403);
+        }
+
+        $subscription = $this->resolveSubscription($type, $id);
+        $this->ensureSubscriptionInScope($subscription, $type);
+
+        $subscription->activate();
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.status_updated'));
     }
 
     public function pause(Request $request, $subdomain, string $type, $id): RedirectResponse

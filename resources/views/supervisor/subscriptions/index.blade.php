@@ -277,6 +277,11 @@
                                         @else
                                             <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">-</span>
                                         @endif
+                                        @if($sub['model']->payment_status !== \App\Enums\SubscriptionPaymentStatus::PAID)
+                                            <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $sub['model']->payment_status->badgeClasses() }}">
+                                                {{ $sub['model']->payment_status->label() }}
+                                            </span>
+                                        @endif
                                         @if($sub['model']->is_sessions_exhausted)
                                             <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
                                                 <i class="ri-check-double-line"></i>

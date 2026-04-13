@@ -104,8 +104,17 @@
                     $statusText = __('components.circle.header.awaiting_payment');
                     $statusClass = 'bg-yellow-100 text-yellow-800';
                 }
+            } elseif ($subStatus === \App\Enums\SessionSubscriptionStatus::ACTIVE) {
+                // ACTIVE subscription — check if actually schedulable (considers payment_status)
+                if ($subscription->isSchedulable()) {
+                    $statusText = $subStatus->label();
+                    $statusClass = $subStatus->badgeClasses();
+                } else {
+                    $statusText = __('components.circle.header.awaiting_payment');
+                    $statusClass = 'bg-yellow-100 text-yellow-800';
+                }
             } else {
-                // For ACTIVE, PAUSED, CANCELLED - use default enum labels
+                // PAUSED, CANCELLED - use default enum labels
                 $statusText = $subStatus->label();
                 $statusClass = $subStatus->badgeClasses();
             }
