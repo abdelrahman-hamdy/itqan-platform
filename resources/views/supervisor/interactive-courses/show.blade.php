@@ -36,14 +36,20 @@
                 @endif
                 <div class="flex flex-wrap gap-2">
                     <span class="text-xs px-2.5 py-1 rounded-full {{ $statusClass }}">{{ $statusLabel }}</span>
-                    <span class="text-xs px-2.5 py-1 rounded-full {{ $course->is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' }}">
-                        {{ $course->is_published ? __('supervisor.interactive_courses.published') : __('supervisor.interactive_courses.unpublished') }}
-                    </span>
+                    @if($statusValue !== 'published')
+                        <span class="text-xs px-2.5 py-1 rounded-full {{ $course->is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' }}">
+                            {{ $course->is_published ? __('supervisor.interactive_courses.published') : __('supervisor.interactive_courses.unpublished') }}
+                        </span>
+                    @endif
                     @if($course->subject)
-                        <span class="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">{{ $course->subject->name }}</span>
+                        <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
+                            <i class="ri-book-open-line"></i>{{ $course->subject->name }}
+                        </span>
                     @endif
                     @if($course->gradeLevel)
-                        <span class="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">{{ $course->gradeLevel->getDisplayName() }}</span>
+                        <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-purple-50 text-purple-700">
+                            <i class="ri-graduation-cap-line"></i>{{ $course->gradeLevel->getDisplayName() }}
+                        </span>
                     @endif
                 </div>
             </div>
@@ -339,7 +345,7 @@
                 @if($canManage)
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
                         <h3 class="text-sm font-bold text-gray-900 mb-4">{{ __('supervisor.interactive_courses.edit_details') }}</h3>
-                        <form method="POST" action="{{ route('manage.interactive-courses.update', ['subdomain' => $subdomain, 'course' => $course->id]) }}">
+                        <form method="POST" action="{{ route('manage.interactive-courses.update', ['subdomain' => $subdomain, 'course' => $course->id]) }}" enctype="multipart/form-data">
                             @csrf @method('PUT')
                             <div class="space-y-4">
 
@@ -356,6 +362,17 @@
                                             <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.description') }}</label>
                                             <textarea name="description" rows="2" maxlength="2000"
                                                       class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">{{ old('description', $course->description) }}</textarea>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.featured_image') }}</label>
+                                            @if($course->featured_image)
+                                                <div class="mb-2">
+                                                    <img src="{{ asset('storage/' . $course->featured_image) }}" alt="{{ $course->title }}" class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                                                </div>
+                                            @endif
+                                            <input type="file" name="featured_image" accept="image/*"
+                                                   class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                            <p class="text-xs text-gray-400 mt-1">{{ __('supervisor.interactive_courses.featured_image_hint') }}</p>
                                         </div>
                                         <div>
                                             <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.interactive_courses.subject') }}</label>
@@ -426,6 +443,40 @@
                                             <input type="date" name="enrollment_deadline" value="{{ old('enrollment_deadline', $course->enrollment_deadline?->format('Y-m-d')) }}"
                                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
                                         </div>
+                                    </div>
+
+                                    {{-- Schedule --}}
+                                    <div class="mt-3" x-data="{
+                                        nextId: {{ count($scheduleEntries) }},
+                                        entries: @js(array_map(fn($e, $i) => array_merge($e, ['_id' => $i]), $scheduleEntries, array_keys($scheduleEntries))),
+                                        addEntry() { this.entries.push({ day: '', time: '', _id: this.nextId++ }) },
+                                        removeEntry(index) { this.entries.splice(index, 1) }
+                                    }">
+                                        <label class="block text-xs font-medium text-gray-700 mb-2">{{ __('supervisor.interactive_courses.schedule') }}</label>
+                                        <div class="space-y-2">
+                                            <template x-for="(entry, index) in entries" :key="entry._id">
+                                                <div class="flex items-center gap-2">
+                                                    <select :name="'schedule_days[' + index + ']'" x-model="entry.day"
+                                                            class="flex-1 rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                                        <option value="">{{ __('supervisor.interactive_courses.schedule_day') }}</option>
+                                                        @foreach($weekDaysOptions as $value => $label)
+                                                            <option value="{{ $label }}">{{ $label }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <input type="text" :name="'schedule_times[' + index + ']'" x-model="entry.time"
+                                                           placeholder="16:00 - 17:00"
+                                                           class="flex-1 rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                                    <button type="button" @click="removeEntry(index)" x-show="entries.length > 1"
+                                                            class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
+                                                        <i class="ri-delete-bin-line text-sm"></i>
+                                                    </button>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <button type="button" @click="addEntry()"
+                                                class="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                            <i class="ri-add-line"></i> {{ __('supervisor.interactive_courses.add_schedule_entry') }}
+                                        </button>
                                     </div>
                                 </div>
 

@@ -702,6 +702,14 @@ return [
         'sale_price' => 'Sale Price',
         'sale_price_placeholder' => 'Leave empty if no discount',
         'certificate_enabled' => 'Enable Certificates',
+        'featured_image' => 'Featured Image',
+        'featured_image_hint' => 'Featured image shown on course card and detail page',
+        'change_image' => 'Change Image',
+        'schedule' => 'Weekly Schedule',
+        'schedule_day' => 'Day',
+        'schedule_time' => 'Time',
+        'add_schedule_entry' => 'Add Day',
+        'remove' => 'Remove',
     ],
 
     'quizzes' => [

@@ -702,6 +702,14 @@ return [
         'sale_price' => 'سعر التخفيض',
         'sale_price_placeholder' => 'اتركه فارغاً إذا لا يوجد تخفيض',
         'certificate_enabled' => 'تفعيل الشهادات',
+        'featured_image' => 'صورة الكورس',
+        'featured_image_hint' => 'صورة مميزة تظهر في بطاقة الكورس وصفحة التفاصيل',
+        'change_image' => 'تغيير الصورة',
+        'schedule' => 'الجدول الأسبوعي',
+        'schedule_day' => 'اليوم',
+        'schedule_time' => 'التوقيت',
+        'add_schedule_entry' => 'إضافة يوم',
+        'remove' => 'حذف',
     ],
 
     'quizzes' => [

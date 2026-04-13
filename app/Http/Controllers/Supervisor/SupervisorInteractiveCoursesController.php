@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Enums\InteractiveCourseStatus;
+use App\Enums\WeekDays;
+use App\Filament\Shared\Resources\BaseInteractiveCourseResource;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
@@ -11,6 +13,7 @@ use App\Models\InteractiveCourseEnrollment;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
@@ -119,15 +122,26 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
 
         $subjects = collect();
         $gradeLevels = collect();
+        $scheduleEntries = [['day' => '', 'time' => '']];
+        $weekDaysOptions = [];
         if ($canManage) {
             $academyId = $this->getAcademyId();
             $subjects = AcademicSubject::where('academy_id', $academyId)->orderBy('name')->get();
             $gradeLevels = AcademicGradeLevel::where('academy_id', $academyId)->orderBy('name')->get();
+            $weekDaysOptions = WeekDays::options();
+            $normalized = BaseInteractiveCourseResource::normalizeScheduleState($course->schedule ?? []);
+            if (! empty($normalized)) {
+                $scheduleEntries = collect($normalized)
+                    ->map(fn ($time, $day) => ['day' => $day, 'time' => $time])
+                    ->values()
+                    ->all();
+            }
         }
 
         return view('supervisor.interactive-courses.show', compact(
             'course', 'teacher', 'isAdmin', 'canManage', 'availableStudents',
-            'academicTeachers', 'certificates', 'subjects', 'gradeLevels'
+            'academicTeachers', 'certificates', 'subjects', 'gradeLevels',
+            'scheduleEntries', 'weekDaysOptions'
         ));
     }
 
@@ -234,12 +248,41 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
             'show_recording_to_teacher' => 'required|in:0,1',
             'show_recording_to_student' => 'required|in:0,1',
             'supervisor_notes' => 'nullable|string|max:2000',
+            'featured_image' => 'nullable|image|max:2048',
+            'schedule_days' => 'nullable|array',
+            'schedule_days.*' => 'nullable|string',
+            'schedule_times' => 'nullable|array',
+            'schedule_times.*' => 'nullable|string',
         ]);
 
         $validated['certificate_enabled'] = (bool) $validated['certificate_enabled'];
         $validated['recording_enabled'] = (bool) $validated['recording_enabled'];
         $validated['show_recording_to_teacher'] = (bool) $validated['show_recording_to_teacher'];
         $validated['show_recording_to_student'] = (bool) $validated['show_recording_to_student'];
+
+        // Handle featured image upload
+        if ($request->hasFile('featured_image')) {
+            $oldImage = $course->featured_image;
+            $validated['featured_image'] = $request->file('featured_image')
+                ->store('interactive-courses/featured', 'public');
+            if ($oldImage) {
+                Storage::disk('public')->delete($oldImage);
+            }
+        } else {
+            unset($validated['featured_image']);
+        }
+
+        // Reconstruct schedule from parallel arrays
+        $days = $validated['schedule_days'] ?? [];
+        $times = $validated['schedule_times'] ?? [];
+        $schedule = [];
+        foreach ($days as $index => $day) {
+            if (! empty($day) && isset($times[$index])) {
+                $schedule[$day] = $times[$index];
+            }
+        }
+        $validated['schedule'] = ! empty($schedule) ? $schedule : null;
+        unset($validated['schedule_days'], $validated['schedule_times']);
 
         $course->update($validated);
 
