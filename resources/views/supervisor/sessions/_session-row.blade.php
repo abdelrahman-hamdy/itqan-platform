@@ -78,9 +78,7 @@
     <td class="px-4 py-3">
         <p class="text-sm font-medium text-gray-900">{{ $session->title ?: ($session->session_code ?? '-') }}</p>
         <div class="flex items-center gap-2 mt-0.5">
-            @if($session->session_code && $session->title)
-                <span class="text-[10px] text-gray-400 font-mono">{{ $session->session_code }}</span>
-            @endif
+            <span class="text-[10px] text-gray-400 font-mono">#{{ $session->id }}</span>
             @if($session->duration_minutes)
                 <span class="text-xs text-gray-400">{{ __('supervisor.sessions.duration_minutes', ['count' => $session->duration_minutes]) }}</span>
             @endif

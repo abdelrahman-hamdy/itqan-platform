@@ -76,7 +76,7 @@
                     @endif
                     <p class="text-sm font-medium text-gray-900 truncate">{{ $studentName }}</p>
                 </div>
-                <p class="text-xs text-gray-500">{{ $typeConfig['label'] }}@if($session->session_code) · <span class="font-mono">{{ $session->session_code }}</span>@endif</p>
+                <p class="text-xs text-gray-500">{{ $typeConfig['label'] }} · <span class="font-mono">#{{ $session->id }}</span></p>
             </div>
         </div>
         <div class="flex items-center gap-1.5 flex-shrink-0">
