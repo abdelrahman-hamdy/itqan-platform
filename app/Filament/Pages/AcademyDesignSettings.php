@@ -551,6 +551,8 @@ class AcademyDesignSettings extends Page implements HasForms
 
     public function save(): void
     {
+        file_put_contents(storage_path('hero_debug.txt'), 'SAVE_CALLED_' . now()->toDateTimeString());
+
         try {
             $data = $this->form->getState();
 
