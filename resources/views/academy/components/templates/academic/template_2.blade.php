@@ -46,7 +46,7 @@
             @if($courseImage)
             <img src="{{ $courseImage }}" alt="{{ $course->title }}" class="w-full h-52 md:h-full md:min-h-[280px] object-cover transition-transform duration-500 group-hover:scale-105">
             @else
-            <div class="w-full h-52 md:h-full md:min-h-[280px] flex flex-col items-center justify-center text-center p-6" style="background: {{ $gradientFromHex }};">
+            <div class="w-full h-52 md:h-full md:min-h-[280px] flex flex-col items-center justify-center text-center p-6 bg-blue-600">
               <div class="w-16 h-16 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center mb-3">
                 <i class="ri-slideshow-3-line text-3xl text-white"></i>
               </div>
@@ -97,14 +97,14 @@
             {{-- Info labels --}}
             <div class="flex items-center flex-wrap gap-2 mb-5">
               @if($course->subject)
-              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md text-gray-600" style="background: {{ $gradientFromHex }}08; border: 1px solid {{ $gradientFromHex }}18;">
-                <i class="ri-book-open-line text-sm" style="color: {{ $gradientFromHex }};"></i>
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md text-gray-600 bg-blue-50 border border-blue-100">
+                <i class="ri-book-open-line text-sm text-blue-500"></i>
                 {{ $course->subject->name }}
               </span>
               @endif
               @if($course->gradeLevel)
-              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md text-gray-600" style="background: {{ $gradientFromHex }}08; border: 1px solid {{ $gradientFromHex }}18;">
-                <i class="ri-graduation-cap-line text-sm" style="color: {{ $gradientFromHex }};"></i>
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md text-gray-600 bg-blue-50 border border-blue-100">
+                <i class="ri-graduation-cap-line text-sm text-blue-500"></i>
                 {{ $course->gradeLevel->getDisplayName() }}
               </span>
               @endif
@@ -137,12 +137,12 @@
               <div>
                 @if($course->hasDiscount())
                 <div class="flex items-baseline gap-3">
-                  <span class="text-3xl font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($course->sale_price) }} {{ getCurrencySymbol() }}</span>
+                  <span class="text-3xl font-bold text-blue-600">{{ number_format($course->sale_price) }} {{ getCurrencySymbol() }}</span>
                   <span class="text-lg text-gray-300 line-through">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
                   <span class="text-xs font-semibold px-2 py-1 rounded bg-red-50 text-red-500 border border-red-100">-{{ round((1 - $course->sale_price / $course->student_price) * 100) }}%</span>
                 </div>
                 @else
-                <span class="text-3xl font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
+                <span class="text-3xl font-bold text-blue-600">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
                 @endif
               </div>
               @else
@@ -150,8 +150,7 @@
               @endif
 
               <a href="{{ route('interactive-courses.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id]) }}"
-                 class="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 t2-ghost-btn"
-                 style="color: {{ $gradientFromHex }}; border: 2px solid {{ $gradientFromHex }}; --t2-fill: {{ $gradientFromHex }};">
+                 class="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 text-blue-600 border-2 border-blue-600 hover:bg-blue-600 hover:text-white">
                 {{ __('academy.cards.view_details') }}
                 <i class="ri-arrow-left-s-line text-base ltr:rotate-180"></i>
               </a>
@@ -231,13 +230,3 @@
   </div>
 </section>
 
-<style>
-  .t2-ghost-btn {
-    background: transparent;
-    transition: background .2s, color .2s;
-  }
-  .t2-ghost-btn:hover {
-    background: var(--t2-fill);
-    color: #fff;
-  }
-</style>
