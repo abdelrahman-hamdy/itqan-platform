@@ -163,7 +163,7 @@
       @if($interactiveCourses->count() > 0)
       <div class="mt-8 text-center">
         <a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg border-2 border-blue-200 text-blue-600 transition-all duration-200 hover:border-blue-600 hover:gap-3">
+           class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg text-blue-600 bg-blue-50/60 transition-all duration-200 hover:bg-blue-100/80 hover:gap-3">
           {{ __('academy.actions.view_more') }}
           <i class="ri-arrow-left-line ltr:rotate-180"></i>
         </a>
@@ -228,8 +228,8 @@
       @if($academicTeachers->count() > 0)
       <div class="mt-8 text-center">
         <a href="{{ route('academic-teachers.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg border-2 transition-all duration-200 hover:gap-3"
-           style="color: {{ $gradientToHex }}; border-color: {{ $gradientToHex }}20;" onmouseover="this.style.borderColor='{{ $gradientToHex }}'" onmouseout="this.style.borderColor='{{ $gradientToHex }}20'">
+           class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 hover:gap-3"
+           style="color: {{ $gradientToHex }}; background: {{ $gradientToHex }}0a;" onmouseover="this.style.background='{{ $gradientToHex }}15'" onmouseout="this.style.background='{{ $gradientToHex }}0a'">
           {{ __('academy.actions.view_more') }}
           <i class="ri-arrow-left-line ltr:rotate-180"></i>
         </a>

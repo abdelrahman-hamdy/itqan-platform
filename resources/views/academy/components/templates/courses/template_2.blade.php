@@ -122,7 +122,7 @@
     @if($recordedCourses->count() > 0)
     <div class="mt-10 text-center">
       <a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}"
-         class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg border-2 border-white/20 text-white/70 transition-all duration-200 hover:border-white/60 hover:text-white hover:gap-3">
+         class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg text-white/70 bg-white/[0.06] transition-all duration-200 hover:bg-white/[0.12] hover:text-white hover:gap-3">
         {{ __('academy.actions.view_more') }}
         <i class="ri-arrow-left-line ltr:rotate-180"></i>
       </a>

@@ -74,8 +74,8 @@
       @if($quranTeachers->count() > 0)
       <div class="mt-8 text-center">
         <a href="{{ route('quran-teachers.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg border-2 transition-all duration-200 hover:gap-3"
-           style="color: {{ $gradientToHex }}; border-color: {{ $gradientToHex }}20;" onmouseover="this.style.borderColor='{{ $gradientToHex }}'" onmouseout="this.style.borderColor='{{ $gradientToHex }}20'">
+           class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 hover:gap-3"
+           style="color: {{ $gradientToHex }}; background: {{ $gradientToHex }}0a;" onmouseover="this.style.background='{{ $gradientToHex }}15'" onmouseout="this.style.background='{{ $gradientToHex }}0a'">
           {{ __('academy.actions.view_more') }}
           <i class="ri-arrow-left-line ltr:rotate-180"></i>
         </a>
@@ -167,8 +167,8 @@
       @if($quranCircles->count() > 0)
       <div class="mt-8 text-center">
         <a href="{{ route('quran-circles.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg border-2 transition-all duration-200 hover:gap-3"
-           style="color: {{ $gradientFromHex }}; border-color: {{ $gradientFromHex }}20;" onmouseover="this.style.borderColor='{{ $gradientFromHex }}'" onmouseout="this.style.borderColor='{{ $gradientFromHex }}20'">
+           class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 hover:gap-3"
+           style="color: {{ $gradientFromHex }}; background: {{ $gradientFromHex }}0a;" onmouseover="this.style.background='{{ $gradientFromHex }}15'" onmouseout="this.style.background='{{ $gradientFromHex }}0a'">
           {{ __('academy.actions.view_more') }}
           <i class="ri-arrow-left-line ltr:rotate-180"></i>
         </a>
