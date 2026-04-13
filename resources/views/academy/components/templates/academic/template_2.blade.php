@@ -121,10 +121,10 @@
             {{-- Schedule --}}
             @php $formattedSchedule = $course->formatted_schedule; @endphp
             @if(count($formattedSchedule) > 0)
-            <div class="flex items-center gap-2 flex-wrap mb-5">
+            <div class="flex items-center gap-1.5 flex-wrap mb-5">
               @foreach(array_slice($formattedSchedule, 0, 4) as $entry)
-              <span class="text-xs font-medium px-3 py-1.5 bg-gray-50 text-gray-500 rounded-md border border-gray-100">
-                <i class="ri-calendar-event-line text-gray-400 me-1"></i>{{ $entry['day'] }}: {{ $entry['time'] }}
+              <span class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium bg-white text-blue-700 border border-blue-200">
+                {{ $entry['day'] }}: {{ $entry['time'] }}
               </span>
               @endforeach
             </div>
@@ -151,9 +151,9 @@
               @endif
 
               <a href="{{ route('interactive-courses.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id]) }}"
-                 class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 text-blue-600 border-2 border-blue-600 hover:bg-blue-600 hover:text-white">
+                 class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-lg text-sm font-semibold transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">
+                <i class="ri-information-line"></i>
                 {{ __('academy.cards.view_details') }}
-                <i class="ri-arrow-left-s-line text-base ltr:rotate-180"></i>
               </a>
             </div>
           </div>
