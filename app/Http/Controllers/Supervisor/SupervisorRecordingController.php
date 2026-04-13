@@ -47,8 +47,16 @@ class SupervisorRecordingController extends BaseSupervisorWebController
         $historyData = null;
 
         if ($tab === 'live') {
-            $sessions = $this->getLiveSessions($sessionTab, $statusFilter, $teacherId, $studentId, $search);
-            $tabCounts = $this->getLiveTabCounts();
+            // Fetch unfiltered sessions first to derive tab counts, then apply status filter
+            $sessions = $this->getLiveSessions($sessionTab, $teacherId, $studentId, $search);
+            $tabCounts = [
+                'quran' => $sessions->where('_type', 'quran')->count(),
+                'academic' => $sessions->where('_type', 'academic')->count(),
+                'interactive' => $sessions->where('_type', 'interactive')->count(),
+            ];
+            if ($statusFilter) {
+                $sessions = $sessions->filter(fn ($s) => $s->getAttribute('_recording_status') === $statusFilter);
+            }
         } elseif ($tab === 'history') {
             $historyData = $this->getHistoryData($request, $sessionTab);
         }
@@ -133,18 +141,18 @@ class SupervisorRecordingController extends BaseSupervisorWebController
     // Live Sessions
     // ────────────────────────────────────────────────────────────────
 
-    private function getLiveSessions(string $sessionTab, ?string $statusFilter, ?string $teacherId, ?string $studentId, ?string $search): Collection
+    private function getLiveSessions(string $sessionTab, ?string $teacherId, ?string $studentId, ?string $search): Collection
     {
         $liveStatuses = [SessionStatus::READY->value, SessionStatus::ONGOING->value];
         $sessions = collect();
+        $recordingWith = ['recordings' => fn ($r) => $r->whereIn('status', [RecordingStatus::RECORDING->value, RecordingStatus::QUEUED->value])];
 
         $quranNeeded = in_array($sessionTab, ['all', 'quran']);
         $academicNeeded = in_array($sessionTab, ['all', 'academic']);
         $interactiveNeeded = in_array($sessionTab, ['all', 'interactive']);
 
         if ($quranNeeded) {
-            $q = $this->getQuranQuery()->whereIn('status', $liveStatuses)
-                ->with(['recordings' => fn ($r) => $r->whereIn('status', [RecordingStatus::RECORDING->value, RecordingStatus::QUEUED->value])]);
+            $q = $this->getQuranQuery()->whereIn('status', $liveStatuses)->with($recordingWith);
             if ($teacherId) {
                 $q->where('quran_teacher_id', (int) $teacherId);
             }
@@ -154,18 +162,16 @@ class SupervisorRecordingController extends BaseSupervisorWebController
             if ($search) {
                 $q->where(fn ($sq) => $sq->where('session_code', 'like', "%{$search}%")->orWhere('title', 'like', "%{$search}%"));
             }
-            $results = $q->get()->map(fn ($s) => $s->setAttribute('_type', 'quran')->setAttribute('_recording_status', $this->getSessionRecordingStatus($s, 'quran')));
-            if ($statusFilter) {
-                $results = $results->filter(fn ($s) => $s->getAttribute('_recording_status') === $statusFilter);
-            }
-            $sessions = $sessions->merge($results);
+            $sessions = $sessions->merge(
+                $q->get()->map(fn ($s) => $s->setAttribute('_type', 'quran')->setAttribute('_recording_status', $this->getSessionRecordingStatus($s, 'quran')))
+            );
         }
 
         if ($academicNeeded) {
-            $q = $this->getAcademicQuery()->whereIn('status', $liveStatuses)
-                ->with(['recordings' => fn ($r) => $r->whereIn('status', [RecordingStatus::RECORDING->value, RecordingStatus::QUEUED->value])]);
+            $q = $this->getAcademicQuery()->whereIn('status', $liveStatuses)->with($recordingWith);
+            // Teacher filter: teacher_id is User.id but academic_teacher_id is profile ID
             if ($teacherId) {
-                $q->where('academic_teacher_id', (int) $teacherId);
+                $q->whereHas('academicTeacher', fn ($tq) => $tq->where('user_id', (int) $teacherId));
             }
             if ($studentId) {
                 $q->where('student_id', (int) $studentId);
@@ -173,41 +179,26 @@ class SupervisorRecordingController extends BaseSupervisorWebController
             if ($search) {
                 $q->where(fn ($sq) => $sq->where('session_code', 'like', "%{$search}%")->orWhere('title', 'like', "%{$search}%"));
             }
-            $results = $q->get()->map(fn ($s) => $s->setAttribute('_type', 'academic')->setAttribute('_recording_status', $this->getSessionRecordingStatus($s, 'academic')));
-            if ($statusFilter) {
-                $results = $results->filter(fn ($s) => $s->getAttribute('_recording_status') === $statusFilter);
-            }
-            $sessions = $sessions->merge($results);
+            $sessions = $sessions->merge(
+                $q->get()->map(fn ($s) => $s->setAttribute('_type', 'academic')->setAttribute('_recording_status', $this->getSessionRecordingStatus($s, 'academic')))
+            );
         }
 
         if ($interactiveNeeded) {
-            $q = $this->getInteractiveQuery()->whereIn('status', $liveStatuses)
-                ->with(['recordings' => fn ($r) => $r->whereIn('status', [RecordingStatus::RECORDING->value, RecordingStatus::QUEUED->value])]);
+            $q = $this->getInteractiveQuery()->whereIn('status', $liveStatuses)->with($recordingWith);
+            // Teacher filter: teacher_id is User.id but assigned_teacher_id is profile ID
             if ($teacherId) {
-                $q->whereHas('course', fn ($cq) => $cq->where('assigned_teacher_id', (int) $teacherId));
+                $q->whereHas('course.assignedTeacher', fn ($tq) => $tq->where('user_id', (int) $teacherId));
             }
             if ($search) {
                 $q->where(fn ($sq) => $sq->where('session_code', 'like', "%{$search}%")->orWhere('title', 'like', "%{$search}%"));
             }
-            $results = $q->get()->map(fn ($s) => $s->setAttribute('_type', 'interactive')->setAttribute('_recording_status', $this->getSessionRecordingStatus($s, 'interactive')));
-            if ($statusFilter) {
-                $results = $results->filter(fn ($s) => $s->getAttribute('_recording_status') === $statusFilter);
-            }
-            $sessions = $sessions->merge($results);
+            $sessions = $sessions->merge(
+                $q->get()->map(fn ($s) => $s->setAttribute('_type', 'interactive')->setAttribute('_recording_status', $this->getSessionRecordingStatus($s, 'interactive')))
+            );
         }
 
         return $sessions->sortBy('scheduled_at');
-    }
-
-    private function getLiveTabCounts(): array
-    {
-        $liveStatuses = [SessionStatus::READY->value, SessionStatus::ONGOING->value];
-
-        return [
-            'quran' => $this->getQuranQuery()->whereIn('status', $liveStatuses)->count(),
-            'academic' => $this->getAcademicQuery()->whereIn('status', $liveStatuses)->count(),
-            'interactive' => $this->getInteractiveQuery()->whereIn('status', $liveStatuses)->count(),
-        ];
     }
 
     private function getSessionRecordingStatus($session, string $type): string
@@ -231,7 +222,13 @@ class SupervisorRecordingController extends BaseSupervisorWebController
         $dateTo = $request->query('date_to');
 
         $query = SessionRecording::query()
-            ->with('recordable')
+            ->with(['recordable' => function (\Illuminate\Database\Eloquent\Relations\MorphTo $morphTo) {
+                $morphTo->morphWith([
+                    QuranSession::class => ['quranTeacher', 'circle'],
+                    AcademicSession::class => ['academicTeacher.user'],
+                    InteractiveCourseSession::class => ['course.assignedTeacher.user'],
+                ]);
+            }])
             ->whereIn('status', [
                 RecordingStatus::COMPLETED->value,
                 RecordingStatus::SKIPPED->value,

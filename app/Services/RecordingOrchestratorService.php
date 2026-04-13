@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Contracts\RecordingCapable;
 use App\Enums\RecordingStatus;
 use App\Jobs\ProcessRecordingQueueJob;
+use App\Models\AcademicSession;
 use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
 use App\Models\SessionRecording;
 use Exception;
 use Illuminate\Support\Facades\Cache;
@@ -360,11 +362,11 @@ class RecordingOrchestratorService
             return 'interactive_course';
         }
 
-        if ($session instanceof \App\Models\AcademicSession) {
+        if ($session instanceof AcademicSession) {
             return 'academic_lesson';
         }
 
-        if ($session instanceof \App\Models\QuranSession) {
+        if ($session instanceof QuranSession) {
             if ($session->session_type === 'trial') {
                 return 'trial';
             }

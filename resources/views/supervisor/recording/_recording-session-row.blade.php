@@ -5,7 +5,6 @@
     $isLive = in_array($status, [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING]);
     $isTrial = method_exists($session, 'isTrial') ? $session->isTrial() : false;
 
-    // Same teacher/student name resolution as sessions page
     $teacherName = match($type) {
         'academic' => $session->academicTeacher?->user?->name ?? '-',
         'interactive' => $session->course?->assignedTeacher?->user?->name ?? '-',
@@ -22,7 +21,6 @@
             ?? '-',
     };
 
-    // Same type config as sessions page
     $typeConfig = match(true) {
         $type === 'academic' => ['label' => __('supervisor.sessions.type_private_lesson'), 'icon' => 'ri-graduation-cap-line', 'bg' => 'bg-violet-50', 'text' => 'text-violet-600'],
         $type === 'interactive' => ['label' => __('supervisor.sessions.type_interactive'), 'icon' => 'ri-video-chat-line', 'bg' => 'bg-blue-50', 'text' => 'text-blue-600'],
