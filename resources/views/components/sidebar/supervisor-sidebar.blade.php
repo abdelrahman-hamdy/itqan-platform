@@ -15,7 +15,7 @@
     $canManageTeachers = $isAdmin || ($profile?->canManageTeachers() ?? false);
     $canManageStudents = $isAdmin || ($profile?->canManageStudents() ?? false);
     $canManageParents = $isAdmin || ($profile?->canManageParents() ?? false);
-    $canManageSubscriptions = $isAdmin || ($profile?->canManageSubscriptions() ?? false);
+    $canAccessSubscriptions = $isAdmin || ($profile?->canManageSubscriptions() ?? false) || ($profile?->canViewSubscriptions() ?? false);
     $canManagePayments = $isAdmin || ($profile?->canManagePayments() ?? false);
     $canManageTeacherEarnings = $isAdmin || ($profile?->canManageTeacherEarnings() ?? false);
 @endphp
@@ -147,7 +147,7 @@
 
       <!-- Management -->
       <x-sidebar.nav-section :title="__('supervisor.sidebar.management')">
-        @if($canManageSubscriptions)
+        @if($canAccessSubscriptions)
         <x-sidebar.nav-item
           :href="route('manage.subscriptions.index', ['subdomain' => $subdomain])"
           :label="__('supervisor.sidebar.subscriptions')"

@@ -32,7 +32,7 @@
             <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.subscriptions.page_title') }}</h1>
             <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.subscriptions.page_subtitle') }}</p>
         </div>
-        @if($canCreate ?? false)
+        @if($canManage ?? false)
             <a href="{{ route('manage.subscriptions.create', ['subdomain' => $subdomain]) }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors text-sm font-semibold shadow-sm whitespace-nowrap">
                 <i class="ri-add-circle-line text-lg"></i>
@@ -379,7 +379,7 @@
                                         <i class="ri-eye-line"></i>{{ __('supervisor.subscriptions.view_lesson') }}
                                     </a>
                                 @endif
-                                @if($isAdmin)
+                                @if($canManage)
                                     <button @click="expanded = !expanded" type="button"
                                         class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors">
                                         <i class="ri-apps-line"></i>
@@ -388,7 +388,7 @@
                                     </button>
                                 @endif
                             </div>
-                            @if($isAdmin)
+                            @if($canManage)
                                 <div x-show="expanded" x-collapse>
                                     <div class="flex flex-wrap items-center gap-2 mt-2">
                                         @if($sub['status'] === \App\Enums\SessionSubscriptionStatus::EXPIRED)
@@ -552,7 +552,7 @@
                     </div>
 
                     {{-- Extend Modal --}}
-                    @if($isAdmin)
+                    @if($canManage)
                         <div id="extend-modal-{{ $sub['id'] }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto" x-data>
                             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
                             <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
@@ -590,7 +590,7 @@
                     @endif
 
                     {{-- Confirm Payment Modal --}}
-                    @if($isAdmin && in_array($sub['model']->payment_status, [\App\Enums\SubscriptionPaymentStatus::PENDING, \App\Enums\SubscriptionPaymentStatus::FAILED]))
+                    @if($canManage && in_array($sub['model']->payment_status, [\App\Enums\SubscriptionPaymentStatus::PENDING, \App\Enums\SubscriptionPaymentStatus::FAILED]))
                         <div id="confirm-payment-modal-{{ $sub['id'] }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
                             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
                             <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
@@ -615,7 +615,7 @@
                     @endif
 
                     {{-- Renew Modal --}}
-                    @if($isAdmin && ($sub['model']->canRenew() || $sub['model']->is_sessions_exhausted))
+                    @if($canManage && ($sub['model']->canRenew() || $sub['model']->is_sessions_exhausted))
                         <div id="renew-modal-{{ $sub['id'] }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
                             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
                             <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
@@ -648,7 +648,7 @@
                     @endif
 
                     {{-- Resubscribe Modal --}}
-                    @if($isAdmin && in_array($sub['status'], [\App\Enums\SessionSubscriptionStatus::CANCELLED, \App\Enums\SessionSubscriptionStatus::EXPIRED]))
+                    @if($canManage && in_array($sub['status'], [\App\Enums\SessionSubscriptionStatus::CANCELLED, \App\Enums\SessionSubscriptionStatus::EXPIRED]))
                         <div id="resubscribe-modal-{{ $sub['id'] }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
                             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
                             <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">

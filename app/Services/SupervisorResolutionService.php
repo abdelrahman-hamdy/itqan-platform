@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use InvalidArgumentException;
 use App\Enums\UserType;
 use App\Models\ChatGroup;
 use App\Models\SupervisorResponsibility;
@@ -11,6 +10,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
 class SupervisorResolutionService
 {
@@ -43,6 +43,15 @@ class SupervisorResolutionService
 
             return $responsibility->supervisorProfile->user;
         });
+    }
+
+    /**
+     * Find ALL supervisors responsible for a given teacher.
+     * A teacher may be assigned to multiple supervisors.
+     */
+    public function getAllSupervisorsForTeacher(User $teacher): Collection
+    {
+        return $teacher->getSupervisors() ?? collect();
     }
 
     /**

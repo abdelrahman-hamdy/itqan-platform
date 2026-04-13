@@ -93,8 +93,8 @@ class SupervisedChatGroupService extends ChatGroupService implements SupervisedC
             // Add student as member
             $this->addMember($group, $student, ChatGroup::ROLE_MEMBER);
 
-            // Add supervisor as moderator
-            $this->addMember($group, $supervisor, ChatGroup::ROLE_MODERATOR);
+            // Add all assigned supervisors as moderators + wire_participants
+            $this->addAllSupervisorsToGroup($group, $teacher);
 
             Log::info('Created supervised Quran individual group', [
                 'group_id' => $group->id,
@@ -168,8 +168,8 @@ class SupervisedChatGroupService extends ChatGroupService implements SupervisedC
             // Add student as member
             $this->addMember($group, $student, ChatGroup::ROLE_MEMBER);
 
-            // Add supervisor as moderator
-            $this->addMember($group, $supervisor, ChatGroup::ROLE_MODERATOR);
+            // Add all assigned supervisors as moderators + wire_participants
+            $this->addAllSupervisorsToGroup($group, $teacher);
 
             Log::info('Created supervised Academic lesson group', [
                 'group_id' => $group->id,
@@ -207,23 +207,20 @@ class SupervisedChatGroupService extends ChatGroupService implements SupervisedC
             return null;
         }
 
-        return DB::transaction(function () use ($circle, $supervisor) {
+        return DB::transaction(function () use ($circle, $teacher, $supervisor) {
             // Check if group already exists
             $existingGroup = ChatGroup::where('quran_circle_id', $circle->id)->first();
 
             if ($existingGroup) {
-                // Ensure supervisor is current
                 $this->ensureSupervisorIsCurrent($existingGroup, $supervisor);
 
                 return $existingGroup;
             }
 
-            // Create the group using parent method then add supervisor
             $group = parent::createForQuranCircle($circle);
-
-            // Add supervisor as moderator
-            $this->addMember($group, $supervisor, ChatGroup::ROLE_MODERATOR);
             $group->update(['supervisor_id' => $supervisor->id]);
+
+            $this->addAllSupervisorsToGroup($group, $teacher);
 
             Log::info('Created supervised Quran circle group', [
                 'group_id' => $group->id,
@@ -258,23 +255,19 @@ class SupervisedChatGroupService extends ChatGroupService implements SupervisedC
             return null;
         }
 
-        return DB::transaction(function () use ($course, $supervisor) {
-            // Check if group already exists
+        return DB::transaction(function () use ($course, $teacher, $supervisor) {
             $existingGroup = ChatGroup::where('interactive_course_id', $course->id)->first();
 
             if ($existingGroup) {
-                // Ensure supervisor is current
                 $this->ensureSupervisorIsCurrent($existingGroup, $supervisor);
 
                 return $existingGroup;
             }
 
-            // Create the group using parent method then add supervisor
             $group = parent::createForInteractiveCourse($course);
-
-            // Add supervisor as moderator
-            $this->addMember($group, $supervisor, ChatGroup::ROLE_MODERATOR);
             $group->update(['supervisor_id' => $supervisor->id]);
+
+            $this->addAllSupervisorsToGroup($group, $teacher);
 
             Log::info('Created supervised Interactive course group', [
                 'group_id' => $group->id,
@@ -354,9 +347,7 @@ class SupervisedChatGroupService extends ChatGroupService implements SupervisedC
             return;
         }
 
-        $supervisor = $group->supervisor;
-
-        DB::transaction(function () use ($group, $teacher, $student, $supervisor, $entityType, $entityId) {
+        DB::transaction(function () use ($group, $teacher, $student, $entityType, $entityId) {
             $conversation = new Conversation;
             $conversation->type = ConversationType::GROUP;
             $conversation->save();
@@ -403,18 +394,11 @@ class SupervisedChatGroupService extends ChatGroupService implements SupervisedC
                 }
             }
 
-            // Add supervisor as admin
-            if ($supervisor) {
-                Participant::create([
-                    'conversation_id' => $conversation->id,
-                    'participantable_id' => $supervisor->id,
-                    'participantable_type' => $supervisor->getMorphClass(),
-                    'role' => ParticipantRole::ADMIN,
-                ]);
-            }
-
-            // Link conversation to ChatGroup
+            // Link conversation to ChatGroup first so addAllSupervisorsToGroup can sync wire_participants
             $group->update(['conversation_id' => $conversation->id]);
+
+            // Add all assigned supervisors to both chat_group_members and wire_participants
+            $this->addAllSupervisorsToGroup($group, $teacher);
 
             Log::info('Created WireChat conversation for supervised chat group', [
                 'group_id' => $group->id,
@@ -459,6 +443,28 @@ class SupervisedChatGroupService extends ChatGroupService implements SupervisedC
     }
 
     /**
+     * Add all assigned supervisors to a chat group (both chat_group_members and wire_participants).
+     */
+    protected function addAllSupervisorsToGroup(ChatGroup $group, User $teacher): void
+    {
+        $allSupervisors = $this->supervisorService->getAllSupervisorsForTeacher($teacher);
+
+        foreach ($allSupervisors as $sup) {
+            $this->addMember($group, $sup, ChatGroup::ROLE_MODERATOR);
+
+            if ($group->conversation_id) {
+                Participant::firstOrCreate([
+                    'conversation_id' => $group->conversation_id,
+                    'participantable_id' => $sup->id,
+                    'participantable_type' => $sup->getMorphClass(),
+                ], [
+                    'role' => ParticipantRole::ADMIN,
+                ]);
+            }
+        }
+    }
+
+    /**
      * Add supervisor to all existing groups for a teacher.
      * Called when a supervisor is newly assigned to a teacher.
      */
@@ -468,10 +474,23 @@ class SupervisedChatGroupService extends ChatGroupService implements SupervisedC
         $count = 0;
 
         foreach ($groups as $group) {
-            if (! $group->hasMember($supervisor)) {
-                $this->addMember($group, $supervisor, ChatGroup::ROLE_MODERATOR);
-                $group->update(['supervisor_id' => $supervisor->id]);
+            $existed = $group->hasMember($supervisor);
+            $this->addMember($group, $supervisor, ChatGroup::ROLE_MODERATOR);
+
+            if (! $existed) {
                 $count++;
+            }
+
+            // Also add to wire_participants so the supervisor can see the
+            // conversation in WireChat (chat_group_members alone is not enough)
+            if ($group->conversation_id) {
+                Participant::firstOrCreate([
+                    'conversation_id' => $group->conversation_id,
+                    'participantable_id' => $supervisor->id,
+                    'participantable_type' => $supervisor->getMorphClass(),
+                ], [
+                    'role' => ParticipantRole::ADMIN,
+                ]);
             }
         }
 

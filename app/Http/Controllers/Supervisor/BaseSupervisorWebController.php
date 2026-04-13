@@ -94,13 +94,21 @@ abstract class BaseSupervisorWebController extends Controller
         return $this->getCurrentSupervisorProfile()?->canManageSubscriptions() ?? false;
     }
 
-    protected function canCreateSubscriptions(): bool
+    protected function canViewSubscriptions(): bool
     {
         if ($this->isAdminUser()) {
             return true;
         }
 
-        return $this->getCurrentSupervisorProfile()?->canCreateSubscriptions() ?? false;
+        return $this->getCurrentSupervisorProfile()?->canViewSubscriptions() ?? false;
+    }
+
+    /**
+     * Check if user can access subscriptions pages (either view or manage permission).
+     */
+    protected function canAccessSubscriptions(): bool
+    {
+        return $this->canManageSubscriptions() || $this->canViewSubscriptions();
     }
 
     protected function canManagePayments(): bool

@@ -70,7 +70,7 @@
         </div>
 
         {{-- Action Buttons (directly visible) --}}
-        @if($isAdmin)
+        @if($canManage)
             <div class="flex flex-wrap gap-2">
                 {{-- View Circle/Lesson --}}
                 @if($type === 'quran')
@@ -370,7 +370,7 @@
 </div>
 
 {{-- ═══ MODALS ═══ --}}
-@if($isAdmin ?? false)
+@if($canManage ?? false)
     {{-- Extend Modal --}}
     <div id="show-extend-modal" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>

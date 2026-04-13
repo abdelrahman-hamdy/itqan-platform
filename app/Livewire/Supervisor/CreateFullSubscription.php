@@ -98,7 +98,7 @@ class CreateFullSubscription extends Component
     public function mount(): void
     {
         $user = auth()->user();
-        if (! $user || ! ($user->hasRole(['super_admin', 'admin']) || $user->supervisorProfile?->canCreateSubscriptions())) {
+        if (! $user || ! ($user->hasRole(['super_admin', 'admin']) || $user->supervisorProfile?->canManageSubscriptions())) {
             abort(403);
         }
         $this->loadTeachers();

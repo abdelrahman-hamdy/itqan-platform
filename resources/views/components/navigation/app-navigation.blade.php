@@ -652,7 +652,7 @@
           $sidebarCanManageTeachers = $sidebarIsAdmin || ($sidebarProfile?->canManageTeachers() ?? false);
           $sidebarCanManageStudents = $sidebarIsAdmin || ($sidebarProfile?->canManageStudents() ?? false);
           $sidebarCanManageParents = $sidebarIsAdmin || ($sidebarProfile?->canManageParents() ?? false);
-          $sidebarCanManageSubscriptions = $sidebarIsAdmin || ($sidebarProfile?->canManageSubscriptions() ?? false);
+          $sidebarCanAccessSubscriptions = $sidebarIsAdmin || ($sidebarProfile?->canManageSubscriptions() ?? false) || ($sidebarProfile?->canViewSubscriptions() ?? false);
           $sidebarCanManagePayments = $sidebarIsAdmin || ($sidebarProfile?->canManagePayments() ?? false);
           $sidebarCanManageTeacherEarnings = $sidebarIsAdmin || ($sidebarProfile?->canManageTeacherEarnings() ?? false);
         @endphp
@@ -775,7 +775,7 @@
           <!-- Section: Management -->
           <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase mt-4">{{ __('supervisor.sidebar.management') }}</p>
 
-          @if($sidebarCanManageSubscriptions)
+          @if($sidebarCanAccessSubscriptions)
           <a href="{{ route('manage.subscriptions.index', ['subdomain' => $subdomain]) }}"
              class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('manage.subscriptions.*') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-vip-crown-line text-xl"></i>

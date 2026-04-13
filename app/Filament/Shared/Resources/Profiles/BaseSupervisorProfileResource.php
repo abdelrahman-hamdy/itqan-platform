@@ -261,12 +261,12 @@ abstract class BaseSupervisorProfileResource extends Resource
                     ])->columns(2),
                 Fieldset::make('الإدارة المالية')
                     ->schema([
+                        Toggle::make('can_view_subscriptions')
+                            ->label(__('supervisor.supervisors.can_view_subscriptions'))
+                            ->helperText(__('supervisor.supervisors.can_view_subscriptions_description')),
                         Toggle::make('can_manage_subscriptions')
-                            ->label('إدارة الاشتراكات')
-                            ->helperText('عرض وتفعيل وإيقاف الاشتراكات'),
-                        Toggle::make('can_create_subscriptions')
-                            ->label('إنشاء اشتراكات جديدة')
-                            ->helperText('إنشاء اشتراكات جديدة للطلاب يدوياً'),
+                            ->label(__('supervisor.supervisors.can_manage_subscriptions'))
+                            ->helperText(__('supervisor.supervisors.can_manage_subscriptions_description')),
                         Toggle::make('can_manage_payments')
                             ->label('إدارة المدفوعات')
                             ->helperText('عرض المدفوعات وتأكيد الدفع'),

@@ -17,7 +17,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 {
     public function index(Request $request, $subdomain = null): View
     {
-        if (! $this->canManageSubscriptions()) {
+        if (! $this->canAccessSubscriptions()) {
             abort(403);
         }
 
@@ -193,15 +193,14 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'totalExpired' => $totalExpired,
             'totalCancelled' => $totalCancelled,
             'filteredCount' => $filteredValues->count(),
-            'isAdmin' => $isAdmin,
-            'canCreate' => $this->canCreateSubscriptions(),
+            'canManage' => $this->canManageSubscriptions(),
             'filterUser' => $filterUser,
         ]);
     }
 
     public function show(Request $request, $subdomain, string $type, $id): View
     {
-        if (! $this->canManageSubscriptions()) {
+        if (! $this->canAccessSubscriptions()) {
             abort(403);
         }
 
@@ -257,12 +256,12 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'allSessionsCount' => $allSessionsCount,
             'teacherUser' => $teacherUser,
             'renewedBy' => $renewedBy,
-            'isAdmin' => $this->isAdminUser(),
+            'canManage' => $this->canManageSubscriptions(),
         ]);
     }
 
     // ========================================================================
-    // Quick Actions (all POST, admin-only)
+    // Quick Actions (all POST, manage permission required)
     // ========================================================================
 
     public function activate(Request $request, $subdomain, string $type, $id): RedirectResponse
@@ -340,7 +339,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
     public function cancel(Request $request, $subdomain, string $type, $id): RedirectResponse
     {
-        if (! $this->isAdminUser()) {
+        if (! $this->canManageSubscriptions()) {
             abort(403);
         }
 
@@ -439,7 +438,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
      */
     private function performRenewalAction(Request $request, $subdomain, string $type, int $subscriptionId, string $mode): RedirectResponse
     {
-        if (! $this->isAdminUser()) {
+        if (! $this->canManageSubscriptions()) {
             abort(403);
         }
 
@@ -485,7 +484,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
      */
     public function confirmPayment(Request $request, $subdomain, string $type, int $subscription): RedirectResponse
     {
-        if (! $this->isAdminUser()) {
+        if (! $this->canManageSubscriptions()) {
             abort(403);
         }
 
@@ -512,7 +511,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
      */
     public function destroy(Request $request, $subdomain, string $type, int $subscription): RedirectResponse
     {
-        if (! $this->isAdminUser()) {
+        if (! $this->canManageSubscriptions()) {
             abort(403);
         }
 

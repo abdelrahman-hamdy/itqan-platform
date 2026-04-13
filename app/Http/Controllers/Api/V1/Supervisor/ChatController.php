@@ -31,7 +31,7 @@ class ChatController extends Controller
             );
         }
 
-        $groups = ChatGroup::where('supervisor_id', $user->supervisorProfile?->id)
+        $groups = ChatGroup::where('supervisor_id', $user->id)
             ->with([
                 'conversation.lastMessage',
                 'members.user',
@@ -92,7 +92,7 @@ class ChatController extends Controller
         }
 
         $group = ChatGroup::where('id', $id)
-            ->where('supervisor_id', $user->supervisorProfile?->id)
+            ->where('supervisor_id', $user->id)
             ->with(['members.user'])
             ->first();
 
