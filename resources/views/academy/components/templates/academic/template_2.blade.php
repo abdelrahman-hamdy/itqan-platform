@@ -69,25 +69,25 @@
           <div class="flex-1 p-6 sm:p-7 lg:p-8 flex flex-col">
             {{-- Title + Rating --}}
             <div class="flex items-start justify-between gap-4 mb-3">
-              <h4 class="text-xl sm:text-2xl font-black text-gray-900 leading-snug line-clamp-2">{{ $course->title }}</h4>
+              <h4 class="text-xl sm:text-2xl font-bold text-gray-900 leading-snug line-clamp-2">{{ $course->title }}</h4>
               @if(($course->avg_rating ?? 0) > 0)
-              <span class="shrink-0 flex items-center gap-1 text-sm font-black px-2 py-1 rounded-sm bg-amber-50 text-amber-700">
+              <span class="shrink-0 flex items-center gap-1 text-sm font-semibold px-2 py-1 rounded-md bg-amber-50 text-amber-600">
                 <i class="ri-star-fill text-amber-400 text-xs"></i>{{ number_format($course->avg_rating, 1) }}
               </span>
               @endif
             </div>
 
             @if($course->description)
-            <p class="text-base text-gray-500 line-clamp-3 leading-relaxed mb-5">{{ $course->description }}</p>
+            <p class="text-base text-gray-500 line-clamp-3 leading-7 mb-5">{{ $course->description }}</p>
             @endif
 
-            {{-- Teacher row with avatar --}}
+            {{-- Teacher --}}
             @if($course->assignedTeacher)
-            <div class="flex items-center gap-3 mb-5 p-3 rounded-lg bg-gray-50">
+            <div class="flex items-center gap-3 mb-5">
               <x-avatar :user="$course->assignedTeacher" size="sm" userType="academic_teacher"
                          :gender="$course->assignedTeacher->gender ?? $course->assignedTeacher->user?->gender ?? 'male'" class="shrink-0" />
               <div class="min-w-0">
-                <span class="text-sm font-bold text-gray-900 block truncate">{{ $course->assignedTeacher->full_name }}</span>
+                <span class="text-sm font-semibold text-gray-800 block truncate">{{ $course->assignedTeacher->full_name }}</span>
                 @if($course->assignedTeacher->teaching_experience_years)
                 <span class="text-xs text-gray-400">{{ __('academy.cards.experience_years', ['years' => $course->assignedTeacher->teaching_experience_years]) }}</span>
                 @endif
@@ -95,36 +95,36 @@
             </div>
             @endif
 
-            {{-- Info chips --}}
+            {{-- Info labels --}}
             <div class="flex items-center flex-wrap gap-2 mb-5">
               @if($course->subject)
-              <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600">
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md text-gray-600" style="background: {{ $gradientFromHex }}08; border: 1px solid {{ $gradientFromHex }}18;">
                 <i class="ri-book-open-line text-sm" style="color: {{ $gradientFromHex }};"></i>
                 {{ $course->subject->name }}
               </span>
               @endif
               @if($course->gradeLevel)
-              <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600">
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md text-gray-600" style="background: {{ $gradientFromHex }}08; border: 1px solid {{ $gradientFromHex }}18;">
                 <i class="ri-graduation-cap-line text-sm" style="color: {{ $gradientFromHex }};"></i>
                 {{ $course->gradeLevel->getDisplayName() }}
               </span>
               @endif
-              <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600">
-                <i class="ri-play-circle-line text-sm" style="color: {{ $gradientFromHex }};"></i>
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md bg-gray-50 text-gray-500 border border-gray-100">
+                <i class="ri-play-circle-line text-sm text-gray-400"></i>
                 {{ __('academy.cards.sessions', ['count' => $course->total_sessions ?? 0]) }}
               </span>
-              <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600">
-                <i class="ri-time-line text-sm" style="color: {{ $gradientFromHex }};"></i>
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md bg-gray-50 text-gray-500 border border-gray-100">
+                <i class="ri-time-line text-sm text-gray-400"></i>
                 {{ __('academy.cards.weeks', ['count' => $course->duration_weeks ?? 0]) }}
               </span>
             </div>
 
-            {{-- Schedule tags --}}
+            {{-- Schedule --}}
             @if($course->schedule && is_array($course->schedule) && count($course->schedule) > 0)
             <div class="flex items-center gap-2 flex-wrap mb-5">
               @foreach(array_slice($course->schedule, 0, 4) as $item)
-              <span class="text-xs font-semibold px-2.5 py-1 bg-gray-50 text-gray-500 rounded-md">
-                {{ is_array($item) ? ($item['day'] ?? '') : ($item->day ?? '') }}@if(is_array($item) ? ($item['time'] ?? null) : ($item->time ?? null)): {{ is_array($item) ? $item['time'] : $item->time }}@endif
+              <span class="text-xs font-medium px-2.5 py-1.5 bg-gray-50 text-gray-500 rounded-md border border-gray-100">
+                <i class="ri-calendar-event-line text-gray-400 me-1"></i>{{ is_array($item) ? ($item['day'] ?? '') : ($item->day ?? '') }}@if(is_array($item) ? ($item['time'] ?? null) : ($item->time ?? null)): {{ is_array($item) ? $item['time'] : $item->time }}@endif
               </span>
               @endforeach
             </div>
@@ -135,23 +135,23 @@
             {{-- Price + CTA --}}
             <div class="flex items-center justify-between gap-4 pt-5 border-t border-gray-100">
               @if($course->student_price > 0)
-              <div class="flex items-center gap-2">
+              <div>
                 @if($course->hasDiscount())
-                <span class="text-3xl font-black" style="color: {{ $gradientFromHex }};">{{ number_format($course->sale_price) }}</span>
-                <span class="text-xs text-gray-400">{{ getCurrencySymbol() }}</span>
-                <span class="text-sm text-gray-400 line-through ms-1">{{ number_format($course->student_price) }}</span>
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-600">-{{ round((1 - $course->sale_price / $course->student_price) * 100) }}%</span>
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="text-sm text-gray-400 line-through">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
+                  <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-red-50 text-red-500 border border-red-100">-{{ round((1 - $course->sale_price / $course->student_price) * 100) }}%</span>
+                </div>
+                <span class="text-2xl font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($course->sale_price) }} <span class="text-sm font-normal text-gray-400">{{ getCurrencySymbol() }}</span></span>
                 @else
-                <span class="text-3xl font-black" style="color: {{ $gradientFromHex }};">{{ number_format($course->student_price) }}</span>
-                <span class="text-xs text-gray-400">{{ getCurrencySymbol() }}</span>
+                <span class="text-2xl font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($course->student_price) }} <span class="text-sm font-normal text-gray-400">{{ getCurrencySymbol() }}</span></span>
                 @endif
               </div>
               @else
-              <span class="text-xl font-black text-green-600">{{ __('academy.cards.free') }}</span>
+              <span class="text-xl font-bold text-green-600">{{ __('academy.cards.free') }}</span>
               @endif
 
               <a href="{{ route('interactive-courses.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id]) }}"
-                 class="inline-flex items-center gap-2 px-6 py-3 rounded-sm text-sm font-bold transition-all duration-200 t2-ghost-btn"
+                 class="inline-flex items-center gap-2 px-6 py-3 rounded-sm text-sm font-semibold transition-all duration-200 t2-ghost-btn"
                  style="color: {{ $gradientFromHex }}; border: 2px solid {{ $gradientFromHex }}; --t2-fill: {{ $gradientFromHex }};">
                 {{ __('academy.cards.view_details') }}
                 <i class="ri-arrow-left-s-line text-base ltr:rotate-180"></i>
