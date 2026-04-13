@@ -137,17 +137,17 @@
               @if($course->student_price > 0)
               <div>
                 @if($course->hasDiscount())
-                <div class="flex items-center gap-2 mb-0.5">
-                  <span class="text-sm text-gray-400 line-through">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
-                  <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-red-50 text-red-500 border border-red-100">-{{ round((1 - $course->sale_price / $course->student_price) * 100) }}%</span>
+                <div class="flex items-baseline gap-3">
+                  <span class="text-3xl font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($course->sale_price) }} {{ getCurrencySymbol() }}</span>
+                  <span class="text-lg text-gray-300 line-through">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
+                  <span class="text-xs font-semibold px-2 py-1 rounded bg-red-50 text-red-500 border border-red-100">-{{ round((1 - $course->sale_price / $course->student_price) * 100) }}%</span>
                 </div>
-                <span class="text-2xl font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($course->sale_price) }} <span class="text-sm font-normal text-gray-400">{{ getCurrencySymbol() }}</span></span>
                 @else
-                <span class="text-2xl font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($course->student_price) }} <span class="text-sm font-normal text-gray-400">{{ getCurrencySymbol() }}</span></span>
+                <span class="text-3xl font-bold" style="color: {{ $gradientFromHex }};">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
                 @endif
               </div>
               @else
-              <span class="text-xl font-bold text-green-600">{{ __('academy.cards.free') }}</span>
+              <span class="text-2xl font-bold text-green-600">{{ __('academy.cards.free') }}</span>
               @endif
 
               <a href="{{ route('interactive-courses.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id]) }}"
