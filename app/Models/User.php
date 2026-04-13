@@ -114,10 +114,8 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
                 try {
                     $user->createProfile();
                 } catch (UniqueConstraintViolationException $e) {
-                    // Profile already exists, likely from parallel test execution - ignore
-                    if (! app()->environment('testing')) {
-                        throw $e;
-                    }
+                    // Profile with same email may exist in another academy — skip auto-creation
+                    // and let the registration controller handle it with correct data
                 }
             }
         });

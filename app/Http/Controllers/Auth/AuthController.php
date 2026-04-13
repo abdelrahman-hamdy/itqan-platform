@@ -227,42 +227,24 @@ class AuthController extends Controller
         $user->active_status = true;
         $user->save();
 
-        // Create or update student profile
-        $existingProfile = StudentProfile::withoutGlobalScopes()
-            ->where(function ($query) use ($user, $request) {
-                $query->where('user_id', $user->id)
-                    ->orWhere('email', $request->email);
-            })->first();
+        // Create or update student profile (boot event may have auto-created one)
+        $profileData = [
+            'email' => $request->email,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'phone' => $request->phone,
+            'birth_date' => $request->birth_date,
+            'gender' => $request->gender,
+            'nationality' => $request->nationality,
+            'grade_level_id' => $request->grade_level,
+            'parent_phone' => $request->parent_phone,
+        ];
 
-        if ($existingProfile) {
-            // Update existing profile
-            $existingProfile->update([
-                'user_id' => $user->id,
-                'email' => $request->email,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'phone' => $request->phone,
-                'birth_date' => $request->birth_date,
-                'gender' => $request->gender,
-                'nationality' => $request->nationality,
-                'grade_level_id' => $request->grade_level,
-                'parent_phone' => $request->parent_phone,
-            ]);
-        } else {
-            // Create new student profile
-            StudentProfile::create([
-                'user_id' => $user->id,
-                'email' => $request->email,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'phone' => $request->phone,
-                'birth_date' => $request->birth_date,
-                'gender' => $request->gender,
-                'nationality' => $request->nationality,
-                'grade_level_id' => $request->grade_level,
-                'parent_phone' => $request->parent_phone,
-            ]);
-        }
+        StudentProfile::withoutGlobalScopes()
+            ->updateOrCreate(
+                ['user_id' => $user->id],
+                $profileData,
+            );
 
         // Auto-login the user
         Auth::login($user);
