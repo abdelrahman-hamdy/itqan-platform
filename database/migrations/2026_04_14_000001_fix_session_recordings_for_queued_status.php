@@ -17,17 +17,28 @@ return new class extends Migration
         // Make started_at nullable — queued records haven't started
         DB::statement('ALTER TABLE session_recordings MODIFY COLUMN started_at TIMESTAMP NULL');
 
-        // Drop unique index on recording_id (queued records have NULL recording_id)
-        Schema::table('session_recordings', function ($table) {
-            $table->dropUnique(['recording_id']);
-            $table->index('recording_id');
-        });
+        // Drop unique constraint on recording_id (queued records have NULL)
+        // Use raw SQL to avoid issues with Laravel's index name conventions
+        try {
+            DB::statement('ALTER TABLE session_recordings DROP INDEX session_recordings_recording_id_unique');
+        } catch (\Exception $e) {
+            // Index may not exist or already dropped
+        }
 
-        // Add indexes for queue operations
-        Schema::table('session_recordings', function ($table) {
-            $table->index(['status', 'queued_at']);
-            $table->index(['recordable_type', 'recordable_id', 'status']);
-        });
+        // Add indexes for queue operations (idempotent)
+        try {
+            DB::statement('CREATE INDEX session_recordings_recording_id_index ON session_recordings (recording_id)');
+        } catch (\Exception $e) {
+            // Index may already exist
+        }
+        try {
+            DB::statement('CREATE INDEX session_recordings_status_queued_at_index ON session_recordings (status, queued_at)');
+        } catch (\Exception $e) {
+        }
+        try {
+            DB::statement('CREATE INDEX session_recordings_recordable_status_index ON session_recordings (recordable_type, recordable_id, status)');
+        } catch (\Exception $e) {
+        }
     }
 
     public function down(): void
