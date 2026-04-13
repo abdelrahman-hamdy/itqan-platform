@@ -407,6 +407,10 @@ class LiveKitConnection {
      */
     async applyNoiseSuppression(localAudioTrack) {
         try {
+            if (this.noiseProcessor) {
+                this.noiseProcessor.stopProcessing();
+                this.noiseProcessor = null;
+            }
             const { NoiseSuppressionProcessor } = await import('/js/livekit/noise-suppression/noise_suppression.js');
             if (!NoiseSuppressionProcessor.isSupported()) {
                 if (window.MT) window.MT.event('audio', 'noise_suppression_unsupported', {});

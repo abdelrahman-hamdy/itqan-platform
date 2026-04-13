@@ -1563,6 +1563,9 @@ function completeSession(sessionId) {
 </script>
 @endif
 
+<!-- Preload noise suppression WASM module during room connection (before mic publish) -->
+<link rel="modulepreload" href="/js/livekit/noise-suppression/noise_suppression.js">
+
 <!-- Meeting Container -->
 <div id="meetingContainer" class="bg-white rounded-lg shadow-md overflow-hidden mt-8" style="display: none;">
     <!-- iOS Safari Audio Hint -->
