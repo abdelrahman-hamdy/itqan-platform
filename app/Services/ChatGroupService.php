@@ -308,21 +308,17 @@ class ChatGroupService
      */
     public function addMember(ChatGroup $group, User $user, string $role = ChatGroup::ROLE_MEMBER, bool $canSendMessages = true): ChatGroupMember
     {
-        // Check if already a member
-        $existingMember = $group->memberships()
-            ->where('user_id', $user->id)
-            ->first();
-        if ($existingMember) {
-            return $existingMember;
-        }
-
-        return ChatGroupMember::create([
-            'group_id' => $group->id,
-            'user_id' => $user->id,
-            'role' => $role,
-            'can_send_messages' => $canSendMessages,
-            'joined_at' => now(),
-        ]);
+        return ChatGroupMember::firstOrCreate(
+            [
+                'group_id' => $group->id,
+                'user_id' => $user->id,
+            ],
+            [
+                'role' => $role,
+                'can_send_messages' => $canSendMessages,
+                'joined_at' => now(),
+            ]
+        );
     }
 
     /**

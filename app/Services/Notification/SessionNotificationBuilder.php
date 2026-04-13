@@ -9,6 +9,7 @@ use App\Enums\NotificationType;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Builds and sends session-related notifications.
@@ -158,7 +159,16 @@ class SessionNotificationBuilder
      */
     public function sendAttendanceMarkedNotification(Model $attendance, User $student, string|AttendanceStatus $status): void
     {
-        $session = $attendance->attendanceable;
+        $session = $attendance->session;
+
+        if (! $session) {
+            Log::warning('Attendance notification skipped: session not found', [
+                'attendance_id' => $attendance->id,
+            ]);
+
+            return;
+        }
+
         $statusValue = $status instanceof AttendanceStatus ? $status->value : $status;
 
         $type = match ($statusValue) {

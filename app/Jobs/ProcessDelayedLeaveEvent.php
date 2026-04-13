@@ -105,6 +105,25 @@ class ProcessDelayedLeaveEvent implements ShouldQueue
             ->first();
 
         if (! $joinEvent) {
+            // Check if the join was already closed by the main webhook handler
+            $alreadyClosed = MeetingAttendanceEvent::where('session_id', $this->sessionId)
+                ->where('session_type', $this->sessionType)
+                ->where('user_id', $this->userId)
+                ->where('participant_sid', $this->participantSid)
+                ->where('event_type', MeetingEventType::JOINED)
+                ->whereNotNull('left_at')
+                ->exists();
+
+            if ($alreadyClosed) {
+                Log::info('[ProcessDelayedLeaveEvent] Join already closed by main handler', [
+                    'session_id' => $this->sessionId,
+                    'user_id' => $this->userId,
+                    'participant_sid' => $this->participantSid,
+                ]);
+
+                return;
+            }
+
             Log::warning('[ProcessDelayedLeaveEvent] Join event still not found', [
                 'session_id' => $this->sessionId,
                 'user_id' => $this->userId,
@@ -112,7 +131,6 @@ class ProcessDelayedLeaveEvent implements ShouldQueue
                 'attempt' => $this->attempts(),
             ]);
 
-            // If we've exhausted retries, log and give up
             if ($this->attempts() >= $this->tries) {
                 Log::error('[ProcessDelayedLeaveEvent] Exhausted retries - join event never found', [
                     'session_id' => $this->sessionId,
@@ -123,7 +141,6 @@ class ProcessDelayedLeaveEvent implements ShouldQueue
                 return;
             }
 
-            // Release back to queue for retry with the appropriate backoff delay
             $this->release($this->backoff[$this->attempts() - 1] ?? 120);
 
             return;
