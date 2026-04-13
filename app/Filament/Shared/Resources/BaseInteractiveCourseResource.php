@@ -400,7 +400,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                                 ->required(),
                             Select::make('period')
                                 ->label(__('supervisor.interactive_courses.schedule_period'))
-                                ->options(['am' => __('common.am'), 'pm' => __('common.pm')])
+                                ->options(['am' => __('common.time.am'), 'pm' => __('common.time.pm')])
                                 ->required(),
                         ]),
                     ])

@@ -119,11 +119,12 @@
             </div>
 
             {{-- Schedule --}}
-            @if($course->schedule && is_array($course->schedule) && count($course->schedule) > 0)
+            @php $formattedSchedule = $course->formatted_schedule; @endphp
+            @if(count($formattedSchedule) > 0)
             <div class="flex items-center gap-2 flex-wrap mb-5">
-              @foreach(array_slice($course->schedule, 0, 4) as $item)
-              <span class="text-xs font-medium px-2.5 py-1.5 bg-gray-50 text-gray-500 rounded-md border border-gray-100">
-                <i class="ri-calendar-event-line text-gray-400 me-1"></i>{{ is_array($item) ? ($item['day'] ?? '') : ($item->day ?? '') }}@if(is_array($item) ? ($item['time'] ?? null) : ($item->time ?? null)): {{ is_array($item) ? $item['time'] : $item->time }}@endif
+              @foreach(array_slice($formattedSchedule, 0, 4) as $entry)
+              <span class="text-xs font-medium px-3 py-1.5 bg-gray-50 text-gray-500 rounded-md border border-gray-100">
+                <i class="ri-calendar-event-line text-gray-400 me-1"></i>{{ $entry['day'] }}: {{ $entry['time'] }}
               </span>
               @endforeach
             </div>

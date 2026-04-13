@@ -479,8 +479,8 @@
                                                     </select>
                                                     <select :name="'schedule_periods[' + index + ']'" x-model="entry.period"
                                                             class="w-16 rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
-                                                        <option value="am">{{ __('common.am') }}</option>
-                                                        <option value="pm">{{ __('common.pm') }}</option>
+                                                        <option value="am">{{ __('common.time.am') }}</option>
+                                                        <option value="pm">{{ __('common.time.pm') }}</option>
                                                     </select>
                                                     <button type="button" @click="removeEntry(index)" x-show="entries.length > 1"
                                                             class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">

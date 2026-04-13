@@ -84,9 +84,9 @@
       </div>
       @php $formattedSchedule = $course->formatted_schedule; @endphp
       @if(count($formattedSchedule) > 0)
-      <div class="flex flex-wrap gap-1 mt-2 ms-12">
+      <div class="flex flex-wrap gap-1.5 mt-2 ms-12">
         @foreach($formattedSchedule as $entry)
-        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-white text-blue-700 border border-blue-200">
+        <span class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium bg-white text-blue-700 border border-blue-200">
           {{ $entry['day'] }}: {{ $entry['time'] }}
         </span>
         @endforeach

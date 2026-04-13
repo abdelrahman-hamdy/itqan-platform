@@ -347,10 +347,10 @@ class InteractiveCourse extends Model
         }
         [$hour, $minute] = explode(':', $time);
         $h = (int) $hour;
-        $period = $h >= 12 ? __('common.pm') : __('common.am');
+        $period = $h >= 12 ? __('common.time.pm') : __('common.time.am');
         $h12 = $h % 12 ?: 12;
 
-        return $h12.':'.$minute.' '.$period;
+        return $minute === '00' ? $h12.' '.$period : $h12.':'.$minute.' '.$period;
     }
 
     public function getPaymentTypeInArabicAttribute(): string
