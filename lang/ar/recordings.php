@@ -21,4 +21,7 @@ return [
     'player_title' => 'تسجيل الجلسة',
     'loading_player' => 'جاري تحميل المشغّل...',
     'download_recording' => 'تحميل التسجيل',
+    'format_not_supported' => 'صيغة الملف غير مدعومة، يرجى التحميل بدلاً من ذلك',
+    'previous' => 'السابق',
+    'next' => 'التالي',
 ];

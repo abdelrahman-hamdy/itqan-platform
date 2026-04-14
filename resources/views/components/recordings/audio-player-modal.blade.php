@@ -1,13 +1,13 @@
-{{-- Audio Player Modal with WaveSurfer.js waveform + playlist navigation (render once per page) --}}
+{{-- Audio Player Modal — native <audio> + Alpine.js (render once per page) --}}
 @once
 <div
     x-data="{
         open: false,
-        loaded: false,
         playing: false,
-        currentTime: '00:00',
-        totalTime: '00:00',
-        wavesurfer: null,
+        loading: false,
+        error: false,
+        currentTime: 0,
+        duration: 0,
         audioUrl: '',
         downloadUrl: '',
         recordingDate: '',
@@ -19,72 +19,40 @@
 
         get hasPrev() { return this.currentIndex > 0; },
         get hasNext() { return this.currentIndex < this.playlist.length - 1; },
+        get progress() { return this.duration > 0 ? (this.currentTime / this.duration) * 100 : 0; },
+        get currentTimeStr() { return this.fmt(this.currentTime); },
+        get durationStr() { return this.fmt(this.duration); },
 
         init() {
-            this.$watch('open', (val) => {
-                if (val && !this.loaded) this.loadWaveSurfer();
-                if (!val && this.wavesurfer) { this.wavesurfer.pause(); this.playing = false; }
-            });
+            const a = this.$refs.audio;
+            a.addEventListener('timeupdate', () => { this.currentTime = a.currentTime; });
+            a.addEventListener('loadedmetadata', () => { this.duration = a.duration; this.loading = false; this.error = false; });
+            a.addEventListener('play', () => { this.playing = true; });
+            a.addEventListener('pause', () => { this.playing = false; });
+            a.addEventListener('ended', () => { this.playing = false; if (this.hasNext) this.next(); });
+            a.addEventListener('error', () => { this.loading = false; this.error = true; this.playing = false; });
+            a.addEventListener('waiting', () => { this.loading = true; });
+            a.addEventListener('canplay', () => { this.loading = false; });
         },
 
-        async loadWaveSurfer() {
-            if (typeof WaveSurfer === 'undefined') {
-                await new Promise((resolve, reject) => {
-                    const s = document.createElement('script');
-                    s.src = 'https://unpkg.com/wavesurfer.js@7';
-                    s.onload = resolve;
-                    s.onerror = reject;
-                    document.head.appendChild(s);
-                });
-            }
-            this.loaded = true;
-            this.$nextTick(() => this.createPlayer());
+        toggle() {
+            const a = this.$refs.audio;
+            if (this.error) return;
+            if (a.paused) { a.play().catch(() => { this.error = true; }); }
+            else { a.pause(); }
         },
 
-        createPlayer() {
-            if (this.wavesurfer) this.wavesurfer.destroy();
-
-            // Use a media element backend — avoids decodeAudioData which
-            // fails on OGG/Opus in Safari. The media element delegates
-            // decoding to the browser's media pipeline instead.
-            const audio = document.createElement('audio');
-            audio.crossOrigin = 'anonymous';
-
-            this.wavesurfer = WaveSurfer.create({
-                container: this.$refs.waveform,
-                waveColor: '#e2e8f0',
-                progressColor: '#3b82f6',
-                cursorColor: '#1d4ed8',
-                barWidth: 3,
-                barGap: 2,
-                barRadius: 3,
-                height: 64,
-                normalize: true,
-                media: audio,
-                url: this.audioUrl,
-            });
-
-            this.wavesurfer.on('ready', () => {
-                this.totalTime = this.fmt(this.wavesurfer.getDuration());
-            });
-            this.wavesurfer.on('timeupdate', (t) => {
-                this.currentTime = this.fmt(t);
-            });
-            this.wavesurfer.on('finish', () => {
-                this.playing = false;
-                if (this.hasNext) this.next();
-            });
-            this.wavesurfer.on('play', () => { this.playing = true; });
-            this.wavesurfer.on('pause', () => { this.playing = false; });
+        seek(event) {
+            const rect = event.currentTarget.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const pct = Math.max(0, Math.min(1, x / rect.width));
+            // RTL: progress bar is always LTR, so no flip needed
+            this.$refs.audio.currentTime = pct * this.duration;
         },
-
-        toggle() { this.wavesurfer?.playPause(); },
 
         skip(sec) {
-            if (!this.wavesurfer) return;
-            const cur = this.wavesurfer.getCurrentTime();
-            const dur = this.wavesurfer.getDuration();
-            this.wavesurfer.setTime(Math.max(0, Math.min(cur + sec, dur)));
+            const a = this.$refs.audio;
+            a.currentTime = Math.max(0, Math.min(a.currentTime + sec, this.duration));
         },
 
         next() {
@@ -101,30 +69,36 @@
             const track = this.playlist[index];
             if (!track) return;
             this.currentIndex = index;
+            this.setTrackData(track);
+            this.loadAudio();
+        },
+
+        setTrackData(track) {
             this.audioUrl = track.streamUrl;
             this.downloadUrl = track.downloadUrl;
             this.recordingDate = track.date || '';
             this.recordingDuration = track.duration || '';
             this.recordingSize = track.size || '';
             this.recordingTitle = track.title || '';
-            this.currentTime = '00:00';
-            this.totalTime = '00:00';
-            if (this.loaded) this.$nextTick(() => this.createPlayer());
+        },
+
+        loadAudio() {
+            const a = this.$refs.audio;
+            this.currentTime = 0;
+            this.duration = 0;
+            this.playing = false;
+            this.loading = true;
+            this.error = false;
+            a.src = this.audioUrl;
+            a.load();
         },
 
         openPlayer(detail) {
             this.playlist = [detail];
             this.currentIndex = 0;
-            this.audioUrl = detail.streamUrl;
-            this.downloadUrl = detail.downloadUrl;
-            this.recordingDate = detail.date || '';
-            this.recordingDuration = detail.duration || '';
-            this.recordingSize = detail.size || '';
-            this.recordingTitle = detail.title || '';
-            this.currentTime = '00:00';
-            this.totalTime = '00:00';
+            this.setTrackData(detail);
             this.open = true;
-            if (this.loaded) this.$nextTick(() => this.createPlayer());
+            this.$nextTick(() => this.loadAudio());
         },
 
         openPlaylist(detail) {
@@ -132,16 +106,15 @@
             this.currentIndex = detail.startIndex || 0;
             const track = this.playlist[this.currentIndex];
             if (!track) return;
-            this.audioUrl = track.streamUrl;
-            this.downloadUrl = track.downloadUrl;
-            this.recordingDate = track.date || '';
-            this.recordingDuration = track.duration || '';
-            this.recordingSize = track.size || '';
-            this.recordingTitle = track.title || '';
-            this.currentTime = '00:00';
-            this.totalTime = '00:00';
+            this.setTrackData(track);
             this.open = true;
-            if (this.loaded) this.$nextTick(() => this.createPlayer());
+            this.$nextTick(() => this.loadAudio());
+        },
+
+        closePlayer() {
+            this.$refs.audio.pause();
+            this.playing = false;
+            this.open = false;
         },
 
         fmt(s) {
@@ -152,61 +125,85 @@
     }"
     x-on:open-audio-player.window="openPlayer($event.detail)"
     x-on:open-audio-player-playlist.window="openPlaylist($event.detail)"
-    x-on:keydown.escape.window="open = false"
+    x-on:keydown.escape.window="if (open) closePlayer()"
     x-show="open"
     x-cloak
     class="fixed inset-0 z-[9999]"
 >
+    {{-- Hidden audio element --}}
+    <audio x-ref="audio" preload="metadata" crossorigin="anonymous"></audio>
+
     {{-- Backdrop --}}
-    <div class="fixed inset-0 bg-black/60" x-show="open" x-transition.opacity @click="open = false"></div>
+    <div class="fixed inset-0 bg-black/60" x-show="open" x-transition.opacity @click="closePlayer()"></div>
 
     {{-- Modal --}}
-    <div class="fixed inset-0 flex items-center justify-center p-4" x-show="open" x-transition @click="open = false">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.stop>
+    <div class="fixed inset-0 flex items-center justify-center p-4" x-show="open" x-transition @click="closePlayer()">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.stop>
 
             {{-- Header --}}
-            <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
                 <div class="flex-1 min-w-0">
-                    <h3 class="text-sm font-semibold text-gray-800 truncate" x-text="recordingTitle || '{{ __('recordings.player_title') }}'"></h3>
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate" x-text="recordingTitle || '{{ __('recordings.player_title') }}'"></h3>
                     <p x-show="playlist.length > 1" class="text-[10px] text-gray-400 mt-0.5" x-text="(currentIndex + 1) + ' / ' + playlist.length"></p>
                 </div>
-                <button @click="open = false" class="p-1 rounded-md hover:bg-gray-100 transition-colors ms-2">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <button @click="closePlayer()" class="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ms-2">
+                    <i class="ri-close-line text-gray-400"></i>
                 </button>
             </div>
 
-            {{-- Waveform --}}
-            <div class="px-5 pt-4 pb-1">
-                <div x-ref="waveform" class="w-full bg-gray-50 rounded-lg overflow-hidden" style="min-height: 64px">
-                    <template x-if="!loaded">
-                        <div class="flex items-center justify-center h-16 text-gray-400 text-xs">
-                            <svg class="animate-spin w-4 h-4 me-1.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                            {{ __('recordings.loading_player') }}
+            {{-- Progress Bar --}}
+            <div class="px-5 pt-5 pb-2">
+                {{-- Error state --}}
+                <template x-if="error">
+                    <div class="flex items-center justify-center h-16 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-500 text-xs gap-2">
+                        <i class="ri-error-warning-line text-base"></i>
+                        {{ __('recordings.format_not_supported') }}
+                    </div>
+                </template>
+
+                {{-- Loading state --}}
+                <template x-if="loading && !error">
+                    <div class="flex items-center justify-center h-16 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-400 text-xs gap-2">
+                        <i class="ri-loader-4-line animate-spin text-base"></i>
+                        {{ __('recordings.loading_player') }}
+                    </div>
+                </template>
+
+                {{-- Progress bar (clickable to seek) --}}
+                <template x-if="!loading && !error">
+                    <div>
+                        <div class="relative h-10 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-pointer group overflow-hidden" @click="seek($event)" dir="ltr">
+                            {{-- Filled progress --}}
+                            <div class="absolute inset-y-0 start-0 bg-blue-500/20 dark:bg-blue-500/30 transition-all duration-100 rounded-lg"
+                                 :style="'width: ' + progress + '%'"></div>
+                            {{-- Progress handle --}}
+                            <div class="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-blue-600 rounded-full shadow transition-all duration-100 opacity-0 group-hover:opacity-100"
+                                 :style="'left: calc(' + progress + '% - 6px)'"></div>
+                            {{-- Center time display --}}
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-xs font-mono text-gray-500 dark:text-gray-400" x-text="currentTimeStr + ' / ' + durationStr"></span>
+                            </div>
                         </div>
-                    </template>
-                </div>
-                <div class="flex justify-between text-[10px] text-gray-400 mt-1 font-mono" dir="ltr">
-                    <span x-text="currentTime"></span>
-                    <span x-text="totalTime"></span>
-                </div>
+                    </div>
+                </template>
             </div>
 
-            {{-- Controls with prev/next --}}
+            {{-- Controls --}}
             <div class="flex items-center justify-center gap-4 py-3">
-                <button @click="prev()" class="p-1.5 rounded-full hover:bg-gray-100 transition-colors" :class="hasPrev ? 'text-gray-500' : 'text-gray-200 cursor-default'" :disabled="!hasPrev" title="{{ __('recordings.previous') }}">
+                <button @click="prev()" class="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" :class="hasPrev ? 'text-gray-500' : 'text-gray-200 dark:text-gray-600 cursor-default'" :disabled="!hasPrev">
                     <i class="ri-skip-back-fill text-lg"></i>
                 </button>
-                <button @click="skip(10)" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 transition-colors" title="+10s">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z"/></svg>
+                <button @click="skip(-10)" class="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors" title="-10s">
+                    <i class="ri-replay-10-line text-xl"></i>
                 </button>
-                <button @click="toggle()" class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow hover:bg-blue-700 transition-colors">
-                    <svg x-show="!playing" class="w-6 h-6 ms-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    <svg x-show="playing" x-cloak class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                <button @click="toggle()" class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow hover:bg-blue-700 transition-colors" :class="error ? 'opacity-50 cursor-not-allowed' : ''">
+                    <i x-show="!playing" class="ri-play-fill text-2xl ms-0.5"></i>
+                    <i x-show="playing" x-cloak class="ri-pause-fill text-2xl"></i>
                 </button>
-                <button @click="skip(-10)" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 transition-colors" title="-10s">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/></svg>
+                <button @click="skip(10)" class="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors" title="+10s">
+                    <i class="ri-forward-10-line text-xl"></i>
                 </button>
-                <button @click="next()" class="p-1.5 rounded-full hover:bg-gray-100 transition-colors" :class="hasNext ? 'text-gray-500' : 'text-gray-200 cursor-default'" :disabled="!hasNext" title="{{ __('recordings.next') }}">
+                <button @click="next()" class="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" :class="hasNext ? 'text-gray-500' : 'text-gray-200 dark:text-gray-600 cursor-default'" :disabled="!hasNext">
                     <i class="ri-skip-forward-fill text-lg"></i>
                 </button>
             </div>
@@ -214,26 +211,26 @@
             {{-- Metadata --}}
             <div class="mx-5 flex items-center justify-center gap-3 text-[11px] text-gray-400">
                 <span x-show="recordingDate" class="flex items-center gap-1">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <i class="ri-calendar-line text-xs"></i>
                     <span x-text="recordingDate"></span>
                 </span>
                 <span x-show="recordingDuration" class="flex items-center gap-1">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <i class="ri-time-line text-xs"></i>
                     <span x-text="recordingDuration"></span>
                 </span>
                 <span x-show="recordingSize" class="flex items-center gap-1">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    <i class="ri-hard-drive-2-line text-xs"></i>
                     <span x-text="recordingSize"></span>
                 </span>
             </div>
 
-            {{-- Download + Retention --}}
-            <div class="px-5 pt-3 pb-6 space-y-2">
-                <a :href="downloadUrl" class="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-medium transition-colors border border-gray-200">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            {{-- Download --}}
+            <div class="px-5 pt-3 pb-5 space-y-2">
+                <a :href="downloadUrl" class="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs font-medium transition-colors border border-gray-200 dark:border-gray-600">
+                    <i class="ri-download-line"></i>
                     {{ __('recordings.download_recording') }}
                 </a>
-                <p class="text-[10px] text-gray-300 text-center">{{ __('recordings.retention_notice') }}</p>
+                <p class="text-[10px] text-gray-300 dark:text-gray-600 text-center">{{ __('recordings.retention_notice') }}</p>
             </div>
         </div>
     </div>

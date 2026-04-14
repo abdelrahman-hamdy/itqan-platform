@@ -21,4 +21,7 @@ return [
     'player_title' => 'Session Recording',
     'loading_player' => 'Loading player...',
     'download_recording' => 'Download Recording',
+    'format_not_supported' => 'Format not supported, please download instead',
+    'previous' => 'Previous',
+    'next' => 'Next',
 ];
