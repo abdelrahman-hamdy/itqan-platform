@@ -48,13 +48,13 @@
 
     {{-- Featured image --}}
     @if($course->featured_image)
-    <div class="rounded-2xl overflow-hidden mb-6 md:mb-8">
+    <div class="overflow-hidden rounded-t-2xl">
       <img src="{{ \Illuminate\Support\Facades\Storage::url($course->featured_image) }}" alt="{{ $course->title }}" class="w-full h-48 sm:h-64 md:h-80 object-cover">
     </div>
     @endif
 
     <!-- Hero Section -->
-    <div class="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 mb-6 md:mb-8 border border-blue-100">
+    <div class="bg-gradient-to-br from-blue-50 to-white {{ $course->featured_image ? 'rounded-b-2xl' : 'rounded-2xl' }} p-4 sm:p-6 md:p-8 lg:p-10 mb-6 md:mb-8 border border-blue-100 {{ $course->featured_image ? 'border-t-0' : '' }}">
         <!-- Status Badge with Rating -->
         <div class="flex items-center justify-between gap-4 mb-4 flex-wrap">
             <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full {{ $statusBg }} {{ $statusText }} text-sm font-medium">
@@ -87,7 +87,7 @@
 
         <!-- Description -->
         @if($course->description)
-        <p class="text-sm md:text-base lg:text-lg text-gray-600 leading-relaxed mb-4 md:mb-6">{{ $course->description }}</p>
+        <p class="text-sm md:text-base lg:text-lg text-gray-600 leading-relaxed mb-4 md:mb-6">{!! nl2br(e($course->description)) !!}</p>
         @endif
 
         <!-- Quick Info Pills -->
@@ -143,7 +143,7 @@
                 <!-- Teacher Information -->
                 @if($course->assignedTeacher)
                 <div class="mb-6 md:mb-10">
-                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
+                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2 bg-blue-50 rounded-lg px-4 py-2.5">
                         <i class="ri-user-star-line text-blue-500"></i>
                         {{ __('student.interactive_course.teacher_title') }}
                     </h2>
@@ -152,7 +152,7 @@
                         <div class="flex-shrink-0">
                             <x-avatar
                                 :user="$course->assignedTeacher->user"
-                                size="2xl"
+                                size="xl"
                                 userType="academic_teacher"
                                 :gender="$course->assignedTeacher->gender ?? 'male'" />
                         </div>
@@ -266,7 +266,7 @@
                 <!-- Learning Outcomes -->
                 @if($course->learning_outcomes && count($course->learning_outcomes) > 0)
                 <div class="mb-6 md:mb-10">
-                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
+                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2 bg-green-50 rounded-lg px-4 py-2.5">
                         <i class="ri-lightbulb-flash-line text-green-600"></i>
                         {{ __('student.interactive_course.learning_outcomes_title') }}
                     </h2>
@@ -291,7 +291,7 @@
                 <!-- Prerequisites -->
                 @if($course->prerequisites && count($course->prerequisites) > 0)
                 <div class="mb-6 md:mb-10">
-                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
+                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2 bg-blue-50 rounded-lg px-4 py-2.5">
                         <i class="ri-file-list-3-line text-blue-600"></i>
                         {{ __('student.interactive_course.prerequisites_title') }}
                     </h2>
@@ -319,7 +319,7 @@
                 @php $formattedSchedule = $course->formatted_schedule; @endphp
                 @if(count($formattedSchedule) > 0)
                 <div>
-                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
+                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2 bg-purple-50 rounded-lg px-4 py-2.5">
                         <i class="ri-calendar-2-line text-purple-600"></i>
                         {{ __('student.interactive_course.schedule_title') }}
                     </h2>
