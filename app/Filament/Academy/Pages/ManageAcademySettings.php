@@ -55,6 +55,12 @@ class ManageAcademySettings extends Page implements HasForms
 
         $data = $academy->toArray();
         // Form uses semantic names; DB columns kept their legacy names.
+        $data['meeting_settings'] = [
+            'default_preparation_minutes' => $academySettings->default_preparation_minutes ?? 10,
+            'default_buffer_minutes' => $academySettings->default_buffer_minutes ?? 5,
+            'teacher_reschedule_deadline_hours' => $academySettings->teacher_reschedule_deadline_hours ?? 24,
+        ];
+
         $data['attendance_settings'] = [
             'student_full_attendance_percent' => $academySettings->default_attendance_threshold_percentage,
             'student_partial_attendance_percent' => $academySettings->student_minimum_presence_percent,
@@ -169,6 +175,42 @@ class ManageAcademySettings extends Page implements HasForms
                     ])
                     ->columns(2),
 
+                Section::make('إعدادات الجلسات والاجتماعات')
+                    ->description('إعدادات توقيت الاجتماعات وجدولة المعلمين')
+                    ->collapsible()
+                    ->schema([
+                        TextInput::make('meeting_settings.default_preparation_minutes')
+                            ->label('وقت تحضير الاجتماع (دقيقة)')
+                            ->helperText('الوقت قبل بداية الجلسة لإنشاء أو فتح الاجتماع')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(60)
+                            ->default(10)
+                            ->required()
+                            ->suffix('دقيقة'),
+
+                        TextInput::make('meeting_settings.default_buffer_minutes')
+                            ->label('وقت إضافي بعد انتهاء الجلسة (دقيقة)')
+                            ->helperText('الوقت الإضافي لبقاء الاجتماع مفتوحاً بعد انتهاء الجلسة')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(60)
+                            ->default(5)
+                            ->required()
+                            ->suffix('دقيقة'),
+
+                        TextInput::make('meeting_settings.teacher_reschedule_deadline_hours')
+                            ->label('مهلة إعادة جدولة المعلم (ساعة)')
+                            ->helperText('الحد الأدنى من الساعات قبل بدء الجلسة التي يمكن للمعلم إعادة جدولتها. القيمة 0 تعني بدون قيود.')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(168)
+                            ->default(24)
+                            ->required()
+                            ->suffix('ساعة'),
+                    ])
+                    ->columns(3),
+
                 Section::make(__('settings.attendance_rules'))
                     ->description(__('settings.attendance_rules_description'))
                     ->schema([
@@ -238,17 +280,18 @@ class ManageAcademySettings extends Page implements HasForms
     {
         $data = $this->form->getState();
 
-        // Separate attendance settings from academy fields
+        // Separate meeting + attendance settings from academy fields
+        $meetingData = $data['meeting_settings'] ?? [];
         $attendanceData = $data['attendance_settings'] ?? [];
-        unset($data['attendance_settings']);
+        unset($data['meeting_settings'], $data['attendance_settings']);
 
-        // Cross-field validation: partial must be ≤ full for both student and teacher.
-        $studentFull = (float) ($attendanceData['student_full_attendance_percent'] ?? 80);
-        $studentPartial = (float) ($attendanceData['student_partial_attendance_percent'] ?? 50);
-        $teacherFull = (float) ($attendanceData['teacher_full_attendance_percent'] ?? 90);
-        $teacherPartial = (float) ($attendanceData['teacher_partial_attendance_percent'] ?? 50);
+        // Validate attendance thresholds: partial must be strictly < full for both roles.
+        $studentFull = (int) ($attendanceData['student_full_attendance_percent'] ?? 80);
+        $studentPartial = (int) ($attendanceData['student_partial_attendance_percent'] ?? 50);
+        $teacherFull = (int) ($attendanceData['teacher_full_attendance_percent'] ?? 90);
+        $teacherPartial = (int) ($attendanceData['teacher_partial_attendance_percent'] ?? 50);
 
-        if ($studentPartial > $studentFull || $teacherPartial > $teacherFull) {
+        if ($studentPartial >= $studentFull || $teacherPartial >= $teacherFull) {
             Notification::make()
                 ->danger()
                 ->title(__('settings.attendance_partial_lte_full'))
@@ -271,14 +314,25 @@ class ManageAcademySettings extends Page implements HasForms
 
         $academy->update($data);
 
+        $academySettings = AcademySettings::getForAcademy($academy);
+
+        $settingsUpdates = [];
+
+        if (! empty($meetingData)) {
+            $settingsUpdates['default_preparation_minutes'] = $meetingData['default_preparation_minutes'] ?? 10;
+            $settingsUpdates['default_buffer_minutes'] = $meetingData['default_buffer_minutes'] ?? 5;
+            $settingsUpdates['teacher_reschedule_deadline_hours'] = $meetingData['teacher_reschedule_deadline_hours'] ?? 24;
+        }
+
         if (! empty($attendanceData)) {
-            $academySettings = AcademySettings::getForAcademy($academy);
-            $academySettings->update([
-                'default_attendance_threshold_percentage' => $studentFull,
-                'student_minimum_presence_percent' => $studentPartial,
-                'teacher_full_attendance_percent' => $teacherFull,
-                'teacher_partial_attendance_percent' => $teacherPartial,
-            ]);
+            $settingsUpdates['default_attendance_threshold_percentage'] = $studentFull;
+            $settingsUpdates['student_minimum_presence_percent'] = $studentPartial;
+            $settingsUpdates['teacher_full_attendance_percent'] = $teacherFull;
+            $settingsUpdates['teacher_partial_attendance_percent'] = $teacherPartial;
+        }
+
+        if (! empty($settingsUpdates)) {
+            $academySettings->update($settingsUpdates);
         }
 
         Notification::make()
