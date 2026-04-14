@@ -1,4 +1,4 @@
-{{-- Audio Player Modal — native <audio> + Alpine.js (render once per page) --}}
+{{-- Audio Player Modal — native <audio> with ogv.js fallback for Safari (render once per page) --}}
 @once
 <div
     x-data="{
@@ -16,6 +16,9 @@
         recordingTitle: '',
         playlist: [],
         currentIndex: -1,
+        player: null,
+        needsOgv: false,
+        ogvLoaded: false,
 
         get hasPrev() { return this.currentIndex > 0; },
         get hasNext() { return this.currentIndex < this.playlist.length - 1; },
@@ -24,34 +27,84 @@
         get durationStr() { return this.fmt(this.duration); },
 
         init() {
-            const a = this.$refs.audio;
-            a.addEventListener('timeupdate', () => { this.currentTime = a.currentTime; });
-            a.addEventListener('loadedmetadata', () => { this.duration = a.duration; this.loading = false; });
-            a.addEventListener('play', () => { this.playing = true; this.loading = false; });
-            a.addEventListener('pause', () => { this.playing = false; });
-            a.addEventListener('ended', () => { this.playing = false; if (this.hasNext) this.next(); });
-            a.addEventListener('waiting', () => { this.loading = true; });
-            a.addEventListener('canplay', () => { this.loading = false; });
+            // Detect if browser can play OGG natively
+            const test = document.createElement('audio');
+            this.needsOgv = !test.canPlayType('audio/ogg; codecs=opus');
         },
 
-        toggle() {
-            const a = this.$refs.audio;
+        bindPlayer(p) {
+            p.addEventListener('timeupdate', () => { this.currentTime = p.currentTime; });
+            p.addEventListener('loadedmetadata', () => { this.duration = p.duration; this.loading = false; });
+            p.addEventListener('durationchange', () => { if (p.duration && isFinite(p.duration)) this.duration = p.duration; });
+            p.addEventListener('play', () => { this.playing = true; this.loading = false; });
+            p.addEventListener('pause', () => { this.playing = false; });
+            p.addEventListener('ended', () => { this.playing = false; if (this.hasNext) this.next(); });
+            p.addEventListener('waiting', () => { this.loading = true; });
+            p.addEventListener('canplay', () => { this.loading = false; });
+            p.addEventListener('error', () => { this.loading = false; this.error = true; this.playing = false; });
+        },
+
+        async ensurePlayer() {
+            if (!this.needsOgv) {
+                // Use native <audio>
+                if (!this.player) {
+                    this.player = this.$refs.audio;
+                    this.bindPlayer(this.player);
+                }
+                return;
+            }
+
+            // Load ogv.js for Safari
+            if (!this.ogvLoaded) {
+                this.loading = true;
+                await new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/ogv@1.9.0/dist/ogv.js';
+                    s.onload = resolve;
+                    s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+                this.ogvLoaded = true;
+            }
+
+            // Create OGVPlayer instance
+            if (this.player && this.player.stop) {
+                try { this.player.stop(); } catch(e) {}
+            }
+            const p = new OGVPlayer();
+            this.bindPlayer(p);
+            this.player = p;
+        },
+
+        async toggle() {
             if (this.error) return;
-            if (!a.paused) { a.pause(); return; }
-            a.play().catch(() => { this.error = true; this.playing = false; });
+            if (this.player && !this.player.paused) {
+                this.player.pause();
+                return;
+            }
+            try {
+                await this.ensurePlayer();
+                if (this.player.src !== this.audioUrl) {
+                    this.player.src = this.audioUrl;
+                }
+                await this.player.play();
+            } catch(e) {
+                this.error = true;
+                this.playing = false;
+            }
         },
 
         seek(event) {
+            if (!this.player || !this.duration) return;
             const rect = event.currentTarget.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const pct = Math.max(0, Math.min(1, x / rect.width));
-            // RTL: progress bar is always LTR, so no flip needed
-            this.$refs.audio.currentTime = pct * this.duration;
+            this.player.currentTime = pct * this.duration;
         },
 
         skip(sec) {
-            const a = this.$refs.audio;
-            a.currentTime = Math.max(0, Math.min(a.currentTime + sec, this.duration));
+            if (!this.player) return;
+            this.player.currentTime = Math.max(0, Math.min(this.player.currentTime + sec, this.duration));
         },
 
         next() {
@@ -64,12 +117,15 @@
             this.loadTrack(this.currentIndex - 1);
         },
 
-        loadTrack(index) {
+        async loadTrack(index) {
             const track = this.playlist[index];
             if (!track) return;
             this.currentIndex = index;
             this.setTrackData(track);
-            this.loadAudio();
+            this.resetState();
+            await this.ensurePlayer();
+            this.player.src = this.audioUrl;
+            try { await this.player.play(); } catch(e) { /* user will click play */ }
         },
 
         setTrackData(track) {
@@ -81,37 +137,39 @@
             this.recordingTitle = track.title || '';
         },
 
-        loadAudio() {
-            const a = this.$refs.audio;
-            a.pause();
+        resetState() {
+            if (this.player) {
+                try { this.player.pause(); } catch(e) {}
+            }
             this.currentTime = 0;
             this.duration = 0;
             this.playing = false;
             this.loading = false;
             this.error = false;
-            a.src = this.audioUrl;
         },
 
-        openPlayer(detail) {
+        async openPlayer(detail) {
             this.playlist = [detail];
             this.currentIndex = 0;
             this.setTrackData(detail);
+            this.resetState();
             this.open = true;
-            this.$nextTick(() => this.loadAudio());
         },
 
-        openPlaylist(detail) {
+        async openPlaylist(detail) {
             this.playlist = detail.playlist || [];
             this.currentIndex = detail.startIndex || 0;
             const track = this.playlist[this.currentIndex];
             if (!track) return;
             this.setTrackData(track);
+            this.resetState();
             this.open = true;
-            this.$nextTick(() => this.loadAudio());
         },
 
         closePlayer() {
-            this.$refs.audio.pause();
+            if (this.player) {
+                try { this.player.pause(); } catch(e) {}
+            }
             this.playing = false;
             this.open = false;
         },
@@ -129,8 +187,8 @@
     x-cloak
     class="fixed inset-0 z-[9999]"
 >
-    {{-- Hidden audio element --}}
-    <audio x-ref="audio" preload="metadata"></audio>
+    {{-- Hidden native audio element (used when browser supports OGG) --}}
+    <audio x-ref="audio" preload="metadata" style="display:none"></audio>
 
     {{-- Backdrop --}}
     <div class="fixed inset-0 bg-black/60" x-show="open" x-transition.opacity @click="closePlayer()"></div>
@@ -152,7 +210,6 @@
 
             {{-- Progress Bar --}}
             <div class="px-5 pt-5 pb-2">
-                {{-- Error state --}}
                 <template x-if="error">
                     <div class="flex items-center justify-center h-16 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-500 text-xs gap-2">
                         <i class="ri-error-warning-line text-base"></i>
@@ -160,7 +217,6 @@
                     </div>
                 </template>
 
-                {{-- Loading state --}}
                 <template x-if="loading && !error">
                     <div class="flex items-center justify-center h-16 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-400 text-xs gap-2">
                         <i class="ri-loader-4-line animate-spin text-base"></i>
@@ -168,17 +224,13 @@
                     </div>
                 </template>
 
-                {{-- Progress bar (clickable to seek) --}}
                 <template x-if="!loading && !error">
                     <div>
                         <div class="relative h-10 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-pointer group overflow-hidden" @click="seek($event)" dir="ltr">
-                            {{-- Filled progress --}}
                             <div class="absolute inset-y-0 start-0 bg-blue-500/20 dark:bg-blue-500/30 transition-all duration-100 rounded-lg"
                                  :style="'width: ' + progress + '%'"></div>
-                            {{-- Progress handle --}}
                             <div class="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-blue-600 rounded-full shadow transition-all duration-100 opacity-0 group-hover:opacity-100"
                                  :style="'left: calc(' + progress + '% - 6px)'"></div>
-                            {{-- Center time display --}}
                             <div class="absolute inset-0 flex items-center justify-center">
                                 <span class="text-xs font-mono text-gray-500 dark:text-gray-400" x-text="currentTimeStr + ' / ' + durationStr"></span>
                             </div>
