@@ -39,7 +39,7 @@ class LiveKitRecordingManager
 
             // Build file path for local storage on LiveKit server
             $audioOnly = $options['audio_only'] ?? false;
-            $extension = $audioOnly ? '.ogg' : '.mp4';
+            $extension = $audioOnly ? '.m4a' : '.mp4';
             $filename = $options['filename'] ?? sprintf('recording-%s-%s', $roomName, now()->timestamp);
             $filepath = sprintf(
                 '%s/%s%s',
@@ -58,9 +58,9 @@ class LiveKitRecordingManager
             ];
 
             if ($audioOnly) {
-                // Audio encoding options (128kbps Opus at 48kHz — good speech quality)
+                // AAC in M4A container — seekable in all browsers (OGG Opus lacks seek tables)
                 $payload['advanced'] = [
-                    'audio_codec' => 'OPUS',
+                    'audio_codec' => 'AAC',
                     'audio_bitrate' => $options['audio_bitrate'] ?? config('livekit.audio.recording_bitrate', 128000),
                     'audio_frequency' => $options['audio_frequency'] ?? config('livekit.audio.recording_frequency', 48000),
                 ];

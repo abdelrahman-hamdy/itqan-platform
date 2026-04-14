@@ -69,7 +69,7 @@ class RecordingService implements RecordingServiceInterface
                 'status' => RecordingStatus::RECORDING->value,
                 'started_at' => now(),
                 'metadata' => $config['metadata'] ?? [],
-                'file_format' => ($config['audio_only'] ?? false) ? 'ogg' : 'mp4',
+                'file_format' => ($config['audio_only'] ?? false) ? 'm4a' : 'mp4',
             ]);
 
             Log::info('Recording started successfully', [

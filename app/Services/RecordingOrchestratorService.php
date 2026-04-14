@@ -184,7 +184,7 @@ class RecordingOrchestratorService
                     'recording_id' => $egressResponse['egress_id'],
                     'meeting_room' => $config['room_name'],
                     'started_at' => now(),
-                    'file_format' => ($config['audio_only'] ?? false) ? 'ogg' : 'mp4',
+                    'file_format' => ($config['audio_only'] ?? false) ? 'm4a' : 'mp4',
                 ]);
 
                 Log::info('Orchestrator: Promoted queued recording', [

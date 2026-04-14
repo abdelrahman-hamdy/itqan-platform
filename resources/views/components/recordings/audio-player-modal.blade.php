@@ -1,4 +1,4 @@
-{{-- Audio Player Modal — native <audio> with ogv.js fallback, waveform bars, swipe gestures --}}
+{{-- Audio Player Modal — native <audio> with waveform bars, swipe gestures --}}
 @once
 <div
     x-data="{
@@ -18,10 +18,6 @@
         recordingId: 0,
         playlist: [],
         currentIndex: -1,
-        player: null,
-        needsOgv: false,
-        ogvLoaded: false,
-        ogvLoading: false,
         bars: [],
         touchStartX: 0,
         touchStartY: 0,
@@ -34,116 +30,62 @@
         get durationStr() { return this.fmt(this.totalDuration); },
 
         init() {
-            const test = document.createElement('audio');
-            this.needsOgv = !test.canPlayType('audio/ogg; codecs=opus');
-            // Preload ogv.js in background for Safari
-            if (this.needsOgv) this.preloadOgv();
-        },
-
-        async preloadOgv() {
-            if (this.ogvLoaded || this.ogvLoading) return;
-            this.ogvLoading = true;
-            try {
-                await new Promise((resolve, reject) => {
-                    const s = document.createElement('script');
-                    s.src = 'https://cdn.jsdelivr.net/npm/ogv@1.9.0/dist/ogv.js';
-                    s.onload = resolve;
-                    s.onerror = reject;
-                    document.head.appendChild(s);
-                });
-                this.ogvLoaded = true;
-            } catch(e) {}
-            this.ogvLoading = false;
+            const a = this.$refs.audio;
+            a.addEventListener('timeupdate', () => { this.currentTime = a.currentTime; });
+            a.addEventListener('loadedmetadata', () => {
+                if (a.duration && isFinite(a.duration)) this.duration = a.duration;
+                this.loading = false;
+            });
+            a.addEventListener('durationchange', () => {
+                if (a.duration && isFinite(a.duration)) this.duration = a.duration;
+            });
+            a.addEventListener('play', () => { this.playing = true; this.loading = false; });
+            a.addEventListener('pause', () => { this.playing = false; });
+            a.addEventListener('ended', () => { this.playing = false; if (this.hasNext) this.next(); });
+            a.addEventListener('waiting', () => { this.loading = true; });
+            a.addEventListener('canplay', () => { this.loading = false; });
+            a.addEventListener('error', () => { this.loading = false; this.error = true; this.playing = false; });
         },
 
         generateBars(id) {
-            // Seed-based pseudo-random bars for consistent look per recording
             let seed = id || 1;
             const rand = () => { seed = (seed * 16807 + 0) % 2147483647; return (seed & 0x7fffffff) / 2147483647; };
             this.bars = Array.from({length: 60}, () => 0.2 + rand() * 0.8);
         },
 
-        bindPlayer(p) {
-            p.addEventListener('timeupdate', () => { this.currentTime = p.currentTime; });
-            p.addEventListener('loadedmetadata', () => {
-                if (p.duration && isFinite(p.duration)) this.duration = p.duration;
-                this.loading = false;
-            });
-            p.addEventListener('durationchange', () => {
-                if (p.duration && isFinite(p.duration)) this.duration = p.duration;
-            });
-            p.addEventListener('play', () => { this.playing = true; this.loading = false; });
-            p.addEventListener('pause', () => { this.playing = false; });
-            p.addEventListener('ended', () => {
-                // OGG files may fire 'ended' prematurely when only partial data is buffered.
-                // If we haven't reached 90% of known duration, it's a false end — don't stop.
-                if (this.knownDuration && this.currentTime < this.knownDuration * 0.9) {
-                    return;
-                }
-                this.playing = false;
-                if (this.hasNext) this.next();
-            });
-            p.addEventListener('waiting', () => { this.loading = true; });
-            p.addEventListener('canplay', () => { this.loading = false; });
-            p.addEventListener('error', () => { this.loading = false; this.error = true; this.playing = false; });
-        },
-
-        async ensurePlayer() {
-            if (!this.needsOgv) {
-                if (!this.player) {
-                    this.player = this.$refs.audio;
-                    this.bindPlayer(this.player);
-                }
-                return;
-            }
-            if (!this.ogvLoaded) {
-                this.loading = true;
-                await this.preloadOgv();
-                if (!this.ogvLoaded) { this.error = true; this.loading = false; return; }
-            }
-            if (this.player && this.player.stop) {
-                try { this.player.stop(); } catch(e) {}
-            }
-            const p = new OGVPlayer();
-            this.bindPlayer(p);
-            this.player = p;
-        },
-
-        async toggle() {
+        toggle() {
+            const a = this.$refs.audio;
             if (this.error) return;
-            if (this.player && !this.player.paused) { this.player.pause(); return; }
-            try {
-                await this.ensurePlayer();
-                if (this.player.src !== this.audioUrl) this.player.src = this.audioUrl;
-                await this.player.play();
-            } catch(e) { this.error = true; this.playing = false; }
+            if (!a.paused) { a.pause(); return; }
+            a.play().catch(() => { this.error = true; this.playing = false; });
         },
 
         seek(event) {
-            if (!this.player || !this.totalDuration) return;
+            const a = this.$refs.audio;
+            if (!this.totalDuration) return;
             const rect = event.currentTarget.getBoundingClientRect();
             const x = event.clientX ?? event.touches?.[0]?.clientX ?? 0;
             const pct = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
-            this.player.currentTime = pct * this.totalDuration;
+            a.currentTime = pct * this.totalDuration;
         },
 
         skip(sec) {
-            if (!this.player) return;
-            this.player.currentTime = Math.max(0, Math.min(this.player.currentTime + sec, this.totalDuration));
+            const a = this.$refs.audio;
+            a.currentTime = Math.max(0, Math.min(a.currentTime + sec, this.totalDuration));
         },
 
         next() { if (this.hasNext) this.loadTrack(this.currentIndex + 1); },
         prev() { if (this.hasPrev) this.loadTrack(this.currentIndex - 1); },
 
-        async loadTrack(index) {
+        loadTrack(index) {
             const track = this.playlist[index];
             if (!track) return;
             this.currentIndex = index;
             this.setTrackData(track);
             this.resetState();
-            await this.ensurePlayer();
-            this.player.src = this.audioUrl;
-            try { await this.player.play(); } catch(e) {}
+            const a = this.$refs.audio;
+            a.src = this.audioUrl;
+            a.play().catch(() => {});
         },
 
         setTrackData(track) {
@@ -159,7 +101,8 @@
         },
 
         resetState() {
-            if (this.player) { try { this.player.pause(); } catch(e) {} }
+            const a = this.$refs.audio;
+            a.pause();
             this.currentTime = 0;
             this.duration = 0;
             this.playing = false;
@@ -186,12 +129,11 @@
         },
 
         closePlayer() {
-            if (this.player) { try { this.player.pause(); } catch(e) {} }
+            this.$refs.audio.pause();
             this.playing = false;
             this.open = false;
         },
 
-        // Swipe handling
         onTouchStart(e) {
             this.touchStartX = e.touches[0].clientX;
             this.touchStartY = e.touches[0].clientY;
@@ -200,7 +142,6 @@
             const dx = e.changedTouches[0].clientX - this.touchStartX;
             const dy = e.changedTouches[0].clientY - this.touchStartY;
             if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
-            // RTL aware: swipe left = next in LTR, prev in RTL
             const isRtl = document.documentElement.dir === 'rtl';
             if (dx < 0) { isRtl ? this.prev() : this.next(); }
             else { isRtl ? this.next() : this.prev(); }
@@ -224,15 +165,12 @@
 >
     <audio x-ref="audio" preload="auto" style="display:none"></audio>
 
-    {{-- Backdrop --}}
     <div class="fixed inset-0 bg-black/60" x-show="open" x-transition.opacity @click="closePlayer()"></div>
 
-    {{-- Modal --}}
     <div class="fixed inset-0 flex items-center justify-center p-4" x-show="open" x-transition @click="closePlayer()">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
              @click.stop @touchstart="onTouchStart($event)" @touchend="onTouchEnd($event)">
 
-            {{-- Header --}}
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
                 <div class="flex-1 min-w-0">
                     <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate" x-text="recordingTitle || '{{ __('recordings.player_title') }}'"></h3>
@@ -243,7 +181,6 @@
                 </button>
             </div>
 
-            {{-- Waveform / Progress --}}
             <div class="px-5 pt-5 pb-2">
                 <template x-if="error">
                     <div class="flex items-center justify-center h-16 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-500 text-xs gap-2">
@@ -254,7 +191,6 @@
 
                 <template x-if="!error">
                     <div>
-                        {{-- Waveform bars (clickable/touchable to seek) --}}
                         <div class="relative h-16 rounded-lg cursor-pointer overflow-hidden flex items-end gap-[2px]"
                              @click="seek($event)" @touchend.prevent="seek($event)" dir="ltr">
                             <template x-for="(height, i) in bars" :key="i">
@@ -265,12 +201,10 @@
                                         : 'bg-gray-200 dark:bg-gray-600'">
                                 </div>
                             </template>
-                            {{-- Loading overlay --}}
                             <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-gray-800/60 rounded-lg">
                                 <i class="ri-loader-4-line animate-spin text-xl text-gray-400"></i>
                             </div>
                         </div>
-                        {{-- Time display --}}
                         <div class="flex justify-between text-[10px] text-gray-400 mt-1.5 font-mono" dir="ltr">
                             <span x-text="currentTimeStr"></span>
                             <span x-text="durationStr"></span>
@@ -279,7 +213,6 @@
                 </template>
             </div>
 
-            {{-- Controls — next/prev swapped so in RTL: next is on right, prev is on left --}}
             <div class="flex items-center justify-center gap-3 py-3">
                 <button @click="next()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" :class="hasNext ? 'text-gray-500' : 'text-gray-200 dark:text-gray-600 cursor-default'" :disabled="!hasNext">
                     <i class="ri-skip-forward-fill text-lg"></i>
@@ -299,14 +232,12 @@
                 </button>
             </div>
 
-            {{-- Metadata --}}
             <div class="mx-5 flex items-center justify-center gap-3 text-[11px] text-gray-400">
                 <span x-show="recordingDate" class="flex items-center gap-1"><i class="ri-calendar-line text-xs"></i><span x-text="recordingDate"></span></span>
                 <span x-show="recordingDuration" class="flex items-center gap-1"><i class="ri-time-line text-xs"></i><span x-text="recordingDuration"></span></span>
                 <span x-show="recordingSize" class="flex items-center gap-1"><i class="ri-hard-drive-2-line text-xs"></i><span x-text="recordingSize"></span></span>
             </div>
 
-            {{-- Download --}}
             <div class="px-5 pt-3 pb-5 space-y-2">
                 <a :href="downloadUrl" class="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs font-medium transition-colors border border-gray-200 dark:border-gray-600">
                     <i class="ri-download-line"></i>
