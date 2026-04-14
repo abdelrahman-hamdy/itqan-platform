@@ -27,7 +27,7 @@
         $isTrial => ['label' => __('supervisor.sessions.type_quran_trial'), 'icon' => 'ri-gift-line', 'bg' => 'bg-orange-50', 'text' => 'text-orange-600'],
         (bool) $session->circle => ['label' => __('supervisor.sessions.type_quran_group'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
         default => ['label' => __('supervisor.sessions.type_quran_individual'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
-    ];
+    };
 
     $showUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
 
