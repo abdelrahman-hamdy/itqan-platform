@@ -25,7 +25,7 @@ class EventFetchingService
     public function getQuranSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
         $query = QuranSession::select([
-            'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+            'id', 'academy_id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
             'quran_teacher_id', 'student_id', 'quran_subscription_id', 'circle_id', 'session_type',
             'individual_circle_id', 'trial_request_id',
         ])
@@ -91,7 +91,7 @@ class EventFetchingService
     {
         if ($user->isQuranTeacher()) {
             return QuranSession::select([
-                'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+                'id', 'academy_id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
                 'quran_teacher_id', 'circle_id', 'session_type',
             ])
                 ->whereBetween('scheduled_at', [$startDate, $endDate])
@@ -109,7 +109,7 @@ class EventFetchingService
             })->pluck('id');
 
             return QuranSession::select([
-                'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+                'id', 'academy_id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
                 'quran_teacher_id', 'circle_id', 'session_type',
             ])
                 ->whereBetween('scheduled_at', [$startDate, $endDate])
@@ -253,7 +253,7 @@ class EventFetchingService
         }
 
         return QuranSession::select([
-            'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+            'id', 'academy_id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
             'quran_teacher_id', 'student_id', 'session_type', 'trial_request_id',
         ])
             ->whereBetween('scheduled_at', [$startDate, $endDate])
@@ -282,7 +282,7 @@ class EventFetchingService
         }
 
         return AcademicSession::select([
-            'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+            'id', 'academy_id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
             'academic_teacher_id', 'student_id', 'academic_subscription_id',
             'academic_individual_lesson_id', 'session_type', 'session_code',
         ])
@@ -309,7 +309,7 @@ class EventFetchingService
         }
 
         return QuranSession::select([
-            'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+            'id', 'academy_id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
             'quran_teacher_id', 'student_id', 'quran_subscription_id',
             'individual_circle_id', 'session_type',
         ])

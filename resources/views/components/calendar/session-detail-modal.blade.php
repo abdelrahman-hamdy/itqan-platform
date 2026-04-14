@@ -134,7 +134,7 @@
                                     <i class="ri-edit-line me-1"></i> {{ __('teacher.calendar.edit_session') }}
                                 </button>
                             </template>
-                            <template x-if="!session.can_edit && (session.status === 'scheduled' || session.status === 'ready')">
+                            <template x-if="session.can_edit && !session.can_reschedule">
                                 <span class="px-4 py-2 text-xs text-gray-400 flex items-center">
                                     <i class="ri-lock-line me-1"></i> {{ __('scheduling.reschedule_teacher_restricted') }}
                                 </span>
@@ -152,8 +152,14 @@
                 <div class="p-5 space-y-4">
                     <h4 class="text-sm font-bold text-gray-900 mb-3"><i class="ri-edit-line me-1 text-blue-600"></i>{{ __('teacher.calendar.edit_session') }}</h4>
 
-                    <!-- Date/Time (Flatpickr for academy-timezone-aware today highlight) -->
-                    <div>
+                    <!-- Date/Time (only if teacher can reschedule) -->
+                    <template x-if="!session.can_reschedule">
+                        <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg text-xs text-gray-400">
+                            <i class="ri-lock-line"></i>
+                            <span>{{ __('scheduling.reschedule_teacher_restricted') }}</span>
+                        </div>
+                    </template>
+                    <div x-show="session.can_reschedule">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.modal_date') }} + {{ __('teacher.calendar.modal_time') }}</label>
                         <input type="text" x-ref="editDatetime" readonly
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer"
@@ -184,7 +190,7 @@
                                })">
                     </div>
 
-                    <!-- Duration -->
+                    <!-- Duration (always visible in edit mode) -->
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.modal_duration') }}</label>
                         <select x-model="editData.duration_minutes" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">

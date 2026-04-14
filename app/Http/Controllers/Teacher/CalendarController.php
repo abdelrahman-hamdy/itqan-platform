@@ -412,7 +412,8 @@ class CalendarController extends Controller
 
         $source = $validated['source'];
         $status = $session->status instanceof SessionStatus ? $session->status : SessionStatus::tryFrom($session->status);
-        $canEdit = $session->can_reschedule;
+        $canEdit = in_array($status, [SessionStatus::SCHEDULED, SessionStatus::READY]);
+        $canReschedule = $session->can_reschedule;
 
         $data = [
             'id' => $session->id,
@@ -428,6 +429,7 @@ class CalendarController extends Controller
             'meeting_link' => $session->meeting_link ?? $session->google_meet_url ?? null,
             'teacher_notes' => $session->teacher_notes ?? null,
             'can_edit' => $canEdit,
+            'can_reschedule' => $canReschedule,
             'detail_url' => $this->getTeacherDetailUrl($session, $source, $subdomain),
         ];
 
