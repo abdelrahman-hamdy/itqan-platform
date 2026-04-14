@@ -68,8 +68,6 @@ class EditGeneralSettings extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        \Log::info('EditGeneralSettings: raw form data keys', ['keys' => array_keys($data), 'meeting_settings' => $data['meeting_settings'] ?? 'NOT_SET']);
-
         // Extract meeting, attendance, and academic settings slots
         $meetingSettings = $data['meeting_settings'] ?? [];
         $attendanceSettings = $data['attendance_settings'] ?? [];
@@ -131,8 +129,6 @@ class EditGeneralSettings extends EditRecord
             $updates['teacher_full_attendance_percent'] = $teacherFull;
             $updates['teacher_partial_attendance_percent'] = $teacherPartial;
         }
-
-        \Log::info('EditGeneralSettings: saving updates', ['updates' => $updates, 'meetingSettings' => $meetingSettings]);
 
         if (! empty($updates)) {
             $academySettingsModel->update($updates);

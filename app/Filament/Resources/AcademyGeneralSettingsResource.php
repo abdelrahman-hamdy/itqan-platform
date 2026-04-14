@@ -281,9 +281,8 @@ class AcademyGeneralSettingsResource extends BaseResource
                 Section::make('إعدادات الاجتماعات')
                     ->description('تحديد القيم الافتراضية لتوقيت فتح وإغلاق الاجتماعات')
                     ->collapsible()
-                    ->collapsed()
                     ->schema([
-                        Grid::make(2)
+                        Grid::make(3)
                             ->schema([
                                 TextInput::make('meeting_settings.default_preparation_minutes')
                                     ->label('وقت تحضير الاجتماع (دقيقة)')
