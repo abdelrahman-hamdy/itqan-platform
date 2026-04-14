@@ -17,7 +17,7 @@
     </div>
 
     {{-- Needs Attention Section --}}
-    <livewire:supervisor.needs-attention />
+    <livewire:supervisor.needs-attention lazy />
 
     {{-- General Stats --}}
     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_general_stats') }}</h2>

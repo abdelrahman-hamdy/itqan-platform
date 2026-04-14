@@ -15,7 +15,7 @@ class QuranAcademyOverviewWidget extends BaseWidget
 {
     protected string $view = 'filament.widgets.collapsible-stats-overview-widget';
 
-    protected ?string $pollingInterval = '30s';
+    protected ?string $pollingInterval = '300s';
 
     protected static bool $isLazy = false;
 

@@ -5,10 +5,7 @@ import 'remixicon/fonts/remixicon.css';
 import 'flag-icons/css/flag-icons.min.css';
 import '../css/app.css';
 import Alpine from 'alpinejs';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+// AOS, GSAP, Chart.js, phone-input: lazy-loaded below (only when needed)
 import tabsComponent from './components/tabs';
 import { initStickySidebar } from './components/sticky-sidebar';
 import { getCsrfToken, getCsrfHeaders, csrfFetch } from './utils/csrf';
@@ -16,11 +13,15 @@ import { LABELS_AR, CSS_CLASSES, ICONS } from './utils/constants';
 import './components/navigation';
 import './components/file-upload';
 
-// Chart.js - bundled via Vite (exposes window.Chart)
-import './chart-init';
+// Chart.js — lazy-load only when chart elements exist
+if (document.querySelector('canvas, .fi-wi-chart')) {
+    import('./chart-init');
+}
 
-// intl-tel-input - bundled via Vite (exposes window.intlTelInput)
-import './phone-input';
+// intl-tel-input — lazy-load only when phone input fields exist
+if (document.querySelector('input[type="tel"], [data-phone-input]')) {
+    import('./phone-input');
+}
 
 // Alpine.js - Initialize only if Livewire hasn't already done so
 // Livewire 3 with inject_assets: true bundles its own Alpine.
@@ -41,15 +42,26 @@ window.getCsrfToken = getCsrfToken;
 window.getCsrfHeaders = getCsrfHeaders;
 window.csrfFetch = csrfFetch;
 
-// Initialize AOS
-AOS.init({
-    duration: 1000,
-    once: true,
-    offset: 100
-});
+// AOS — lazy-load only on pages with scroll animations (public/platform pages)
+if (document.querySelector('[data-aos]')) {
+    Promise.all([
+        import('aos'),
+        import('aos/dist/aos.css'),
+    ]).then(([{ default: AOS }]) => {
+        AOS.init({ duration: 1000, once: true, offset: 100 });
+    });
+}
 
-// Register GSAP plugins
-gsap.registerPlugin(ScrollTrigger);
+// GSAP — lazy-load only when needed (currently no blade templates use it)
+if (document.querySelector('[data-gsap], .gsap-trigger')) {
+    Promise.all([
+        import('gsap'),
+        import('gsap/ScrollTrigger'),
+    ]).then(([{ gsap }, { ScrollTrigger }]) => {
+        gsap.registerPlugin(ScrollTrigger);
+        window.gsap = gsap;
+    });
+}
 
 // Initialize sticky sidebar
 initStickySidebar();

@@ -146,13 +146,21 @@ class UnifiedHomeworkService implements UnifiedHomeworkServiceInterface
 
         $homework = $query->get();
 
-        return $homework->map(function ($hw) use ($studentId) {
-            // Get or create submission record
-            $submission = $this->getOrCreateSubmission(
-                $hw,
-                $studentId,
-                'academic'
-            );
+        // Batch-fetch existing submissions (1 query instead of N)
+        $existingSubmissions = AcademicHomeworkSubmission::where('student_id', $studentId)
+            ->whereIn('academic_homework_id', $homework->pluck('id'))
+            ->get()
+            ->keyBy('academic_homework_id');
+
+        return $homework->map(function ($hw) use ($studentId, $existingSubmissions) {
+            $submission = $existingSubmissions->get($hw->id)
+                ?? new AcademicHomeworkSubmission([
+                    'academic_homework_id' => $hw->id,
+                    'student_id' => $studentId,
+                    'academy_id' => $hw->academy_id,
+                    'submission_status' => HomeworkSubmissionStatus::PENDING,
+                    'max_score' => 10,
+                ]);
 
             return $this->formatAcademicHomework($hw, $submission);
         })->filter(function ($item) use ($status) {
@@ -181,9 +189,22 @@ class UnifiedHomeworkService implements UnifiedHomeworkServiceInterface
 
         $homeworkAssignments = $query->get();
 
-        return $homeworkAssignments->map(function ($homework) use ($studentId) {
-            // Get or create submission record for this homework
-            $submission = $this->getOrCreateInteractiveSubmission($homework, $studentId);
+        // Batch-fetch existing submissions (1 query instead of N)
+        $existingSubmissions = InteractiveCourseHomeworkSubmission::where('student_id', $studentId)
+            ->whereIn('interactive_course_homework_id', $homeworkAssignments->pluck('id'))
+            ->get()
+            ->keyBy('interactive_course_homework_id');
+
+        return $homeworkAssignments->map(function ($homework) use ($studentId, $existingSubmissions) {
+            $submission = $existingSubmissions->get($homework->id)
+                ?? new InteractiveCourseHomeworkSubmission([
+                    'interactive_course_homework_id' => $homework->id,
+                    'student_id' => $studentId,
+                    'academy_id' => $homework->academy_id,
+                    'interactive_course_session_id' => $homework->interactive_course_session_id,
+                    'submission_status' => HomeworkSubmissionStatus::PENDING,
+                    'max_score' => 10,
+                ]);
 
             return $this->formatInteractiveHomework($homework, $submission);
         })->filter(function ($item) use ($status) {

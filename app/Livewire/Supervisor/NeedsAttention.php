@@ -28,6 +28,18 @@ class NeedsAttention extends Component
 
     public bool $showUnconfirmedPanel = false;
 
+    public function placeholder(): string
+    {
+        return <<<'HTML'
+        <div class="mb-6">
+            <div class="animate-pulse space-y-3">
+                <div class="h-5 bg-gray-200 rounded w-1/4"></div>
+                <div class="h-24 bg-gray-100 rounded-xl"></div>
+            </div>
+        </div>
+        HTML;
+    }
+
     public function mount(): void
     {
         $this->loadData();

@@ -18,7 +18,7 @@ class AcademyStatsWidget extends BaseWidget
 {
     protected string $view = 'filament.widgets.collapsible-stats-overview-widget';
 
-    protected ?string $pollingInterval = '60s';
+    protected ?string $pollingInterval = '300s';
 
     protected static ?int $sort = 1;
 
