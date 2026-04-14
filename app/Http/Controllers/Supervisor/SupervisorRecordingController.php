@@ -54,7 +54,7 @@ class SupervisorRecordingController extends BaseSupervisorWebController
                 'interactive' => $sessions->where('_type', 'interactive')->count(),
             ];
         } elseif ($tab === 'history') {
-            $historyData = $this->getHistoryData($request, $sessionTab, $dateFilter);
+            $historyData = $this->getHistoryData($sessionTab, $dateFilter);
         }
 
         $liveSessions = $sessions->pluck('id')->values();
@@ -259,7 +259,7 @@ class SupervisorRecordingController extends BaseSupervisorWebController
     // History
     // ────────────────────────────────────────────────────────────────
 
-    private function getHistoryData(Request $request, string $sessionTab, string $dateFilter = 'all'): array
+    private function getHistoryData(string $sessionTab, string $dateFilter = 'all'): array
     {
         $query = SessionRecording::query()
             ->with(['recordable' => function (\Illuminate\Database\Eloquent\Relations\MorphTo $morphTo) {
@@ -290,13 +290,6 @@ class SupervisorRecordingController extends BaseSupervisorWebController
             if ($morphClass) {
                 $query->where('recordable_type', $morphClass);
             }
-        }
-
-        if ($dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        }
-        if ($dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
         }
 
         $recordings = $query->paginate(20)->withQueryString();
