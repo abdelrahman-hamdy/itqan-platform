@@ -67,23 +67,6 @@
                             <span>{{ $statusLabel }}</span>
                         </div>
 
-                        @if($course->total_reviews > 0)
-                        <div class="flex items-center gap-2">
-                            <div class="flex items-center gap-1">
-                                @for($i = 1; $i <= 5; $i++)
-                                    @if($i <= floor($course->avg_rating))
-                                        <i class="ri-star-fill text-yellow-400 text-lg"></i>
-                                    @elseif($i - 0.5 <= $course->avg_rating)
-                                        <i class="ri-star-half-fill text-yellow-400 text-lg"></i>
-                                    @else
-                                        <i class="ri-star-line text-gray-300 text-lg"></i>
-                                    @endif
-                                @endfor
-                            </div>
-                            <span class="text-sm font-medium text-gray-700">{{ number_format($course->avg_rating, 1) }}</span>
-                            <span class="text-sm text-gray-500">({{ $course->total_reviews }})</span>
-                        </div>
-                        @endif
                     </div>
 
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 md:mb-4 leading-tight">{{ $course->title }}</h1>
@@ -321,7 +304,7 @@
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                         @foreach($formattedSchedule as $entry)
-                        <div class="flex items-center justify-between p-3 md:p-4 bg-gradient-to-l from-purple-50 to-white rounded-xl border border-purple-100">
+                        <div class="flex items-center justify-between p-3 md:p-4 rounded-xl border border-gray-200">
                             <span class="font-semibold text-gray-900 text-sm md:text-base">{{ $entry['day'] }}</span>
                             <span class="text-purple-600 font-bold text-sm md:text-base">{{ $entry['time'] }}</span>
                         </div>
@@ -653,6 +636,33 @@
                         type="interactive"
                     />
                 @endif
+                @endif
+
+                {{-- Course Rating --}}
+                @if($course->total_reviews > 0)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                    <h3 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <i class="ri-star-line text-yellow-500 text-lg"></i>
+                        {{ __('student.interactive_course.rating_title') }}
+                    </h3>
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl font-bold text-gray-900">{{ number_format($course->avg_rating, 1) }}</span>
+                        <div>
+                            <div class="flex items-center gap-0.5">
+                                @for($i = 1; $i <= 5; $i++)
+                                    @if($i <= floor($course->avg_rating))
+                                        <i class="ri-star-fill text-yellow-400"></i>
+                                    @elseif($i - 0.5 <= $course->avg_rating)
+                                        <i class="ri-star-half-fill text-yellow-400"></i>
+                                    @else
+                                        <i class="ri-star-line text-gray-300"></i>
+                                    @endif
+                                @endfor
+                            </div>
+                            <span class="text-xs text-gray-500">{{ $course->total_reviews }} {{ __('student.interactive_course.reviews_count') }}</span>
+                        </div>
+                    </div>
+                </div>
                 @endif
             </div>
             <!-- End inner wrapper -->

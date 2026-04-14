@@ -140,6 +140,8 @@ return [
         'countdown_hours' => 'hours',
         'countdown_minutes' => 'minutes',
         'countdown_seconds' => 'seconds',
+        'rating_title' => 'Course Rating',
+        'reviews_count' => 'reviews',
     ],
     'calendar' => [
         'title' => 'Calendar & Sessions',

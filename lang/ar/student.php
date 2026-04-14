@@ -201,6 +201,8 @@ return [
         'countdown_hours' => 'ساعة',
         'countdown_minutes' => 'دقيقة',
         'countdown_seconds' => 'ثانية',
+        'rating_title' => 'تقييم الكورس',
+        'reviews_count' => 'تقييم',
     ],
     'calendar' => [
         'title' => 'التقويم والجلسات',
