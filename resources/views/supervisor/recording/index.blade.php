@@ -315,6 +315,7 @@
                         'downloadUrl' => $r->getDownloadUrl(),
                         'date' => $r->started_at ? toAcademyTimezone($r->started_at)->translatedFormat('d M h:i A') : '',
                         'duration' => $r->formatted_duration,
+                        'durationSeconds' => $r->duration,
                         'size' => $r->formatted_file_size,
                         'title' => $r->recordable?->session_code ?? $r->display_name,
                     ])->toArray();
