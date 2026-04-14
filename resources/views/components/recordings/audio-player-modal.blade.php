@@ -28,7 +28,7 @@
 
         get hasPrev() { return this.currentIndex > 0; },
         get hasNext() { return this.currentIndex < this.playlist.length - 1; },
-        get totalDuration() { return this.knownDuration || this.duration || 0; },
+        get totalDuration() { return (this.duration && isFinite(this.duration)) ? this.duration : (this.knownDuration || 0); },
         get progress() { return this.totalDuration > 0 ? (this.currentTime / this.totalDuration) * 100 : 0; },
         get currentTimeStr() { return this.fmt(this.currentTime); },
         get durationStr() { return this.fmt(this.totalDuration); },
@@ -66,11 +66,11 @@
         bindPlayer(p) {
             p.addEventListener('timeupdate', () => { this.currentTime = p.currentTime; });
             p.addEventListener('loadedmetadata', () => {
-                if (!this.knownDuration && p.duration && isFinite(p.duration)) this.duration = p.duration;
+                if (p.duration && isFinite(p.duration)) this.duration = p.duration;
                 this.loading = false;
             });
             p.addEventListener('durationchange', () => {
-                if (!this.knownDuration && p.duration && isFinite(p.duration)) this.duration = p.duration;
+                if (p.duration && isFinite(p.duration)) this.duration = p.duration;
             });
             p.addEventListener('play', () => { this.playing = true; this.loading = false; });
             p.addEventListener('pause', () => { this.playing = false; });
@@ -271,23 +271,23 @@
                 </template>
             </div>
 
-            {{-- Controls --}}
+            {{-- Controls — next/prev swapped so in RTL: next is on right, prev is on left --}}
             <div class="flex items-center justify-center gap-3 py-3">
-                <button @click="prev()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" :class="hasPrev ? 'text-gray-500' : 'text-gray-200 dark:text-gray-600 cursor-default'" :disabled="!hasPrev">
-                    <i class="ri-skip-back-fill text-lg"></i>
+                <button @click="next()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" :class="hasNext ? 'text-gray-500' : 'text-gray-200 dark:text-gray-600 cursor-default'" :disabled="!hasNext">
+                    <i class="ri-skip-forward-fill text-lg"></i>
                 </button>
-                <button @click="skip(-10)" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors">
-                    <i class="ri-replay-10-line text-xl"></i>
+                <button @click="skip(10)" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors">
+                    <i class="ri-forward-10-line text-xl"></i>
                 </button>
                 <button @click="toggle()" class="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors" :class="error ? 'opacity-50 cursor-not-allowed' : ''">
                     <i x-show="!playing" class="ri-play-fill text-2xl ms-0.5"></i>
                     <i x-show="playing" x-cloak class="ri-pause-fill text-2xl"></i>
                 </button>
-                <button @click="skip(10)" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors">
-                    <i class="ri-forward-10-line text-xl"></i>
+                <button @click="skip(-10)" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors">
+                    <i class="ri-replay-10-line text-xl"></i>
                 </button>
-                <button @click="next()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" :class="hasNext ? 'text-gray-500' : 'text-gray-200 dark:text-gray-600 cursor-default'" :disabled="!hasNext">
-                    <i class="ri-skip-forward-fill text-lg"></i>
+                <button @click="prev()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" :class="hasPrev ? 'text-gray-500' : 'text-gray-200 dark:text-gray-600 cursor-default'" :disabled="!hasPrev">
+                    <i class="ri-skip-back-fill text-lg"></i>
                 </button>
             </div>
 

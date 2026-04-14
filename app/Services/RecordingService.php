@@ -245,8 +245,10 @@ class RecordingService implements RecordingServiceInterface
         // Get first file (for room composite, there's usually only one)
         $file = is_array($fileList) && isset($fileList[0]) ? $fileList[0] : $fileList;
 
-        // LiveKit sends duration in nanoseconds — convert to seconds
-        $durationNs = $file['duration'] ?? $egressInfo['duration'] ?? null;
+        // LiveKit sends file duration in nanoseconds — convert to seconds
+        // Only use $file['duration'] (actual audio duration), NOT $egressInfo['duration']
+        // which is the total egress session time (room alive time) and is much larger
+        $durationNs = $file['duration'] ?? null;
         $durationSeconds = $durationNs ? (int) round($durationNs / 1_000_000_000) : null;
 
         return [
