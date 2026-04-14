@@ -98,7 +98,7 @@
                 : 'Your session was refreshed for security. Please go back and try again.' }}
         </p>
         <div class="buttons">
-            <button onclick="history.back()" class="btn">
+            <button onclick="history.length > 1 ? history.back() : (window.location.href = '/')" class="btn">
                 {{ app()->getLocale() === 'ar' ? 'العودة والمحاولة مرة أخرى' : 'Go Back & Try Again' }}
             </button>
             @auth

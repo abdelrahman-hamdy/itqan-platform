@@ -48,6 +48,8 @@ class DashboardAttentionService
         array $quranTeacherIds,
         array $academicTeacherProfileIds,
         bool $canConfirmStudentEmails = false,
+        int $reviewsLimit = 10,
+        int $unconfirmedLimit = 10,
     ): array {
         $cacheKey = $this->buildCacheKey($academyId, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails);
 
@@ -60,10 +62,10 @@ class DashboardAttentionService
         $worstSeverity = $this->determineWorstSeverity($groups);
 
         // Reviews data (not cached — needs to be fresh for inline actions)
-        $pendingReviews = $this->getPendingReviewsData($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds);
+        $pendingReviews = $this->getPendingReviewsData($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $reviewsLimit);
 
         // Unconfirmed students data (not cached — needs to be fresh for inline actions)
-        $unconfirmedStudents = $this->getUnconfirmedStudentsData($academyId, $canConfirmStudentEmails, $isAdmin, $counts['unconfirmed_emails']);
+        $unconfirmedStudents = $this->getUnconfirmedStudentsData($academyId, $canConfirmStudentEmails, $isAdmin, $counts['unconfirmed_emails'], $unconfirmedLimit);
 
         return [
             'groups' => $groups,
@@ -477,13 +479,13 @@ class DashboardAttentionService
      * @param  int[]  $quranTeacherIds  User IDs of assigned Quran teachers
      * @param  int[]  $academicTeacherProfileIds  Profile IDs of assigned Academic teachers
      */
-    private function getPendingReviewsData(int $academyId, bool $isAdmin, array $quranTeacherIds, array $academicTeacherProfileIds): array
+    private function getPendingReviewsData(int $academyId, bool $isAdmin, array $quranTeacherIds, array $academicTeacherProfileIds, int $limit = 10): array
     {
         $academy = Cache::remember("academy:{$academyId}", 600, fn () => Academy::find($academyId));
         $manualReviews = ! (($academy->academic_settings ?? [])['auto_approve_reviews'] ?? true);
 
         if (! $manualReviews) {
-            return ['enabled' => false, 'items' => [], 'total' => 0];
+            return ['enabled' => false, 'items' => [], 'total' => 0, 'hasMore' => false];
         }
 
         // Derive IDs for scoping (same as queryCounts)
@@ -511,7 +513,7 @@ class DashboardAttentionService
             })
             ->with(['user', 'reviewable'])
             ->latest()
-            ->limit(10)
+            ->limit($limit)
             ->get()
             ->map(fn ($r) => [
                 'id' => $r->id,
@@ -538,7 +540,7 @@ class DashboardAttentionService
             })
             ->with(['student', 'reviewable'])
             ->latest()
-            ->limit(10)
+            ->limit($limit)
             ->get()
             ->map(fn ($r) => [
                 'id' => $r->id,
@@ -552,7 +554,7 @@ class DashboardAttentionService
 
         $allReviews = collect($courseReviews)->merge($teacherReviews)
             ->sortByDesc('created_at')
-            ->take(10)
+            ->take($limit)
             ->values()
             ->toArray();
 
@@ -564,16 +566,17 @@ class DashboardAttentionService
             'enabled' => true,
             'items' => $allReviews,
             'total' => $totalCount,
+            'hasMore' => count($allReviews) < $totalCount,
         ];
     }
 
     /**
      * Get unconfirmed students data for inline management panel.
      */
-    private function getUnconfirmedStudentsData(int $academyId, bool $canConfirmStudentEmails, bool $isAdmin, int $cachedTotal = 0): array
+    private function getUnconfirmedStudentsData(int $academyId, bool $canConfirmStudentEmails, bool $isAdmin, int $cachedTotal = 0, int $limit = 10): array
     {
         if (! $canConfirmStudentEmails && ! $isAdmin) {
-            return ['enabled' => false, 'items' => [], 'total' => 0];
+            return ['enabled' => false, 'items' => [], 'total' => 0, 'hasMore' => false];
         }
 
         $students = User::where('academy_id', $academyId)
@@ -582,7 +585,7 @@ class DashboardAttentionService
             ->where('active_status', true)
             ->select(['id', 'first_name', 'last_name', 'email', 'created_at'])
             ->latest()
-            ->limit(10)
+            ->limit($limit)
             ->get()
             ->map(fn ($u) => [
                 'id' => $u->id,
@@ -595,6 +598,7 @@ class DashboardAttentionService
             'enabled' => true,
             'items' => $students->toArray(),
             'total' => $cachedTotal,
+            'hasMore' => $students->count() < $cachedTotal,
         ];
     }
 

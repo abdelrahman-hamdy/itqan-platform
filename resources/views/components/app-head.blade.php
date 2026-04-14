@@ -31,21 +31,21 @@
 <!-- Periodic CSRF token refresh — keeps session alive and prevents 419 errors on idle pages -->
 <script>
 (function() {
-    var interval = {{ (int) config('session.lifetime', 120) * 60 * 1000 / 4 }};
+    const interval = {{ (int) config('session.lifetime', 120) * 60 * 1000 / 4 }};
     function refreshToken() {
         fetch('/sanctum/csrf-cookie', { method: 'GET', credentials: 'same-origin' })
             .then(function() {
-                var match = document.cookie.match('(?:^|; )XSRF-TOKEN=([^;]*)');
+                const match = document.cookie.match('(?:^|; )XSRF-TOKEN=([^;]*)');
                 if (match) {
-                    var token = decodeURIComponent(match[1]);
-                    var meta = document.querySelector('meta[name="csrf-token"]');
+                    const token = decodeURIComponent(match[1]);
+                    const meta = document.querySelector('meta[name="csrf-token"]');
                     if (meta) meta.setAttribute('content', token);
                     document.querySelectorAll('input[name="_token"]').forEach(function(el) { el.value = token; });
                 }
             })
             .catch(function() {});
     }
-    var timerId = setInterval(refreshToken, interval);
+    let timerId = setInterval(refreshToken, interval);
     document.addEventListener('visibilitychange', function() {
         clearInterval(timerId);
         if (!document.hidden) { refreshToken(); timerId = setInterval(refreshToken, interval); }
