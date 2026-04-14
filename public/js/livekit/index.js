@@ -585,7 +585,15 @@ class LiveKitMeeting {
      */
     async setupMediaPermissions(localParticipant) {
         const isTeacher = this.config.role === 'teacher';
+        const isObserver = this.config.role === 'observer';
         let mediaPermissionsGranted = false;
+
+        // Observers don't need mic/camera — skip permission request entirely
+        if (isObserver) {
+            if (window.MT) window.MT.event('media', 'observer_skipped_permissions', {});
+            this.showNotification(t('connection.joined_student_muted'), 'success');
+            return;
+        }
 
         // MICROPHONE: ON for teachers, OFF for students
         try {

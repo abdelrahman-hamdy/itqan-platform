@@ -283,6 +283,15 @@ class LiveKitControls {
      */
     setupControlButtons() {
 
+        // Observer mode: hide publish controls, show badge
+        if (this.isObserver()) {
+            ['toggleMic', 'toggleCamera', 'toggleScreenShare', 'toggleHandRaise'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.style.display = 'none';
+            });
+            this.showObserverBadge();
+        }
+
         // Microphone toggle
         const micButton = document.getElementById('toggleMic');
         if (micButton) {
@@ -2304,10 +2313,34 @@ class LiveKitControls {
         const role = this.config.meetingConfig?.role;
         if (role === 'teacher' || role === 'quran_teacher') {
             return 'teacher';
+        } else if (role === 'observer') {
+            return 'observer';
         } else if (role === 'student') {
             return 'student';
         }
         return 'unknown';
+    }
+
+    /**
+     * Check if current user is an observer (supervisor monitoring)
+     * @returns {boolean}
+     */
+    isObserver() {
+        return this.userRole === 'observer';
+    }
+
+    /**
+     * Show a small badge in the control bar indicating observer mode
+     */
+    showObserverBadge() {
+        const controlBar = document.querySelector('.control-bar, [id="controlBar"]');
+        if (!controlBar) return;
+        const badge = document.createElement('div');
+        badge.className = 'observer-badge';
+        badge.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#3b82f6;font-size:13px;font-weight:600;';
+        badge.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+            '<span>\u0645\u0631\u0627\u0642\u0628\u0629 \u0641\u0642\u0637</span>';
+        controlBar.prepend(badge);
     }
 
     /**

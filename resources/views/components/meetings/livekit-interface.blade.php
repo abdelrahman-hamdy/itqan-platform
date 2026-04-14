@@ -605,7 +605,7 @@
         }
     }
 
-    function loadScript(src, name) {
+    function loadScript(src, name, retries = 2) {
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
             script.src = src;
@@ -614,7 +614,15 @@
                 checkAllScriptsLoaded();
                 resolve();
             };
-            script.onerror = reject;
+            script.onerror = () => {
+                script.remove();
+                if (retries > 0) {
+                    if (window.MT) window.MT.event('loader', 'script_retry', { name, src, retries_left: retries });
+                    setTimeout(() => loadScript(src, name, retries - 1).then(resolve, reject), 1500);
+                } else {
+                    reject(new Error('Failed to load script: ' + name + ' (' + src + ')'));
+                }
+            };
             document.head.appendChild(script);
         });
     }
@@ -1685,7 +1693,7 @@ function completeSession(sessionId) {
                 csrfToken: '{{ csrf_token() }}',
                 roomName: {!! json_encode($session->meeting_room_name ?? 'session-' . $session->id) !!},
                 participantName: {!! json_encode(trim(auth()->user()->first_name . ' ' . auth()->user()->last_name)) !!},
-                role: '{{ $userType === "quran_teacher" ? "teacher" : "student" }}',
+                role: '{{ in_array($userType, ["quran_teacher", "academic_teacher"]) ? "teacher" : (in_array($userType, ["observer", "supervisor", "admin", "super_admin"]) ? "observer" : "student") }}',
                 // Avatar data for local participant
                 avatarUrl: {!! json_encode($currentUserAvatarUrl) !!},
                 defaultAvatarUrl: '{{ $currentUserDefaultAvatarUrl }}',
