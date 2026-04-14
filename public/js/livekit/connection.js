@@ -157,6 +157,14 @@ class LiveKitConnection {
             }
         });
 
+        // iOS Safari blocks audio autoplay without a user gesture.
+        // Show a tap-to-hear prompt when playback is blocked, then call startAudio().
+        this.room.on(window.LiveKit.RoomEvent.AudioPlaybackStatusChanged, () => {
+            if (!this.room.canPlaybackAudio) {
+                this.showAudioPlaybackPrompt();
+            }
+        });
+
         this.room.on(window.LiveKit.RoomEvent.LocalTrackUnpublished, (publication, participant) => {
             if (this.config.onTrackUnpublished) {
                 this.config.onTrackUnpublished(publication, participant);
@@ -447,6 +455,42 @@ class LiveKitConnection {
         } catch (e) {
             console.warn('Noise suppression not available:', e.message);
         }
+    }
+
+    /**
+     * Show a prompt for iOS Safari users when audio autoplay is blocked.
+     * Calls room.startAudio() on tap to unlock playback.
+     */
+    showAudioPlaybackPrompt() {
+        if (document.getElementById('audioPlaybackPrompt')) return;
+
+        const prompt = document.createElement('div');
+        prompt.id = 'audioPlaybackPrompt';
+        prompt.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
+        prompt.innerHTML = `
+            <div style="background:white;border-radius:16px;padding:32px 24px;text-align:center;max-width:320px;margin:16px;">
+                <div style="font-size:48px;margin-bottom:16px;">🔊</div>
+                <p style="font-size:18px;font-weight:600;margin-bottom:8px;color:#1e293b;">تفعيل الصوت</p>
+                <p style="font-size:14px;color:#64748b;margin-bottom:20px;">اضغط الزر لسماع صوت المشاركين</p>
+                <button id="audioPlaybackBtn" style="background:#2563eb;color:white;border:none;padding:14px 32px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;width:100%;">
+                    تفعيل الصوت
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(prompt);
+
+        document.getElementById('audioPlaybackBtn').addEventListener('click', async () => {
+            try {
+                await this.room.startAudio();
+                if (window.MT) window.MT.event('audio', 'autoplay_unlocked', {});
+            } catch (e) {
+                console.warn('startAudio failed:', e.message);
+            }
+            prompt.remove();
+        });
+
+        if (window.MT) window.MT.event('audio', 'autoplay_blocked_prompt_shown', {});
     }
 
     /**
