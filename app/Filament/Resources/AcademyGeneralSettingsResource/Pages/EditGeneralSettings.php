@@ -68,10 +68,6 @@ class EditGeneralSettings extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        file_put_contents(storage_path('logs/settings_debug.log'),
-            date('Y-m-d H:i:s').' mutateFormDataBeforeSave called. meeting_settings='
-            .json_encode($data['meeting_settings'] ?? 'KEY_MISSING')."\n", FILE_APPEND);
-
         // Extract meeting, attendance, and academic settings slots
         $meetingSettings = $data['meeting_settings'] ?? [];
         $attendanceSettings = $data['attendance_settings'] ?? [];

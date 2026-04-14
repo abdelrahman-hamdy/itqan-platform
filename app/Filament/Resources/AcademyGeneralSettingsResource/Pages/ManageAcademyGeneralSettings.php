@@ -96,6 +96,7 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
         $formData['meeting_settings'] = [
             'default_preparation_minutes' => $academySettings->default_preparation_minutes ?? 10,
             'default_buffer_minutes' => $academySettings->default_buffer_minutes ?? 5,
+            'teacher_reschedule_deadline_hours' => $academySettings->teacher_reschedule_deadline_hours ?? 24,
         ];
 
         // Form uses semantic names; DB columns keep their legacy names.
@@ -199,6 +200,7 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
                 $meetingUpdate = [
                     'default_preparation_minutes' => $data['meeting_settings']['default_preparation_minutes'] ?? 10,
                     'default_buffer_minutes' => $data['meeting_settings']['default_buffer_minutes'] ?? 5,
+                    'teacher_reschedule_deadline_hours' => $data['meeting_settings']['teacher_reschedule_deadline_hours'] ?? 24,
                     'default_attendance_threshold_percentage' => $studentFull,
                     'student_minimum_presence_percent' => $studentPartial,
                     'teacher_full_attendance_percent' => $teacherFull,
