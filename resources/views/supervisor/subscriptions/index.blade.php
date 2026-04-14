@@ -54,7 +54,8 @@
         </div>
     @endif
 
-    <!-- Stats -->
+    <!-- Stats (admin/superadmin only) -->
+    @if($isAdmin)
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-4">
             <div class="flex items-center gap-3">
@@ -123,6 +124,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- List Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">

@@ -194,6 +194,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'totalCancelled' => $totalCancelled,
             'filteredCount' => $filteredValues->count(),
             'canManage' => $this->canManageSubscriptions(),
+            'isAdmin' => $isAdmin,
             'filterUser' => $filterUser,
         ]);
     }
