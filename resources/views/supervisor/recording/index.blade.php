@@ -318,10 +318,10 @@
                         'size' => $r->formatted_file_size,
                         'title' => $r->recordable?->session_code ?? $r->display_name,
                     ])->toArray();
-                    $playlistJson = json_encode($playlist);
+                    $playlistJs = \Illuminate\Support\Js::from($playlist);
                 @endphp
 
-                <div x-data="bulkRecordings()" class="relative">
+                <div x-data="bulkRecordings({{ $playlistJs }})" class="relative">
                     {{-- Bulk action bar --}}
                     <div x-show="selected.length > 0" x-transition
                          class="sticky top-0 z-10 bg-indigo-600 text-white px-4 py-2.5 flex items-center justify-between">
@@ -392,7 +392,7 @@
                                         $playlistIndex = $playableRecordings->search(fn ($r) => $r->id === $rec->id);
                                     @endphp
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                        <td class="px-4 py-3"><input type="checkbox" value="{{ $rec->id }}" x-model.number="selected" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"></td>
+                                        <td class="px-4 py-3"><input type="checkbox" value="{{ $rec->id }}" x-model="selected" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"></td>
                                         {{-- Type --}}
                                         <td class="px-4 py-3">
                                             <div class="flex items-center gap-1.5">
@@ -440,7 +440,7 @@
                                         <td class="px-4 py-3">
                                             @if($rec->isCompleted() && $rec->isAvailable())
                                                 <div class="flex items-center gap-1">
-                                                    <button @click="$dispatch('open-audio-player-playlist', { playlist: {{ $playlistJson }}, startIndex: {{ $playlistIndex !== false ? $playlistIndex : 0 }} })"
+                                                    <button @click="$dispatch('open-audio-player-playlist', { playlist: playlist, startIndex: {{ $playlistIndex !== false ? $playlistIndex : 0 }} })"
                                                        class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
                                                         <i class="ri-play-circle-line"></i> {{ __($t.'play') }}
                                                     </button>
@@ -448,7 +448,7 @@
                                                        class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 transition-colors">
                                                         <i class="ri-download-line"></i> {{ __($t.'download') }}
                                                     </a>
-                                                    <button @click="deleteRecording({{ $rec->id }}, '{{ $sess?->session_code ?? $rec->display_name }}')"
+                                                    <button @click="deleteRecording({{ $rec->id }})"
                                                        class="inline-flex items-center px-1.5 py-1 text-xs rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                                                         <i class="ri-delete-bin-line"></i>
                                                     </button>
@@ -487,9 +487,8 @@
     </div>
 </div>
 
-{{-- Modals --}}
+{{-- Audio Player Modal (confirmation modal already in supervisor layout) --}}
 <x-recordings.audio-player-modal />
-<x-ui.confirmation-modal />
 
 {{-- Delete form (single) --}}
 <form id="deleteRecordingForm" method="POST" class="hidden">
@@ -498,26 +497,39 @@
 </form>
 
 <script>
-function bulkRecordings() {
+function bulkRecordings(playlistData) {
     return {
         selected: [],
+        playlist: playlistData || [],
 
         toggleAll(event) {
             if (event.target.checked) {
-                this.selected = Array.from(document.querySelectorAll('tbody input[type="checkbox"]')).map(cb => parseInt(cb.value)).filter(v => !isNaN(v));
+                this.selected = Array.from(document.querySelectorAll('tbody input[type="checkbox"]')).map(cb => cb.value).filter(v => v);
             } else {
                 this.selected = [];
             }
         },
 
         bulkDownload() {
-            const rows = document.querySelectorAll('tbody tr');
-            rows.forEach(row => {
+            const links = [];
+            document.querySelectorAll('tbody tr').forEach(row => {
                 const cb = row.querySelector('input[type="checkbox"]');
-                if (cb && this.selected.includes(parseInt(cb.value))) {
+                if (cb && this.selected.includes(cb.value)) {
                     const dlLink = row.querySelector('a[href*="download"]');
-                    if (dlLink) window.open(dlLink.href, '_blank');
+                    if (dlLink) links.push(dlLink.href);
                 }
+            });
+            // Sequential download via hidden <a> clicks to avoid popup blocker
+            links.forEach((href, i) => {
+                setTimeout(() => {
+                    const a = document.createElement('a');
+                    a.href = href;
+                    a.download = '';
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }, i * 500);
             });
         },
 
@@ -539,7 +551,7 @@ function bulkRecordings() {
             }
         },
 
-        deleteRecording(id, name) {
+        deleteRecording(id) {
             const doDelete = () => {
                 const form = document.getElementById('deleteRecordingForm');
                 form.action = '{{ route("manage.recording.delete", ["subdomain" => $subdomain, "recordingId" => "__ID__"]) }}'.replace('__ID__', id);

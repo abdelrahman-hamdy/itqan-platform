@@ -101,38 +101,52 @@ class SupervisorRecordingController extends BaseSupervisorWebController
         return response()->json($status);
     }
 
-    public function deleteRecording(Request $request, $subdomain, $recordingId)
+    public function deleteRecording(Request $request, $subdomain, $recordingId): \Illuminate\Http\RedirectResponse
     {
         if (! $this->canManageRecording()) {
             abort(403);
         }
 
         $recording = SessionRecording::findOrFail($recordingId);
+
+        if (! $recording->status->canDelete()) {
+            abort(403);
+        }
+
         $recording->markAsDeleted();
 
         return redirect()->back()->with('success', __('supervisor.recording.deleted_success'));
     }
 
-    public function bulkDelete(Request $request, $subdomain = null)
+    public function bulkDelete(Request $request, $subdomain = null): \Illuminate\Http\RedirectResponse
     {
         if (! $this->canManageRecording()) {
             abort(403);
         }
 
-        $ids = $request->input('recording_ids', []);
-        if (empty($ids)) {
-            return redirect()->back();
-        }
+        $request->validate([
+            'recording_ids' => 'required|array',
+            'recording_ids.*' => 'integer',
+        ]);
 
-        SessionRecording::whereIn('id', $ids)
+        $ids = $request->input('recording_ids');
+
+        // Use model method per-record so observer fires (handles file cleanup)
+        $recordings = SessionRecording::whereIn('id', $ids)
             ->whereIn('status', [
                 RecordingStatus::COMPLETED->value,
                 RecordingStatus::SKIPPED->value,
                 RecordingStatus::FAILED->value,
             ])
-            ->update(['status' => RecordingStatus::DELETED->value]);
+            ->get();
 
-        return redirect()->back()->with('success', __('supervisor.recording.bulk_deleted_success', ['count' => count($ids)]));
+        $count = 0;
+        foreach ($recordings as $recording) {
+            $recording->markAsDeleted();
+            $count++;
+        }
+
+        return redirect()->back()->with('success', __('supervisor.recording.bulk_deleted_success', ['count' => $count]));
     }
 
     public function livePresence(Request $request): JsonResponse
@@ -258,8 +272,8 @@ class SupervisorRecordingController extends BaseSupervisorWebController
         $query = SessionRecording::query()
             ->with(['recordable' => function (\Illuminate\Database\Eloquent\Relations\MorphTo $morphTo) {
                 $morphTo->morphWith([
-                    QuranSession::class => ['quranTeacher', 'circle'],
-                    AcademicSession::class => ['academicTeacher.user'],
+                    QuranSession::class => ['quranTeacher', 'circle', 'student', 'trialRequest.student'],
+                    AcademicSession::class => ['academicTeacher.user', 'student'],
                     InteractiveCourseSession::class => ['course.assignedTeacher.user'],
                 ]);
             }])
