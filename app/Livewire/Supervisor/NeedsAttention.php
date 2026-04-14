@@ -28,6 +28,10 @@ class NeedsAttention extends Component
 
     public bool $showUnconfirmedPanel = false;
 
+    public int $reviewsPerPage = 10;
+
+    public int $unconfirmedPerPage = 10;
+
     public function placeholder(): string
     {
         return <<<'HTML'
@@ -62,7 +66,7 @@ class NeedsAttention extends Component
         $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();
 
         $service = app(DashboardAttentionService::class);
-        $data = $service->getAttentionItems($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $this->canConfirmStudentEmails());
+        $data = $service->getAttentionItems($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $this->canConfirmStudentEmails(), $this->reviewsPerPage, $this->unconfirmedPerPage);
 
         $this->groups = $data['groups'];
         $this->totalCount = $data['total_count'];
@@ -148,8 +152,23 @@ class NeedsAttention extends Component
         $this->showUnconfirmedPanel = ! $this->showUnconfirmedPanel;
     }
 
+    public function loadMoreReviews(): void
+    {
+        $this->reviewsPerPage += 10;
+        $this->loadData();
+    }
+
+    public function loadMoreUnconfirmed(): void
+    {
+        $this->unconfirmedPerPage += 10;
+        $this->loadData();
+    }
+
     private function clearCacheAndReload(int $academyId): void
     {
+        $this->reviewsPerPage = 10;
+        $this->unconfirmedPerPage = 10;
+
         $service = app(DashboardAttentionService::class);
         $service->forgetCacheFor(
             $academyId,

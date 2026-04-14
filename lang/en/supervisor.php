@@ -168,6 +168,7 @@ return [
         'hide_unconfirmed' => 'Hide',
         'confirm_email' => 'Confirm Email',
         'confirm_email_confirmation' => 'Are you sure you want to confirm this student\'s email?',
+        'load_more' => 'Load more',
     ],
 
     'teachers' => [

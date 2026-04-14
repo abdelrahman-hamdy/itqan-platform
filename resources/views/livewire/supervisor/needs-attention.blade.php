@@ -196,9 +196,15 @@
                                                     <p class="text-xs text-gray-500 mt-0.5">{{ $student['email'] }}</p>
                                                 </div>
                                                 <button
-                                                    wire:click="confirmStudentEmail({{ $student['id'] }})"
-                                                    wire:loading.attr="disabled"
-                                                    wire:confirm="{{ __('supervisor.attention.confirm_email_confirmation') }}"
+                                                    @click="confirmAction({
+                                                        title: @js(__('supervisor.attention.confirm_email')),
+                                                        message: @js(__('supervisor.attention.confirm_email_confirmation')),
+                                                        confirmText: @js(__('supervisor.attention.confirm_email')),
+                                                        isDangerous: false,
+                                                        theme: 'green',
+                                                        icon: 'ri-mail-check-line',
+                                                        onConfirm: () => $wire.confirmStudentEmail({{ $student['id'] }})
+                                                    })"
                                                     class="px-2.5 py-1.5 text-xs font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50"
                                                 >
                                                     {{ __('supervisor.attention.confirm_email') }}
@@ -206,6 +212,16 @@
                                             </div>
                                         @endforeach
                                     </div>
+
+                                    @if($unconfirmedStudents['hasMore'])
+                                        <div class="mt-2 text-center">
+                                            <button wire:click="loadMoreUnconfirmed" wire:loading.attr="disabled"
+                                                    class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                                <span wire:loading.remove wire:target="loadMoreUnconfirmed">{{ __('supervisor.attention.load_more') }}</span>
+                                                <span wire:loading wire:target="loadMoreUnconfirmed">...</span>
+                                            </button>
+                                        </div>
+                                    @endif
                                 </div>
                             @endif
 
@@ -254,9 +270,14 @@
                                                         {{ __('supervisor.attention.approve') }}
                                                     </button>
                                                     <button
-                                                        wire:click="deleteReview('{{ $review['type'] }}', {{ $review['id'] }})"
-                                                        wire:loading.attr="disabled"
-                                                        wire:confirm="{{ __('supervisor.attention.confirm_delete_review') }}"
+                                                        @click="confirmAction({
+                                                            title: @js(__('supervisor.attention.delete_review')),
+                                                            message: @js(__('supervisor.attention.confirm_delete_review')),
+                                                            confirmText: @js(__('supervisor.attention.delete_review')),
+                                                            isDangerous: true,
+                                                            icon: 'ri-delete-bin-line',
+                                                            onConfirm: () => $wire.deleteReview('{{ $review['type'] }}', {{ $review['id'] }})
+                                                        })"
                                                         class="px-2.5 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
                                                     >
                                                         {{ __('supervisor.attention.delete_review') }}
@@ -265,6 +286,16 @@
                                             </div>
                                         @endforeach
                                     </div>
+
+                                    @if($pendingReviews['hasMore'])
+                                        <div class="mt-2 text-center">
+                                            <button wire:click="loadMoreReviews" wire:loading.attr="disabled"
+                                                    class="text-xs text-amber-600 hover:text-amber-800 font-medium">
+                                                <span wire:loading.remove wire:target="loadMoreReviews">{{ __('supervisor.attention.load_more') }}</span>
+                                                <span wire:loading wire:target="loadMoreReviews">...</span>
+                                            </button>
+                                        </div>
+                                    @endif
                                 </div>
                             @endif
                         </div>

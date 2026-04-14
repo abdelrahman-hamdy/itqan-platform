@@ -168,6 +168,7 @@ return [
         'hide_unconfirmed' => 'إخفاء',
         'confirm_email' => 'تأكيد البريد',
         'confirm_email_confirmation' => 'هل أنت متأكد من تأكيد بريد هذا الطالب؟',
+        'load_more' => 'عرض المزيد',
     ],
 
     'teachers' => [
