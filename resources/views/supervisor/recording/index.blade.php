@@ -323,17 +323,23 @@
 
                 <div x-data="bulkRecordings({{ $playlistJs }})" class="relative">
                     {{-- Bulk action bar --}}
-                    <div x-show="selected.length > 0" x-transition
-                         class="sticky top-0 z-10 bg-indigo-600 text-white px-4 py-2.5 flex items-center justify-between">
+                    <div x-show="selected.length > 0" x-cloak
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 -translate-y-2"
+                         class="sticky top-0 z-10 bg-indigo-50 dark:bg-indigo-900/30 border-b border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-200 px-4 py-2.5 flex items-center justify-between">
                         <span class="text-sm font-medium" x-text="'{{ __($t.'bulk_selected') }}: ' + selected.length"></span>
                         <div class="flex items-center gap-2">
-                            <button @click="bulkDownload()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/20 hover:bg-white/30 transition-colors">
+                            <button @click="bulkDownload()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
                                 <i class="ri-download-line"></i> {{ __($t.'bulk_download') }}
                             </button>
-                            <button @click="bulkDeleteConfirm()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500 hover:bg-red-600 transition-colors">
+                            <button @click="bulkDeleteConfirm()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors">
                                 <i class="ri-delete-bin-line"></i> {{ __($t.'bulk_delete') }}
                             </button>
-                            <button @click="selected = []" class="p-1 hover:bg-white/20 rounded transition-colors">
+                            <button @click="selected = []" class="p-1 hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded transition-colors">
                                 <i class="ri-close-line"></i>
                             </button>
                         </div>
