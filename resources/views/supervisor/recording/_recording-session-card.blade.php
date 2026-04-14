@@ -47,7 +47,7 @@
                 <i class="{{ $typeConfig['icon'] }} {{ $typeConfig['text'] }}"></i>
             </span>
             <div>
-                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $typeConfig['label'] }}</p>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $typeConfig['label'] }} <span class="text-[10px] text-gray-400 font-mono">#{{ $session->id }}</span></p>
                 <div class="flex items-center gap-2 mt-0.5">
                     <x-sessions.status-badge :status="$status" size="sm" />
                     @if($session->duration_minutes)

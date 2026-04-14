@@ -59,7 +59,10 @@
             <span class="w-6 h-6 rounded flex items-center justify-center {{ $typeConfig['bg'] }}">
                 <i class="{{ $typeConfig['icon'] }} text-xs {{ $typeConfig['text'] }}"></i>
             </span>
-            <span class="text-xs text-gray-600 dark:text-gray-400">{{ $typeConfig['label'] }}</span>
+            <div>
+                <span class="text-xs text-gray-600 dark:text-gray-400">{{ $typeConfig['label'] }}</span>
+                <span class="text-[10px] text-gray-400 font-mono block">#{{ $session->id }}</span>
+            </div>
         </div>
     </td>
 
