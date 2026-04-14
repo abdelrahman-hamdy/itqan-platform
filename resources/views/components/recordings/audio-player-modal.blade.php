@@ -115,6 +115,7 @@
             this.currentIndex = 0;
             this.setTrackData(detail);
             this.resetState();
+            this.$refs.audio.src = this.audioUrl;
             this.open = true;
         },
 
@@ -125,6 +126,7 @@
             if (!track) return;
             this.setTrackData(track);
             this.resetState();
+            this.$refs.audio.src = this.audioUrl;
             this.open = true;
         },
 
