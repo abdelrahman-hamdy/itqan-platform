@@ -221,7 +221,7 @@
 
                 <h4 class="text-sm font-medium text-gray-700 mt-2">{{ __('supervisor.supervisors.perm_group_users') }}</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    @foreach(['can_manage_teachers', 'can_manage_students', 'can_manage_parents', 'can_reset_passwords'] as $perm)
+                    @foreach(['can_manage_teachers', 'can_manage_students', 'can_confirm_student_emails', 'can_manage_parents', 'can_reset_passwords'] as $perm)
                         <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                             <input type="hidden" name="{{ $perm }}" value="0">
                             <input type="checkbox" name="{{ $perm }}" value="1"

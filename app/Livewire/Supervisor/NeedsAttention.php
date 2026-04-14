@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\AcademyContextService;
 use App\Services\DashboardAttentionService;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class NeedsAttention extends Component
@@ -28,8 +29,10 @@ class NeedsAttention extends Component
 
     public bool $showUnconfirmedPanel = false;
 
+    #[Locked]
     public int $reviewsPerPage = 10;
 
+    #[Locked]
     public int $unconfirmedPerPage = 10;
 
     public function placeholder(): string
@@ -66,7 +69,11 @@ class NeedsAttention extends Component
         $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();
 
         $service = app(DashboardAttentionService::class);
-        $data = $service->getAttentionItems($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $this->canConfirmStudentEmails(), $this->reviewsPerPage, $this->unconfirmedPerPage);
+        $data = $service->getAttentionItems(
+            $academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds,
+            $this->canConfirmStudentEmails(), $this->reviewsPerPage, $this->unconfirmedPerPage,
+            $this->showReviewsPanel, $this->showUnconfirmedPanel,
+        );
 
         $this->groups = $data['groups'];
         $this->totalCount = $data['total_count'];
@@ -93,7 +100,7 @@ class NeedsAttention extends Component
         }
 
         $review->approve(Auth::id());
-        $this->clearCacheAndReload($academyId);
+        $this->clearCacheAndReload($academyId, 'reviews');
     }
 
     public function deleteReview(string $type, int $id): void
@@ -114,7 +121,7 @@ class NeedsAttention extends Component
         }
 
         $review->delete();
-        $this->clearCacheAndReload($academyId);
+        $this->clearCacheAndReload($academyId, 'reviews');
     }
 
     public function toggleReviewsPanel(): void
@@ -144,7 +151,7 @@ class NeedsAttention extends Component
         }
 
         $user->markEmailAsVerified();
-        $this->clearCacheAndReload($academyId);
+        $this->clearCacheAndReload($academyId, 'unconfirmed');
     }
 
     public function toggleUnconfirmedPanel(): void
@@ -154,20 +161,24 @@ class NeedsAttention extends Component
 
     public function loadMoreReviews(): void
     {
-        $this->reviewsPerPage += 10;
+        $this->reviewsPerPage = min($this->reviewsPerPage + 10, 100);
         $this->loadData();
     }
 
     public function loadMoreUnconfirmed(): void
     {
-        $this->unconfirmedPerPage += 10;
+        $this->unconfirmedPerPage = min($this->unconfirmedPerPage + 10, 100);
         $this->loadData();
     }
 
-    private function clearCacheAndReload(int $academyId): void
+    private function clearCacheAndReload(int $academyId, string $resetPanel = 'all'): void
     {
-        $this->reviewsPerPage = 10;
-        $this->unconfirmedPerPage = 10;
+        if ($resetPanel === 'all' || $resetPanel === 'reviews') {
+            $this->reviewsPerPage = 10;
+        }
+        if ($resetPanel === 'all' || $resetPanel === 'unconfirmed') {
+            $this->unconfirmedPerPage = 10;
+        }
 
         $service = app(DashboardAttentionService::class);
         $service->forgetCacheFor(

@@ -50,6 +50,8 @@ class DashboardAttentionService
         bool $canConfirmStudentEmails = false,
         int $reviewsLimit = 10,
         int $unconfirmedLimit = 10,
+        bool $loadReviews = true,
+        bool $loadUnconfirmed = true,
     ): array {
         $cacheKey = $this->buildCacheKey($academyId, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails);
 
@@ -61,11 +63,14 @@ class DashboardAttentionService
         $totalCount = collect($groups)->sum(fn ($g) => collect($g['items'])->sum('count'));
         $worstSeverity = $this->determineWorstSeverity($groups);
 
-        // Reviews data (not cached — needs to be fresh for inline actions)
-        $pendingReviews = $this->getPendingReviewsData($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $reviewsLimit);
+        // Panel data (not cached — only fetched when panels are open)
+        $pendingReviews = $loadReviews
+            ? $this->getPendingReviewsData($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $reviewsLimit)
+            : ['enabled' => false, 'items' => [], 'total' => 0, 'hasMore' => false];
 
-        // Unconfirmed students data (not cached — needs to be fresh for inline actions)
-        $unconfirmedStudents = $this->getUnconfirmedStudentsData($academyId, $canConfirmStudentEmails, $isAdmin, $counts['unconfirmed_emails'], $unconfirmedLimit);
+        $unconfirmedStudents = $loadUnconfirmed
+            ? $this->getUnconfirmedStudentsData($academyId, $canConfirmStudentEmails, $isAdmin, $counts['unconfirmed_emails'], $unconfirmedLimit)
+            : ['enabled' => false, 'items' => [], 'total' => 0, 'hasMore' => false];
 
         return [
             'groups' => $groups,
