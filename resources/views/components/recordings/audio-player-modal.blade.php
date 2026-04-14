@@ -131,7 +131,7 @@
     class="fixed inset-0 z-[9999]"
 >
     {{-- Hidden audio element --}}
-    <audio x-ref="audio" preload="metadata" crossorigin="anonymous"></audio>
+    <audio x-ref="audio" preload="metadata"></audio>
 
     {{-- Backdrop --}}
     <div class="fixed inset-0 bg-black/60" x-show="open" x-transition.opacity @click="closePlayer()"></div>
