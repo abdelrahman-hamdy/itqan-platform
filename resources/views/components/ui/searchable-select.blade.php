@@ -96,7 +96,7 @@
             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
             x-transition:leave="transition ease-in duration-75"
             x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-            class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+            class="absolute z-[100] mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
 
             {{-- Search --}}
             <div class="px-3 pt-3 pb-2">
