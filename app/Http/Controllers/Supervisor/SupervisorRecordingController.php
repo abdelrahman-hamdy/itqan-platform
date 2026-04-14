@@ -34,10 +34,10 @@ class SupervisorRecordingController extends BaseSupervisorWebController
 
         $tab = $request->query('tab', 'live');
         $sessionTab = $request->query('session_tab', 'all');
-        $statusFilter = $request->query('recording_status');
         $teacherId = $request->query('teacher_id');
         $studentId = $request->query('student_id');
         $search = $request->query('search');
+        $dateFilter = $request->query('date', 'all');
 
         $capacityStatus = $this->orchestrator->getCapacityStatus();
         $sessions = collect();
@@ -47,18 +47,14 @@ class SupervisorRecordingController extends BaseSupervisorWebController
         $historyData = null;
 
         if ($tab === 'live') {
-            // Fetch unfiltered sessions first to derive tab counts, then apply status filter
             $sessions = $this->getLiveSessions($sessionTab, $teacherId, $studentId, $search);
             $tabCounts = [
                 'quran' => $sessions->where('_type', 'quran')->count(),
                 'academic' => $sessions->where('_type', 'academic')->count(),
                 'interactive' => $sessions->where('_type', 'interactive')->count(),
             ];
-            if ($statusFilter) {
-                $sessions = $sessions->filter(fn ($s) => $s->getAttribute('_recording_status') === $statusFilter);
-            }
         } elseif ($tab === 'history') {
-            $historyData = $this->getHistoryData($request, $sessionTab);
+            $historyData = $this->getHistoryData($request, $sessionTab, $dateFilter);
         }
 
         $liveSessions = $sessions->pluck('id')->values();
@@ -72,7 +68,7 @@ class SupervisorRecordingController extends BaseSupervisorWebController
             'sessions' => $sessions,
             'activeTab' => $tab,
             'sessionTab' => $sessionTab,
-            'statusFilter' => $statusFilter,
+            'dateFilter' => $dateFilter,
             'teacherId' => $teacherId,
             'studentId' => $studentId,
             'search' => $search,
@@ -263,12 +259,8 @@ class SupervisorRecordingController extends BaseSupervisorWebController
     // History
     // ────────────────────────────────────────────────────────────────
 
-    private function getHistoryData(Request $request, string $sessionTab): array
+    private function getHistoryData(Request $request, string $sessionTab, string $dateFilter = 'all'): array
     {
-        $statusFilter = $request->query('recording_status');
-        $dateFrom = $request->query('date_from');
-        $dateTo = $request->query('date_to');
-
         $query = SessionRecording::query()
             ->with(['recordable' => function (\Illuminate\Database\Eloquent\Relations\MorphTo $morphTo) {
                 $morphTo->morphWith([
@@ -277,16 +269,16 @@ class SupervisorRecordingController extends BaseSupervisorWebController
                     InteractiveCourseSession::class => ['course.assignedTeacher.user'],
                 ]);
             }])
-            ->whereIn('status', [
-                RecordingStatus::COMPLETED->value,
-                RecordingStatus::SKIPPED->value,
-                RecordingStatus::FAILED->value,
-            ])
+            ->where('status', RecordingStatus::COMPLETED->value)
             ->orderByDesc('created_at');
 
-        if ($statusFilter) {
-            $query->where('status', $statusFilter);
-        }
+        // Date filter
+        match ($dateFilter) {
+            'today' => $query->whereDate('created_at', today()),
+            'week' => $query->where('created_at', '>=', now()->startOfWeek()),
+            'month' => $query->where('created_at', '>=', now()->startOfMonth()),
+            default => null,
+        };
 
         if ($sessionTab !== 'all') {
             $morphClass = match ($sessionTab) {
@@ -309,23 +301,18 @@ class SupervisorRecordingController extends BaseSupervisorWebController
 
         $recordings = $query->paginate(20)->withQueryString();
 
-        $stats = SessionRecording::query()
-            ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
-            ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
-            ->selectRaw('
-                COUNT(CASE WHEN status = ? THEN 1 END) as total_recorded,
-                COUNT(CASE WHEN status = ? THEN 1 END) as total_skipped,
-                COUNT(CASE WHEN status = ? THEN 1 END) as total_failed,
-                COALESCE(SUM(CASE WHEN status = ? THEN duration END), 0) as total_duration,
-                COALESCE(SUM(CASE WHEN status = ? THEN file_size END), 0) as total_storage
-            ', [
-                RecordingStatus::COMPLETED->value,
-                RecordingStatus::SKIPPED->value,
-                RecordingStatus::FAILED->value,
-                RecordingStatus::COMPLETED->value,
-                RecordingStatus::COMPLETED->value,
-            ])
-            ->first();
+        $statsQuery = SessionRecording::query()->where('status', RecordingStatus::COMPLETED->value);
+        match ($dateFilter) {
+            'today' => $statsQuery->whereDate('created_at', today()),
+            'week' => $statsQuery->where('created_at', '>=', now()->startOfWeek()),
+            'month' => $statsQuery->where('created_at', '>=', now()->startOfMonth()),
+            default => null,
+        };
+        $stats = $statsQuery->selectRaw('
+                COUNT(*) as total_recorded,
+                COALESCE(SUM(duration), 0) as total_duration,
+                COALESCE(SUM(file_size), 0) as total_storage
+            ')->first();
 
         return [
             'recordings' => $recordings,

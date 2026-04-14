@@ -27,7 +27,7 @@
         $isTrial => ['label' => __('supervisor.sessions.type_quran_trial'), 'icon' => 'ri-gift-line', 'bg' => 'bg-orange-50', 'text' => 'text-orange-600'],
         (bool) $session->circle => ['label' => __('supervisor.sessions.type_quran_group'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
         default => ['label' => __('supervisor.sessions.type_quran_individual'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
-    };
+    ];
 
     $showUrl = route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
 
@@ -41,7 +41,19 @@
 @endphp
 
 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-    {{-- Type (same design as sessions page) --}}
+    {{-- Recording Status (first column) --}}
+    <td class="px-4 py-3">
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium {{ $statusBadge['class'] }}">
+            @if($statusBadge['pulse'] ?? false)
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+            @else
+                <i class="{{ $statusBadge['icon'] }} text-xs"></i>
+            @endif
+            {{ __($t.'status_' . $recordingStatus) }}
+        </span>
+    </td>
+
+    {{-- Type --}}
     <td class="px-4 py-3">
         <div class="flex items-center gap-1.5">
             <span class="w-6 h-6 rounded flex items-center justify-center {{ $typeConfig['bg'] }}">
@@ -57,9 +69,14 @@
     {{-- Student --}}
     <td class="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm">{{ $studentName }}</td>
 
-    {{-- Time --}}
-    <td class="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm" dir="ltr">
-        {{ $session->scheduled_at ? toAcademyTimezone($session->scheduled_at)->format('M d, H:i') : '-' }}
+    {{-- Scheduled At (matching sessions page format) --}}
+    <td class="px-4 py-3 whitespace-nowrap">
+        @if($session->scheduled_at)
+            <span class="text-sm text-gray-700">{{ toAcademyTimezone($session->scheduled_at)->translatedFormat('d M') }}</span>
+            <span class="text-xs text-gray-500 block">{{ toAcademyTimezone($session->scheduled_at)->translatedFormat('h:i A') }}</span>
+        @else
+            <span class="text-sm text-gray-400">-</span>
+        @endif
     </td>
 
     {{-- Duration --}}
@@ -71,24 +88,7 @@
         @endif
     </td>
 
-    {{-- Session Status --}}
-    <td class="px-4 py-3">
-        <x-sessions.status-badge :status="$status" size="sm" />
-    </td>
-
-    {{-- Recording Status --}}
-    <td class="px-4 py-3">
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium {{ $statusBadge['class'] }}">
-            @if($statusBadge['pulse'] ?? false)
-                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-            @else
-                <i class="{{ $statusBadge['icon'] }} text-xs"></i>
-            @endif
-            {{ __($t.'status_' . $recordingStatus) }}
-        </span>
-    </td>
-
-    {{-- Actions (same buttons as sessions page) --}}
+    {{-- Actions --}}
     <td class="px-4 py-3">
         @if($isLive)
             <div class="flex items-center gap-1.5" onclick="event.stopPropagation();">

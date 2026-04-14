@@ -6,8 +6,8 @@
 
     $filterUrl = fn(array $overrides = []) => route('manage.recording.index', array_filter(array_merge([
         'subdomain' => $subdomain, 'tab' => $activeTab, 'session_tab' => $sessionTab,
-        'recording_status' => $statusFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId,
-        'search' => $search, 'date_from' => request('date_from'), 'date_to' => request('date_to'),
+        'date' => $dateFilter, 'teacher_id' => $teacherId, 'student_id' => $studentId,
+        'search' => $search,
     ], $overrides)));
 @endphp
 
@@ -134,27 +134,23 @@
         </nav>
     </div>
 
-    {{-- Filters (grid layout matching sessions page) --}}
-    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-            {{-- Recording Status --}}
-            <select onchange="if(this.value !== '') { window.location.href = this.value; }"
-                class="text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500">
-                <option value="{{ $filterUrl(['recording_status' => null]) }}" {{ !$statusFilter ? 'selected' : '' }}>
-                    {{ __($t.'filter_recording_status') }}: {{ __($t.'filter_all_statuses') }}
-                </option>
-                <option value="{{ $filterUrl(['recording_status' => 'recording']) }}" {{ $statusFilter === 'recording' ? 'selected' : '' }}>{{ __($t.'status_recording') }}</option>
-                <option value="{{ $filterUrl(['recording_status' => 'queued']) }}" {{ $statusFilter === 'queued' ? 'selected' : '' }}>{{ __($t.'status_queued') }}</option>
-                @if($activeTab === 'history')
-                    <option value="{{ $filterUrl(['recording_status' => 'completed']) }}" {{ $statusFilter === 'completed' ? 'selected' : '' }}>{{ __($t.'status_completed') }}</option>
-                    <option value="{{ $filterUrl(['recording_status' => 'skipped']) }}" {{ $statusFilter === 'skipped' ? 'selected' : '' }}>{{ __($t.'status_skipped') }}</option>
-                    <option value="{{ $filterUrl(['recording_status' => 'failed']) }}" {{ $statusFilter === 'failed' ? 'selected' : '' }}>{{ __($t.'status_failed') }}</option>
-                @else
-                    <option value="{{ $filterUrl(['recording_status' => 'manual']) }}" {{ $statusFilter === 'manual' ? 'selected' : '' }}>{{ __($t.'status_manual') }}</option>
-                    <option value="{{ $filterUrl(['recording_status' => 'none']) }}" {{ $statusFilter === 'none' ? 'selected' : '' }}>{{ __($t.'status_none') }}</option>
-                @endif
-            </select>
+    {{-- Date filter pills --}}
+    <div class="px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-medium text-gray-500">{{ __('supervisor.sessions.col_scheduled') }}:</span>
+            @foreach(['all' => __('supervisor.sessions.filter_date_all'), 'today' => __('supervisor.sessions.filter_date_today'), 'week' => __('supervisor.sessions.filter_date_week'), 'month' => __('supervisor.sessions.filter_date_month')] as $dateVal => $dateLabel)
+                <a href="{{ $filterUrl(['date' => $dateVal]) }}"
+                   class="px-3 py-1 text-xs font-medium rounded-full transition-colors
+                       {{ $dateFilter === $dateVal ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+                    {{ $dateLabel }}
+                </a>
+            @endforeach
+        </div>
+    </div>
 
+    {{-- Filters --}}
+    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {{-- Teacher --}}
             @if(!empty($teachers))
             <x-ui.searchable-select
@@ -187,7 +183,7 @@
                 <form method="GET" action="{{ route('manage.recording.index', ['subdomain' => $subdomain]) }}">
                     <input type="hidden" name="tab" value="{{ $activeTab }}">
                     <input type="hidden" name="session_tab" value="{{ $sessionTab }}">
-                    @if($statusFilter)<input type="hidden" name="recording_status" value="{{ $statusFilter }}">@endif
+                    <input type="hidden" name="date" value="{{ $dateFilter }}">
                     @if($teacherId)<input type="hidden" name="teacher_id" value="{{ $teacherId }}">@endif
                     @if($studentId)<input type="hidden" name="student_id" value="{{ $studentId }}">@endif
                     <input type="text" name="search" value="{{ $search }}"
@@ -214,13 +210,12 @@
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-gray-900/50">
                         <tr>
+                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'status') }}</th>
                             <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'type') }}</th>
                             <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'teacher') }}</th>
                             <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_student') }}</th>
-                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'time') }}</th>
+                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_scheduled') }}</th>
                             <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_duration') }}</th>
-                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_status') }}</th>
-                            <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'status') }}</th>
                             <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'actions') }}</th>
                         </tr>
                     </thead>
@@ -244,31 +239,13 @@
         @if($historyData)
             {{-- Stats (same card design as capacity dashboard) --}}
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-                <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                <div class="grid grid-cols-3 gap-3">
                     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center"><i class="ri-checkbox-circle-line text-lg text-green-600"></i></div>
                             <div>
                                 <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($historyData['stats']->total_recorded) }}</p>
                                 <p class="text-xs text-gray-500">{{ __($t.'history_total_recorded') }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-700 flex items-center justify-center"><i class="ri-skip-forward-line text-lg text-gray-600"></i></div>
-                            <div>
-                                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($historyData['stats']->total_skipped) }}</p>
-                                <p class="text-xs text-gray-500">{{ __($t.'history_total_skipped') }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center"><i class="ri-error-warning-line text-lg text-red-600"></i></div>
-                            <div>
-                                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($historyData['stats']->total_failed) }}</p>
-                                <p class="text-xs text-gray-500">{{ __($t.'history_total_failed') }}</p>
                             </div>
                         </div>
                     </div>
@@ -355,9 +332,7 @@
                                     <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'teacher') }}</th>
                                     <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_student') }}</th>
                                     <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_scheduled') }}</th>
-                                    <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_status') }}</th>
                                     <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_duration') }}</th>
-                                    <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'status') }}</th>
                                     <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'history_storage_used') }}</th>
                                     <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'actions') }}</th>
                                 </tr>
@@ -390,12 +365,6 @@
                                             $sess && $sess->circle => ['label' => __('supervisor.sessions.type_quran_group'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
                                             default => ['label' => __('supervisor.sessions.type_quran_individual'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
                                         };
-                                        $sBadge = match($rec->status) {
-                                            \App\Enums\RecordingStatus::COMPLETED => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                                            \App\Enums\RecordingStatus::SKIPPED => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-                                            \App\Enums\RecordingStatus::FAILED => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-                                            default => 'bg-gray-100 text-gray-600',
-                                        };
                                         $playlistIndex = $playableRecordings->search(fn ($r) => $r->id === $rec->id);
                                     @endphp
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
@@ -422,24 +391,12 @@
                                                 <span class="text-sm text-gray-400">-</span>
                                             @endif
                                         </td>
-                                        {{-- Session Status --}}
-                                        <td class="px-4 py-3">
-                                            @if($sess?->status)
-                                                <x-sessions.status-badge :status="$sess->status" size="sm" />
-                                            @else
-                                                <span class="text-xs text-gray-400">-</span>
+                                        {{-- Duration (audio + session time) --}}
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <span class="text-sm text-gray-700">{{ $rec->formatted_duration ?: '-' }}</span>
+                                            @if($sess?->duration_minutes)
+                                                <span class="text-xs text-gray-400 block">{{ $sess->duration_minutes }} {{ __('supervisor.sessions.minutes_short') }}</span>
                                             @endif
-                                        </td>
-                                        {{-- Duration --}}
-                                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm">
-                                            {{ $sess?->duration_minutes ? $sess->duration_minutes . ' ' . __('supervisor.sessions.minutes_short') : $rec->formatted_duration }}
-                                        </td>
-                                        {{-- Recording Status --}}
-                                        <td class="px-4 py-3">
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $sBadge }}">
-                                                <i class="{{ $rec->status->icon() }} me-1"></i>
-                                                {{ $rec->status->label() }}
-                                            </span>
                                         </td>
                                         {{-- Size --}}
                                         <td class="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm" dir="ltr">{{ $rec->formatted_file_size }}</td>
