@@ -196,7 +196,7 @@
                                                     <p class="text-xs text-gray-500 mt-0.5">{{ $student['email'] }}</p>
                                                 </div>
                                                 <button
-                                                    @click="confirmAction({
+                                                    @click="window.confirmAction({
                                                         title: @js(__('supervisor.attention.confirm_email')),
                                                         message: @js(__('supervisor.attention.confirm_email_confirmation')),
                                                         confirmText: @js(__('supervisor.attention.confirm_email')),
@@ -213,7 +213,7 @@
                                         @endforeach
                                     </div>
 
-                                    @if($unconfirmedStudents['hasMore'])
+                                    @if(count($unconfirmedStudents['items'] ?? []) < ($unconfirmedStudents['total'] ?? 0))
                                         <div class="mt-2 text-center">
                                             <button wire:click="loadMoreUnconfirmed" wire:loading.attr="disabled"
                                                     class="text-xs text-blue-600 hover:text-blue-800 font-medium">
@@ -270,7 +270,7 @@
                                                         {{ __('supervisor.attention.approve') }}
                                                     </button>
                                                     <button
-                                                        @click="confirmAction({
+                                                        @click="window.confirmAction({
                                                             title: @js(__('supervisor.attention.delete_review')),
                                                             message: @js(__('supervisor.attention.confirm_delete_review')),
                                                             confirmText: @js(__('supervisor.attention.delete_review')),
@@ -287,7 +287,7 @@
                                         @endforeach
                                     </div>
 
-                                    @if($pendingReviews['hasMore'])
+                                    @if(count($pendingReviews['items'] ?? []) < ($pendingReviews['total'] ?? 0))
                                         <div class="mt-2 text-center">
                                             <button wire:click="loadMoreReviews" wire:loading.attr="disabled"
                                                     class="text-xs text-amber-600 hover:text-amber-800 font-medium">
