@@ -363,7 +363,7 @@ class UnifiedInteractiveCourseController extends Controller
                 'payment_code' => Payment::generatePaymentCode($academy->id, 'ICP'),
                 'payment_method' => 'credit_card',
                 'payment_gateway' => $gateway,
-                'payment_type' => 'course_enrollment',
+                'payment_type' => 'course',
                 'amount' => $price,
                 'net_amount' => $price,
                 'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
