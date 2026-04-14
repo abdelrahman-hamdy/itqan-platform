@@ -412,8 +412,8 @@ class CalendarController extends Controller
 
         $source = $validated['source'];
         $status = $session->status instanceof SessionStatus ? $session->status : SessionStatus::tryFrom($session->status);
-        $canEdit = in_array($status, [SessionStatus::SCHEDULED, SessionStatus::READY]);
-        $canReschedule = $session->can_reschedule;
+        $canEdit = $session->can_reschedule;
+        $canReschedule = $canEdit;
 
         $data = [
             'id' => $session->id,
