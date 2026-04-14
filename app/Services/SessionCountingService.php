@@ -161,6 +161,16 @@ class SessionCountingService
                 $session->update(['subscription_counted' => false]);
             }
 
+            // Academic individual sessions: create a replacement UNSCHEDULED session
+            // so the freed slot can be rescheduled via the calendar.
+            if ($session instanceof \App\Models\AcademicSession
+                && $session->session_type === 'individual'
+                && $session->academicIndividualLesson
+            ) {
+                $session->academicIndividualLesson->createReplacementUnscheduledSession($session);
+                $session->academicIndividualLesson->updateSessionCounts();
+            }
+
             Log::info('SessionCountingService: Subscription reversed', [
                 'subscription_id' => $subscription->id,
                 'student_id' => $studentId,

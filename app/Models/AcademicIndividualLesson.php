@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\LessonStatus;
+use App\Enums\SessionStatus;
 use App\Models\Traits\ScopedToAcademy;
 use DB;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -216,46 +217,83 @@ class AcademicIndividualLesson extends Model
             ->countable()
             ->count();
 
+        $remaining = $this->sessions()
+            ->where('status', SessionStatus::UNSCHEDULED->value)
+            ->count();
+
         $this->update([
             'sessions_scheduled' => $scheduled,
             'sessions_completed' => $completed,
+            'sessions_remaining' => $remaining,
         ]);
     }
 
     /**
-     * Handle session cancellation by incrementing remaining sessions
-     * When a session is cancelled, a new slot becomes available for scheduling
+     * Handle session cancellation by creating a replacement UNSCHEDULED session.
+     * The scheduling system requires UNSCHEDULED rows to schedule — without a
+     * replacement, the freed slot cannot be rescheduled.
      */
-    public function handleSessionCancelled(): void
+    public function handleSessionCancelled(AcademicSession $cancelledSession): void
     {
-        DB::transaction(function () {
+        DB::transaction(function () use ($cancelledSession) {
             $lesson = static::lockForUpdate()->find($this->id);
 
             if (! $lesson) {
                 return;
             }
 
-            // Increment sessions_remaining (a cancelled session frees up a slot)
-            $lesson->increment('sessions_remaining');
+            // Create a replacement UNSCHEDULED session so the slot can be rescheduled
+            $lesson->createReplacementUnscheduledSession($cancelledSession);
 
-            // Recalculate session counts to ensure consistency
-            $scheduled = $lesson->sessions()
-                ->active()
-                ->count();
-
-            $completed = $lesson->sessions()
-                ->countable()
-                ->count();
-
+            // Recalculate all cached counters from actual session data
             $lesson->update([
-                'sessions_scheduled' => $scheduled,
-                'sessions_completed' => $completed,
+                'sessions_scheduled' => $lesson->sessions()->active()->count(),
+                'sessions_completed' => $lesson->sessions()->countable()->count(),
+                'sessions_remaining' => $lesson->sessions()->where('status', SessionStatus::UNSCHEDULED->value)->count(),
             ]);
 
-            Log::info("Lesson {$lesson->id} remaining sessions incremented due to cancellation", [
+            Log::info("Lesson {$lesson->id} replacement session created after cancellation", [
                 'lesson_id' => $lesson->id,
+                'cancelled_session_id' => $cancelledSession->id,
                 'new_remaining' => $lesson->sessions_remaining,
             ]);
         });
+    }
+
+    /**
+     * Create a single UNSCHEDULED AcademicSession to replace a cancelled or uncounted session.
+     * Uses withoutEvents() to bypass the BaseSessionObserver schedulability guard.
+     */
+    public function createReplacementUnscheduledSession(AcademicSession $sourceSession): void
+    {
+        $nextNumber = ((int) AcademicSession::where('academic_individual_lesson_id', $this->id)->max('session_number')) + 1;
+        $subscriptionId = $sourceSession->academic_subscription_id;
+        $sessionCode = 'AS-' . $subscriptionId . '-' . str_pad((string) $nextNumber, 3, '0', STR_PAD_LEFT);
+
+        $subjectName = $sourceSession->academicSubscription?->subject_name ?? 'مادة';
+
+        AcademicSession::withoutEvents(function () use ($sourceSession, $nextNumber, $sessionCode, $subjectName) {
+            AcademicSession::create([
+                'academy_id' => $sourceSession->academy_id,
+                'academic_teacher_id' => $sourceSession->academic_teacher_id,
+                'academic_subscription_id' => $sourceSession->academic_subscription_id,
+                'academic_individual_lesson_id' => $this->id,
+                'student_id' => $sourceSession->student_id,
+                'session_code' => $sessionCode,
+                'session_type' => 'individual',
+                'status' => SessionStatus::UNSCHEDULED,
+                'session_number' => $nextNumber,
+                'title' => __('sessions.naming.academic_session', ['n' => $nextNumber, 'subject' => $subjectName]),
+                'description' => $sourceSession->description,
+                'duration_minutes' => $sourceSession->duration_minutes ?? 60,
+                'created_by' => $sourceSession->student_id,
+            ]);
+        });
+
+        Log::info("Replacement UNSCHEDULED session created for lesson {$this->id}", [
+            'lesson_id' => $this->id,
+            'source_session_id' => $sourceSession->id,
+            'new_session_number' => $nextNumber,
+        ]);
     }
 }

@@ -64,7 +64,7 @@ class AcademicSessionObserver
                     ->delete();
 
                 if ($session->session_type === 'individual' && $session->academicIndividualLesson) {
-                    $session->academicIndividualLesson->handleSessionCancelled();
+                    $session->academicIndividualLesson->handleSessionCancelled($session);
                 }
             });
 

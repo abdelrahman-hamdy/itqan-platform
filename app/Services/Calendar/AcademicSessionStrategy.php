@@ -304,7 +304,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         $course = InteractiveCourse::findOrFail($courseId);
 
         $requestedSessionCount = $data['session_count'];
-        $remainingSessions = max(0, $course->total_sessions - $course->sessions()->count());
+        $remainingSessions = max(0, $course->total_sessions - $course->sessions()->notCancelled()->count());
 
         if ($remainingSessions <= 0) {
             throw new Exception(__('calendar.strategy.no_remaining_course_sessions'));
