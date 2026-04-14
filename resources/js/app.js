@@ -13,10 +13,8 @@ import { LABELS_AR, CSS_CLASSES, ICONS } from './utils/constants';
 import './components/navigation';
 import './components/file-upload';
 
-// Chart.js — lazy-load only when chart elements exist
-if (document.querySelector('canvas, .fi-wi-chart')) {
-    import('./chart-init');
-}
+// Chart.js — must be static (inline scripts and Livewire widgets need window.Chart synchronously)
+import './chart-init';
 
 // intl-tel-input — lazy-load only when phone input fields exist
 if (document.querySelector('input[type="tel"], [data-phone-input]')) {
