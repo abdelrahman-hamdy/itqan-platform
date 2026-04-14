@@ -46,97 +46,93 @@
         }
     @endphp
 
-    {{-- Featured image --}}
-    @if($course->featured_image)
-    <div class="overflow-hidden rounded-t-2xl">
-      <img src="{{ \Illuminate\Support\Facades\Storage::url($course->featured_image) }}" alt="{{ $course->title }}" class="w-full">
-    </div>
-    @endif
-
-    <!-- Hero Section -->
-    <div class="bg-gradient-to-br from-blue-50 to-white {{ $course->featured_image ? 'rounded-b-2xl' : 'rounded-2xl' }} p-4 sm:p-6 md:p-8 lg:p-10 mb-6 md:mb-8 border border-blue-100 {{ $course->featured_image ? 'border-t-0' : '' }}">
-        <!-- Status Badge with Rating -->
-        <div class="flex items-center justify-between gap-4 mb-4 flex-wrap">
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full {{ $statusBg }} {{ $statusText }} text-sm font-medium">
-                <i class="{{ $statusIcon }}"></i>
-                <span>{{ $statusLabel }}</span>
-            </div>
-
-            <!-- Rating Stars -->
-            @if($course->total_reviews > 0)
-            <div class="flex items-center gap-2">
-                <div class="flex items-center gap-1">
-                    @for($i = 1; $i <= 5; $i++)
-                        @if($i <= floor($course->avg_rating))
-                            <i class="ri-star-fill text-yellow-400 text-lg"></i>
-                        @elseif($i - 0.5 <= $course->avg_rating)
-                            <i class="ri-star-half-fill text-yellow-400 text-lg"></i>
-                        @else
-                            <i class="ri-star-line text-gray-300 text-lg"></i>
-                        @endif
-                    @endfor
-                </div>
-                <span class="text-sm font-medium text-gray-700">{{ number_format($course->avg_rating, 1) }}</span>
-                <span class="text-sm text-gray-500">({{ $course->total_reviews }})</span>
-            </div>
-            @endif
-        </div>
-
-        <!-- Title -->
-        <h1 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4 leading-tight">{{ $course->title }}</h1>
-
-        <!-- Description -->
-        @if($course->description)
-        <p class="text-sm md:text-base lg:text-lg text-gray-600 leading-relaxed mb-4 md:mb-6">{!! nl2br(e($course->description)) !!}</p>
-        @endif
-
-        <!-- Quick Info Pills -->
-        <div class="flex flex-wrap gap-2 md:gap-3">
-            @if($course->subject)
-            <div class="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-full border border-gray-200 shadow-sm">
-                <i class="ri-bookmark-line text-blue-500 text-sm md:text-base"></i>
-                <span class="text-xs md:text-sm font-medium text-gray-700">{{ $course->subject->name }}</span>
-            </div>
-            @endif
-
-            @if($course->gradeLevel)
-            <div class="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-full border border-gray-200 shadow-sm">
-                <i class="ri-graduation-cap-line text-blue-500 text-sm md:text-base"></i>
-                <span class="text-xs md:text-sm font-medium text-gray-700">{{ $course->gradeLevel->getDisplayName() }}</span>
-            </div>
-            @endif
-
-            @if($course->difficulty_level)
-            <div class="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-full border border-gray-200 shadow-sm">
-                <i class="ri-bar-chart-line text-blue-500 text-sm md:text-base"></i>
-                <span class="text-xs md:text-sm font-medium text-gray-700">
-                    @if($course->difficulty_level === 'beginner') {{ __('student.interactive_course.difficulty_beginner') }}
-                    @elseif($course->difficulty_level === 'intermediate') {{ __('student.interactive_course.difficulty_intermediate') }}
-                    @elseif($course->difficulty_level === 'advanced') {{ __('student.interactive_course.difficulty_advanced') }}
-                    @else {{ $course->difficulty_level }}
-                    @endif
-                </span>
-            </div>
-            @endif
-        </div>
-
-        {{-- Price Display --}}
-        @if($course->student_price > 0)
-        <div class="flex items-center gap-3 mt-4 md:mt-6">
-            @if($course->hasDiscount())
-                <span class="text-2xl md:text-3xl font-bold text-blue-700">{{ number_format($course->sale_price) }} {{ getCurrencySymbol() }}</span>
-                <span class="text-base md:text-lg text-gray-500 line-through">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
-            @else
-                <span class="text-2xl md:text-3xl font-bold text-blue-700">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
-            @endif
-        </div>
-        @endif
-    </div>
-
     <!-- Main Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8" data-sticky-container>
         <!-- Main Content (Left Column - 2/3) -->
         <div class="lg:col-span-2 space-y-4 md:space-y-6 lg:space-y-8">
+
+            {{-- Featured image + Hero Section --}}
+            <div>
+                @if($course->featured_image)
+                <div class="overflow-hidden rounded-t-2xl">
+                  <img src="{{ \Illuminate\Support\Facades\Storage::url($course->featured_image) }}" alt="{{ $course->title }}" class="w-full">
+                </div>
+                @endif
+
+                <div class="bg-gradient-to-br from-blue-50 to-white {{ $course->featured_image ? 'rounded-b-2xl' : 'rounded-2xl' }} p-4 sm:p-6 md:p-8 border border-blue-100 {{ $course->featured_image ? 'border-t-0' : '' }}">
+                    <!-- Status Badge with Rating -->
+                    <div class="flex items-center justify-between gap-4 mb-4 flex-wrap">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full {{ $statusBg }} {{ $statusText }} text-sm font-medium">
+                            <i class="{{ $statusIcon }}"></i>
+                            <span>{{ $statusLabel }}</span>
+                        </div>
+
+                        @if($course->total_reviews > 0)
+                        <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-1">
+                                @for($i = 1; $i <= 5; $i++)
+                                    @if($i <= floor($course->avg_rating))
+                                        <i class="ri-star-fill text-yellow-400 text-lg"></i>
+                                    @elseif($i - 0.5 <= $course->avg_rating)
+                                        <i class="ri-star-half-fill text-yellow-400 text-lg"></i>
+                                    @else
+                                        <i class="ri-star-line text-gray-300 text-lg"></i>
+                                    @endif
+                                @endfor
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">{{ number_format($course->avg_rating, 1) }}</span>
+                            <span class="text-sm text-gray-500">({{ $course->total_reviews }})</span>
+                        </div>
+                        @endif
+                    </div>
+
+                    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 md:mb-4 leading-tight">{{ $course->title }}</h1>
+
+                    @if($course->description)
+                    <p class="text-sm md:text-base text-gray-600 leading-relaxed mb-4 md:mb-6">{!! nl2br(e($course->description)) !!}</p>
+                    @endif
+
+                    <div class="flex flex-wrap gap-2 md:gap-3">
+                        @if($course->subject)
+                        <div class="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-full border border-gray-200 shadow-sm">
+                            <i class="ri-bookmark-line text-blue-500 text-sm md:text-base"></i>
+                            <span class="text-xs md:text-sm font-medium text-gray-700">{{ $course->subject->name }}</span>
+                        </div>
+                        @endif
+
+                        @if($course->gradeLevel)
+                        <div class="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-full border border-gray-200 shadow-sm">
+                            <i class="ri-graduation-cap-line text-blue-500 text-sm md:text-base"></i>
+                            <span class="text-xs md:text-sm font-medium text-gray-700">{{ $course->gradeLevel->getDisplayName() }}</span>
+                        </div>
+                        @endif
+
+                        @if($course->difficulty_level)
+                        <div class="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-full border border-gray-200 shadow-sm">
+                            <i class="ri-bar-chart-line text-blue-500 text-sm md:text-base"></i>
+                            <span class="text-xs md:text-sm font-medium text-gray-700">
+                                @if($course->difficulty_level === 'beginner') {{ __('student.interactive_course.difficulty_beginner') }}
+                                @elseif($course->difficulty_level === 'intermediate') {{ __('student.interactive_course.difficulty_intermediate') }}
+                                @elseif($course->difficulty_level === 'advanced') {{ __('student.interactive_course.difficulty_advanced') }}
+                                @else {{ $course->difficulty_level }}
+                                @endif
+                            </span>
+                        </div>
+                        @endif
+                    </div>
+
+                    @if($course->student_price > 0)
+                    <div class="flex items-center gap-3 mt-4 md:mt-6">
+                        @if($course->hasDiscount())
+                            <span class="text-2xl md:text-3xl font-bold text-blue-700">{{ number_format($course->sale_price) }} {{ getCurrencySymbol() }}</span>
+                            <span class="text-base md:text-lg text-gray-500 line-through">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
+                        @else
+                            <span class="text-2xl md:text-3xl font-bold text-blue-700">{{ number_format($course->student_price) }} {{ getCurrencySymbol() }}</span>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
 
             <!-- About Course Section (Teacher, Learning Outcomes, Prerequisites) -->
             <div class="bg-white rounded-2xl p-4 md:p-6 lg:p-8 shadow-sm border border-gray-200">
