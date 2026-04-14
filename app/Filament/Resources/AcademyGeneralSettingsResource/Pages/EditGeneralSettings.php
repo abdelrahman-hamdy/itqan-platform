@@ -30,10 +30,11 @@ class EditGeneralSettings extends EditRecord
             []
         );
 
-        // Meeting settings (preparation + buffer minutes)
+        // Meeting settings (preparation + buffer + reschedule deadline)
         $data['meeting_settings'] = [
             'default_preparation_minutes' => $academySettings->default_preparation_minutes ?? 10,
             'default_buffer_minutes' => $academySettings->default_buffer_minutes ?? 5,
+            'teacher_reschedule_deadline_hours' => $academySettings->teacher_reschedule_deadline_hours ?? 24,
         ];
 
         // Form uses semantic names; DB columns kept their legacy names.
@@ -119,6 +120,7 @@ class EditGeneralSettings extends EditRecord
         if (! empty($meetingSettings)) {
             $updates['default_preparation_minutes'] = $meetingSettings['default_preparation_minutes'] ?? 10;
             $updates['default_buffer_minutes'] = $meetingSettings['default_buffer_minutes'] ?? 5;
+            $updates['teacher_reschedule_deadline_hours'] = $meetingSettings['teacher_reschedule_deadline_hours'] ?? 24;
         }
         if (! empty($attendanceSettings)) {
             // Semantic names from the form map back to the legacy DB column names.

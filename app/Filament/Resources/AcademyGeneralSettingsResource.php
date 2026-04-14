@@ -304,6 +304,16 @@ class AcademyGeneralSettingsResource extends BaseResource
                                     ->default(5)
                                     ->required()
                                     ->suffix('دقيقة'),
+
+                                TextInput::make('meeting_settings.teacher_reschedule_deadline_hours')
+                                    ->label('مهلة إعادة جدولة المعلم (ساعة)')
+                                    ->helperText('الحد الأدنى من الساعات قبل بدء الجلسة التي يمكن للمعلم إعادة جدولتها. القيمة 0 تعني بدون قيود.')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(168)
+                                    ->default(24)
+                                    ->required()
+                                    ->suffix('ساعة'),
                             ]),
                     ]),
 

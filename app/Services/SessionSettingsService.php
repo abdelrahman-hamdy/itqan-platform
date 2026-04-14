@@ -78,6 +78,17 @@ class SessionSettingsService
     }
 
     /**
+     * Get teacher reschedule deadline hours from academy settings
+     * Teachers cannot reschedule within this many hours of session start. 0 = no restriction.
+     */
+    public function getTeacherRescheduleDeadlineHours(BaseSession $session): int
+    {
+        $settings = $this->getAcademySettings($session);
+
+        return $settings?->teacher_reschedule_deadline_hours ?? 24;
+    }
+
+    /**
      * Get early join minutes from academy settings
      * This is how early participants can join before scheduled start
      */

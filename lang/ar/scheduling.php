@@ -145,4 +145,6 @@ return [
         'full' => '✓ الحلقة ممتلئة (:current/:max طالب)',
         'suitable' => '✓ السعة مناسبة (:current/:max طالب، :available مقعد متاح)',
     ],
+
+    'reschedule_deadline_passed' => 'لا يمكن إعادة جدولة الجلسة. يجب إعادة الجدولة قبل :hours ساعة على الأقل من موعد الجلسة.',
 ];

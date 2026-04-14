@@ -127,4 +127,6 @@ return [
         'full' => '✓ Circle is full (:current/:max students)',
         'suitable' => '✓ Capacity is suitable (:current/:max students, :available seats available)',
     ],
+
+    'reschedule_deadline_passed' => 'Cannot reschedule session. Must reschedule at least :hours hours before the session start time.',
 ];

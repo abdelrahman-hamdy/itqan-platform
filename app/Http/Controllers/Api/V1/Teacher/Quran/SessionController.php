@@ -318,6 +318,19 @@ class SessionController extends Controller
             return $absentResponse;
         }
 
+        // Enforce teacher reschedule deadline
+        $deadlineHours = app(\App\Services\SessionSettingsService::class)->getTeacherRescheduleDeadlineHours($session);
+        if ($deadlineHours > 0 && $session->scheduled_at) {
+            $deadline = $session->scheduled_at->copy()->subHours($deadlineHours);
+            if (now()->gte($deadline)) {
+                return $this->error(
+                    __('scheduling.reschedule_deadline_passed', ['hours' => $deadlineHours]),
+                    422,
+                    'RESCHEDULE_DEADLINE_PASSED'
+                );
+            }
+        }
+
         $oldScheduledAt = $session->scheduled_at;
 
         $session->update([

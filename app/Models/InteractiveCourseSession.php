@@ -322,6 +322,19 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
         return true;
     }
 
+    public function getCanRescheduleAttribute(): bool
+    {
+        if ($this->status !== SessionStatus::SCHEDULED || ! $this->scheduled_at) {
+            return false;
+        }
+
+        $now = \App\Services\AcademyContextService::nowInAcademyTimezone();
+        $deadlineHours = app(\App\Services\SessionSettingsService::class)->getTeacherRescheduleDeadlineHours($this);
+
+        return $this->scheduled_at->gt($now)
+            && ($deadlineHours <= 0 || $now->diffInHours($this->scheduled_at, false) >= $deadlineHours);
+    }
+
     /**
      * Mark session as completed
      * Updates attendance counts and session records
