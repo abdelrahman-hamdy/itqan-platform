@@ -26,11 +26,10 @@
         init() {
             const a = this.$refs.audio;
             a.addEventListener('timeupdate', () => { this.currentTime = a.currentTime; });
-            a.addEventListener('loadedmetadata', () => { this.duration = a.duration; this.loading = false; this.error = false; });
-            a.addEventListener('play', () => { this.playing = true; });
+            a.addEventListener('loadedmetadata', () => { this.duration = a.duration; this.loading = false; });
+            a.addEventListener('play', () => { this.playing = true; this.loading = false; });
             a.addEventListener('pause', () => { this.playing = false; });
             a.addEventListener('ended', () => { this.playing = false; if (this.hasNext) this.next(); });
-            a.addEventListener('error', () => { this.loading = false; this.error = true; this.playing = false; });
             a.addEventListener('waiting', () => { this.loading = true; });
             a.addEventListener('canplay', () => { this.loading = false; });
         },
@@ -38,8 +37,8 @@
         toggle() {
             const a = this.$refs.audio;
             if (this.error) return;
-            if (a.paused) { a.play().catch(() => { this.error = true; }); }
-            else { a.pause(); }
+            if (!a.paused) { a.pause(); return; }
+            a.play().catch(() => { this.error = true; this.playing = false; });
         },
 
         seek(event) {
@@ -84,13 +83,13 @@
 
         loadAudio() {
             const a = this.$refs.audio;
+            a.pause();
             this.currentTime = 0;
             this.duration = 0;
             this.playing = false;
-            this.loading = true;
+            this.loading = false;
             this.error = false;
             a.src = this.audioUrl;
-            a.load();
         },
 
         openPlayer(detail) {
