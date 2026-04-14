@@ -56,7 +56,15 @@
             const a = this.$refs.audio;
             if (this.error) return;
             if (!a.paused) { a.pause(); return; }
-            a.play().catch(() => { this.error = true; this.playing = false; });
+            this.loading = true;
+            a.play().catch((e) => {
+                this.loading = false;
+                // Only show format error for NotSupportedError/unsupported media
+                if (e.name === 'NotSupportedError') {
+                    this.error = true;
+                }
+                this.playing = false;
+            });
         },
 
         seek(event) {
