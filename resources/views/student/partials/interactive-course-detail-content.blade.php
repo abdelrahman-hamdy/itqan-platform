@@ -49,7 +49,7 @@
     {{-- Featured image --}}
     @if($course->featured_image)
     <div class="overflow-hidden rounded-t-2xl">
-      <img src="{{ \Illuminate\Support\Facades\Storage::url($course->featured_image) }}" alt="{{ $course->title }}" class="w-full h-48 sm:h-64 md:h-80 object-cover">
+      <img src="{{ \Illuminate\Support\Facades\Storage::url($course->featured_image) }}" alt="{{ $course->title }}" class="w-full">
     </div>
     @endif
 
@@ -152,7 +152,7 @@
                         <div class="flex-shrink-0">
                             <x-avatar
                                 :user="$course->assignedTeacher->user"
-                                size="xl"
+                                size="lg"
                                 userType="academic_teacher"
                                 :gender="$course->assignedTeacher->gender ?? 'male'" />
                         </div>
