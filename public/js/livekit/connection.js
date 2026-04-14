@@ -42,6 +42,9 @@ class LiveKitConnection {
         // maxReconnectAttempts entirely.
         this.stabilityTimerId = null;
         this.stabilityWindowMs = 30000;
+        this._wakeLock = null;
+        this._keepAliveAudio = null;
+        this._visibilityHandler = null;
     }
 
     /**
@@ -236,6 +239,10 @@ class LiveKitConnection {
             if (window.MT) window.MT.event('connection', 'connect_succeeded', { ms: Date.now() - t0 });
             // Begin sampling WebRTC stats now that we have a live room
             if (window.MT) window.MT.startStatsPolling(this.room);
+            // Keep meeting alive when browser goes to background
+            this._acquireWakeLock();
+            this._startKeepAliveAudio();
+            this._setupVisibilityHandler();
         } catch (error) {
             this.isConnecting = false;
             if (window.MT) window.MT.error('connection', 'connect_failed', error, { ms: Date.now() - t0 });
@@ -506,9 +513,80 @@ class LiveKitConnection {
     }
 
     /**
+     * Acquire screen wake lock to prevent screen dimming during meetings.
+     * Released automatically by the browser when tab is backgrounded,
+     * re-acquired when tab becomes visible again.
+     */
+    async _acquireWakeLock() {
+        try {
+            if (!('wakeLock' in navigator)) return;
+            this._wakeLock = await navigator.wakeLock.request('screen');
+        } catch (e) { /* Low battery or not supported */ }
+    }
+
+    _releaseWakeLock() {
+        if (this._wakeLock) {
+            this._wakeLock.release().catch(() => {});
+            this._wakeLock = null;
+        }
+    }
+
+    /**
+     * Play a silent audio loop to prevent the OS from killing the tab.
+     * Uses a hidden <audio> element (not AudioContext) to avoid
+     * interfering with the noise suppression pipeline.
+     */
+    _startKeepAliveAudio() {
+        if (this._keepAliveAudio) return;
+        // 1-second silent WAV (44 bytes header + 8000 zero samples at 8kHz mono 8-bit)
+        const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAABCxAgABAAgAZGF0YQAAAAA=';
+        this._keepAliveAudio = new Audio(silentWav);
+        this._keepAliveAudio.loop = true;
+        this._keepAliveAudio.volume = 0.01;
+        this._keepAliveAudio.play().catch(() => {});
+    }
+
+    _stopKeepAliveAudio() {
+        if (this._keepAliveAudio) {
+            this._keepAliveAudio.pause();
+            this._keepAliveAudio.src = '';
+            this._keepAliveAudio = null;
+        }
+    }
+
+    /**
+     * Handle visibility changes — re-acquire wake lock when tab becomes
+     * visible, and trigger immediate reconnection if connection was lost
+     * while backgrounded.
+     */
+    _setupVisibilityHandler() {
+        if (this._visibilityHandler) return;
+        this._visibilityHandler = async () => {
+            if (document.visibilityState !== 'visible') return;
+            // Re-acquire wake lock (browser releases it on background)
+            this._acquireWakeLock();
+            // If disconnected while backgrounded, trigger reconnection immediately
+            if (this.room && !this.isConnected && !this.isConnecting && !this.intentionalDisconnect) {
+                this.handleDisconnection();
+            }
+        };
+        document.addEventListener('visibilitychange', this._visibilityHandler);
+    }
+
+    _teardownVisibilityHandler() {
+        if (this._visibilityHandler) {
+            document.removeEventListener('visibilitychange', this._visibilityHandler);
+            this._visibilityHandler = null;
+        }
+    }
+
+    /**
      * Disconnect from the room
      */
     async disconnect() {
+        this._releaseWakeLock();
+        this._stopKeepAliveAudio();
+        this._teardownVisibilityHandler();
         if (this.noiseProcessor) {
             this.noiseProcessor.stopProcessing();
             this.noiseProcessor = null;
