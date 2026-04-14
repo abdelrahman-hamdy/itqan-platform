@@ -76,9 +76,15 @@
                 ? 'عذراً، الصفحة التي تبحث عنها غير موجودة أو تم نقلها.'
                 : 'Sorry, the page you are looking for does not exist or has been moved.' }}
         </p>
-        <a href="{{ url('/') }}" class="btn">
-            {{ app()->getLocale() === 'ar' ? 'العودة للرئيسية' : 'Back to Home' }}
-        </a>
+        @auth
+            <a href="{{ url(auth()->user()->user_type->getDashboardRoute()) }}" class="btn">
+                {{ app()->getLocale() === 'ar' ? 'الذهاب للوحة التحكم' : 'Go to Dashboard' }}
+            </a>
+        @else
+            <a href="{{ url('/') }}" class="btn">
+                {{ app()->getLocale() === 'ar' ? 'العودة للرئيسية' : 'Back to Home' }}
+            </a>
+        @endauth
     </div>
 </body>
 </html>

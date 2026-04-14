@@ -44,6 +44,12 @@
             margin-bottom: 30px;
             line-height: 1.6;
         }
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
         .btn {
             display: inline-block;
             padding: 12px 32px;
@@ -53,10 +59,25 @@
             border-radius: 12px;
             font-weight: 500;
             transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 16px;
         }
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: #7c3aed;
+            border: 2px solid #7c3aed;
+            padding: 10px 30px;
+        }
+        .btn-secondary:hover {
+            background: rgba(139, 92, 246, 0.1);
+            box-shadow: none;
+            transform: none;
         }
         .icon {
             font-size: 80px;
@@ -73,12 +94,23 @@
         </h1>
         <p class="error-message">
             {{ app()->getLocale() === 'ar'
-                ? 'انتهت صلاحية جلستك. يرجى تحديث الصفحة والمحاولة مرة أخرى.'
-                : 'Your session has expired. Please refresh the page and try again.' }}
+                ? 'تم تحديث جلستك لأسباب أمنية. يرجى العودة للصفحة السابقة والمحاولة مرة أخرى.'
+                : 'Your session was refreshed for security. Please go back and try again.' }}
         </p>
-        <a href="javascript:location.reload()" class="btn">
-            {{ app()->getLocale() === 'ar' ? 'تحديث الصفحة' : 'Refresh Page' }}
-        </a>
+        <div class="buttons">
+            <button onclick="history.back()" class="btn">
+                {{ app()->getLocale() === 'ar' ? 'العودة والمحاولة مرة أخرى' : 'Go Back & Try Again' }}
+            </button>
+            @auth
+                <a href="{{ url(auth()->user()->user_type->getDashboardRoute()) }}" class="btn btn-secondary">
+                    {{ app()->getLocale() === 'ar' ? 'الذهاب للوحة التحكم' : 'Go to Dashboard' }}
+                </a>
+            @else
+                <a href="{{ url('/') }}" class="btn btn-secondary">
+                    {{ app()->getLocale() === 'ar' ? 'العودة للرئيسية' : 'Back to Home' }}
+                </a>
+            @endauth
+        </div>
     </div>
 </body>
 </html>

@@ -28,6 +28,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
+<!-- Periodic CSRF token refresh — keeps session alive and prevents 419 errors on idle pages -->
+<script>
+(function() {
+    var interval = {{ (int) config('session.lifetime', 120) * 60 * 1000 / 4 }};
+    function refreshToken() {
+        fetch('/sanctum/csrf-cookie', { method: 'GET', credentials: 'same-origin' })
+            .then(function() {
+                var match = document.cookie.match('(?:^|; )XSRF-TOKEN=([^;]*)');
+                if (match) {
+                    var token = decodeURIComponent(match[1]);
+                    var meta = document.querySelector('meta[name="csrf-token"]');
+                    if (meta) meta.setAttribute('content', token);
+                    document.querySelectorAll('input[name="_token"]').forEach(function(el) { el.value = token; });
+                }
+            })
+            .catch(function() {});
+    }
+    var timerId = setInterval(refreshToken, interval);
+    document.addEventListener('visibilitychange', function() {
+        clearInterval(timerId);
+        if (!document.hidden) { refreshToken(); timerId = setInterval(refreshToken, interval); }
+    });
+})();
+</script>
+
 <!-- Page Title -->
 <title>{{ $pageTitle }}</title>
 <meta name="description" content="{{ $pageDescription }}">

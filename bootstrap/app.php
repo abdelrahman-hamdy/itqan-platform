@@ -5,6 +5,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -93,6 +94,19 @@ return Application::configure(basePath: dirname(__DIR__))
         }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Handle CSRF token mismatch gracefully — redirect back with input instead of showing 419 page
+        $exceptions->render(function (TokenMismatchException $e, $request) {
+            if ($request->expectsJson()) {
+                return null; // Let default 419 JSON response handle it (csrfFetch retries automatically)
+            }
+
+            $request->session()->regenerateToken();
+
+            return redirect()->back()
+                ->withInput($request->except(['password', 'password_confirmation', 'current_password']))
+                ->with('warning', __('common.messages.session_refreshed'));
+        });
+
         // Wrap 401 Unauthenticated in standard API envelope
         $exceptions->render(function (AuthenticationException $e, $request) {
             if ($request->is('api/*') || $request->expectsJson()) {

@@ -287,6 +287,7 @@ return [
         'unauthorized' => 'غير مصرح لك بهذا الإجراء',
         'not_found' => 'المورد المطلوب غير موجود',
         'session_expired' => 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى',
+        'session_refreshed' => 'تم تحديث جلستك لأسباب أمنية. يرجى إعادة الإرسال.',
         'coming_soon' => 'قريباً',
         'under_construction' => 'تحت الإنشاء',
         'maintenance_mode' => 'الموقع تحت الصيانة',

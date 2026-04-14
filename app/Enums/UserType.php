@@ -119,6 +119,7 @@ enum UserType: string
             self::ADMIN, self::SUPER_ADMIN => '/panel',
             self::SUPERVISOR => '/manage/dashboard',
             self::QURAN_TEACHER, self::ACADEMIC_TEACHER => '/teacher/calendar',
+            self::PARENT => '/parent',
             default => '/profile',
         };
     }

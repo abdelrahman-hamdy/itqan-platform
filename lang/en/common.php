@@ -315,6 +315,7 @@ return [
         'unauthorized' => 'You are not authorized to perform this action',
         'not_found' => 'The requested resource was not found',
         'session_expired' => 'Your session has expired. Please login again',
+        'session_refreshed' => 'Your session was refreshed for security. Please re-submit.',
         'coming_soon' => 'Coming Soon',
         'under_construction' => 'Under Construction',
         'maintenance_mode' => 'Site is under maintenance',
