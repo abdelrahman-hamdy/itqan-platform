@@ -178,6 +178,7 @@
                         backgroundColor: statusColors[event.status] || event.color || '#3b82f6',
                         borderColor: 'transparent',
                         classNames: ['fc-event-' + (event.status || 'scheduled')],
+                        editable: event.can_reschedule ?? false,
                         extendedProps: {
                             status: event.status,
                             source: event.source,
@@ -186,6 +187,7 @@
                             participants: event.participants,
                             url: event.url,
                             session_type: event.session_type,
+                            can_reschedule: event.can_reschedule ?? false,
                             originalEvent: event
                         }
                     }));
@@ -231,7 +233,7 @@
                 const event = info.event;
                 const props = event.extendedProps;
 
-                if (props.status !== 'scheduled' && props.status !== 'ready') {
+                if (!props.can_reschedule) {
                     info.revert();
                     if (window.toast) {
                         window.toast.warning(@js(__('teacher.calendar.cannot_reschedule_status')));
