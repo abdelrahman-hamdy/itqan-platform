@@ -96,11 +96,21 @@ class StopExpiredRecordingsCommand extends Command
                     }
                 }
             } catch (Exception $e) {
-                $errorCount++;
-                Log::error('[RECORDINGS] Failed to stop recording', [
-                    'session_id' => $session->id,
-                    'error' => $e->getMessage(),
-                ]);
+                // "No active recording found" means egress already ended — mark as
+                // failed so this record isn't retried every minute indefinitely.
+                if (str_contains($e->getMessage(), 'No active recording found')) {
+                    $recordingRecord->markAsFailed('Egress already ended: '.$e->getMessage());
+                    Log::warning('[RECORDINGS] Marking stale recording as failed', [
+                        'session_id' => $session->id,
+                        'recording_id' => $recordingRecord->id,
+                    ]);
+                } else {
+                    $errorCount++;
+                    Log::error('[RECORDINGS] Failed to stop recording', [
+                        'session_id' => $session->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
         }
 
