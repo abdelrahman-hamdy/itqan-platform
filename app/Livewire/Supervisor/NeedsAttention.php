@@ -127,6 +127,9 @@ class NeedsAttention extends Component
     public function toggleReviewsPanel(): void
     {
         $this->showReviewsPanel = ! $this->showReviewsPanel;
+        if ($this->showReviewsPanel) {
+            $this->loadData();
+        }
     }
 
     public function confirmStudentEmail(int $userId): void
@@ -157,6 +160,9 @@ class NeedsAttention extends Component
     public function toggleUnconfirmedPanel(): void
     {
         $this->showUnconfirmedPanel = ! $this->showUnconfirmedPanel;
+        if ($this->showUnconfirmedPanel) {
+            $this->loadData();
+        }
     }
 
     public function loadMoreReviews(): void
