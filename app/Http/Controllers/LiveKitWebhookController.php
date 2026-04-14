@@ -929,9 +929,10 @@ class LiveKitWebhookController extends Controller
                 $session->stopRecording();
                 Log::info('Recording stopped on room finished', ['session_id' => $session->id]);
             } catch (Exception $e) {
-                Log::error('Failed to stop recording on room finished', [
+                // Expected when egress already stopped (room closed before explicit stop)
+                Log::debug('Recording stop skipped on room finished', [
                     'session_id' => $session->id,
-                    'error' => $e->getMessage(),
+                    'reason' => $e->getMessage(),
                 ]);
             }
         }
