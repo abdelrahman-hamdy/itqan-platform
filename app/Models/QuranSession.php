@@ -18,7 +18,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Services\SessionSettingsService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -877,19 +876,6 @@ class QuranSession extends BaseSession implements RecordingCapable
      * Check if session can be rescheduled (at least 24 hours before)
      * Uses academy timezone for accurate comparison
      */
-    public function getCanRescheduleAttribute(): bool
-    {
-        if ($this->status !== SessionStatus::SCHEDULED || ! $this->scheduled_at) {
-            return false;
-        }
-
-        $now = AcademyContextService::nowInAcademyTimezone();
-        $deadlineHours = app(SessionSettingsService::class)->getTeacherRescheduleDeadlineHours($this);
-
-        return $this->scheduled_at->gt($now)
-            && ($deadlineHours <= 0 || $now->diffInHours($this->scheduled_at, false) >= $deadlineHours);
-    }
-
     public function getProgressSummaryAttribute(): string
     {
         // Use sessionHomework for progress summary

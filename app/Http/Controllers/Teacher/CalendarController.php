@@ -365,15 +365,12 @@ class CalendarController extends Controller
         }
 
         // Enforce teacher reschedule deadline
-        $deadlineHours = app(SessionSettingsService::class)->getTeacherRescheduleDeadlineHours($session);
-        if ($deadlineHours > 0 && $session->scheduled_at) {
-            $deadline = $session->scheduled_at->copy()->subHours($deadlineHours);
-            if (now()->gte($deadline)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => __('scheduling.reschedule_deadline_passed', ['hours' => $deadlineHours]),
-                ], 422);
-            }
+        $settingsService = app(SessionSettingsService::class);
+        if ($settingsService->isRescheduleDeadlinePassed($session)) {
+            return response()->json([
+                'success' => false,
+                'message' => __('scheduling.reschedule_deadline_passed', ['hours' => $settingsService->getTeacherRescheduleDeadlineHours($session)]),
+            ], 422);
         }
 
         $oldScheduledAt = $session->scheduled_at;
@@ -509,15 +506,12 @@ class CalendarController extends Controller
 
         if (isset($validated['scheduled_at'])) {
             // Enforce teacher reschedule deadline when changing scheduled time
-            $deadlineHours = app(SessionSettingsService::class)->getTeacherRescheduleDeadlineHours($session);
-            if ($deadlineHours > 0 && $session->scheduled_at) {
-                $deadline = $session->scheduled_at->copy()->subHours($deadlineHours);
-                if (now()->gte($deadline)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => __('scheduling.reschedule_deadline_passed', ['hours' => $deadlineHours]),
-                    ], 422);
-                }
+            $settingsService = app(SessionSettingsService::class);
+            if ($settingsService->isRescheduleDeadlinePassed($session)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('scheduling.reschedule_deadline_passed', ['hours' => $settingsService->getTeacherRescheduleDeadlineHours($session)]),
+                ], 422);
             }
 
             $updateData['scheduled_at'] = AcademyContextService::toUtcForStorage(

@@ -78,14 +78,28 @@ class SessionSettingsService
     }
 
     /**
-     * Get teacher reschedule deadline hours from academy settings
-     * Teachers cannot reschedule within this many hours of session start. 0 = no restriction.
+     * Get teacher reschedule deadline hours from academy settings.
+     * 0 = no restriction.
      */
     public function getTeacherRescheduleDeadlineHours(BaseSession $session): int
     {
         $settings = $this->getAcademySettings($session);
 
         return $settings?->teacher_reschedule_deadline_hours ?? 24;
+    }
+
+    /**
+     * Check if the teacher reschedule deadline has passed for a session.
+     */
+    public function isRescheduleDeadlinePassed(BaseSession $session): bool
+    {
+        $deadlineHours = $this->getTeacherRescheduleDeadlineHours($session);
+
+        if ($deadlineHours <= 0 || ! $session->scheduled_at) {
+            return false;
+        }
+
+        return now()->gte($session->scheduled_at->copy()->subHours($deadlineHours));
     }
 
     /**

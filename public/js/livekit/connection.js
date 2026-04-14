@@ -538,7 +538,7 @@ class LiveKitConnection {
      */
     _startKeepAliveAudio() {
         if (this._keepAliveAudio) return;
-        // 1-second silent WAV (44 bytes header + 8000 zero samples at 8kHz mono 8-bit)
+        // Zero-length silent WAV (header only). Looping keeps the tab alive in background.
         const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAABCxAgABAAgAZGF0YQAAAAA=';
         this._keepAliveAudio = new Audio(silentWav);
         this._keepAliveAudio.loop = true;
@@ -561,7 +561,7 @@ class LiveKitConnection {
      */
     _setupVisibilityHandler() {
         if (this._visibilityHandler) return;
-        this._visibilityHandler = async () => {
+        this._visibilityHandler = () => {
             if (document.visibilityState !== 'visible') return;
             // Re-acquire wake lock (browser releases it on background)
             this._acquireWakeLock();

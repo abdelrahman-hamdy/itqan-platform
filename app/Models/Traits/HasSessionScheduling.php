@@ -5,6 +5,7 @@ namespace App\Models\Traits;
 use App\Enums\SessionStatus;
 use App\Models\User;
 use App\Services\AcademyContextService;
+use App\Services\SessionSettingsService;
 use Carbon\Carbon;
 
 /**
@@ -27,6 +28,22 @@ trait HasSessionScheduling
     protected function getNowInAcademyTimezone(): Carbon
     {
         return AcademyContextService::nowInAcademyTimezone();
+    }
+
+    /**
+     * Whether the teacher can still reschedule this session (deadline not passed).
+     */
+    public function getCanRescheduleAttribute(): bool
+    {
+        if ($this->status !== SessionStatus::SCHEDULED || ! $this->scheduled_at) {
+            return false;
+        }
+
+        if (! $this->scheduled_at->gt($this->getNowInAcademyTimezone())) {
+            return false;
+        }
+
+        return ! app(SessionSettingsService::class)->isRescheduleDeadlinePassed($this);
     }
 
     /**
