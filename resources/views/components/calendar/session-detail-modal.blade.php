@@ -134,6 +134,11 @@
                                     <i class="ri-edit-line me-1"></i> {{ __('teacher.calendar.edit_session') }}
                                 </button>
                             </template>
+                            <template x-if="!session.can_edit && (session.status === 'scheduled' || session.status === 'ready')">
+                                <span class="px-4 py-2 text-xs text-gray-400 flex items-center">
+                                    <i class="ri-lock-line me-1"></i> {{ __('scheduling.reschedule_teacher_restricted') }}
+                                </span>
+                            </template>
                             <button @click="openHomeworkModal()" class="px-4 py-2 bg-amber-50 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-100 border border-amber-200 transition-colors cursor-pointer">
                                 <i class="ri-task-line me-1"></i> {{ __('teacher.calendar.manage_homework') }}
                             </button>

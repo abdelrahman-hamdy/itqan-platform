@@ -147,4 +147,5 @@ return [
     ],
 
     'reschedule_deadline_passed' => 'لا يمكن إعادة جدولة الجلسة. يجب إعادة الجدولة قبل :hours ساعة على الأقل من موعد الجلسة.',
+    'reschedule_teacher_restricted' => 'التعديل متاح للإدارة فقط',
 ];
