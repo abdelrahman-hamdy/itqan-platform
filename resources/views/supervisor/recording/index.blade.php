@@ -311,7 +311,7 @@
                     $playableRecordings = $historyData['recordings']->filter(fn ($r) => $r->isCompleted() && $r->isAvailable());
                     $playlist = $playableRecordings->values()->map(fn ($r) => [
                         'id' => $r->id,
-                        'streamUrl' => $r->getStreamUrl(),
+                        'streamUrl' => $r->getDirectUrl() ?? $r->getStreamUrl(),
                         'downloadUrl' => $r->getDownloadUrl(),
                         'date' => $r->started_at ? toAcademyTimezone($r->started_at)->translatedFormat('d M h:i A') : '',
                         'duration' => $r->formatted_duration,
