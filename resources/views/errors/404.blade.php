@@ -77,7 +77,7 @@
                 : 'Sorry, the page you are looking for does not exist or has been moved.' }}
         </p>
         @auth
-            <a href="{{ url(auth()->user()->user_type->getDashboardRoute()) }}" class="btn">
+            <a href="{{ url(\App\Enums\UserType::from(auth()->user()->user_type)->getDashboardRoute()) }}" class="btn">
                 {{ app()->getLocale() === 'ar' ? 'الذهاب للوحة التحكم' : 'Go to Dashboard' }}
             </a>
         @else

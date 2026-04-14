@@ -102,7 +102,7 @@
                 {{ app()->getLocale() === 'ar' ? 'العودة والمحاولة مرة أخرى' : 'Go Back & Try Again' }}
             </button>
             @auth
-                <a href="{{ url(auth()->user()->user_type->getDashboardRoute()) }}" class="btn btn-secondary">
+                <a href="{{ url(\App\Enums\UserType::from(auth()->user()->user_type)->getDashboardRoute()) }}" class="btn btn-secondary">
                     {{ app()->getLocale() === 'ar' ? 'الذهاب للوحة التحكم' : 'Go to Dashboard' }}
                 </a>
             @else
