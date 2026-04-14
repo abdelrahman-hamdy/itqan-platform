@@ -23,7 +23,7 @@ return [
     'teacher_partial_attendance_help' => 'If the teacher attends this percentage or more they are marked as partially attended (student subscription still counts, but teacher does not earn); below this they are marked absent',
 
     // Cross-field validation
-    'attendance_partial_lte_full' => 'Partial attendance percentage must be less than or equal to full attendance percentage',
+    'attendance_partial_lte_full' => 'Partial attendance percentage must be less than full attendance percentage',
 
     // Counting management
     'counting_management' => 'Session Counting Management',

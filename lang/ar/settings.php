@@ -23,7 +23,7 @@ return [
     'teacher_partial_attendance_help' => 'إذا حضر المعلم هذه النسبة أو أكثر يُعتبر حاضراً جزئياً (يُحتسب الاشتراك للطالب لكن لا تُحتسب أرباح للمعلم)، وإذا حضر أقل منها يُعتبر غائباً',
 
     // Cross-field validation
-    'attendance_partial_lte_full' => 'يجب أن تكون نسبة الحضور الجزئي أقل من أو تساوي نسبة الحضور الكامل',
+    'attendance_partial_lte_full' => 'يجب أن تكون نسبة الحضور الجزئي أقل من نسبة الحضور الكامل',
 
     // Counting management
     'counting_management' => 'إدارة احتساب الجلسة',

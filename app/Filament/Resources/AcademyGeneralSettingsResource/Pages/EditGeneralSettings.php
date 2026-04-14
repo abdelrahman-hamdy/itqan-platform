@@ -95,12 +95,12 @@ class EditGeneralSettings extends EditRecord
         ];
 
         // Validate attendance thresholds: partial must be ≤ full for both roles.
-        $studentFull = (float) ($attendanceSettings['student_full_attendance_percent'] ?? 80);
-        $studentPartial = (float) ($attendanceSettings['student_partial_attendance_percent'] ?? 50);
-        $teacherFull = (float) ($attendanceSettings['teacher_full_attendance_percent'] ?? 90);
-        $teacherPartial = (float) ($attendanceSettings['teacher_partial_attendance_percent'] ?? 50);
+        $studentFull = (int) ($attendanceSettings['student_full_attendance_percent'] ?? 80);
+        $studentPartial = (int) ($attendanceSettings['student_partial_attendance_percent'] ?? 50);
+        $teacherFull = (int) ($attendanceSettings['teacher_full_attendance_percent'] ?? 90);
+        $teacherPartial = (int) ($attendanceSettings['teacher_partial_attendance_percent'] ?? 50);
 
-        if ($studentPartial > $studentFull || $teacherPartial > $teacherFull) {
+        if ($studentPartial >= $studentFull || $teacherPartial >= $teacherFull) {
             \Filament\Notifications\Notification::make()
                 ->title(__('settings.attendance_partial_lte_full'))
                 ->danger()

@@ -184,12 +184,12 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
                 $academySettings = AcademySettings::getForAcademy($academy);
 
                 $attendanceForm = $data['attendance_settings'] ?? [];
-                $studentFull = (float) ($attendanceForm['student_full_attendance_percent'] ?? 80);
-                $studentPartial = (float) ($attendanceForm['student_partial_attendance_percent'] ?? 50);
-                $teacherFull = (float) ($attendanceForm['teacher_full_attendance_percent'] ?? 90);
-                $teacherPartial = (float) ($attendanceForm['teacher_partial_attendance_percent'] ?? 50);
+                $studentFull = (int) ($attendanceForm['student_full_attendance_percent'] ?? 80);
+                $studentPartial = (int) ($attendanceForm['student_partial_attendance_percent'] ?? 50);
+                $teacherFull = (int) ($attendanceForm['teacher_full_attendance_percent'] ?? 90);
+                $teacherPartial = (int) ($attendanceForm['teacher_partial_attendance_percent'] ?? 50);
 
-                if ($studentPartial > $studentFull || $teacherPartial > $teacherFull) {
+                if ($studentPartial >= $studentFull || $teacherPartial >= $teacherFull) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
                         'attendance_settings.student_partial_attendance_percent' => __('settings.attendance_partial_lte_full'),
                     ]);
