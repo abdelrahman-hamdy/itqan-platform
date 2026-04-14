@@ -9,13 +9,13 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Spatie\Multitenancy\Jobs\NotTenantAware;
 
 /**
  * Processes the recording queue after a recording slot frees up.
- * Dispatched when an egress ends (via webhook) or a session finishes.
- * ShouldBeUnique prevents duplicate processing when multiple webhooks fire close together.
+ * NotTenantAware because recording capacity is server-wide, not per-tenant.
  */
-class ProcessRecordingQueueJob implements ShouldBeUnique, ShouldQueue
+class ProcessRecordingQueueJob implements NotTenantAware, ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
