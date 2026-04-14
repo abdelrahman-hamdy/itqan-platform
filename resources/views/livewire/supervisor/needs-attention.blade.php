@@ -150,10 +150,18 @@
                                                         {{ __($item['secondary']['action_key']) }}
                                                     </a>
                                                 @endif
-                                            @else
+                                            @elseif($item['key'] === 'reviews_awaiting_approval')
                                                 {{-- Reviews — toggle inline panel --}}
                                                 <button
                                                     wire:click="toggleReviewsPanel"
+                                                    class="text-xs font-medium px-3 py-1.5 rounded-lg {{ $colors['action'] }} transition-colors"
+                                                >
+                                                    {{ __($item['action_key']) }}
+                                                </button>
+                                            @elseif($item['key'] === 'unconfirmed_student_emails')
+                                                {{-- Unconfirmed emails — toggle inline panel --}}
+                                                <button
+                                                    wire:click="toggleUnconfirmedPanel"
                                                     class="text-xs font-medium px-3 py-1.5 rounded-lg {{ $colors['action'] }} transition-colors"
                                                 >
                                                     {{ __($item['action_key']) }}
@@ -163,6 +171,43 @@
                                     </div>
                                 @endforeach
                             </div>
+
+                            {{-- Unconfirmed Emails Panel (inside info group) --}}
+                            @if($group['key'] === 'info' && $showUnconfirmedPanel && !empty($unconfirmedStudents['items']))
+                                <div class="mt-3 bg-gray-50 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h3 class="text-sm font-bold text-gray-800">
+                                            <i class="ri-mail-unread-line text-blue-500 me-1"></i>
+                                            {{ __('supervisor.attention.unconfirmed_students_panel_title') }}
+                                            @if($unconfirmedStudents['total'] > 10)
+                                                <span class="text-xs text-gray-500 font-normal">({{ $unconfirmedStudents['total'] }})</span>
+                                            @endif
+                                        </h3>
+                                        <button wire:click="toggleUnconfirmedPanel" class="text-xs text-gray-400 hover:text-gray-600">
+                                            {{ __('supervisor.attention.hide_unconfirmed') }}
+                                        </button>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        @foreach($unconfirmedStudents['items'] as $student)
+                                            <div class="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100" wire:key="student-{{ $student['id'] }}">
+                                                <div class="flex-1 min-w-0">
+                                                    <span class="text-sm font-medium text-gray-900 truncate">{{ $student['name'] }}</span>
+                                                    <p class="text-xs text-gray-500 mt-0.5">{{ $student['email'] }}</p>
+                                                </div>
+                                                <button
+                                                    wire:click="confirmStudentEmail({{ $student['id'] }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:confirm="{{ __('supervisor.attention.confirm_email_confirmation') }}"
+                                                    class="px-2.5 py-1.5 text-xs font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50"
+                                                >
+                                                    {{ __('supervisor.attention.confirm_email') }}
+                                                </button>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
 
                             {{-- Reviews Panel (inside warning group) --}}
                             @if($group['key'] === 'warning' && $showReviewsPanel && !empty($pendingReviews['items']))

@@ -142,11 +142,13 @@ return [
         'inactive_academic_teachers' => 'معلمون أكاديميون غير نشطين',
         'inactive_parents' => 'أولياء أمور غير نشطين',
         'pending_session_requests' => 'طلبات جلسات معلقة',
+        'unconfirmed_student_emails' => 'طلاب بريدهم غير مؤكد',
 
         // Action buttons
         'action_view' => 'عرض',
         'action_review' => 'مراجعة',
         'action_schedule' => 'جدولة',
+        'action_confirm' => 'تأكيد',
 
         // Reviews panel
         'pending_reviews' => 'مراجعات معلقة',
@@ -160,6 +162,12 @@ return [
         'show_reviews' => 'عرض المراجعات',
         'hide_reviews' => 'إخفاء المراجعات',
         'unknown' => 'غير معروف',
+
+        // Unconfirmed emails panel
+        'unconfirmed_students_panel_title' => 'طلاب بريدهم الإلكتروني غير مؤكد',
+        'hide_unconfirmed' => 'إخفاء',
+        'confirm_email' => 'تأكيد البريد',
+        'confirm_email_confirmation' => 'هل أنت متأكد من تأكيد بريد هذا الطالب؟',
     ],
 
     'teachers' => [
@@ -1200,6 +1208,8 @@ return [
         'recording_session_types_label' => 'أنواع الجلسات المسموح بتسجيلها',
         'can_manage_sessions' => 'إدارة الجلسات',
         'can_manage_sessions_description' => 'إلغاء الجلسات والتحكم في الاحتساب',
+        'can_confirm_student_emails' => 'تأكيد بريد الطلاب',
+        'can_confirm_student_emails_description' => 'عرض وتأكيد عناوين البريد الإلكتروني للطلاب واستلام إشعارات عند تسجيل طالب جديد',
         'perm_group_users' => 'إدارة المستخدمين',
         'perm_group_financial' => 'الإدارة المالية',
         'perm_group_monitoring' => 'المراقبة',

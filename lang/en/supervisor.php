@@ -142,11 +142,13 @@ return [
         'inactive_academic_teachers' => 'Inactive academic teachers',
         'inactive_parents' => 'Inactive parents',
         'pending_session_requests' => 'Pending session requests',
+        'unconfirmed_student_emails' => 'Students with unconfirmed email',
 
         // Action buttons
         'action_view' => 'View',
         'action_review' => 'Review',
         'action_schedule' => 'Schedule',
+        'action_confirm' => 'Confirm',
 
         // Reviews panel
         'pending_reviews' => 'Pending Reviews',
@@ -160,6 +162,12 @@ return [
         'show_reviews' => 'Show reviews',
         'hide_reviews' => 'Hide reviews',
         'unknown' => 'Unknown',
+
+        // Unconfirmed emails panel
+        'unconfirmed_students_panel_title' => 'Unconfirmed Student Emails',
+        'hide_unconfirmed' => 'Hide',
+        'confirm_email' => 'Confirm Email',
+        'confirm_email_confirmation' => 'Are you sure you want to confirm this student\'s email?',
     ],
 
     'teachers' => [
@@ -1200,6 +1208,8 @@ return [
         'recording_session_types_label' => 'Allowed session types for recording',
         'can_manage_sessions' => 'Manage Sessions',
         'can_manage_sessions_description' => 'Cancel sessions and control counting',
+        'can_confirm_student_emails' => 'Confirm Student Emails',
+        'can_confirm_student_emails_description' => 'View and confirm student email addresses, and receive notifications for new student registrations',
         'perm_group_users' => 'User Management',
         'perm_group_financial' => 'Financial Management',
         'perm_group_monitoring' => 'Monitoring',

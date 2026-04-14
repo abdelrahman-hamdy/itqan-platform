@@ -47,11 +47,12 @@ class DashboardAttentionService
         bool $isAdmin,
         array $quranTeacherIds,
         array $academicTeacherProfileIds,
+        bool $canConfirmStudentEmails = false,
     ): array {
-        $cacheKey = 'dashboard_attention_'.$academyId.'_'.md5(serialize([$quranTeacherIds, $academicTeacherProfileIds]));
+        $cacheKey = $this->buildCacheKey($academyId, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails);
 
-        $counts = Cache::remember($cacheKey, 300, function () use ($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds) {
-            return $this->queryCounts($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds);
+        $counts = Cache::remember($cacheKey, 300, function () use ($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails) {
+            return $this->queryCounts($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails);
         });
 
         $groups = $this->buildGroups($counts, $isAdmin);
@@ -61,15 +62,19 @@ class DashboardAttentionService
         // Reviews data (not cached — needs to be fresh for inline actions)
         $pendingReviews = $this->getPendingReviewsData($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds);
 
+        // Unconfirmed students data (not cached — needs to be fresh for inline actions)
+        $unconfirmedStudents = $this->getUnconfirmedStudentsData($academyId, $canConfirmStudentEmails, $isAdmin, $counts['unconfirmed_emails']);
+
         return [
             'groups' => $groups,
             'total_count' => $totalCount,
             'worst_severity' => $worstSeverity,
             'pendingReviews' => $pendingReviews,
+            'unconfirmedStudents' => $unconfirmedStudents,
         ];
     }
 
-    private function queryCounts(int $academyId, bool $isAdmin, array $quranTeacherIds, array $academicTeacherProfileIds): array
+    private function queryCounts(int $academyId, bool $isAdmin, array $quranTeacherIds, array $academicTeacherProfileIds, bool $canConfirmStudentEmails = false): array
     {
         $now = now();
         $today = $now->copy()->startOfDay();
@@ -289,6 +294,16 @@ class DashboardAttentionService
                 ->count();
         }
 
+        // 18. Students with unconfirmed email (academy-wide, permission-gated)
+        $unconfirmedEmails = 0;
+        if ($canConfirmStudentEmails || $isAdmin) {
+            $unconfirmedEmails = User::where('academy_id', $academyId)
+                ->where('user_type', UserType::STUDENT->value)
+                ->whereNull('email_verified_at')
+                ->where('active_status', true)
+                ->count();
+        }
+
         return [
             'expiring_3d' => $expiring3d,
             'extended_subs' => $extendedSubs,
@@ -308,6 +323,7 @@ class DashboardAttentionService
             'inactive_academic_teachers' => $inactiveAcademicTeachers,
             'inactive_parents' => $inactiveParents,
             'pending_session_requests' => $pendingSessionRequests,
+            'unconfirmed_emails' => $unconfirmedEmails,
         ];
     }
 
@@ -404,6 +420,7 @@ class DashboardAttentionService
             $this->makeItem('inactive_academic_teachers', $counts['inactive_academic_teachers'], 'info', 'ri-graduation-cap-line', 'manage.teachers.index', ['status' => 'inactive', 'type' => 'academic']),
             $this->makeItem('inactive_parents', $counts['inactive_parents'], 'info', 'ri-parent-line', 'manage.parents.index', ['status' => 'inactive']),
             $this->makeItem('pending_session_requests', $counts['pending_session_requests'], 'info', 'ri-calendar-todo-line', 'manage.sessions.index', ['status' => 'scheduled,ready']),
+            $this->makeItem('unconfirmed_student_emails', $counts['unconfirmed_emails'], 'info', 'ri-mail-unread-line', null, [], 'confirm'),
         ], fn ($item) => $item['count'] > 0);
 
         if (! empty($infoItems)) {
@@ -457,7 +474,7 @@ class DashboardAttentionService
     /**
      * Get pending reviews data for inline management panel (scoped by teacher for supervisors).
      *
-     * @param  int[]  $quranTeacherIds       User IDs of assigned Quran teachers
+     * @param  int[]  $quranTeacherIds  User IDs of assigned Quran teachers
      * @param  int[]  $academicTeacherProfileIds  Profile IDs of assigned Academic teachers
      */
     private function getPendingReviewsData(int $academyId, bool $isAdmin, array $quranTeacherIds, array $academicTeacherProfileIds): array
@@ -551,15 +568,47 @@ class DashboardAttentionService
     }
 
     /**
-     * Clear attention cache for an academy.
+     * Get unconfirmed students data for inline management panel.
      */
-    public function clearCache(int $academyId): void
+    private function getUnconfirmedStudentsData(int $academyId, bool $canConfirmStudentEmails, bool $isAdmin, int $cachedTotal = 0): array
     {
-        // Since the cache key includes teacher IDs, we use a pattern-based approach
-        // by clearing all keys that start with the prefix
-        $pattern = 'dashboard_attention_'.$academyId.'_*';
-        // Redis doesn't support wildcard delete in Cache facade, so we clear by known key
-        // The 5-minute TTL handles natural expiry; this is for immediate refresh after actions
-        Cache::forget('dashboard_attention_'.$academyId.'_'.md5(serialize([[], []])));
+        if (! $canConfirmStudentEmails && ! $isAdmin) {
+            return ['enabled' => false, 'items' => [], 'total' => 0];
+        }
+
+        $students = User::where('academy_id', $academyId)
+            ->where('user_type', UserType::STUDENT->value)
+            ->whereNull('email_verified_at')
+            ->where('active_status', true)
+            ->select(['id', 'first_name', 'last_name', 'email', 'created_at'])
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(fn ($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'email' => $u->email,
+                'registered_at' => $u->created_at,
+            ]);
+
+        return [
+            'enabled' => true,
+            'items' => $students->toArray(),
+            'total' => $cachedTotal,
+        ];
+    }
+
+    /**
+     * Forget the attention cache for specific parameters.
+     */
+    public function forgetCacheFor(int $academyId, array $quranTeacherIds, array $academicTeacherProfileIds, bool $canConfirmStudentEmails = false): void
+    {
+        $cacheKey = $this->buildCacheKey($academyId, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails);
+        Cache::forget($cacheKey);
+    }
+
+    private function buildCacheKey(int $academyId, array $quranTeacherIds, array $academicTeacherProfileIds, bool $canConfirmStudentEmails): string
+    {
+        return 'dashboard_attention_'.$academyId.'_'.md5(serialize([$quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails]));
     }
 }

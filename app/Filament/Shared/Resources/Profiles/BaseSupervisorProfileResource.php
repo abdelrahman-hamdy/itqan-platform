@@ -252,6 +252,9 @@ abstract class BaseSupervisorProfileResource extends Resource
                         Toggle::make('can_manage_students')
                             ->label('إدارة الطلاب')
                             ->helperText('إنشاء وتعديل وحذف الطلاب'),
+                        Toggle::make('can_confirm_student_emails')
+                            ->label(__('supervisor.supervisors.can_confirm_student_emails'))
+                            ->helperText(__('supervisor.supervisors.can_confirm_student_emails_description')),
                         Toggle::make('can_manage_parents')
                             ->label('إدارة أولياء الأمور')
                             ->helperText('إنشاء وتعديل وحذف أولياء الأمور'),

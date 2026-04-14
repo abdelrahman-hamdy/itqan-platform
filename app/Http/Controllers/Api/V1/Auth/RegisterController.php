@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Enums\EducationalQualification;
+use App\Enums\NotificationType;
 use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\Academy\AcademyBrandingResource;
@@ -17,6 +18,7 @@ use App\Models\QuranTeacherProfile;
 use App\Models\StudentProfile;
 use App\Models\User;
 use App\Rules\PasswordRules;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -68,7 +70,7 @@ class RegisterController extends Controller
             );
         }
 
-        return DB::transaction(function () use ($request, $academy) {
+        [$user, $token] = DB::transaction(function () use ($request, $academy) {
             // Create user - User model's boot() hook will auto-create a StudentProfile
             $user = new User([
                 'academy_id' => $academy->id,
@@ -103,28 +105,54 @@ class RegisterController extends Controller
                 now()->addDays(30)
             );
 
-            // Send email verification notification
-            try {
-                $user->sendEmailVerificationNotification();
-            } catch (Exception $e) {
-                Log::error('Failed to send student verification email', [
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            // Load relationships
-            $user->load(['academy', 'studentProfile']);
-
-            return $this->created([
-                'user' => new UserResource($user),
-                'academy' => new AcademyBrandingResource($academy),
-                'token' => $token->plainTextToken,
-                'token_type' => 'Bearer',
-                'expires_at' => now()->addDays(30)->toISOString(),
-            ], __('Registration successful'));
+            return [$user, $token];
         });
+
+        // Post-transaction: send notifications (failures must not roll back registration)
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (Exception $e) {
+            Log::error('Failed to send student verification email', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            $supervisorsToNotify = User::where('academy_id', $academy->id)
+                ->where('user_type', UserType::SUPERVISOR->value)
+                ->where('active_status', true)
+                ->whereHas('supervisorProfile', fn ($q) => $q->where('can_confirm_student_emails', true))
+                ->get();
+
+            if ($supervisorsToNotify->isNotEmpty()) {
+                $dashboardUrl = route('manage.dashboard', ['subdomain' => $academy->subdomain]);
+
+                app(NotificationService::class)->send(
+                    $supervisorsToNotify,
+                    NotificationType::NEW_STUDENT_ENROLLED,
+                    ['student_name' => $user->name],
+                    $dashboardUrl,
+                );
+            }
+        } catch (Exception $e) {
+            Log::error('Failed to notify supervisors of new student', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // Load relationships
+        $user->load(['academy', 'studentProfile']);
+
+        return $this->created([
+            'user' => new UserResource($user),
+            'academy' => new AcademyBrandingResource($academy),
+            'token' => $token->plainTextToken,
+            'token_type' => 'Bearer',
+            'expires_at' => now()->addDays(30)->toISOString(),
+        ], __('Registration successful'));
     }
 
     /**

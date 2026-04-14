@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Services\AcademyContextService;
 use App\Services\DashboardAttentionService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 
 class NeedsAttention extends Component
@@ -24,6 +23,10 @@ class NeedsAttention extends Component
     public array $pendingReviews = [];
 
     public bool $showReviewsPanel = false;
+
+    public array $unconfirmedStudents = [];
+
+    public bool $showUnconfirmedPanel = false;
 
     public function mount(): void
     {
@@ -47,12 +50,13 @@ class NeedsAttention extends Component
         $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();
 
         $service = app(DashboardAttentionService::class);
-        $data = $service->getAttentionItems($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds);
+        $data = $service->getAttentionItems($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $this->canConfirmStudentEmails());
 
         $this->groups = $data['groups'];
         $this->totalCount = $data['total_count'];
         $this->worstSeverity = $data['worst_severity'];
         $this->pendingReviews = $data['pendingReviews'];
+        $this->unconfirmedStudents = $data['unconfirmedStudents'];
     }
 
     public function approveReview(string $type, int $id): void
@@ -102,12 +106,45 @@ class NeedsAttention extends Component
         $this->showReviewsPanel = ! $this->showReviewsPanel;
     }
 
+    public function confirmStudentEmail(int $userId): void
+    {
+        if (! $this->canConfirmStudentEmails()) {
+            return;
+        }
+
+        $academyId = AcademyContextService::getCurrentAcademy()?->id;
+        if (! $academyId) {
+            return;
+        }
+
+        $user = User::where('academy_id', $academyId)
+            ->where('user_type', UserType::STUDENT->value)
+            ->whereNull('email_verified_at')
+            ->where('active_status', true)
+            ->find($userId);
+
+        if (! $user) {
+            return;
+        }
+
+        $user->markEmailAsVerified();
+        $this->clearCacheAndReload($academyId);
+    }
+
+    public function toggleUnconfirmedPanel(): void
+    {
+        $this->showUnconfirmedPanel = ! $this->showUnconfirmedPanel;
+    }
+
     private function clearCacheAndReload(int $academyId): void
     {
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $academicTeacherProfileIds = $this->getAssignedAcademicTeacherProfileIds();
-        $cacheKey = 'dashboard_attention_'.$academyId.'_'.md5(serialize([$quranTeacherIds, $academicTeacherProfileIds]));
-        Cache::forget($cacheKey);
+        $service = app(DashboardAttentionService::class);
+        $service->forgetCacheFor(
+            $academyId,
+            $this->getAssignedQuranTeacherIds(),
+            $this->getAssignedAcademicTeacherProfileIds(),
+            $this->canConfirmStudentEmails(),
+        );
 
         $this->loadData();
     }
@@ -121,6 +158,12 @@ class NeedsAttention extends Component
         $user = Auth::user();
 
         return $user && ($user->isSuperAdmin() || $user->isAdmin() || $user->isAcademyAdmin());
+    }
+
+    private function canConfirmStudentEmails(): bool
+    {
+        return $this->isAdminUser()
+            || (Auth::user()?->supervisorProfile?->canConfirmStudentEmails() ?? false);
     }
 
     private function getAssignedQuranTeacherIds(): array
