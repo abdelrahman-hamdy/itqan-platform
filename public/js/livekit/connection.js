@@ -419,6 +419,10 @@ class LiveKitConnection {
                 this.noiseProcessor.stopProcessing();
                 this.noiseProcessor = null;
             }
+            if (this._noiseGainCtx) {
+                this._noiseGainCtx.close();
+                this._noiseGainCtx = null;
+            }
             const { NoiseSuppressionProcessor } = await import('/js/livekit/noise-suppression/noise_suppression.js');
             if (!NoiseSuppressionProcessor.isSupported()) {
                 if (window.MT) window.MT.event('audio', 'noise_suppression_unsupported', {});
@@ -426,9 +430,20 @@ class LiveKitConnection {
             }
             this.noiseProcessor = new NoiseSuppressionProcessor();
             const mediaTrack = localAudioTrack.mediaStreamTrack;
-            const processedTrack = await this.noiseProcessor.startProcessing(mediaTrack);
-            await localAudioTrack.replaceTrack(processedTrack);
-            if (window.MT) window.MT.event('audio', 'noise_suppression_enabled', { mem, cores });
+            const denoisedTrack = await this.noiseProcessor.startProcessing(mediaTrack);
+
+            // RNNoise reduces volume as a side-effect of per-band gain attenuation.
+            // Apply a 1.5x gain boost to compensate without clipping.
+            const ctx = new AudioContext({ sampleRate: 48000 });
+            const source = ctx.createMediaStreamSource(new MediaStream([denoisedTrack]));
+            const gain = ctx.createGain();
+            gain.gain.value = 1.5;
+            const dest = ctx.createMediaStreamDestination();
+            source.connect(gain).connect(dest);
+            this._noiseGainCtx = ctx;
+
+            await localAudioTrack.replaceTrack(dest.stream.getAudioTracks()[0]);
+            if (window.MT) window.MT.event('audio', 'noise_suppression_enabled', { mem, cores, gain: 1.5 });
         } catch (e) {
             console.warn('Noise suppression not available:', e.message);
         }
@@ -441,6 +456,10 @@ class LiveKitConnection {
         if (this.noiseProcessor) {
             this.noiseProcessor.stopProcessing();
             this.noiseProcessor = null;
+        }
+        if (this._noiseGainCtx) {
+            this._noiseGainCtx.close();
+            this._noiseGainCtx = null;
         }
         if (this.room && this.isConnected) {
             this.intentionalDisconnect = true;
