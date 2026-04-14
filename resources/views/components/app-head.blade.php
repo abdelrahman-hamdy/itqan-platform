@@ -63,7 +63,7 @@
 <!-- Fonts - Primary: Tajawal (Arabic & English) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family={{ $primaryFont }}:wght@{{ $fontWeights }}&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family={{ $primaryFont . ':wght@' . $fontWeights }}&display=swap" rel="stylesheet">
 
 <!-- Icons (RemixIcon & Flag-icons) are bundled via Vite in app.css -->
 
