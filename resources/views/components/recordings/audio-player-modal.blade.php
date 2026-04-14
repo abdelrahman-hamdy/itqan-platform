@@ -44,7 +44,6 @@
             a.addEventListener('ended', () => { this.playing = false; if (this.hasNext) this.next(); });
             a.addEventListener('waiting', () => { this.loading = true; });
             a.addEventListener('canplay', () => { this.loading = false; });
-            a.addEventListener('error', () => { this.loading = false; this.error = true; this.playing = false; });
         },
 
         generateBars(id) {
