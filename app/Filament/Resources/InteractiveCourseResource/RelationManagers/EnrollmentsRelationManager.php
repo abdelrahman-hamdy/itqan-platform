@@ -92,7 +92,7 @@ class EnrollmentsRelationManager extends RelationManager
                             ->label('المبلغ')
                             ->numeric()
                             ->prefix(getCurrencyCode())
-                            ->default(fn () => $this->getOwnerRecord()->student_price ?? 0),
+                            ->default(fn () => $this->getOwnerRecord()->getEffectivePrice()),
 
                         TextInput::make('discount_applied')
                             ->label('الخصم')

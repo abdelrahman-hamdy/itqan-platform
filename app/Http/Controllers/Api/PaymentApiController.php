@@ -145,7 +145,7 @@ class PaymentApiController extends Controller
             $course = InteractiveCourse::when($academyId, fn ($q) => $q->where('academy_id', $academyId))
                 ->find($courseId);
             if ($course) {
-                $priceDecimal = $course->student_price ?? 0;
+                $priceDecimal = $course->getEffectivePrice();
 
                 return (int) round($priceDecimal * 100);
             }

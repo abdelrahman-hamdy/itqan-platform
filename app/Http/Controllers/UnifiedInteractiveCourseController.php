@@ -318,7 +318,7 @@ class UnifiedInteractiveCourseController extends Controller
         }
 
         // Get course price
-        $price = $course->student_price ?? 0;
+        $price = $course->getEffectivePrice();
 
         // If course is free, enroll directly without payment
         if ($price <= 0) {
