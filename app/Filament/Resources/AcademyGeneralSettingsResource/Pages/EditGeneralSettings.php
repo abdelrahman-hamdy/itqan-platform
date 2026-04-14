@@ -68,6 +68,8 @@ class EditGeneralSettings extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        \Log::info('EditGeneralSettings: raw form data keys', ['keys' => array_keys($data), 'meeting_settings' => $data['meeting_settings'] ?? 'NOT_SET']);
+
         // Extract meeting, attendance, and academic settings slots
         $meetingSettings = $data['meeting_settings'] ?? [];
         $attendanceSettings = $data['attendance_settings'] ?? [];
@@ -95,7 +97,7 @@ class EditGeneralSettings extends EditRecord
             'email_categories' => $notificationSettings['email_categories'] ?? [],
         ];
 
-        // Validate attendance thresholds: partial must be ≤ full for both roles.
+        // Validate attendance thresholds: partial must be strictly < full for both roles.
         $studentFull = (int) ($attendanceSettings['student_full_attendance_percent'] ?? 80);
         $studentPartial = (int) ($attendanceSettings['student_partial_attendance_percent'] ?? 50);
         $teacherFull = (int) ($attendanceSettings['teacher_full_attendance_percent'] ?? 90);
@@ -129,6 +131,8 @@ class EditGeneralSettings extends EditRecord
             $updates['teacher_full_attendance_percent'] = $teacherFull;
             $updates['teacher_partial_attendance_percent'] = $teacherPartial;
         }
+
+        \Log::info('EditGeneralSettings: saving updates', ['updates' => $updates, 'meetingSettings' => $meetingSettings]);
 
         if (! empty($updates)) {
             $academySettingsModel->update($updates);
