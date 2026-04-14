@@ -62,8 +62,14 @@ class AcademyObserver
     public function updated(Academy $academy): void
     {
         Cache::forget("academy:{$academy->id}");
+        Cache::forget("academy:subdomain:{$academy->subdomain}");
         Cache::forget('academy:default');
         Cache::forget('academies:all');
+
+        // If subdomain changed, also clear the old subdomain cache
+        if ($academy->isDirty('subdomain')) {
+            Cache::forget("academy:subdomain:{$academy->getOriginal('subdomain')}");
+        }
     }
 
     /**
@@ -72,6 +78,7 @@ class AcademyObserver
      */
     public function created(Academy $academy): void
     {
+        Cache::forget("academy:subdomain:{$academy->subdomain}");
         Cache::forget('academy:default');
         Cache::forget('academies:all');
 
@@ -93,6 +100,7 @@ class AcademyObserver
     public function deleted(Academy $academy): void
     {
         Cache::forget("academy:{$academy->id}");
+        Cache::forget("academy:subdomain:{$academy->subdomain}");
         Cache::forget('academy:default');
         Cache::forget('academies:all');
     }

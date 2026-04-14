@@ -20,8 +20,8 @@ $createMeetingsCommand = Schedule::command('meetings:create-scheduled')
     ->runInBackground()
     ->description('Create video meetings for scheduled sessions');
 
-// Run every minute as backup (primary creation now happens via BaseSessionObserver)
-$createMeetingsCommand->everyMinute();
+// Run every 5 minutes as backup (primary creation now happens via BaseSessionObserver)
+$createMeetingsCommand->everyFiveMinutes();
 
 // Cleanup expired meetings
 $cleanupMeetingsCommand = Schedule::command('meetings:cleanup-expired')

@@ -13,6 +13,8 @@ use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class SuperAdminStatsWidget extends BaseWidget
 {
@@ -52,38 +54,45 @@ class SuperAdminStatsWidget extends BaseWidget
 
     private function getGlobalStats(): array
     {
-        // Academies
-        $totalAcademies = Academy::count();
-        $activeAcademies = Academy::where('is_active', true)->where('maintenance_mode', false)->count();
+        $s = Cache::remember('superadmin_stats_global', 300, function () {
+            $academyStats = Academy::selectRaw('COUNT(*) as total, SUM(CASE WHEN is_active = 1 AND maintenance_mode = 0 THEN 1 ELSE 0 END) as active')
+                ->first();
+
+            $users = $this->countUsersByTypeAndStatus();
+
+            $totalIncome = Payment::where('status', PaymentStatus::COMPLETED->value)->sum('amount');
+
+            $quranStats = QuranSession::selectRaw('COUNT(*) as total, SUM(CASE WHEN scheduled_at < ? THEN 1 ELSE 0 END) as passed', [now()])->first();
+            $academicStats = AcademicSession::selectRaw('COUNT(*) as total, SUM(CASE WHEN scheduled_at < ? THEN 1 ELSE 0 END) as passed', [now()])->first();
+            $interactiveStats = InteractiveCourseSession::selectRaw('COUNT(*) as total, SUM(CASE WHEN scheduled_at < ? THEN 1 ELSE 0 END) as passed', [now()])->first();
+
+            return [
+                'totalAcademies' => $academyStats->total,
+                'activeAcademies' => (int) $academyStats->active,
+                'users' => $users,
+                'totalIncome' => $totalIncome,
+                'totalSessions' => $quranStats->total + $academicStats->total + $interactiveStats->total,
+                'passedSessions' => (int) $quranStats->passed + (int) $academicStats->passed + (int) $interactiveStats->passed,
+            ];
+        });
+
+        $totalAcademies = $s['totalAcademies'];
+        $activeAcademies = $s['activeAcademies'];
         $inactiveAcademies = $totalAcademies - $activeAcademies;
-
-        // Users
-        $totalStudents = User::where('user_type', UserType::STUDENT->value)->count();
-        $totalQuranTeachers = User::where('user_type', UserType::QURAN_TEACHER->value)->count();
-        $totalAcademicTeachers = User::where('user_type', UserType::ACADEMIC_TEACHER->value)->count();
-        $totalParents = User::where('user_type', UserType::PARENT->value)->count();
-        $totalSupervisors = User::where('user_type', UserType::SUPERVISOR->value)->count();
+        $totalStudents = $s['users']['byType'][UserType::STUDENT->value] ?? 0;
+        $totalQuranTeachers = $s['users']['byType'][UserType::QURAN_TEACHER->value] ?? 0;
+        $totalAcademicTeachers = $s['users']['byType'][UserType::ACADEMIC_TEACHER->value] ?? 0;
+        $totalParents = $s['users']['byType'][UserType::PARENT->value] ?? 0;
+        $totalSupervisors = $s['users']['byType'][UserType::SUPERVISOR->value] ?? 0;
         $totalUsers = $totalStudents + $totalQuranTeachers + $totalAcademicTeachers + $totalParents;
-        $activeUsers = User::whereIn('user_type', [UserType::STUDENT->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::PARENT->value])
-            ->where('active_status', true)->count();
+        $activeUsers = ($s['users']['activeByType'][UserType::STUDENT->value] ?? 0)
+            + ($s['users']['activeByType'][UserType::QURAN_TEACHER->value] ?? 0)
+            + ($s['users']['activeByType'][UserType::ACADEMIC_TEACHER->value] ?? 0)
+            + ($s['users']['activeByType'][UserType::PARENT->value] ?? 0);
         $inactiveUsers = $totalUsers - $activeUsers;
-
-        // Total Income (all time)
-        $totalIncome = Payment::where('status', PaymentStatus::COMPLETED->value)->sum('amount');
-
-        // Sessions
-        $totalQuranSessions = QuranSession::count();
-        $totalAcademicSessions = AcademicSession::count();
-        $totalInteractiveSessions = InteractiveCourseSession::count();
-        $totalSessions = $totalQuranSessions + $totalAcademicSessions + $totalInteractiveSessions;
-
-        // Passed sessions (completed or status indicates past)
-        $passedQuran = QuranSession::where('scheduled_at', '<', now())->count();
-        $passedAcademic = AcademicSession::where('scheduled_at', '<', now())->count();
-        $passedInteractive = InteractiveCourseSession::where('scheduled_at', '<', now())->count();
-        $passedSessions = $passedQuran + $passedAcademic + $passedInteractive;
-
-        // Scheduled sessions (future)
+        $totalIncome = $s['totalIncome'];
+        $totalSessions = $s['totalSessions'];
+        $passedSessions = $s['passedSessions'];
         $scheduledSessions = $totalSessions - $passedSessions;
 
         return [
@@ -138,29 +147,41 @@ class SuperAdminStatsWidget extends BaseWidget
 
     private function getAcademyStats($academy): array
     {
-        // Users for specific academy
-        $totalStudents = User::where('academy_id', $academy->id)->where('user_type', UserType::STUDENT->value)->count();
-        $totalQuranTeachers = User::where('academy_id', $academy->id)->where('user_type', UserType::QURAN_TEACHER->value)->count();
-        $totalAcademicTeachers = User::where('academy_id', $academy->id)->where('user_type', UserType::ACADEMIC_TEACHER->value)->count();
-        $totalParents = User::where('academy_id', $academy->id)->where('user_type', UserType::PARENT->value)->count();
-        $totalSupervisors = User::where('academy_id', $academy->id)->where('user_type', UserType::SUPERVISOR->value)->count();
+        $s = Cache::remember("superadmin_stats_academy:{$academy->id}", 300, function () use ($academy) {
+            $users = $this->countUsersByTypeAndStatus($academy->id);
+
+            $totalIncome = Payment::where('academy_id', $academy->id)
+                ->where('status', PaymentStatus::COMPLETED->value)->sum('amount');
+
+            $quranStats = QuranSession::where('academy_id', $academy->id)
+                ->selectRaw('COUNT(*) as total, SUM(CASE WHEN scheduled_at < ? THEN 1 ELSE 0 END) as passed', [now()])
+                ->first();
+            $academicStats = AcademicSession::where('academy_id', $academy->id)
+                ->selectRaw('COUNT(*) as total, SUM(CASE WHEN scheduled_at < ? THEN 1 ELSE 0 END) as passed', [now()])
+                ->first();
+
+            return [
+                'users' => $users,
+                'totalIncome' => $totalIncome,
+                'totalSessions' => $quranStats->total + $academicStats->total,
+                'passedSessions' => (int) $quranStats->passed + (int) $academicStats->passed,
+            ];
+        });
+
+        $totalStudents = $s['users']['byType'][UserType::STUDENT->value] ?? 0;
+        $totalQuranTeachers = $s['users']['byType'][UserType::QURAN_TEACHER->value] ?? 0;
+        $totalAcademicTeachers = $s['users']['byType'][UserType::ACADEMIC_TEACHER->value] ?? 0;
+        $totalParents = $s['users']['byType'][UserType::PARENT->value] ?? 0;
+        $totalSupervisors = $s['users']['byType'][UserType::SUPERVISOR->value] ?? 0;
         $totalUsers = $totalStudents + $totalQuranTeachers + $totalAcademicTeachers + $totalParents;
-        $activeUsers = User::where('academy_id', $academy->id)
-            ->whereIn('user_type', [UserType::STUDENT->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::PARENT->value])
-            ->where('active_status', true)->count();
+        $activeUsers = ($s['users']['activeByType'][UserType::STUDENT->value] ?? 0)
+            + ($s['users']['activeByType'][UserType::QURAN_TEACHER->value] ?? 0)
+            + ($s['users']['activeByType'][UserType::ACADEMIC_TEACHER->value] ?? 0)
+            + ($s['users']['activeByType'][UserType::PARENT->value] ?? 0);
         $inactiveUsers = $totalUsers - $activeUsers;
-
-        // Total Income for academy
-        $totalIncome = Payment::where('academy_id', $academy->id)->where('status', PaymentStatus::COMPLETED->value)->sum('amount');
-
-        // Sessions for academy
-        $totalQuranSessions = QuranSession::where('academy_id', $academy->id)->count();
-        $totalAcademicSessions = AcademicSession::where('academy_id', $academy->id)->count();
-        $totalSessions = $totalQuranSessions + $totalAcademicSessions;
-
-        $passedQuran = QuranSession::where('academy_id', $academy->id)->where('scheduled_at', '<', now())->count();
-        $passedAcademic = AcademicSession::where('academy_id', $academy->id)->where('scheduled_at', '<', now())->count();
-        $passedSessions = $passedQuran + $passedAcademic;
+        $totalIncome = $s['totalIncome'];
+        $totalSessions = $s['totalSessions'];
+        $passedSessions = $s['passedSessions'];
         $scheduledSessions = $totalSessions - $passedSessions;
 
         return [
@@ -206,6 +227,37 @@ class SuperAdminStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-shield-check')
                 ->color('warning'),
         ];
+    }
+
+    /**
+     * Batch user counts by type and active_status in a single query.
+     *
+     * @return array{byType: array<string, int>, activeByType: array<string, int>}
+     */
+    private function countUsersByTypeAndStatus(?int $academyId = null): array
+    {
+        $query = User::select('user_type', 'active_status', DB::raw('COUNT(*) as total'))
+            ->whereIn('user_type', [
+                UserType::STUDENT->value,
+                UserType::QURAN_TEACHER->value,
+                UserType::ACADEMIC_TEACHER->value,
+                UserType::PARENT->value,
+                UserType::SUPERVISOR->value,
+            ])
+            ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+            ->groupBy('user_type', 'active_status')
+            ->get();
+
+        $byType = [];
+        $activeByType = [];
+        foreach ($query as $row) {
+            $byType[$row->user_type] = ($byType[$row->user_type] ?? 0) + $row->total;
+            if ($row->active_status) {
+                $activeByType[$row->user_type] = ($activeByType[$row->user_type] ?? 0) + $row->total;
+            }
+        }
+
+        return ['byType' => $byType, 'activeByType' => $activeByType];
     }
 
     public static function canView(): bool

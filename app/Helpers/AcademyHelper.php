@@ -3,17 +3,19 @@
 namespace App\Helpers;
 
 use App\Models\Academy;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Session;
 
 class AcademyHelper
 {
     public static function getCurrentAcademy(): ?Academy
     {
-        // Always fetch fresh from database to get latest settings (like currency)
+        // Cached for 10 minutes — invalidated by AcademyObserver on academy update
         $academyId = Session::get('selected_academy_id');
         if ($academyId) {
-            return Academy::find($academyId);
+            return Cache::remember("academy:{$academyId}", 600, fn () => Academy::find($academyId));
         }
+
         return null;
     }
 

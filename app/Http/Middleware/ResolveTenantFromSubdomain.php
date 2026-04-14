@@ -7,6 +7,7 @@ use Log;
 use App\Models\Academy;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -53,8 +54,12 @@ class ResolveTenantFromSubdomain
 
                 // If we have a subdomain and it's not the base domain
                 if ($subdomain !== $baseDomain && ! empty($subdomain)) {
-                    // Find the academy
-                    $academy = Academy::where('subdomain', $subdomain)->first();
+                    // Find the academy (cached for 10 minutes, invalidated by AcademyObserver)
+                    $academy = Cache::remember(
+                        "academy:subdomain:{$subdomain}",
+                        600,
+                        fn () => Academy::where('subdomain', $subdomain)->first()
+                    );
 
                     if ($academy) {
                         // Set the current tenant in the request

@@ -4,8 +4,10 @@ namespace App\Filament\Academy\Widgets;
 
 use App\Enums\UserType;
 use App\Models\User;
+use Carbon\CarbonPeriod;
 use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\DB;
 
 class AcademyUserAnalyticsChartWidget extends ChartWidget
 {
@@ -38,49 +40,65 @@ class AcademyUserAnalyticsChartWidget extends ChartWidget
         }
 
         $days = (int) $this->filter;
+        $startDate = now()->subDays($days - 1)->startOfDay();
+        $endDate = now()->endOfDay();
+
+        $userTypes = [
+            UserType::STUDENT->value,
+            UserType::QURAN_TEACHER->value,
+            UserType::ACADEMIC_TEACHER->value,
+            UserType::PARENT->value,
+        ];
+
+        // Base counts: users created BEFORE the date range (1 query)
+        $baseCounts = User::where('academy_id', $academy->id)
+            ->select('user_type', DB::raw('COUNT(*) as total'))
+            ->where('created_at', '<', $startDate)
+            ->whereIn('user_type', $userTypes)
+            ->groupBy('user_type')
+            ->pluck('total', 'user_type');
+
+        // Daily new signups in a single batch query, keyed by date for O(1) lookups
+        $dailyCounts = User::where('academy_id', $academy->id)
+            ->select(DB::raw('DATE(created_at) as signup_date'), 'user_type', DB::raw('COUNT(*) as total'))
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereIn('user_type', $userTypes)
+            ->groupBy('signup_date', 'user_type')
+            ->get()
+            ->groupBy('user_type')
+            ->map(fn ($records) => $records->keyBy('signup_date'));
+
+        // Build cumulative arrays
         $labels = [];
-        $studentsData = [];
-        $quranTeachersData = [];
-        $academicTeachersData = [];
-        $parentsData = [];
+        $series = array_fill_keys($userTypes, []);
+        $running = [];
+        foreach ($userTypes as $type) {
+            $running[$type] = (int) ($baseCounts[$type] ?? 0);
+        }
 
-        // Generate data points
-        for ($i = $days - 1; $i >= 0; $i--) {
-            $date = now()->subDays($i);
+        foreach (CarbonPeriod::create($startDate, $endDate) as $date) {
+            $dateStr = $date->format('Y-m-d');
 
-            // Format label based on filter
             if ($days <= 7) {
                 $labels[] = $date->translatedFormat('D');
-            } elseif ($days <= 30) {
-                $labels[] = $date->format('d/m');
             } elseif ($days <= 90) {
                 $labels[] = $date->format('d/m');
             } else {
                 $labels[] = $date->translatedFormat('M');
             }
 
-            // Build query scoped to academy
-            $baseQuery = User::where('academy_id', $academy->id);
-
-            // Count users by type up to this date (cumulative)
-            $studentsData[] = (clone $baseQuery)->where('user_type', UserType::STUDENT->value)
-                ->whereDate('created_at', '<=', $date)->count();
-
-            $quranTeachersData[] = (clone $baseQuery)->where('user_type', UserType::QURAN_TEACHER->value)
-                ->whereDate('created_at', '<=', $date)->count();
-
-            $academicTeachersData[] = (clone $baseQuery)->where('user_type', UserType::ACADEMIC_TEACHER->value)
-                ->whereDate('created_at', '<=', $date)->count();
-
-            $parentsData[] = (clone $baseQuery)->where('user_type', UserType::PARENT->value)
-                ->whereDate('created_at', '<=', $date)->count();
+            foreach ($userTypes as $type) {
+                $dayCount = $dailyCounts->get($type)?->get($dateStr)?->total ?? 0;
+                $running[$type] += $dayCount;
+                $series[$type][] = $running[$type];
+            }
         }
 
         return [
             'datasets' => [
                 [
                     'label' => 'الطلاب',
-                    'data' => $studentsData,
+                    'data' => $series[UserType::STUDENT->value],
                     'borderColor' => '#10B981',
                     'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                     'pointBackgroundColor' => '#10B981',
@@ -90,7 +108,7 @@ class AcademyUserAnalyticsChartWidget extends ChartWidget
                 ],
                 [
                     'label' => 'معلمو القرآن',
-                    'data' => $quranTeachersData,
+                    'data' => $series[UserType::QURAN_TEACHER->value],
                     'borderColor' => '#3B82F6',
                     'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
                     'pointBackgroundColor' => '#3B82F6',
@@ -100,7 +118,7 @@ class AcademyUserAnalyticsChartWidget extends ChartWidget
                 ],
                 [
                     'label' => 'المعلمون الأكاديميون',
-                    'data' => $academicTeachersData,
+                    'data' => $series[UserType::ACADEMIC_TEACHER->value],
                     'borderColor' => '#8B5CF6',
                     'backgroundColor' => 'rgba(139, 92, 246, 0.1)',
                     'pointBackgroundColor' => '#8B5CF6',
@@ -110,7 +128,7 @@ class AcademyUserAnalyticsChartWidget extends ChartWidget
                 ],
                 [
                     'label' => 'أولياء الأمور',
-                    'data' => $parentsData,
+                    'data' => $series[UserType::PARENT->value],
                     'borderColor' => '#F59E0B',
                     'backgroundColor' => 'rgba(245, 158, 11, 0.1)',
                     'pointBackgroundColor' => '#F59E0B',

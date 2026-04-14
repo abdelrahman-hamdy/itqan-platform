@@ -50,7 +50,7 @@ class DashboardAttentionService
     ): array {
         $cacheKey = 'dashboard_attention_'.$academyId.'_'.md5(serialize([$quranTeacherIds, $academicTeacherProfileIds]));
 
-        $counts = Cache::remember($cacheKey, 30, function () use ($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds) {
+        $counts = Cache::remember($cacheKey, 300, function () use ($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds) {
             return $this->queryCounts($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds);
         });
 
@@ -232,7 +232,7 @@ class DashboardAttentionService
 
         // 12. Reviews awaiting approval (conditional on academy settings, scoped by teacher)
         $pendingReviewsCount = 0;
-        $academy = Academy::find($academyId);
+        $academy = Cache::remember("academy:{$academyId}", 600, fn () => Academy::find($academyId));
         $manualReviews = ! (($academy->academic_settings ?? [])['auto_approve_reviews'] ?? true);
         if ($manualReviews) {
             $pendingReviewsCount = $this->countPendingReviews(
@@ -242,33 +242,38 @@ class DashboardAttentionService
 
         // === INFO ===
 
-        // 13. Inactive students (admin-only — students are not directly assigned to supervisors)
-        $inactiveStudents = $isAdmin
-            ? User::where('academy_id', $academyId)
-                ->where('active_status', false)
-                ->where('user_type', UserType::STUDENT->value)->count()
-            : 0;
-
-        // 14. Inactive Quran teachers (scoped to assigned teachers)
-        $inactiveQuranTeachers = User::where('academy_id', $academyId)
+        // 13-16. Inactive users — batch into 1 query
+        $inactiveQuery = User::where('academy_id', $academyId)
             ->where('active_status', false)
-            ->where('user_type', UserType::QURAN_TEACHER->value)
-            ->when(! $isAdmin, fn ($q) => $q->whereIn('id', $quranTeacherIds ?: [0]))
-            ->count();
+            ->whereIn('user_type', [
+                UserType::STUDENT->value,
+                UserType::QURAN_TEACHER->value,
+                UserType::ACADEMIC_TEACHER->value,
+                UserType::PARENT->value,
+            ]);
 
-        // 15. Inactive Academic teachers (scoped to assigned teachers)
-        $inactiveAcademicTeachers = User::where('academy_id', $academyId)
-            ->where('active_status', false)
-            ->where('user_type', UserType::ACADEMIC_TEACHER->value)
-            ->when(! $isAdmin, fn ($q) => $q->whereIn('id', $academicTeacherUserIds ?: [0]))
-            ->count();
+        if (! $isAdmin) {
+            // Scope teachers to assigned only; students/parents return 0 for supervisors
+            $inactiveQuery->where(function ($q) use ($quranTeacherIds, $academicTeacherUserIds) {
+                $q->where(function ($q) use ($quranTeacherIds) {
+                    $q->where('user_type', UserType::QURAN_TEACHER->value)
+                        ->whereIn('id', $quranTeacherIds ?: [0]);
+                })->orWhere(function ($q) use ($academicTeacherUserIds) {
+                    $q->where('user_type', UserType::ACADEMIC_TEACHER->value)
+                        ->whereIn('id', $academicTeacherUserIds ?: [0]);
+                });
+            });
+        }
 
-        // 16. Inactive parents (admin-only — parents are not directly assigned to supervisors)
-        $inactiveParents = $isAdmin
-            ? User::where('academy_id', $academyId)
-                ->where('active_status', false)
-                ->where('user_type', UserType::PARENT->value)->count()
-            : 0;
+        $inactiveCounts = $inactiveQuery
+            ->selectRaw('user_type, COUNT(*) as total')
+            ->groupBy('user_type')
+            ->pluck('total', 'user_type');
+
+        $inactiveStudents = $isAdmin ? ($inactiveCounts[UserType::STUDENT->value] ?? 0) : 0;
+        $inactiveQuranTeachers = $inactiveCounts[UserType::QURAN_TEACHER->value] ?? 0;
+        $inactiveAcademicTeachers = $inactiveCounts[UserType::ACADEMIC_TEACHER->value] ?? 0;
+        $inactiveParents = $isAdmin ? ($inactiveCounts[UserType::PARENT->value] ?? 0) : 0;
 
         // 17. Pending session requests (scoped by teacher)
         $pendingSessionRequests = 0;
@@ -457,7 +462,7 @@ class DashboardAttentionService
      */
     private function getPendingReviewsData(int $academyId, bool $isAdmin, array $quranTeacherIds, array $academicTeacherProfileIds): array
     {
-        $academy = Academy::find($academyId);
+        $academy = Cache::remember("academy:{$academyId}", 600, fn () => Academy::find($academyId));
         $manualReviews = ! (($academy->academic_settings ?? [])['auto_approve_reviews'] ?? true);
 
         if (! $manualReviews) {
@@ -554,7 +559,7 @@ class DashboardAttentionService
         // by clearing all keys that start with the prefix
         $pattern = 'dashboard_attention_'.$academyId.'_*';
         // Redis doesn't support wildcard delete in Cache facade, so we clear by known key
-        // The 30-second TTL handles natural expiry; this is for immediate refresh after actions
+        // The 5-minute TTL handles natural expiry; this is for immediate refresh after actions
         Cache::forget('dashboard_attention_'.$academyId.'_'.md5(serialize([[], []])));
     }
 }

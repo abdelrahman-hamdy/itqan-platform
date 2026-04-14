@@ -240,8 +240,8 @@ class AppServiceProvider extends ServiceProvider
         Route::aliasMiddleware('academy.context', AcademyContext::class);
         Route::aliasMiddleware('resolve.tenant', ResolveTenantFromSubdomain::class);
 
-        // Share academy context with all views
-        View::composer('*', function ($view) {
+        // Share academy context with views that use $currentAcademy / $hasAcademySelected
+        View::composer(['components.layouts.*', 'livewire.academy-selector', 'filament.*'], function ($view) {
             $view->with('currentAcademy', AcademyHelper::getCurrentAcademy());
             $view->with('hasAcademySelected', AcademyHelper::hasAcademySelected());
         });

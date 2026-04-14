@@ -109,10 +109,20 @@ class ContentSecurityPolicy
     }
 
     /**
+     * In-process cache for CSP directive strings (deterministic per deployment).
+     */
+    private static array $cspCache = [];
+
+    /**
      * Build CSP directives based on environment
      */
     private function buildCspDirectives(bool $allowIframe = false): string
     {
+        $key = $allowIframe ? 'iframe' : 'default';
+        if (isset(self::$cspCache[$key])) {
+            return self::$cspCache[$key];
+        }
+
         $isLocal = config('app.env') === 'local';
         $appDomain = config('app.domain', 'itqan-platform.test');
 
@@ -178,9 +188,9 @@ class ContentSecurityPolicy
             $directives[] = 'upgrade-insecure-requests';
         }
 
-        // Clean up extra spaces and return
+        // Clean up extra spaces and cache
         $cspString = implode('; ', $directives);
 
-        return preg_replace('/\s+/', ' ', $cspString);
+        return self::$cspCache[$key] = preg_replace('/\s+/', ' ', $cspString);
     }
 }

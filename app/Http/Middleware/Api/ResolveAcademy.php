@@ -7,6 +7,7 @@ use App\Models\Academy;
 use App\Services\AcademyContextService;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 class ResolveAcademy
@@ -24,7 +25,11 @@ class ResolveAcademy
     {
         $subdomain = $this->resolveSubdomain($request);
 
-        $academy = Academy::where('subdomain', $subdomain)->first();
+        $academy = Cache::remember(
+            "academy:subdomain:{$subdomain}",
+            600,
+            fn () => Academy::where('subdomain', $subdomain)->first()
+        );
 
         if (! $academy) {
             return response()->json([
