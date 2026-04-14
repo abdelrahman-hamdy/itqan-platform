@@ -624,7 +624,6 @@
                 @php
                     $courseReviews = $course->approvedReviews()->with('user')->latest()->get();
                 @endphp
-                @if($courseReviews->count() > 0)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
                     <x-reviews.section
                         :reviewable-type="\App\Models\InteractiveCourse::class"
@@ -633,12 +632,11 @@
                         :reviews="$courseReviews"
                         :rating="$course->avg_rating ?? 0"
                         :total-reviews="$course->total_reviews ?? 0"
-                        :show-summary="true"
-                        :show-breakdown="true"
+                        :show-summary="$courseReviews->count() > 0"
+                        :show-breakdown="$courseReviews->count() > 0"
                         :show-review-form="false"
                     />
                 </div>
-                @endif
 
                 {{-- Course Rating --}}
                 @if($course->total_reviews > 0)
