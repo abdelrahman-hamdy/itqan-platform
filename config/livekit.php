@@ -100,7 +100,7 @@ return [
         'delete_files_on_delete' => env('LIVEKIT_RECORDINGS_DELETE_FILES', true),
 
         // Maximum number of concurrent recordings the server can handle
-        'max_concurrent_recordings' => (int) env('LIVEKIT_MAX_CONCURRENT_RECORDINGS', 5),
+        'max_concurrent_recordings' => (int) env('LIVEKIT_MAX_CONCURRENT_RECORDINGS', 10),
 
         // Session types that are auto-managed by the orchestrator (no manual toggle)
         'auto_managed_types' => ['quran_individual', 'quran_group', 'academic_lesson', 'trial'],

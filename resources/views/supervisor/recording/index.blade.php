@@ -134,9 +134,9 @@
         </nav>
     </div>
 
-    {{-- Filters --}}
+    {{-- Filters (grid layout matching sessions page) --}}
     <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             {{-- Recording Status --}}
             <select onchange="if(this.value !== '') { window.location.href = this.value; }"
                 class="text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500">
@@ -155,7 +155,7 @@
                 @endif
             </select>
 
-            {{-- Teacher searchable select --}}
+            {{-- Teacher --}}
             @if(!empty($teachers))
             <x-ui.searchable-select
                 name="teacher_id"
@@ -167,7 +167,7 @@
             />
             @endif
 
-            {{-- Student searchable select --}}
+            {{-- Student --}}
             @if(!empty($students))
             <x-ui.searchable-select
                 name="student_id"
@@ -175,6 +175,8 @@
                 :selected="$studentId"
                 :placeholder="__('supervisor.sessions.all_students')"
                 :showGenderFilter="true"
+                :maleLabel="__('supervisor.recording.student_male')"
+                :femaleLabel="__('supervisor.recording.student_female')"
                 :showTypeFilter="false"
             />
             @endif
@@ -296,7 +298,7 @@
                 </div>
             </div>
 
-            {{-- History Table --}}
+            {{-- History Table with Bulk Selection --}}
             @if($historyData['recordings']->isEmpty())
                 <div class="p-12 text-center">
                     <i class="ri-history-line text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
@@ -304,97 +306,178 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __($t.'no_history_description') }}</p>
                 </div>
             @else
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 dark:bg-gray-900/50">
-                            <tr>
-                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'session') }}</th>
-                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'type') }}</th>
-                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'teacher') }}</th>
-                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'time') }}</th>
-                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'status') }}</th>
-                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.recording.history_total_duration') }}</th>
-                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.recording.history_storage_used') }}</th>
-                                <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'actions') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                            @foreach($historyData['recordings'] as $recording)
-                                @php
-                                    $rec = $recording;
-                                    $sess = $rec->recordable;
-                                    $recType = match(true) {
-                                        $sess instanceof \App\Models\AcademicSession => 'academic',
-                                        $sess instanceof \App\Models\InteractiveCourseSession => 'interactive',
-                                        default => 'quran',
-                                    };
-                                    $recTeacher = match($recType) {
-                                        'academic' => $sess?->academicTeacher?->user?->name ?? '-',
-                                        'interactive' => $sess?->course?->assignedTeacher?->user?->name ?? '-',
-                                        default => $sess?->quranTeacher?->name ?? '-',
-                                    };
-                                    $isTrial = $recType === 'quran' && $sess && method_exists($sess, 'isTrial') && $sess->isTrial();
-                                    $typeConfig = match(true) {
-                                        $recType === 'academic' => ['label' => __('supervisor.sessions.type_private_lesson'), 'icon' => 'ri-graduation-cap-line', 'bg' => 'bg-violet-50', 'text' => 'text-violet-600'],
-                                        $recType === 'interactive' => ['label' => __('supervisor.sessions.type_interactive'), 'icon' => 'ri-video-chat-line', 'bg' => 'bg-blue-50', 'text' => 'text-blue-600'],
-                                        $isTrial => ['label' => __('supervisor.sessions.type_quran_trial'), 'icon' => 'ri-gift-line', 'bg' => 'bg-orange-50', 'text' => 'text-orange-600'],
-                                        $sess && $sess->circle => ['label' => __('supervisor.sessions.type_quran_group'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
-                                        default => ['label' => __('supervisor.sessions.type_quran_individual'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
-                                    };
-                                @endphp
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                    <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $sess?->session_code ?? $rec->display_name }}</td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="w-6 h-6 rounded flex items-center justify-center {{ $typeConfig['bg'] }}">
-                                                <i class="{{ $typeConfig['icon'] }} text-xs {{ $typeConfig['text'] }}"></i>
-                                            </span>
-                                            <span class="text-xs text-gray-600 dark:text-gray-400">{{ $typeConfig['label'] }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $recTeacher }}</td>
-                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400" dir="ltr">{{ $rec->created_at ? toAcademyTimezone($rec->created_at)->format('M d, H:i') : '-' }}</td>
-                                    <td class="px-4 py-3">
-                                        @php
-                                            $sBadge = match($rec->status) {
-                                                \App\Enums\RecordingStatus::COMPLETED => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                                                \App\Enums\RecordingStatus::SKIPPED => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-                                                \App\Enums\RecordingStatus::FAILED => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-                                                default => 'bg-gray-100 text-gray-600',
-                                            };
-                                        @endphp
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $sBadge }}">
-                                            <i class="{{ $rec->status->icon() }} me-1"></i>
-                                            {{ $rec->status->label() }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400" dir="ltr">{{ $rec->formatted_duration }}</td>
-                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400" dir="ltr">{{ $rec->formatted_file_size }}</td>
-                                    <td class="px-4 py-3">
-                                        @if($rec->isCompleted() && $rec->isAvailable())
-                                            <div class="flex items-center gap-1.5">
-                                                @if($rec->getStreamUrl())
-                                                    <a href="{{ $rec->getStreamUrl() }}" target="_blank"
-                                                       class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
-                                                        <i class="ri-play-circle-line"></i>
-                                                    </a>
-                                                @endif
-                                                @if($rec->getDownloadUrl())
-                                                    <a href="{{ $rec->getDownloadUrl() }}" target="_blank"
-                                                       class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 transition-colors">
-                                                        <i class="ri-download-line"></i>
-                                                    </a>
-                                                @endif
-                                            </div>
-                                        @else
-                                            <span class="text-xs text-gray-400">-</span>
-                                        @endif
-                                    </td>
+                @php
+                    // Build playlist for audio player navigation
+                    $playableRecordings = $historyData['recordings']->filter(fn ($r) => $r->isCompleted() && $r->isAvailable());
+                    $playlist = $playableRecordings->values()->map(fn ($r) => [
+                        'id' => $r->id,
+                        'streamUrl' => $r->getStreamUrl(),
+                        'downloadUrl' => $r->getDownloadUrl(),
+                        'date' => $r->started_at ? toAcademyTimezone($r->started_at)->translatedFormat('d M h:i A') : '',
+                        'duration' => $r->formatted_duration,
+                        'size' => $r->formatted_file_size,
+                        'title' => $r->recordable?->session_code ?? $r->display_name,
+                    ])->toArray();
+                    $playlistJson = json_encode($playlist);
+                @endphp
+
+                <div x-data="bulkRecordings()" class="relative">
+                    {{-- Bulk action bar --}}
+                    <div x-show="selected.length > 0" x-transition
+                         class="sticky top-0 z-10 bg-indigo-600 text-white px-4 py-2.5 flex items-center justify-between">
+                        <span class="text-sm font-medium" x-text="'{{ __($t.'bulk_selected') }}: ' + selected.length"></span>
+                        <div class="flex items-center gap-2">
+                            <button @click="bulkDownload()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/20 hover:bg-white/30 transition-colors">
+                                <i class="ri-download-line"></i> {{ __($t.'bulk_download') }}
+                            </button>
+                            <button @click="bulkDeleteConfirm()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500 hover:bg-red-600 transition-colors">
+                                <i class="ri-delete-bin-line"></i> {{ __($t.'bulk_delete') }}
+                            </button>
+                            <button @click="selected = []" class="p-1 hover:bg-white/20 rounded transition-colors">
+                                <i class="ri-close-line"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-900/50">
+                                <tr>
+                                    <th class="px-4 py-3 w-10"><input type="checkbox" @change="toggleAll($event)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"></th>
+                                    <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'type') }}</th>
+                                    <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'teacher') }}</th>
+                                    <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_student') }}</th>
+                                    <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_scheduled') }}</th>
+                                    <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_status') }}</th>
+                                    <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __('supervisor.sessions.col_duration') }}</th>
+                                    <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'status') }}</th>
+                                    <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'history_storage_used') }}</th>
+                                    <th class="px-4 py-3 text-start text-gray-600 dark:text-gray-400 font-medium">{{ __($t.'actions') }}</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                                @foreach($historyData['recordings'] as $recording)
+                                    @php
+                                        $rec = $recording;
+                                        $sess = $rec->recordable;
+                                        $recType = match(true) {
+                                            $sess instanceof \App\Models\AcademicSession => 'academic',
+                                            $sess instanceof \App\Models\InteractiveCourseSession => 'interactive',
+                                            default => 'quran',
+                                        };
+                                        $recTeacher = match($recType) {
+                                            'academic' => $sess?->academicTeacher?->user?->name ?? '-',
+                                            'interactive' => $sess?->course?->assignedTeacher?->user?->name ?? '-',
+                                            default => $sess?->quranTeacher?->name ?? '-',
+                                        };
+                                        $recStudent = match($recType) {
+                                            'academic' => $sess?->student?->name ?? '-',
+                                            'interactive' => $sess?->course?->title ?? '-',
+                                            default => $sess?->circle?->name ?? $sess?->student?->name ?? $sess?->trialRequest?->student?->name ?? '-',
+                                        };
+                                        $isTrial = $recType === 'quran' && $sess && method_exists($sess, 'isTrial') && $sess->isTrial();
+                                        $typeConfig = match(true) {
+                                            $recType === 'academic' => ['label' => __('supervisor.sessions.type_private_lesson'), 'icon' => 'ri-graduation-cap-line', 'bg' => 'bg-violet-50', 'text' => 'text-violet-600'],
+                                            $recType === 'interactive' => ['label' => __('supervisor.sessions.type_interactive'), 'icon' => 'ri-video-chat-line', 'bg' => 'bg-blue-50', 'text' => 'text-blue-600'],
+                                            $isTrial => ['label' => __('supervisor.sessions.type_quran_trial'), 'icon' => 'ri-gift-line', 'bg' => 'bg-orange-50', 'text' => 'text-orange-600'],
+                                            $sess && $sess->circle => ['label' => __('supervisor.sessions.type_quran_group'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
+                                            default => ['label' => __('supervisor.sessions.type_quran_individual'), 'icon' => 'ri-book-read-line', 'bg' => 'bg-green-50', 'text' => 'text-green-600'],
+                                        };
+                                        $sBadge = match($rec->status) {
+                                            \App\Enums\RecordingStatus::COMPLETED => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                            \App\Enums\RecordingStatus::SKIPPED => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+                                            \App\Enums\RecordingStatus::FAILED => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                                            default => 'bg-gray-100 text-gray-600',
+                                        };
+                                        $playlistIndex = $playableRecordings->search(fn ($r) => $r->id === $rec->id);
+                                    @endphp
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <td class="px-4 py-3"><input type="checkbox" value="{{ $rec->id }}" x-model.number="selected" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"></td>
+                                        {{-- Type --}}
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="w-6 h-6 rounded flex items-center justify-center {{ $typeConfig['bg'] }}">
+                                                    <i class="{{ $typeConfig['icon'] }} text-xs {{ $typeConfig['text'] }}"></i>
+                                                </span>
+                                                <span class="text-xs text-gray-600 dark:text-gray-400">{{ $typeConfig['label'] }}</span>
+                                            </div>
+                                        </td>
+                                        {{-- Teacher --}}
+                                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm">{{ $recTeacher }}</td>
+                                        {{-- Student --}}
+                                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm">{{ $recStudent }}</td>
+                                        {{-- Scheduled At (matching sessions page) --}}
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            @if($sess?->scheduled_at)
+                                                <span class="text-sm text-gray-700">{{ toAcademyTimezone($sess->scheduled_at)->translatedFormat('d M') }}</span>
+                                                <span class="text-xs text-gray-500 block">{{ toAcademyTimezone($sess->scheduled_at)->translatedFormat('h:i A') }}</span>
+                                            @else
+                                                <span class="text-sm text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                        {{-- Session Status --}}
+                                        <td class="px-4 py-3">
+                                            @if($sess?->status)
+                                                <x-sessions.status-badge :status="$sess->status" size="sm" />
+                                            @else
+                                                <span class="text-xs text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                        {{-- Duration --}}
+                                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm">
+                                            {{ $sess?->duration_minutes ? $sess->duration_minutes . ' ' . __('supervisor.sessions.minutes_short') : $rec->formatted_duration }}
+                                        </td>
+                                        {{-- Recording Status --}}
+                                        <td class="px-4 py-3">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $sBadge }}">
+                                                <i class="{{ $rec->status->icon() }} me-1"></i>
+                                                {{ $rec->status->label() }}
+                                            </span>
+                                        </td>
+                                        {{-- Size --}}
+                                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm" dir="ltr">{{ $rec->formatted_file_size }}</td>
+                                        {{-- Actions --}}
+                                        <td class="px-4 py-3">
+                                            @if($rec->isCompleted() && $rec->isAvailable())
+                                                <div class="flex items-center gap-1">
+                                                    <button @click="$dispatch('open-audio-player-playlist', { playlist: {{ $playlistJson }}, startIndex: {{ $playlistIndex !== false ? $playlistIndex : 0 }} })"
+                                                       class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
+                                                        <i class="ri-play-circle-line"></i> {{ __($t.'play') }}
+                                                    </button>
+                                                    <a href="{{ $rec->getDownloadUrl() }}"
+                                                       class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 transition-colors">
+                                                        <i class="ri-download-line"></i> {{ __($t.'download') }}
+                                                    </a>
+                                                    <button @click="deleteRecording({{ $rec->id }}, '{{ $sess?->session_code ?? $rec->display_name }}')"
+                                                       class="inline-flex items-center px-1.5 py-1 text-xs rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                                        <i class="ri-delete-bin-line"></i>
+                                                    </button>
+                                                </div>
+                                            @elseif($rec->status->canDelete())
+                                                <button @click="deleteRecording({{ $rec->id }}, '{{ $sess?->session_code ?? '' }}')"
+                                                   class="inline-flex items-center px-1.5 py-1 text-xs rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                </button>
+                                            @else
+                                                <span class="text-xs text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Bulk delete form (hidden) --}}
+                    <form x-ref="bulkDeleteForm" method="POST" action="{{ route('manage.recording.bulk-delete', ['subdomain' => $subdomain]) }}">
+                        @csrf
+                        @method('DELETE')
+                        <template x-for="id in selected" :key="id">
+                            <input type="hidden" name="recording_ids[]" :value="id">
+                        </template>
+                    </form>
                 </div>
+
                 <div class="p-4">
                     {{ $historyData['recordings']->links() }}
                 </div>
@@ -404,7 +487,81 @@
     </div>
 </div>
 
+{{-- Modals --}}
+<x-recordings.audio-player-modal />
+<x-ui.confirmation-modal />
+
+{{-- Delete form (single) --}}
+<form id="deleteRecordingForm" method="POST" class="hidden">
+    @csrf
+    @method('DELETE')
+</form>
+
 <script>
+function bulkRecordings() {
+    return {
+        selected: [],
+
+        toggleAll(event) {
+            if (event.target.checked) {
+                this.selected = Array.from(document.querySelectorAll('tbody input[type="checkbox"]')).map(cb => parseInt(cb.value)).filter(v => !isNaN(v));
+            } else {
+                this.selected = [];
+            }
+        },
+
+        bulkDownload() {
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cb = row.querySelector('input[type="checkbox"]');
+                if (cb && this.selected.includes(parseInt(cb.value))) {
+                    const dlLink = row.querySelector('a[href*="download"]');
+                    if (dlLink) window.open(dlLink.href, '_blank');
+                }
+            });
+        },
+
+        bulkDeleteConfirm() {
+            if (typeof window.confirmAction === 'function') {
+                window.confirmAction({
+                    title: '{{ __($t."bulk_delete_title") }}',
+                    message: '{{ __($t."bulk_delete_confirm") }}',
+                    confirmText: '{{ __($t."bulk_delete") }}',
+                    cancelText: '{{ __("common.cancel") }}',
+                    isDangerous: true,
+                    icon: 'ri-delete-bin-line',
+                    onConfirm: () => { this.$refs.bulkDeleteForm.submit(); }
+                });
+            } else {
+                if (confirm('{{ __($t."bulk_delete_confirm") }}')) {
+                    this.$refs.bulkDeleteForm.submit();
+                }
+            }
+        },
+
+        deleteRecording(id, name) {
+            const doDelete = () => {
+                const form = document.getElementById('deleteRecordingForm');
+                form.action = '{{ route("manage.recording.delete", ["subdomain" => $subdomain, "recordingId" => "__ID__"]) }}'.replace('__ID__', id);
+                form.submit();
+            };
+            if (typeof window.confirmAction === 'function') {
+                window.confirmAction({
+                    title: '{{ __($t."delete_title") }}',
+                    message: '{{ __($t."delete_confirm") }}',
+                    confirmText: '{{ __($t."delete_action") }}',
+                    cancelText: '{{ __("common.cancel") }}',
+                    isDangerous: true,
+                    icon: 'ri-delete-bin-line',
+                    onConfirm: doDelete
+                });
+            } else {
+                if (confirm('{{ __($t."delete_confirm") }}')) doDelete();
+            }
+        }
+    };
+}
+
 function recordingCapacity() {
     return {
         activeCount: {{ $capacityStatus['active_count'] }},

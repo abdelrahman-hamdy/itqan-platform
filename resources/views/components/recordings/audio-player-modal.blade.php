@@ -1,4 +1,4 @@
-{{-- Audio Player Modal with WaveSurfer.js waveform (render once per page) --}}
+{{-- Audio Player Modal with WaveSurfer.js waveform + playlist navigation (render once per page) --}}
 @once
 <div
     x-data="{
@@ -13,6 +13,12 @@
         recordingDate: '',
         recordingDuration: '',
         recordingSize: '',
+        recordingTitle: '',
+        playlist: [],
+        currentIndex: -1,
+
+        get hasPrev() { return this.currentIndex > 0; },
+        get hasNext() { return this.currentIndex < this.playlist.length - 1; },
 
         init() {
             this.$watch('open', (val) => {
@@ -56,7 +62,10 @@
             this.wavesurfer.on('timeupdate', (t) => {
                 this.currentTime = this.fmt(t);
             });
-            this.wavesurfer.on('finish', () => { this.playing = false; });
+            this.wavesurfer.on('finish', () => {
+                this.playing = false;
+                if (this.hasNext) this.next();
+            });
             this.wavesurfer.on('play', () => { this.playing = true; });
             this.wavesurfer.on('pause', () => { this.playing = false; });
 
@@ -72,25 +81,71 @@
             this.wavesurfer.setTime(Math.max(0, Math.min(cur + sec, dur)));
         },
 
-        fmt(s) {
-            if (!s || isNaN(s)) return '00:00';
-            const m = Math.floor(s / 60), ss = Math.floor(s % 60);
-            return String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+        next() {
+            if (!this.hasNext) return;
+            this.loadTrack(this.currentIndex + 1);
+        },
+
+        prev() {
+            if (!this.hasPrev) return;
+            this.loadTrack(this.currentIndex - 1);
+        },
+
+        loadTrack(index) {
+            const track = this.playlist[index];
+            if (!track) return;
+            this.currentIndex = index;
+            this.audioUrl = track.streamUrl;
+            this.downloadUrl = track.downloadUrl;
+            this.recordingDate = track.date || '';
+            this.recordingDuration = track.duration || '';
+            this.recordingSize = track.size || '';
+            this.recordingTitle = track.title || '';
+            this.currentTime = '00:00';
+            this.totalTime = '00:00';
+            if (this.loaded) this.$nextTick(() => this.createPlayer());
         },
 
         openPlayer(detail) {
+            this.playlist = [detail];
+            this.currentIndex = 0;
             this.audioUrl = detail.streamUrl;
             this.downloadUrl = detail.downloadUrl;
             this.recordingDate = detail.date || '';
             this.recordingDuration = detail.duration || '';
             this.recordingSize = detail.size || '';
+            this.recordingTitle = detail.title || '';
             this.currentTime = '00:00';
             this.totalTime = '00:00';
             this.open = true;
             if (this.loaded) this.$nextTick(() => this.createPlayer());
+        },
+
+        openPlaylist(detail) {
+            this.playlist = detail.playlist || [];
+            this.currentIndex = detail.startIndex || 0;
+            const track = this.playlist[this.currentIndex];
+            if (!track) return;
+            this.audioUrl = track.streamUrl;
+            this.downloadUrl = track.downloadUrl;
+            this.recordingDate = track.date || '';
+            this.recordingDuration = track.duration || '';
+            this.recordingSize = track.size || '';
+            this.recordingTitle = track.title || '';
+            this.currentTime = '00:00';
+            this.totalTime = '00:00';
+            this.open = true;
+            if (this.loaded) this.$nextTick(() => this.createPlayer());
+        },
+
+        fmt(s) {
+            if (!s || isNaN(s)) return '00:00';
+            const m = Math.floor(s / 60), ss = Math.floor(s % 60);
+            return String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
         }
     }"
     x-on:open-audio-player.window="openPlayer($event.detail)"
+    x-on:open-audio-player-playlist.window="openPlaylist($event.detail)"
     x-on:keydown.escape.window="open = false"
     x-show="open"
     x-cloak
@@ -99,14 +154,17 @@
     {{-- Backdrop --}}
     <div class="fixed inset-0 bg-black/60" x-show="open" x-transition.opacity @click="open = false"></div>
 
-    {{-- Modal wrapper — click on padding area closes --}}
+    {{-- Modal --}}
     <div class="fixed inset-0 flex items-center justify-center p-4" x-show="open" x-transition @click="open = false">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.stop>
 
             {{-- Header --}}
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-                <h3 class="text-sm font-semibold text-gray-800">{{ __('recordings.player_title') }}</h3>
-                <button @click="open = false" class="p-1 rounded-md hover:bg-gray-100 transition-colors">
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-sm font-semibold text-gray-800 truncate" x-text="recordingTitle || '{{ __('recordings.player_title') }}'"></h3>
+                    <p x-show="playlist.length > 1" class="text-[10px] text-gray-400 mt-0.5" x-text="(currentIndex + 1) + ' / ' + playlist.length"></p>
+                </div>
+                <button @click="open = false" class="p-1 rounded-md hover:bg-gray-100 transition-colors ms-2">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
@@ -127,8 +185,11 @@
                 </div>
             </div>
 
-            {{-- Controls --}}
-            <div class="flex items-center justify-center gap-5 py-3">
+            {{-- Controls with prev/next --}}
+            <div class="flex items-center justify-center gap-4 py-3">
+                <button @click="prev()" class="p-1.5 rounded-full hover:bg-gray-100 transition-colors" :class="hasPrev ? 'text-gray-500' : 'text-gray-200 cursor-default'" :disabled="!hasPrev" title="{{ __('recordings.previous') }}">
+                    <i class="ri-skip-back-fill text-lg"></i>
+                </button>
                 <button @click="skip(10)" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 transition-colors" title="+10s">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z"/></svg>
                 </button>
@@ -138,6 +199,9 @@
                 </button>
                 <button @click="skip(-10)" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 transition-colors" title="-10s">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/></svg>
+                </button>
+                <button @click="next()" class="p-1.5 rounded-full hover:bg-gray-100 transition-colors" :class="hasNext ? 'text-gray-500' : 'text-gray-200 cursor-default'" :disabled="!hasNext" title="{{ __('recordings.next') }}">
+                    <i class="ri-skip-forward-fill text-lg"></i>
                 </button>
             </div>
 

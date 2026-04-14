@@ -101,6 +101,40 @@ class SupervisorRecordingController extends BaseSupervisorWebController
         return response()->json($status);
     }
 
+    public function deleteRecording(Request $request, $subdomain, $recordingId)
+    {
+        if (! $this->canManageRecording()) {
+            abort(403);
+        }
+
+        $recording = SessionRecording::findOrFail($recordingId);
+        $recording->markAsDeleted();
+
+        return redirect()->back()->with('success', __('supervisor.recording.deleted_success'));
+    }
+
+    public function bulkDelete(Request $request, $subdomain = null)
+    {
+        if (! $this->canManageRecording()) {
+            abort(403);
+        }
+
+        $ids = $request->input('recording_ids', []);
+        if (empty($ids)) {
+            return redirect()->back();
+        }
+
+        SessionRecording::whereIn('id', $ids)
+            ->whereIn('status', [
+                RecordingStatus::COMPLETED->value,
+                RecordingStatus::SKIPPED->value,
+                RecordingStatus::FAILED->value,
+            ])
+            ->update(['status' => RecordingStatus::DELETED->value]);
+
+        return redirect()->back()->with('success', __('supervisor.recording.bulk_deleted_success', ['count' => count($ids)]));
+    }
+
     public function livePresence(Request $request): JsonResponse
     {
         if (! $this->canManageRecording()) {

@@ -196,6 +196,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Recording Management
         Route::get('/recording/capacity', [SupervisorRecordingController::class, 'capacityStatus'])->name('recording.capacity');
         Route::get('/recording/live-presence', [SupervisorRecordingController::class, 'livePresence'])->name('recording.live-presence');
+        Route::delete('/recording/bulk-delete', [SupervisorRecordingController::class, 'bulkDelete'])->name('recording.bulk-delete');
+        Route::delete('/recording/{recordingId}', [SupervisorRecordingController::class, 'deleteRecording'])->name('recording.delete');
         Route::get('/recording', [SupervisorRecordingController::class, 'index'])->name('recording.index');
 
         // Redirect old monitoring route

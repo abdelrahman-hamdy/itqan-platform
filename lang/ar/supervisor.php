@@ -1891,5 +1891,25 @@ return [
         'time' => 'الوقت',
         'status' => 'حالة التسجيل',
         'actions' => 'الإجراءات',
+
+        // Actions
+        'play' => 'تشغيل',
+        'download' => 'تحميل',
+        'delete_title' => 'حذف التسجيل',
+        'delete_confirm' => 'هل أنت متأكد من حذف هذا التسجيل؟',
+        'delete_action' => 'حذف',
+        'deleted_success' => 'تم حذف التسجيل بنجاح',
+
+        // Bulk actions
+        'bulk_selected' => 'محدد',
+        'bulk_download' => 'تحميل الكل',
+        'bulk_delete' => 'حذف الكل',
+        'bulk_delete_title' => 'حذف التسجيلات المحددة',
+        'bulk_delete_confirm' => 'هل أنت متأكد من حذف التسجيلات المحددة؟',
+        'bulk_deleted_success' => 'تم حذف :count تسجيل بنجاح',
+
+        // Student gender labels
+        'student_male' => 'طالب',
+        'student_female' => 'طالبة',
     ],
 ];
