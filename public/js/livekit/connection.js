@@ -53,15 +53,26 @@ class LiveKitConnection {
         return {
             adaptiveStream: true,
             dynacast: true,
+            disconnectOnPageLeave: false,
+            stopLocalTrackOnUnpublish: false,
             audioCaptureDefaults: {
                 echoCancellation: true,
                 noiseSuppression: true,
                 autoGainControl: true,
+                voiceIsolation: true,
+                channelCount: 1,
             },
             publishDefaults: {
-                audioPreset: { maxBitrate: 64_000 }, // 64kbps — higher quality for Quran recitation (was 32kbps speech preset)
+                audioPreset: { maxBitrate: 48_000 },
                 dtx: true,
                 red: true,
+            },
+            reconnectPolicy: {
+                nextRetryDelayInMs: (context) => {
+                    // Aggressive reconnection: 7 retries with exponential backoff
+                    if (context.retryCount > 7) return null; // give up
+                    return Math.min(300 * Math.pow(2, context.retryCount), 10_000);
+                },
             },
         };
     }
@@ -74,6 +85,7 @@ class LiveKitConnection {
     getConnectOptions() {
         return {
             autoSubscribe: true,
+            maxRetries: 5,
         };
     }
 
