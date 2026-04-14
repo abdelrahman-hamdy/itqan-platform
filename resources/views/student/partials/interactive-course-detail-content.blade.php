@@ -375,24 +375,6 @@
                     </x-tabs.panel>
                 </x-slot>
             </x-tabs>
-            @else
-            <!-- Course Reviews Section (for non-enrolled students) -->
-            @php
-                $courseReviews = $course->approvedReviews()->with('user')->latest()->get();
-            @endphp
-            <div class="bg-white rounded-2xl p-4 md:p-6 lg:p-8 shadow-sm border border-gray-200">
-                <x-reviews.section
-                    :reviewable-type="\App\Models\InteractiveCourse::class"
-                    :reviewable-id="$course->id"
-                    review-type="course"
-                    :reviews="$courseReviews"
-                    :rating="$course->avg_rating ?? 0"
-                    :total-reviews="$course->total_reviews ?? 0"
-                    :show-summary="$courseReviews->count() > 0"
-                    :show-breakdown="true"
-                    :show-review-form="false"
-                />
-            </div>
             @endif
 
         </div>
@@ -636,6 +618,26 @@
                         type="interactive"
                     />
                 @endif
+                @endif
+
+                {{-- Course Reviews --}}
+                @php
+                    $courseReviews = $course->approvedReviews()->with('user')->latest()->get();
+                @endphp
+                @if($courseReviews->count() > 0)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                    <x-reviews.section
+                        :reviewable-type="\App\Models\InteractiveCourse::class"
+                        :reviewable-id="$course->id"
+                        review-type="course"
+                        :reviews="$courseReviews"
+                        :rating="$course->avg_rating ?? 0"
+                        :total-reviews="$course->total_reviews ?? 0"
+                        :show-summary="true"
+                        :show-breakdown="true"
+                        :show-review-form="false"
+                    />
+                </div>
                 @endif
 
                 {{-- Course Rating --}}
