@@ -44,6 +44,12 @@
         createPlayer() {
             if (this.wavesurfer) this.wavesurfer.destroy();
 
+            // Use a media element backend — avoids decodeAudioData which
+            // fails on OGG/Opus in Safari. The media element delegates
+            // decoding to the browser's media pipeline instead.
+            const audio = document.createElement('audio');
+            audio.crossOrigin = 'anonymous';
+
             this.wavesurfer = WaveSurfer.create({
                 container: this.$refs.waveform,
                 waveColor: '#e2e8f0',
@@ -54,6 +60,8 @@
                 barRadius: 3,
                 height: 64,
                 normalize: true,
+                media: audio,
+                url: this.audioUrl,
             });
 
             this.wavesurfer.on('ready', () => {
@@ -68,8 +76,6 @@
             });
             this.wavesurfer.on('play', () => { this.playing = true; });
             this.wavesurfer.on('pause', () => { this.playing = false; });
-
-            this.wavesurfer.load(this.audioUrl);
         },
 
         toggle() { this.wavesurfer?.playPause(); },
