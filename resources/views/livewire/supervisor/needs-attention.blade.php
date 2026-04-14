@@ -213,7 +213,7 @@
                                         @endforeach
                                     </div>
 
-                                    @if(count($unconfirmedStudents['items'] ?? []) < ($unconfirmedStudents['total'] ?? 0))
+                                    @if($hasMoreUnconfirmed)
                                         <div class="mt-2 text-center">
                                             <button wire:click="loadMoreUnconfirmed" wire:loading.attr="disabled"
                                                     class="text-xs text-blue-600 hover:text-blue-800 font-medium">
@@ -287,7 +287,7 @@
                                         @endforeach
                                     </div>
 
-                                    @if(count($pendingReviews['items'] ?? []) < ($pendingReviews['total'] ?? 0))
+                                    @if($hasMoreReviews)
                                         <div class="mt-2 text-center">
                                             <button wire:click="loadMoreReviews" wire:loading.attr="disabled"
                                                     class="text-xs text-amber-600 hover:text-amber-800 font-medium">

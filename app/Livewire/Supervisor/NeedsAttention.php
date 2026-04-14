@@ -29,6 +29,10 @@ class NeedsAttention extends Component
 
     public bool $showUnconfirmedPanel = false;
 
+    public bool $hasMoreUnconfirmed = false;
+
+    public bool $hasMoreReviews = false;
+
     #[Locked]
     public int $reviewsPerPage = 10;
 
@@ -80,6 +84,8 @@ class NeedsAttention extends Component
         $this->worstSeverity = $data['worst_severity'];
         $this->pendingReviews = $data['pendingReviews'];
         $this->unconfirmedStudents = $data['unconfirmedStudents'];
+        $this->hasMoreReviews = $data['pendingReviews']['hasMore'] ?? false;
+        $this->hasMoreUnconfirmed = $data['unconfirmedStudents']['hasMore'] ?? false;
     }
 
     public function approveReview(string $type, int $id): void
