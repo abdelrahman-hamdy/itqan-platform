@@ -956,8 +956,13 @@ class QuranSession extends BaseSession implements RecordingCapable
 
     public function complete(array $sessionData = []): self
     {
-        if (! in_array($this->status, [SessionStatus::ONGOING, SessionStatus::SCHEDULED, SessionStatus::READY])) {
+        if (! in_array($this->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
             throw new Exception('لا يمكن إنهاء الجلسة. الحالة الحالية: '.$this->status_text);
+        }
+
+        // Never complete a session whose scheduled time hasn't arrived yet
+        if ($this->scheduled_at && $this->scheduled_at->isFuture()) {
+            throw new Exception('لا يمكن إنهاء جلسة لم يحن موعدها بعد');
         }
 
         $endTime = now();

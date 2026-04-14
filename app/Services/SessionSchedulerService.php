@@ -77,7 +77,7 @@ class SessionSchedulerService
      */
     public function shouldAutoComplete(BaseSession $session): bool
     {
-        if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
+        if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
             return false;
         }
 

@@ -93,11 +93,13 @@ enum SessionStatus: string
     }
 
     /**
-     * Check if session can be completed
+     * Check if session can be completed.
+     * Only READY and ONGOING sessions can transition to COMPLETED.
+     * SCHEDULED sessions must go through READY first.
      */
     public function canComplete(): bool
     {
-        return $this === self::SCHEDULED || $this === self::READY || $this === self::ONGOING;
+        return $this === self::READY || $this === self::ONGOING;
     }
 
     /**

@@ -263,32 +263,46 @@ class LiveKitWebhookController extends Controller
             $participantCount = $data['room']['num_participants'] ?? 0;
             $duration = $data['room']['duration_seconds'] ?? 0;
 
-            // Guard: never overwrite cancelled sessions, and only update if session is active
+            // Guard: only complete sessions that were actually in progress (ONGOING/READY).
+            // SCHEDULED sessions must not be completed by a room_finished event — the room
+            // may have been pre-created but the session hasn't started yet.
             $currentStatus = $session->status;
-            if ($currentStatus === SessionStatus::CANCELLED) {
-                Log::info('Room finished event ignored: session is already cancelled', [
-                    'session_id' => $session->id,
-                    'room_name' => $roomName,
-                ]);
+            $canComplete = in_array($currentStatus, [SessionStatus::ONGOING, SessionStatus::READY]);
 
-                return;
+            if (! $canComplete) {
+                Log::channel('webhook')->info('Room finished ignored: session not in completable state', [
+                    'session_id' => $session->id,
+                    'current_status' => $currentStatus->value,
+                    'room_name' => $roomName,
+                    'duration_seconds' => $duration,
+                ]);
             }
 
-            // Only mark as completed if the session was actually used
+            // Only mark as completed if the session was in a valid state and actually used
             $wasCompletedByThisEvent = false;
-            if ($duration > 60) { // At least 1 minute of activity
-                $updateData = [
-                    'status' => SessionStatus::COMPLETED,
-                    'ended_at' => now(),
-                    'actual_duration_minutes' => round($duration / 60),
-                ];
-                // Ensure started_at is set (may be null if webhook join didn't transition)
-                if (! $session->started_at) {
-                    $updateData['started_at'] = $session->scheduled_at ?? now()->subMinutes(round($duration / 60));
+            if ($canComplete && $duration > 60) { // At least 1 minute of activity
+                // Safety: don't complete if the session's scheduled time hasn't arrived yet
+                if ($session->scheduled_at && $session->scheduled_at->isFuture()) {
+                    Log::channel('webhook')->warning('Room finished but session time not reached yet', [
+                        'session_id' => $session->id,
+                        'scheduled_at' => $session->scheduled_at,
+                        'room_name' => $roomName,
+                    ]);
+                    $session->update(['ended_at' => now()]);
+                } else {
+                    $updateData = [
+                        'status' => SessionStatus::COMPLETED,
+                        'ended_at' => now(),
+                        'actual_duration_minutes' => round($duration / 60),
+                    ];
+                    // Ensure started_at is set (may be null if webhook join didn't transition)
+                    if (! $session->started_at) {
+                        $updateData['started_at'] = $session->scheduled_at ?? now()->subMinutes(round($duration / 60));
+                    }
+                    $session->update($updateData);
+                    $wasCompletedByThisEvent = true;
                 }
-                $session->update($updateData);
-                $wasCompletedByThisEvent = true;
-            } elseif (! in_array($currentStatus, [SessionStatus::COMPLETED])) {
+            } elseif ($canComplete && ! in_array($currentStatus, [SessionStatus::COMPLETED])) {
                 // Very short session, just mark as ended (don't overwrite already-completed)
                 $session->update([
                     'ended_at' => now(),
