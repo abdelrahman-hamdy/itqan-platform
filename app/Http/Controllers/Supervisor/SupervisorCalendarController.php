@@ -431,6 +431,7 @@ class SupervisorCalendarController extends BaseSupervisorWebController
             'meeting_link' => $session->meeting_link ?? $session->google_meet_url ?? null,
             'teacher_notes' => $session->teacher_notes ?? null,
             'can_edit' => $canEdit,
+            'can_reschedule' => $canEdit,
             'detail_url' => $this->getManageDetailUrl($session, $source, $subdomain),
         ];
 

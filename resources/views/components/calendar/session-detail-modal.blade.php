@@ -134,11 +134,6 @@
                                     <i class="ri-edit-line me-1"></i> {{ __('teacher.calendar.edit_session') }}
                                 </button>
                             </template>
-                            <template x-if="session.can_edit && !session.can_reschedule">
-                                <span class="px-4 py-2 text-xs text-gray-400 flex items-center">
-                                    <i class="ri-lock-line me-1"></i> {{ __('scheduling.reschedule_teacher_restricted') }}
-                                </span>
-                            </template>
                             <button @click="openHomeworkModal()" class="px-4 py-2 bg-amber-50 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-100 border border-amber-200 transition-colors cursor-pointer">
                                 <i class="ri-task-line me-1"></i> {{ __('teacher.calendar.manage_homework') }}
                             </button>
@@ -159,7 +154,8 @@
                             <span>{{ __('scheduling.reschedule_teacher_restricted') }}</span>
                         </div>
                     </template>
-                    <div x-show="session.can_reschedule">
+                    <template x-if="session.can_reschedule">
+                    <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.modal_date') }} + {{ __('teacher.calendar.modal_time') }}</label>
                         <input type="text" x-ref="editDatetime" readonly
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer"
@@ -189,8 +185,9 @@
                                    $watch('editMode', v => { if (!v && fp) fp.destroy(); });
                                })">
                     </div>
+                    </template>
 
-                    <!-- Duration (always visible in edit mode) -->
+                    <!-- Duration -->
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.modal_duration') }}</label>
                         <select x-model="editData.duration_minutes" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
