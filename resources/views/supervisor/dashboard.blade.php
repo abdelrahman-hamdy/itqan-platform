@@ -136,7 +136,8 @@
     {{-- Monthly Stats --}}
     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('supervisor.dashboard.section_this_month') }}</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 md:mb-8">
-        {{-- Active Subscriptions --}}
+        {{-- Active Subscriptions (admin/superadmin only) --}}
+        @if($isAdmin)
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -149,6 +150,7 @@
             </div>
             <p class="mt-1.5 text-xs text-gray-500">{{ $monthlyStats['activeQuranSubs'] }} {{ __('supervisor.dashboard.quran') }}، {{ $monthlyStats['activeAcademicSubs'] }} {{ __('supervisor.dashboard.academic') }}</p>
         </div>
+        @endif
 
         {{-- Sessions This Month --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">

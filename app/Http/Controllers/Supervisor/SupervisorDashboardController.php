@@ -95,12 +95,11 @@ class SupervisorDashboardController extends BaseSupervisorWebController
         // ====================================================================
         // Monthly Stats — scoped for supervisors, academy-wide for admins
         // ====================================================================
+        $activeQuranSubs = 0;
+        $activeAcademicSubs = 0;
         if ($isAdmin) {
             $activeQuranSubs = QuranSubscription::where('academy_id', $academyId)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
             $activeAcademicSubs = AcademicSubscription::where('academy_id', $academyId)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
-        } else {
-            $activeQuranSubs = ! empty($quranTeacherIds) ? QuranSubscription::whereIn('quran_teacher_id', $quranTeacherIds)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count() : 0;
-            $activeAcademicSubs = ! empty($academicTeacherProfileIds) ? AcademicSubscription::whereIn('teacher_id', $academicTeacherProfileIds)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count() : 0;
         }
         $totalActiveSubs = $activeQuranSubs + $activeAcademicSubs;
 
