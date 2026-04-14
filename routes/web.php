@@ -239,3 +239,22 @@ Route::get('/mobile-purchase/{type}/{id}', [\App\Http\Controllers\WebPurchaseCon
 */
 
 require __DIR__.'/web/dev.php';
+
+/*
+|--------------------------------------------------------------------------
+| Subdomain Fallback (404 with Auth Context)
+|--------------------------------------------------------------------------
+| Must be last — catches unmatched subdomain routes inside the middleware
+| pipeline so auth() is available for role-aware navigation on the 404 page.
+*/
+
+Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
+    Route::fallback(function () {
+        $dashboardRoute = null;
+        if (auth()->check()) {
+            $dashboardRoute = \App\Enums\UserType::from(auth()->user()->user_type)->getDashboardRoute();
+        }
+
+        return response()->view('errors.404', compact('dashboardRoute'), 404);
+    });
+});

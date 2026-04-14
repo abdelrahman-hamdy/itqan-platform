@@ -76,15 +76,15 @@
                 ? 'عذراً، الصفحة التي تبحث عنها غير موجودة أو تم نقلها.'
                 : 'Sorry, the page you are looking for does not exist or has been moved.' }}
         </p>
-        @auth
-            <a href="{{ url(\App\Enums\UserType::from(auth()->user()->user_type)->getDashboardRoute()) }}" class="btn">
+        @if(! empty($dashboardRoute))
+            <a href="{{ url($dashboardRoute) }}" class="btn">
                 {{ app()->getLocale() === 'ar' ? 'الذهاب للوحة التحكم' : 'Go to Dashboard' }}
             </a>
         @else
             <a href="{{ url('/') }}" class="btn">
                 {{ app()->getLocale() === 'ar' ? 'العودة للرئيسية' : 'Back to Home' }}
             </a>
-        @endauth
+        @endif
     </div>
 </body>
 </html>

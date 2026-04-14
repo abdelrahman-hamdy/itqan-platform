@@ -101,15 +101,9 @@
             <button onclick="history.length > 1 ? history.back() : (window.location.href = '/')" class="btn">
                 {{ app()->getLocale() === 'ar' ? 'العودة والمحاولة مرة أخرى' : 'Go Back & Try Again' }}
             </button>
-            @auth
-                <a href="{{ url(\App\Enums\UserType::from(auth()->user()->user_type)->getDashboardRoute()) }}" class="btn btn-secondary">
-                    {{ app()->getLocale() === 'ar' ? 'الذهاب للوحة التحكم' : 'Go to Dashboard' }}
-                </a>
-            @else
-                <a href="{{ url('/') }}" class="btn btn-secondary">
-                    {{ app()->getLocale() === 'ar' ? 'العودة للرئيسية' : 'Back to Home' }}
-                </a>
-            @endauth
+            <a href="{{ url('/') }}" class="btn btn-secondary">
+                {{ app()->getLocale() === 'ar' ? 'العودة للرئيسية' : 'Back to Home' }}
+            </a>
         </div>
     </div>
 </body>
