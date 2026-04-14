@@ -28,7 +28,7 @@
 
         get hasPrev() { return this.currentIndex > 0; },
         get hasNext() { return this.currentIndex < this.playlist.length - 1; },
-        get totalDuration() { return (this.duration && isFinite(this.duration)) ? this.duration : (this.knownDuration || 0); },
+        get totalDuration() { return this.knownDuration || ((this.duration && isFinite(this.duration)) ? this.duration : 0); },
         get progress() { return this.totalDuration > 0 ? (this.currentTime / this.totalDuration) * 100 : 0; },
         get currentTimeStr() { return this.fmt(this.currentTime); },
         get durationStr() { return this.fmt(this.totalDuration); },
@@ -74,7 +74,15 @@
             });
             p.addEventListener('play', () => { this.playing = true; this.loading = false; });
             p.addEventListener('pause', () => { this.playing = false; });
-            p.addEventListener('ended', () => { this.playing = false; if (this.hasNext) this.next(); });
+            p.addEventListener('ended', () => {
+                // OGG files may fire 'ended' prematurely when only partial data is buffered.
+                // If we haven't reached 90% of known duration, it's a false end — don't stop.
+                if (this.knownDuration && this.currentTime < this.knownDuration * 0.9) {
+                    return;
+                }
+                this.playing = false;
+                if (this.hasNext) this.next();
+            });
             p.addEventListener('waiting', () => { this.loading = true; });
             p.addEventListener('canplay', () => { this.loading = false; });
             p.addEventListener('error', () => { this.loading = false; this.error = true; this.playing = false; });
@@ -214,7 +222,7 @@
     x-cloak
     class="fixed inset-0 z-[9999]"
 >
-    <audio x-ref="audio" preload="metadata" style="display:none"></audio>
+    <audio x-ref="audio" preload="auto" style="display:none"></audio>
 
     {{-- Backdrop --}}
     <div class="fixed inset-0 bg-black/60" x-show="open" x-transition.opacity @click="closePlayer()"></div>
