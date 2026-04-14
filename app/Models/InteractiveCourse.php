@@ -428,4 +428,48 @@ class InteractiveCourse extends Model
     {
         return $query->where('grade_level_id', $gradeLevelId);
     }
+
+    /**
+     * Create enrollment when payment is completed.
+     * Called by Payment::markAsCompleted() via the payable relationship.
+     */
+    public function activateFromPayment(Payment $payment): void
+    {
+        $metadata = is_string($payment->metadata) ? json_decode($payment->metadata, true) : ($payment->metadata ?? []);
+
+        // Prevent duplicate enrollment
+        $existing = InteractiveCourseEnrollment::where('course_id', $this->id)
+            ->where('student_id', $metadata['student_id'] ?? 0)
+            ->whereIn('enrollment_status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])
+            ->first();
+
+        if ($existing) {
+            return;
+        }
+
+        // Delete any stale pending enrollment for this student/course
+        InteractiveCourseEnrollment::where('course_id', $this->id)
+            ->where('student_id', $metadata['student_id'] ?? 0)
+            ->where('enrollment_status', EnrollmentStatus::PENDING)
+            ->delete();
+
+        $enrollment = InteractiveCourseEnrollment::create([
+            'course_id' => $this->id,
+            'student_id' => $metadata['student_id'],
+            'academy_id' => $this->academy_id,
+            'enrollment_status' => EnrollmentStatus::ENROLLED,
+            'enrollment_date' => now(),
+            'payment_status' => 'paid',
+            'payment_amount' => $payment->amount,
+            'discount_applied' => 0,
+            'total_possible_attendance' => $metadata['total_possible_attendance'] ?? 0,
+        ]);
+
+        // Update payment to reference the enrollment
+        $payment->update([
+            'payable_type' => InteractiveCourseEnrollment::class,
+            'payable_id' => $enrollment->id,
+            'subscription_id' => $enrollment->id,
+        ]);
+    }
 }

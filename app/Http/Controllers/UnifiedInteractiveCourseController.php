@@ -180,6 +180,7 @@ class UnifiedInteractiveCourseController extends Controller
         if ($isStudent && $studentId) {
             $enrollment = InteractiveCourseEnrollment::where('course_id', $course->id)
                 ->where('student_id', $studentId)
+                ->whereIn('enrollment_status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])
                 ->first();
 
             $isEnrolled = (bool) $enrollment;
@@ -284,14 +285,18 @@ class UnifiedInteractiveCourseController extends Controller
                 ->with('error', __('payments.subscription.enrollment_closed'));
         }
 
-        // Check if already enrolled
+        // Check if already enrolled (only ENROLLED/COMPLETED counts)
         $existingEnrollment = InteractiveCourseEnrollment::where('course_id', $course->id)
             ->where('student_id', $studentId)
             ->first();
 
         if ($existingEnrollment) {
-            return redirect()->route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $courseId])
-                ->with('info', __('payments.subscription.already_enrolled'));
+            if (in_array($existingEnrollment->enrollment_status, [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])) {
+                return redirect()->route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $courseId])
+                    ->with('info', __('payments.subscription.already_enrolled'));
+            }
+            // Delete stale PENDING enrollment so user can retry
+            $existingEnrollment->delete();
         }
 
         // Calculate total possible attendance (sessions from enrollment date forward)
@@ -334,50 +339,37 @@ class UnifiedInteractiveCourseController extends Controller
         }
 
         try {
-            DB::beginTransaction();
-
-            // Create enrollment with pending status
-            $enrollment = InteractiveCourseEnrollment::create([
-                'course_id' => $course->id,
-                'student_id' => $studentId,
-                'academy_id' => $academy->id,
-                'enrollment_status' => EnrollmentStatus::PENDING,
-                'enrollment_date' => $enrollmentDate,
-                'payment_status' => 'pending',
-                'payment_amount' => $price,
-                'discount_applied' => 0,
-                'total_possible_attendance' => $totalPossibleSessions,
-            ]);
-
             // Get payment gateway (use provided or academy default)
             $paymentSettings = $academy->getPaymentSettings();
             $gateway = $request->payment_gateway ?? $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
 
-            // Create payment record
+            // Create payment record ONLY — no enrollment yet.
+            // Enrollment will be created by InteractiveCourse::activateFromPayment() on payment success.
             $payment = Payment::create([
                 'academy_id' => $academy->id,
                 'user_id' => $user->id,
-                'subscription_id' => $enrollment->id,
-                'payable_type' => InteractiveCourseEnrollment::class,
-                'payable_id' => $enrollment->id,
+                'payable_type' => InteractiveCourse::class,
+                'payable_id' => $course->id,
                 'payment_code' => Payment::generatePaymentCode($academy->id, 'ICP'),
                 'payment_method' => 'credit_card',
                 'payment_gateway' => $gateway,
                 'payment_type' => 'course',
                 'amount' => $price,
                 'net_amount' => $price,
-                'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
+                'currency' => getCurrencyCode(null, $academy),
                 'tax_amount' => 0,
                 'tax_percentage' => 0,
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'created_by' => $user->id,
+                'metadata' => [
+                    'student_id' => $studentId,
+                    'course_id' => $course->id,
+                    'total_possible_attendance' => $totalPossibleSessions,
+                ],
             ]);
 
-            DB::commit();
-
-            Log::info('Interactive course enrollment created', [
-                'enrollment_id' => $enrollment->id,
+            Log::info('Interactive course payment created (enrollment deferred to payment success)', [
                 'payment_id' => $payment->id,
                 'course_id' => $course->id,
                 'user_id' => $user->id,
@@ -403,9 +395,7 @@ class UnifiedInteractiveCourseController extends Controller
 
             // If payment failed immediately
             if (! ($result['success'] ?? false)) {
-                // Delete the payment and enrollment
                 $payment->delete();
-                $enrollment->delete();
 
                 return redirect()->back()
                     ->with('error', __('payments.subscription.payment_init_failed').': '.($result['error'] ?? __('payments.subscription.unknown_error')));
@@ -416,9 +406,7 @@ class UnifiedInteractiveCourseController extends Controller
                 ->with('info', __('payments.subscription.enrollment_pending'));
 
         } catch (Exception $e) {
-            DB::rollback();
-
-            Log::error('Interactive course enrollment failed', [
+            Log::error('Interactive course payment failed', [
                 'course_id' => $course->id,
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
