@@ -56,29 +56,28 @@ class StopExpiredRecordingsCommand extends Command
             if (! $session) {
                 continue;
             }
-            // Calculate session end time
-            $scheduledEndTime = $session->scheduled_at
-                ? $session->scheduled_at->copy()->addMinutes($session->duration_minutes ?? 60)
-                : null;
+            // Use recording's actual start time (not session scheduled_at) + session duration + 15 min buffer.
+            // Teachers often join 5-10 min after scheduled time, so using scheduled_at
+            // would stop the recording before the session actually finishes.
+            $bufferMinutes = 15;
+            $durationMinutes = $session->duration_minutes ?? 60;
+            $recordingStartTime = $recordingRecord->started_at ?? $session->scheduled_at;
 
-            // Skip if no scheduled_at or end time not reached yet
-            if (! $scheduledEndTime || now()->lt($scheduledEndTime)) {
-                Log::debug('[RECORDINGS] Session end time not yet reached', [
-                    'session_id' => $session->id,
-                    'scheduled_at' => $session->scheduled_at?->toISOString(),
-                    'scheduled_end' => $scheduledEndTime?->toISOString(),
-                    'current_time' => now()->toISOString(),
-                ]);
-
+            if (! $recordingStartTime) {
                 continue;
             }
 
-            // Session has passed its scheduled end time - stop recording
+            $expectedEndTime = $recordingStartTime->copy()->addMinutes($durationMinutes + $bufferMinutes);
+
+            if (now()->lt($expectedEndTime)) {
+                continue;
+            }
+
             Log::info('[RECORDINGS] Stopping recording for expired session', [
                 'session_id' => $session->id,
-                'scheduled_at' => $session->scheduled_at->toISOString(),
-                'scheduled_end' => $scheduledEndTime->toISOString(),
-                'minutes_overdue' => now()->diffInMinutes($scheduledEndTime),
+                'recording_started' => $recordingStartTime->toISOString(),
+                'expected_end' => $expectedEndTime->toISOString(),
+                'minutes_overdue' => now()->diffInMinutes($expectedEndTime),
             ]);
 
             try {

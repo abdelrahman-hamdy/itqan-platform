@@ -59,7 +59,7 @@ class LiveKitConnection {
                 autoGainControl: true,
             },
             publishDefaults: {
-                audioPreset: window.LiveKit.AudioPresets.speech, // ~32 kbps, voice-optimized
+                audioPreset: { maxBitrate: 64_000 }, // 64kbps — higher quality for Quran recitation (was 32kbps speech preset)
                 dtx: true,
                 red: true,
             },
