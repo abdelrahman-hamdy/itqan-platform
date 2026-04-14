@@ -263,24 +263,26 @@ class LiveKitWebhookController extends Controller
             $participantCount = $data['room']['num_participants'] ?? 0;
             $duration = $data['room']['duration_seconds'] ?? 0;
 
-            // Guard: only complete sessions that were actually in progress (ONGOING/READY).
-            // SCHEDULED sessions must not be completed by a room_finished event — the room
-            // may have been pre-created but the session hasn't started yet.
+            // Only complete sessions that were actually in progress (ONGOING/READY).
             $currentStatus = $session->status;
-            $canComplete = in_array($currentStatus, [SessionStatus::ONGOING, SessionStatus::READY]);
 
-            if (! $canComplete) {
+            if (! $currentStatus->canComplete()) {
                 Log::channel('webhook')->info('Room finished ignored: session not in completable state', [
                     'session_id' => $session->id,
                     'current_status' => $currentStatus->value,
                     'room_name' => $roomName,
                     'duration_seconds' => $duration,
                 ]);
+
+                // Still cleanup room resources, but skip status change and attendance jobs
+                $this->cleanupRoomResources($session);
+
+                return;
             }
 
-            // Only mark as completed if the session was in a valid state and actually used
+            // Mark as completed if session was actually used (> 60s of activity)
             $wasCompletedByThisEvent = false;
-            if ($canComplete && $duration > 60) { // At least 1 minute of activity
+            if ($duration > 60) {
                 // Safety: don't complete if the session's scheduled time hasn't arrived yet
                 if ($session->scheduled_at && $session->scheduled_at->isFuture()) {
                     Log::channel('webhook')->warning('Room finished but session time not reached yet', [
@@ -295,40 +297,21 @@ class LiveKitWebhookController extends Controller
                         'ended_at' => now(),
                         'actual_duration_minutes' => round($duration / 60),
                     ];
-                    // Ensure started_at is set (may be null if webhook join didn't transition)
                     if (! $session->started_at) {
                         $updateData['started_at'] = $session->scheduled_at ?? now()->subMinutes(round($duration / 60));
                     }
                     $session->update($updateData);
                     $wasCompletedByThisEvent = true;
                 }
-            } elseif ($canComplete && ! in_array($currentStatus, [SessionStatus::COMPLETED])) {
-                // Very short session, just mark as ended (don't overwrite already-completed)
-                $session->update([
-                    'ended_at' => now(),
-                ]);
+            } else {
+                // Very short session, just mark as ended
+                $session->update(['ended_at' => now()]);
             }
 
-            // Remove persistence since room is finished
-            $this->sessionMeetingService->removeSessionPersistence($session);
+            // Cleanup room resources (persistence, recordings)
+            $this->cleanupRoomResources($session);
 
-            // Stop any active recording when room closes
-            if ($session instanceof RecordingCapable && $session->isRecording()) {
-                try {
-                    $session->stopRecording();
-                    Log::info('Recording stopped on room finished', ['session_id' => $session->id]);
-                } catch (Exception $e) {
-                    Log::error('Failed to stop recording on room finished', [
-                        'session_id' => $session->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
-
-            // Mark any queued recordings as skipped and free up slots
-            $this->recordingOrchestrator->handleSessionEnded($session);
-
-            // Dispatch SessionCompletedEvent for attendance finalization + subscription counting
+            // Dispatch completion events and attendance job only when actually completed
             if ($wasCompletedByThisEvent) {
                 $sessionType = match (true) {
                     $session instanceof QuranSession => 'quran',
@@ -342,15 +325,13 @@ class LiveKitWebhookController extends Controller
                     'session_id' => $session->id,
                     'session_type' => $sessionType,
                 ]);
-            }
 
-            // Dispatch per-session attendance calculation job as safety net
-            // (FinalizeAttendanceListener also calculates attendance, but this catches edge cases)
-            $delayMinutes = config('business.attendance.calculation_delay_minutes', 5);
-            CalculateSessionForAttendance::dispatch(
-                $session->id,
-                get_class($session)
-            )->delay(now()->addMinutes($delayMinutes));
+                $delayMinutes = config('business.attendance.calculation_delay_minutes', 5);
+                CalculateSessionForAttendance::dispatch(
+                    $session->id,
+                    get_class($session)
+                )->delay(now()->addMinutes($delayMinutes));
+            }
 
             Log::info('Session meeting finished', [
                 'session_id' => $session->id,
@@ -934,6 +915,28 @@ class LiveKitWebhookController extends Controller
                 'camera_allowed' => $permissions['camera_allowed'] ?? true,
             ]);
         }
+    }
+
+    /**
+     * Cleanup room resources (persistence, recordings) regardless of session status.
+     */
+    private function cleanupRoomResources(BaseSession $session): void
+    {
+        $this->sessionMeetingService->removeSessionPersistence($session);
+
+        if ($session instanceof RecordingCapable && $session->isRecording()) {
+            try {
+                $session->stopRecording();
+                Log::info('Recording stopped on room finished', ['session_id' => $session->id]);
+            } catch (Exception $e) {
+                Log::error('Failed to stop recording on room finished', [
+                    'session_id' => $session->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        $this->recordingOrchestrator->handleSessionEnded($session);
     }
 
     /**

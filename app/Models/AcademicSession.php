@@ -692,13 +692,12 @@ class AcademicSession extends BaseSession implements RecordingCapable
                 return false;
             }
 
-            if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
+            if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
                 return false;
             }
 
-            // Validate that we're not completing before start time
-            if ($session->started_at && now()->lt($session->started_at)) {
-                return false; // Cannot complete before start
+            if ($session->scheduled_at && $session->scheduled_at->isFuture()) {
+                return false;
             }
 
             $updateData = array_merge([

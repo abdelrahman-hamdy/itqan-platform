@@ -956,37 +956,39 @@ class QuranSession extends BaseSession implements RecordingCapable
 
     public function complete(array $sessionData = []): self
     {
-        if (! in_array($this->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
-            throw new Exception('لا يمكن إنهاء الجلسة. الحالة الحالية: '.$this->status_text);
-        }
+        return DB::transaction(function () use ($sessionData) {
+            $session = static::lockForUpdate()->find($this->id);
 
-        // Never complete a session whose scheduled time hasn't arrived yet
-        if ($this->scheduled_at && $this->scheduled_at->isFuture()) {
-            throw new Exception('لا يمكن إنهاء جلسة لم يحن موعدها بعد');
-        }
+            if (! $session || ! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
+                throw new Exception('لا يمكن إنهاء الجلسة. الحالة الحالية: '.($session?->status_text ?? 'unknown'));
+            }
 
-        $endTime = now();
-        $actualDuration = $this->started_at ? $this->started_at->diffInMinutes($endTime) : $this->duration_minutes;
+            if ($session->scheduled_at && $session->scheduled_at->isFuture()) {
+                throw new Exception('لا يمكن إنهاء جلسة لم يحن موعدها بعد');
+            }
 
-        $updateData = array_merge([
-            'status' => SessionStatus::COMPLETED,
-            'ended_at' => $endTime,
-            'actual_duration_minutes' => $actualDuration,
-            'attendance_status' => AttendanceStatus::ATTENDED,
-        ], $sessionData);
+            $endTime = now();
+            $actualDuration = $session->started_at ? $session->started_at->diffInMinutes($endTime) : $session->duration_minutes;
 
-        $this->update($updateData);
+            $updateData = array_merge([
+                'status' => SessionStatus::COMPLETED,
+                'ended_at' => $endTime,
+                'actual_duration_minutes' => $actualDuration,
+                'attendance_status' => AttendanceStatus::ATTENDED,
+            ], $sessionData);
 
-        // Update subscription session count using the trait's safe method
-        // (handles idempotency via subscription_counted flag and DB row locking)
-        $this->updateSubscriptionUsage();
+            $session->update($updateData);
 
-        // Update circle session count
-        if ($this->circle) {
-            $this->circle->increment('sessions_completed');
-        }
+            $session->updateSubscriptionUsage();
 
-        return $this;
+            if ($session->circle) {
+                $session->circle->increment('sessions_completed');
+            }
+
+            $this->refresh();
+
+            return $this;
+        });
     }
 
     public function cancel(string $reason, ?User $cancelledBy = null): self

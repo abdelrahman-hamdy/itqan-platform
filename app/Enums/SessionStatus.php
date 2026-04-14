@@ -93,9 +93,7 @@ enum SessionStatus: string
     }
 
     /**
-     * Check if session can be completed.
-     * Only READY and ONGOING sessions can transition to COMPLETED.
-     * SCHEDULED sessions must go through READY first.
+     * Check if session can be completed
      */
     public function canComplete(): bool
     {
