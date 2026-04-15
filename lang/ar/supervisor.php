@@ -1839,6 +1839,17 @@ return [
         'page_subtitle' => 'مراقبة وتسجيل الحلقات والجلسات التعليمية',
         'breadcrumb' => 'إدارة التسجيلات',
 
+        // System toggle
+        'system_on' => 'التسجيل مفعّل',
+        'system_off' => 'التسجيل متوقف',
+        'stop_all' => 'إيقاف الكل',
+        'confirm_disable_system' => 'هل تريد إيقاف نظام التسجيل التلقائي؟ لن يتم تسجيل أي جلسة جديدة.',
+        'confirm_enable_system' => 'هل تريد تفعيل نظام التسجيل التلقائي؟',
+        'confirm_stop_all' => 'هل تريد إيقاف جميع التسجيلات النشطة الآن؟',
+        'system_enabled' => 'تم تفعيل نظام التسجيل التلقائي',
+        'system_disabled' => 'تم إيقاف نظام التسجيل التلقائي',
+        'all_stopped' => 'تم إيقاف :count تسجيل نشط',
+
         // Capacity dashboard
         'capacity_active' => 'التسجيلات النشطة',
         'capacity_max' => 'الحد الأقصى',

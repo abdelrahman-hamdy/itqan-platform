@@ -99,6 +99,9 @@ return [
         // Set to false to keep files on disk even after database deletion
         'delete_files_on_delete' => env('LIVEKIT_RECORDINGS_DELETE_FILES', true),
 
+        // Master switch — set to false to pause all auto-recording
+        'system_enabled' => (bool) env('LIVEKIT_RECORDING_ENABLED', true),
+
         // Maximum number of concurrent recordings the server can handle
         'max_concurrent_recordings' => (int) env('LIVEKIT_MAX_CONCURRENT_RECORDINGS', 10),
 

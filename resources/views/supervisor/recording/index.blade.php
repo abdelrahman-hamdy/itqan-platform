@@ -17,7 +17,37 @@
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ __($t.'page_title') }}</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __($t.'page_subtitle') }}</p>
     </div>
-    <x-ui.timezone-clock />
+    <div class="flex items-center gap-3">
+        <!-- Recording System Toggle -->
+        <div class="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
+            <form method="POST" action="{{ route('manage.recording.toggle-system', ['subdomain' => $subdomain]) }}" class="inline">
+                @csrf
+                <button type="submit" class="flex items-center gap-2 text-sm font-medium {{ $recordingSystemEnabled ? 'text-green-700' : 'text-red-600' }}"
+                        onclick="return confirm('{{ $recordingSystemEnabled ? __($t.'confirm_disable_system') : __($t.'confirm_enable_system') }}')">
+                    <span class="relative flex h-3 w-3">
+                        @if($recordingSystemEnabled)
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                        @else
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        @endif
+                    </span>
+                    {{ $recordingSystemEnabled ? __($t.'system_on') : __($t.'system_off') }}
+                </button>
+            </form>
+            @if($recordingSystemEnabled && ($capacityStatus['active_count'] ?? 0) > 0)
+                <span class="text-gray-300 dark:text-gray-600">|</span>
+                <form method="POST" action="{{ route('manage.recording.stop-all', ['subdomain' => $subdomain]) }}" class="inline">
+                    @csrf
+                    <button type="submit" class="text-sm text-red-600 hover:text-red-800 font-medium"
+                            onclick="return confirm('{{ __($t.'confirm_stop_all') }}')">
+                        <i class="ri-stop-circle-line"></i> {{ __($t.'stop_all') }}
+                    </button>
+                </form>
+            @endif
+        </div>
+        <x-ui.timezone-clock />
+    </div>
 </div>
 
 <!-- Capacity Dashboard -->

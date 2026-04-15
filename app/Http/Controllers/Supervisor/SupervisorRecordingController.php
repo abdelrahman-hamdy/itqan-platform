@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Contracts\MeetingObserverServiceInterface;
+use App\Contracts\RecordingCapable;
 use App\Enums\RecordingStatus;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
@@ -13,8 +14,10 @@ use App\Models\User;
 use App\Services\RecordingOrchestratorService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class SupervisorRecordingController extends BaseSupervisorWebController
@@ -79,6 +82,7 @@ class SupervisorRecordingController extends BaseSupervisorWebController
             'liveSessions' => $liveSessions,
             'tabCounts' => $tabCounts,
             'historyData' => $historyData,
+            'recordingSystemEnabled' => config('livekit.recordings.system_enabled', true),
         ]);
     }
 
@@ -426,5 +430,61 @@ class SupervisorRecordingController extends BaseSupervisorWebController
                 'gender' => $u->studentProfile?->gender ?? $u->gender ?? '',
             ])
             ->toArray();
+    }
+
+    public function toggleSystem(Request $request, $subdomain = null): RedirectResponse
+    {
+        if (! $this->canManageRecording()) {
+            abort(403);
+        }
+
+        $currentValue = config('livekit.recordings.system_enabled', true);
+        $newValue = ! $currentValue;
+
+        // Write to .env file
+        $envPath = base_path('.env');
+        $envContent = file_get_contents($envPath);
+
+        if (str_contains($envContent, 'LIVEKIT_RECORDING_ENABLED=')) {
+            $envContent = preg_replace('/LIVEKIT_RECORDING_ENABLED=.*/', 'LIVEKIT_RECORDING_ENABLED='.($newValue ? 'true' : 'false'), $envContent);
+        } else {
+            $envContent .= "\nLIVEKIT_RECORDING_ENABLED=".($newValue ? 'true' : 'false');
+        }
+
+        file_put_contents($envPath, $envContent);
+
+        // Clear config cache so the change takes effect
+        \Artisan::call('config:cache');
+
+        Log::info('[RECORDINGS] System toggled', ['enabled' => $newValue, 'by' => auth()->id()]);
+
+        return back()->with('success', $newValue ? __('supervisor.recording.system_enabled') : __('supervisor.recording.system_disabled'));
+    }
+
+    public function stopAllActive(Request $request, $subdomain = null): RedirectResponse
+    {
+        if (! $this->canManageRecording()) {
+            abort(403);
+        }
+
+        $activeRecordings = SessionRecording::where('status', RecordingStatus::RECORDING)->with('recordable')->get();
+        $stoppedCount = 0;
+
+        foreach ($activeRecordings as $recording) {
+            $session = $recording->recordable;
+            if ($session instanceof RecordingCapable) {
+                try {
+                    $session->stopRecording();
+                    $stoppedCount++;
+                } catch (\Exception $e) {
+                    $recording->markAsFailed('Manually stopped: '.$e->getMessage());
+                    $stoppedCount++;
+                }
+            }
+        }
+
+        Log::info('[RECORDINGS] All active recordings stopped', ['count' => $stoppedCount, 'by' => auth()->id()]);
+
+        return back()->with('success', __('supervisor.recording.all_stopped', ['count' => $stoppedCount]));
     }
 }
