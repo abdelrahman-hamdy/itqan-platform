@@ -32,7 +32,7 @@ class LiveKitConnection {
         this.isConnected = false;
         this.isConnecting = false;
         this.reconnectAttempts = 0;
-        this.maxReconnectAttempts = 5;
+        this.maxReconnectAttempts = 3;
         this.intentionalDisconnect = false;
         this.reconnectTimeoutId = null;
         // Stability timer: only reset reconnectAttempts after the connection
@@ -74,9 +74,9 @@ class LiveKitConnection {
             },
             reconnectPolicy: {
                 nextRetryDelayInMs: (context) => {
-                    // 15 retries with exponential backoff (better for mobile)
-                    if (context.retryCount > 15) return null;
-                    return Math.min(300 * Math.pow(2, context.retryCount), 15_000);
+                    // 4 SDK-level retries for brief blips, then hand off to fresh-token reconnect
+                    if (context.retryCount > 4) return null;
+                    return Math.min(500 * Math.pow(2, context.retryCount), 8_000);
                 },
             },
         };
@@ -346,7 +346,7 @@ class LiveKitConnection {
         }
 
         this.reconnectAttempts++;
-        const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 16000);
+        const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 8000);
 
         if (window.MT) window.MT.event('connection', 'reconnect_scheduled', {
             attempt: this.reconnectAttempts,
@@ -465,7 +465,7 @@ class LiveKitConnection {
 
             const originalTrack = localAudioTrack.mediaStreamTrack;
 
-            // Step 1: Noise gate — mute audio below RMS threshold
+            // Step 1: Noise gate with forced mono output (RNNoise crashes on stereo)
             const ctx = new AudioContext({ sampleRate: 48000 });
             const source = ctx.createMediaStreamSource(new MediaStream([originalTrack]));
             const analyser = ctx.createAnalyser();
@@ -474,6 +474,8 @@ class LiveKitConnection {
             const gate = ctx.createGain();
             gate.gain.value = 1;
             const dest = ctx.createMediaStreamDestination();
+            dest.channelCount = 1;
+            dest.channelCountMode = 'explicit';
             source.connect(analyser);
             analyser.connect(gate);
             gate.connect(dest);
@@ -489,16 +491,13 @@ class LiveKitConnection {
                 let sum = 0;
                 for (let i = 0; i < dataArray.length; i++) sum += dataArray[i] * dataArray[i];
                 const rms = Math.sqrt(sum / dataArray.length);
-                const now = ctx.currentTime;
                 if (rms > GATE_THRESHOLD) {
                     lastSpeechTime = Date.now();
-                    gate.gain.cancelScheduledValues(now);
-                    gate.gain.linearRampToValueAtTime(1, now + 0.01); // 10ms ramp up
+                    gate.gain.value = 1;
                 } else if (Date.now() - lastSpeechTime > GRACE_MS) {
-                    gate.gain.cancelScheduledValues(now);
-                    gate.gain.linearRampToValueAtTime(0, now + 0.05); // 50ms ramp down
+                    gate.gain.value = 0;
                 }
-            }, 50);
+            }, 20);
 
             const gatedTrack = dest.stream.getAudioTracks()[0];
 
