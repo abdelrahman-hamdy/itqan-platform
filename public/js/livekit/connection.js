@@ -621,7 +621,7 @@ class LiveKitConnection {
                 prompt.remove();
             } else {
                 const btn = document.getElementById('audioPlaybackBtn');
-                if (btn) btn.textContent = 'حاول مرة أخرى';
+                if (btn) btn.textContent = window.meetingTranslations?.buttons?.retry || 'Try again';
                 if (window.MT) window.MT.warn('audio', 'autoplay_unlock_failed_keep_prompt', {});
             }
         });

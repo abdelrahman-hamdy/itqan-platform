@@ -83,9 +83,10 @@ class LiveKitMeeting {
             this.startContinuousSync();
 
             // Listen for critical audio failures from connection module
-            window.addEventListener('livekit-audio-critical', () => {
+            this._audioFailureHandler = () => {
                 this.showNotification(t('connection.mic_disconnected') || 'Microphone disconnected — please check your audio device', 'error');
-            });
+            };
+            window.addEventListener('livekit-audio-critical', this._audioFailureHandler);
 
             this.isInitialized = true;
             this.isConnected = true;
@@ -1580,6 +1581,12 @@ class LiveKitMeeting {
 
 
         try {
+            // Clean up global event listeners
+            if (this._audioFailureHandler) {
+                window.removeEventListener('livekit-audio-critical', this._audioFailureHandler);
+                this._audioFailureHandler = null;
+            }
+
             // CRITICAL FIX: Stop track synchronization check
             this.stopTrackSyncCheck();
             
