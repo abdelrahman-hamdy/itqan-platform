@@ -81,7 +81,7 @@
                 ? 'لقد تجاوزت الحد المسموح من الطلبات. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.'
                 : 'You have exceeded the allowed number of requests. Please wait a moment and try again.' }}
         </p>
-        <a href="javascript:location.reload()" class="btn">
+        <button onclick="history.length > 1 ? history.back() : (window.location.href = '/')" class="btn">
             {{ app()->getLocale() === 'ar' ? 'إعادة المحاولة' : 'Try Again' }}
         </a>
         <p class="timer">

@@ -462,19 +462,25 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             
-            const response = await fetch(`{{ url('/') }}/teacher/sessions/{{ $session->id }}/homework`, {
+            const csrfToken = () => document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const doFetch = () => fetch(`{{ url('/') }}/teacher/sessions/{{ $session->id }}/homework`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    'X-CSRF-TOKEN': csrfToken()
                 },
                 body: JSON.stringify(data)
             });
-            
-            
-            // Get response text first
+
+            let response = await doFetch();
+            if (response.status === 419) {
+                await fetch('/sanctum/csrf-cookie', { method: 'GET', credentials: 'same-origin' });
+                const match = document.cookie.match('(?:^|; )XSRF-TOKEN=([^;]*)');
+                if (match) document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', decodeURIComponent(match[1]));
+                response = await doFetch();
+            }
+
             const responseText = await response.text();
-            
             let result;
             try {
                 result = JSON.parse(responseText);

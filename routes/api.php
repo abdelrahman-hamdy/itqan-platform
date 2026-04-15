@@ -1,9 +1,7 @@
 <?php
 
-use App\Http\Controllers\Api\DevMeetingController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\ServerTimeController;
-use App\Http\Controllers\UnifiedMeetingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -63,50 +61,10 @@ Route::middleware(['web', 'auth'])->prefix('courses')->group(function () {
 });
 
 // ============================================================================
-// MEETING MANAGEMENT (Web Auth - Session Pages)
-// These endpoints are called from session detail pages, not mobile app.
+// MEETING MANAGEMENT — Moved to routes/web/meetings.php
+// These use web session auth, not API tokens. Kept in web routes to avoid
+// the api middleware group's throttle:api (60/min) which caused 429 errors.
 // ============================================================================
-Route::middleware(['web', 'auth', 'verified'])
-    ->prefix('sessions/meeting')
-    ->group(function () {
-        Route::post('/create', [UnifiedMeetingController::class, 'createMeeting'])
-            ->name('api.sessions.meeting.create');
-        Route::post('/token', [UnifiedMeetingController::class, 'getParticipantToken'])
-            ->name('api.sessions.meeting.token');
-        Route::get('/info', [UnifiedMeetingController::class, 'getRoomInfo'])
-            ->name('api.sessions.meeting.info');
-        Route::post('/end', [UnifiedMeetingController::class, 'endMeeting'])
-            ->name('api.sessions.meeting.end');
-        Route::post('/leave', [DevMeetingController::class, 'leave'])
-            ->name('api.sessions.meeting.leave');
-
-        // Client-side telemetry sink: receives batched events from the meeting
-        // page (telemetry.js) and forwards them to the dedicated 'meeting-telemetry'
-        // log channel for offline analysis.
-        //
-        // Throttle sized for shared NAT: a school/office WiFi with 100 concurrent
-        // teachers appears as one IP, and each client flushes up to ~12 batches/min
-        // (5s timer + eager flush at 50 buffered events). 1500 keeps burst headroom
-        // while still bounding abuse.
-        Route::post('/telemetry', [\App\Http\Controllers\Api\MeetingTelemetryController::class, 'store'])
-            ->middleware('throttle:1500,1')
-            ->name('api.sessions.meeting.telemetry');
-    });
-
-// ============================================================================
-// DEVELOPMENT ROUTES (Local/Development Only)
-// These routes are NOT available in production.
-// ============================================================================
-if (app()->environment('local', 'development')) {
-    Route::middleware(['web', 'auth', 'verified'])
-        ->prefix('sessions/meeting')
-        ->group(function () {
-            Route::post('/join-dev', [DevMeetingController::class, 'joinDev'])
-                ->name('api.sessions.meeting.join-dev');
-            Route::post('/leave-dev', [DevMeetingController::class, 'leaveDev'])
-                ->name('api.sessions.meeting.leave-dev');
-        });
-}
 
 // ============================================================================
 // PAYMENT API ROUTES (Web Auth - Checkout Pages)

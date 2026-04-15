@@ -8,12 +8,15 @@
 | Note: Meetings are embedded in session pages, not separate routes.
 */
 
+use App\Http\Controllers\Api\DevMeetingController;
+use App\Http\Controllers\Api\MeetingTelemetryController;
 use App\Http\Controllers\InteractiveCourseRecordingController;
 use App\Http\Controllers\LiveKitController;
 use App\Http\Controllers\LiveKitMeetingController;
 use App\Http\Controllers\LiveKitWebhookController;
 use App\Http\Controllers\MeetingController;
 use App\Http\Controllers\MeetingObserverController;
+use App\Http\Controllers\UnifiedMeetingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,6 +38,45 @@ Route::prefix('livekit')->middleware(['auth'])->group(function () {
         Route::get('rooms/{room_name}/participants', [LiveKitController::class, 'getRoomParticipants']);
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| LiveKit Webhooks (Global - No Authentication)
+|--------------------------------------------------------------------------
+*/
+
+/*
+|--------------------------------------------------------------------------
+| Meeting Management API (Session Pages)
+|--------------------------------------------------------------------------
+| Called from session detail pages via fetch/sendBeacon, not mobile app.
+| These are web routes (not api/) to avoid the api middleware group's
+| throttle:api (60/min) which caused 429 errors during meetings.
+| CSRF exempted for telemetry/leave in bootstrap/app.php (sendBeacon can't set headers).
+*/
+
+Route::middleware(['auth', 'verified'])
+    ->prefix('api/sessions/meeting')
+    ->group(function () {
+        Route::post('/create', [UnifiedMeetingController::class, 'createMeeting'])->name('api.sessions.meeting.create');
+        Route::post('/token', [UnifiedMeetingController::class, 'getParticipantToken'])->name('api.sessions.meeting.token');
+        Route::get('/info', [UnifiedMeetingController::class, 'getRoomInfo'])->name('api.sessions.meeting.info');
+        Route::post('/end', [UnifiedMeetingController::class, 'endMeeting'])->name('api.sessions.meeting.end');
+        Route::post('/leave', [DevMeetingController::class, 'leave'])->name('api.sessions.meeting.leave');
+        Route::post('/telemetry', [MeetingTelemetryController::class, 'store'])
+            ->middleware('throttle:1500,1')
+            ->name('api.sessions.meeting.telemetry');
+    });
+
+// Dev-only meeting routes (not available in production)
+if (app()->environment('local', 'development')) {
+    Route::middleware(['auth', 'verified'])
+        ->prefix('api/sessions/meeting')
+        ->group(function () {
+            Route::post('/join-dev', [DevMeetingController::class, 'joinDev'])->name('api.sessions.meeting.join-dev');
+            Route::post('/leave-dev', [DevMeetingController::class, 'leaveDev'])->name('api.sessions.meeting.leave-dev');
+        });
+}
 
 /*
 |--------------------------------------------------------------------------

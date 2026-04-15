@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Generic form submission handler
     function handleHomeworkFormSubmit(form, method = 'POST', successMessage = 'تم الحفظ بنجاح') {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const formData = new FormData(this);
@@ -229,31 +229,36 @@ document.addEventListener('DOMContentLoaded', function() {
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="ri-loader-line animate-spin ms-2"></i>جارٍ الحفظ...';
 
-            fetch(url, {
-                method: method,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
+            try {
+                const csrfToken = () => document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                const doFetch = () => fetch(url, {
+                    method: method,
+                    headers: { 'X-CSRF-TOKEN': csrfToken(), 'Accept': 'application/json' },
+                    body: formData
+                });
+
+                let response = await doFetch();
+                if (response.status === 419) {
+                    await fetch('/sanctum/csrf-cookie', { method: 'GET', credentials: 'same-origin' });
+                    const match = document.cookie.match('(?:^|; )XSRF-TOKEN=([^;]*)');
+                    if (match) document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', decodeURIComponent(match[1]));
+                    response = await doFetch();
+                }
+
+                const data = await response.json();
                 if (data.success) {
                     showNotification(successMessage, 'success');
-                    // Reload page after short delay to show updated content
                     setTimeout(() => window.location.reload(), 1500);
                 } else {
                     showNotification(data.message || 'حدث خطأ أثناء الحفظ', 'error');
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalText;
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 showNotification('حدث خطأ أثناء الحفظ', 'error');
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalText;
-            });
+            }
         });
     }
 

@@ -594,6 +594,8 @@
 
     // Store interval IDs for cleanup (prevents memory leaks)
     let sessionStatusPollingInterval = null;
+    let pollInterval = 10000; // Normal: 10 seconds
+    const MAX_POLL_INTERVAL = 60000; // Max backoff: 60 seconds
 
     function checkAllScriptsLoaded() {
         const allLoaded = Object.values(scriptsLoaded).every(loaded => loaded);
@@ -851,10 +853,9 @@
 
     // Initialize session status polling for real-time updates
     function initializeSessionStatusPolling() {
-        // Check session status every 10 seconds for real-time button updates
         checkSessionStatus();
-        // Store interval ID for cleanup on page unload (prevents memory leak)
-        sessionStatusPollingInterval = setInterval(checkSessionStatus, 10000);
+        pollInterval = 10000;
+        sessionStatusPollingInterval = setInterval(checkSessionStatus, pollInterval);
     }
 
     // Stop session status polling (for cleanup)
@@ -888,14 +889,25 @@
         }
     }
 
-    // Check session status and update UI accordingly
+    // Check session status and update UI accordingly (with exponential backoff on errors)
     function checkSessionStatus() {
         fetchWithAuth(`/web-api/sessions/{{ $session->id }}/status?type={{ $sessionTypeForApi }}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error(response.status);
+                return response.json();
+            })
             .then(data => {
                 updateSessionStatusUI(data);
+                if (pollInterval !== 10000) {
+                    pollInterval = 10000;
+                    stopSessionStatusPolling();
+                    sessionStatusPollingInterval = setInterval(checkSessionStatus, pollInterval);
+                }
             })
-            .catch(error => {
+            .catch(() => {
+                pollInterval = Math.min(pollInterval * 2, MAX_POLL_INTERVAL);
+                stopSessionStatusPolling();
+                sessionStatusPollingInterval = setInterval(checkSessionStatus, pollInterval);
             });
     }
 
@@ -995,63 +1007,35 @@
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         };
-
         const config = {
             ...options,
-            credentials: 'same-origin', // CRITICAL: Include session cookies for authentication
-            headers: {
-                ...defaultHeaders,
-                ...options.headers
-            }
+            credentials: 'same-origin',
+            headers: { ...defaultHeaders, ...options.headers }
         };
 
-        try {
-            const response = await fetch(url, config);
-            
-            // Handle authentication errors
-            if (response.status === 401) {
-                
-                // Try to refresh CSRF token
-                await refreshCSRFToken();
-                
-                // Retry with new token
-                const newToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                config.headers['X-CSRF-TOKEN'] = newToken;
-                
-                return await fetch(url, config);
-            }
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            return response;
-        } catch (error) {
-            throw error;
+        const response = await fetch(url, config);
+
+        // Handle CSRF mismatch or auth error — refresh token and retry once
+        if (response.status === 419 || response.status === 401) {
+            await refreshCSRFToken();
+            config.headers['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            return await fetch(url, config);
         }
+
+        return response;
     }
 
-    // Refresh CSRF token
+    // Refresh CSRF token using Sanctum (works even with expired sessions)
     async function refreshCSRFToken() {
         try {
-            const response = await fetch('/csrf-token', {
-                method: 'GET',
-                credentials: 'same-origin', // Include session cookies
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', data.token);
+            await fetch('/sanctum/csrf-cookie', { method: 'GET', credentials: 'same-origin' });
+            const match = document.cookie.match('(?:^|; )XSRF-TOKEN=([^;]*)');
+            if (match) {
+                const token = decodeURIComponent(match[1]);
+                document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', token);
             }
-        } catch (error) {
-            // Fallback: reload page if token refresh fails repeatedly
-            if (window.tokenRefreshAttempts > 2) {
-                window.location.reload();
-            }
-            window.tokenRefreshAttempts = (window.tokenRefreshAttempts || 0) + 1;
+        } catch (e) {
+            // Silent fail — next request will use whatever token is available
         }
     }
 

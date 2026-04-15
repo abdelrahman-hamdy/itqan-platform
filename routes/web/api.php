@@ -110,18 +110,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | CSRF Token Endpoint
-    |--------------------------------------------------------------------------
-    */
-
-    Route::middleware(['auth'])->get('/csrf-token', function () {
-        return response()->json([
-            'token' => csrf_token(),
-        ]);
-    });
-
-    /*
-    |--------------------------------------------------------------------------
     | Custom File Upload Route (Filament Components)
     |--------------------------------------------------------------------------
     */
