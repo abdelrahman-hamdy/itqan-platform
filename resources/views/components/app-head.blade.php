@@ -28,29 +28,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
-<!-- Periodic CSRF token refresh — keeps session alive and prevents 419 errors on idle pages -->
+<!-- Livewire 419 handler — silently refreshes CSRF token instead of showing "Page Expired" dialog -->
 <script>
-(function() {
-    const interval = Math.min({{ (int) config('session.lifetime', 120) * 60 * 1000 / 4 }}, 900000);
-    function refreshToken() {
-        fetch('/sanctum/csrf-cookie', { method: 'GET', credentials: 'same-origin' })
-            .then(function() {
-                const match = document.cookie.match('(?:^|; )XSRF-TOKEN=([^;]*)');
-                if (match) {
-                    const token = decodeURIComponent(match[1]);
-                    const meta = document.querySelector('meta[name="csrf-token"]');
-                    if (meta) meta.setAttribute('content', token);
-                    document.querySelectorAll('input[name="_token"]').forEach(function(el) { el.value = token; });
-                }
-            })
-            .catch(function() {});
-    }
-    let timerId = setInterval(refreshToken, interval);
-    document.addEventListener('visibilitychange', function() {
-        clearInterval(timerId);
-        if (!document.hidden) { refreshToken(); timerId = setInterval(refreshToken, interval); }
+document.addEventListener('livewire:init', function() {
+    var isRefreshing = false;
+    Livewire.hook('request', function(bundle) {
+        bundle.fail(function(ctx) {
+            if (ctx.status === 419 && !isRefreshing) {
+                ctx.preventDefault();
+                isRefreshing = true;
+                fetch('/sanctum/csrf-cookie', { method: 'GET', credentials: 'same-origin' })
+                    .then(function() {
+                        var match = document.cookie.match('(?:^|; )XSRF-TOKEN=([^;]*)');
+                        if (match) {
+                            var token = decodeURIComponent(match[1]);
+                            var meta = document.querySelector('meta[name="csrf-token"]');
+                            if (meta) meta.setAttribute('content', token);
+                        }
+                        isRefreshing = false;
+                        Livewire.all().forEach(function(c) { c.$refresh(); });
+                    })
+                    .catch(function() {
+                        isRefreshing = false;
+                        window.location.reload();
+                    });
+            }
+        });
     });
-})();
+});
 </script>
 
 <!-- Page Title -->

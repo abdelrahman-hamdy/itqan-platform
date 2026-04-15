@@ -1502,12 +1502,8 @@ function cancelSession(sessionId) {
         return;
     }
 
-    fetch(`/teacher/sessions/${sessionId}/cancel`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        }
+    fetchWithAuth(`/teacher/sessions/${sessionId}/cancel`, {
+        method: 'PUT'
     })
     .then(response => response.json())
     .then(data => {
@@ -1532,12 +1528,8 @@ function completeSession(sessionId) {
     // Flag the disconnect as intentional
     window._meetingEndedIntentionally = true;
 
-    fetch(`/teacher/sessions/${sessionId}/complete`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        }
+    fetchWithAuth(`/teacher/sessions/${sessionId}/complete`, {
+        method: 'PUT'
     })
     .then(response => response.json())
     .then(data => {
