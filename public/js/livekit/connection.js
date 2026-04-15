@@ -220,6 +220,10 @@ class LiveKitConnection {
             const bitrates = { excellent: 48_000, good: 32_000, poor: 16_000 };
             const q = quality === window.LiveKit.ConnectionQuality.Excellent ? 'excellent'
                     : quality === window.LiveKit.ConnectionQuality.Good ? 'good' : 'poor';
+            const pub = this.room.localParticipant.getTrackPublication(window.LiveKit.Track.Source.Microphone);
+            if (pub && pub.track) {
+                pub.track.setPublishingQuality?.(bitrates[q]);
+            }
             if (window.MT) window.MT.event('connection', 'quality_adaptive_bitrate', { quality: q, bitrate: bitrates[q] });
         });
 
@@ -439,15 +443,10 @@ class LiveKitConnection {
 
 
     /**
-     * Apply RNNoise-based noise suppression to the local audio track.
-     * Uses @shiguredo/noise-suppression (WASM, runs client-side, ~2ms latency).
-     * Fails silently on unsupported browsers — audio works without suppression.
-     */
-    /**
      * Audio processing chain: Mic → Noise Gate → RNNoise → LiveKit
-     * Noise gate kills distant/ambient sounds that RNNoise alone lets through.
-     * RNNoise handles remaining noise with ML-based suppression.
-     * No gain boost — was causing sharp artifacts.
+     * Noise gate mutes audio below RMS threshold to kill distant/ambient sounds.
+     * RNNoise (WASM, ~2ms latency) handles remaining noise with ML suppression.
+     * Fails silently on unsupported browsers — audio works without processing.
      */
     async applyNoiseSuppression(localAudioTrack) {
         try {
@@ -490,13 +489,16 @@ class LiveKitConnection {
                 let sum = 0;
                 for (let i = 0; i < dataArray.length; i++) sum += dataArray[i] * dataArray[i];
                 const rms = Math.sqrt(sum / dataArray.length);
+                const now = ctx.currentTime;
                 if (rms > GATE_THRESHOLD) {
                     lastSpeechTime = Date.now();
-                    gate.gain.value = 1;
+                    gate.gain.cancelScheduledValues(now);
+                    gate.gain.linearRampToValueAtTime(1, now + 0.01); // 10ms ramp up
                 } else if (Date.now() - lastSpeechTime > GRACE_MS) {
-                    gate.gain.value = 0;
+                    gate.gain.cancelScheduledValues(now);
+                    gate.gain.linearRampToValueAtTime(0, now + 0.05); // 50ms ramp down
                 }
-            }, 20);
+            }, 50);
 
             const gatedTrack = dest.stream.getAudioTracks()[0];
 
