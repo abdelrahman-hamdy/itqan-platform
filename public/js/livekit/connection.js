@@ -163,10 +163,6 @@ class LiveKitConnection {
 
         // Local track events - important for local participant
         this.room.on(window.LiveKit.RoomEvent.LocalTrackPublished, (publication, participant) => {
-            // Apply noise suppression to outbound audio (RNNoise WASM)
-            if (publication.source === window.LiveKit.Track.Source.Microphone && publication.track) {
-                this.applyNoiseSuppression(publication.track);
-            }
             if (this.config.onTrackPublished) {
                 this.config.onTrackPublished(publication, participant);
             }
