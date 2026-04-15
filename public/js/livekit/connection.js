@@ -45,8 +45,6 @@ class LiveKitConnection {
         this._wakeLock = null;
         this._keepAliveAudio = null;
         this._visibilityHandler = null;
-        this._noiseGateCtx = null;
-        this._noiseGateInterval = null;
     }
 
     /**
@@ -64,7 +62,7 @@ class LiveKitConnection {
                 echoCancellation: true,
                 noiseSuppression: false, // RNNoise handles noise suppression instead
                 autoGainControl: true,
-                voiceIsolation: true,
+                voiceIsolation: false,
                 channelCount: 1,
             },
             publishDefaults: {
@@ -443,10 +441,9 @@ class LiveKitConnection {
 
 
     /**
-     * Audio processing chain: Mic → Noise Gate → RNNoise → LiveKit
-     * Noise gate mutes audio below RMS threshold to kill distant/ambient sounds.
-     * RNNoise (WASM, ~2ms latency) handles remaining noise with ML suppression.
-     * Fails silently on unsupported browsers — audio works without processing.
+     * Apply RNNoise ML noise suppression directly to the mic track.
+     * No noise gate, no gain boost — just RNNoise on raw mic audio.
+     * Fails silently on unsupported browsers or stereo mics.
      */
     async applyNoiseSuppression(localAudioTrack) {
         try {
@@ -461,76 +458,20 @@ class LiveKitConnection {
                 this.noiseProcessor.stopProcessing();
                 this.noiseProcessor = null;
             }
-            this._cleanupNoiseGate();
 
-            const originalTrack = localAudioTrack.mediaStreamTrack;
-
-            // Step 1: Noise gate with forced mono output (RNNoise crashes on stereo)
-            const ctx = new AudioContext({ sampleRate: 48000 });
-            const source = ctx.createMediaStreamSource(new MediaStream([originalTrack]));
-            const analyser = ctx.createAnalyser();
-            analyser.fftSize = 2048;
-            analyser.smoothingTimeConstant = 0.3;
-            const gate = ctx.createGain();
-            gate.gain.value = 1;
-            const dest = ctx.createMediaStreamDestination();
-            dest.channelCount = 1;
-            dest.channelCountMode = 'explicit';
-            source.connect(analyser);
-            analyser.connect(gate);
-            gate.connect(dest);
-            this._noiseGateCtx = ctx;
-
-            const dataArray = new Float32Array(analyser.fftSize);
-            const GATE_THRESHOLD = 0.008;
-            const GRACE_MS = 300;
-            let lastSpeechTime = 0;
-
-            this._noiseGateInterval = setInterval(() => {
-                analyser.getFloatTimeDomainData(dataArray);
-                let sum = 0;
-                for (let i = 0; i < dataArray.length; i++) sum += dataArray[i] * dataArray[i];
-                const rms = Math.sqrt(sum / dataArray.length);
-                if (rms > GATE_THRESHOLD) {
-                    lastSpeechTime = Date.now();
-                    gate.gain.value = 1;
-                } else if (Date.now() - lastSpeechTime > GRACE_MS) {
-                    gate.gain.value = 0;
-                }
-            }, 20);
-
-            const gatedTrack = dest.stream.getAudioTracks()[0];
-
-            // Step 2: RNNoise on the gated track
-            try {
-                const { NoiseSuppressionProcessor } = await import('/js/livekit/noise-suppression/noise_suppression.js');
-                if (NoiseSuppressionProcessor.isSupported()) {
-                    this.noiseProcessor = new NoiseSuppressionProcessor();
-                    const denoisedTrack = await this.noiseProcessor.startProcessing(gatedTrack);
-                    await localAudioTrack.replaceTrack(denoisedTrack);
-                    if (window.MT) window.MT.event('audio', 'noise_gate_and_rnnoise_enabled', { mem, cores });
-                    return;
-                }
-            } catch (e) {
-                if (window.MT) window.MT.event('audio', 'rnnoise_failed_gate_only', { error: e.message });
+            const { NoiseSuppressionProcessor } = await import('/js/livekit/noise-suppression/noise_suppression.js');
+            if (!NoiseSuppressionProcessor.isSupported()) {
+                if (window.MT) window.MT.event('audio', 'noise_suppression_unsupported', {});
+                return;
             }
 
-            // Fallback: noise gate only
-            await localAudioTrack.replaceTrack(gatedTrack);
-            if (window.MT) window.MT.event('audio', 'noise_gate_only_enabled', { mem, cores });
+            this.noiseProcessor = new NoiseSuppressionProcessor();
+            const denoisedTrack = await this.noiseProcessor.startProcessing(localAudioTrack.mediaStreamTrack);
+            await localAudioTrack.replaceTrack(denoisedTrack);
+            if (window.MT) window.MT.event('audio', 'rnnoise_enabled', { mem, cores });
         } catch (e) {
-            console.warn('Noise processing not available:', e.message);
-        }
-    }
-
-    _cleanupNoiseGate() {
-        if (this._noiseGateInterval) {
-            clearInterval(this._noiseGateInterval);
-            this._noiseGateInterval = null;
-        }
-        if (this._noiseGateCtx) {
-            this._noiseGateCtx.close().catch(() => {});
-            this._noiseGateCtx = null;
+            // Stereo mic or unsupported browser — user gets raw audio with browser AEC
+            if (window.MT) window.MT.event('audio', 'rnnoise_failed', { error: e.message });
         }
     }
 
@@ -649,7 +590,6 @@ class LiveKitConnection {
             this.noiseProcessor.stopProcessing();
             this.noiseProcessor = null;
         }
-        this._cleanupNoiseGate();
         if (this.room && this.isConnected) {
             this.intentionalDisconnect = true;
             await this.room.disconnect();
