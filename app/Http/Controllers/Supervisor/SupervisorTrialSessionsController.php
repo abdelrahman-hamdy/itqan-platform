@@ -73,7 +73,7 @@ class SupervisorTrialSessionsController extends BaseSupervisorWebController
         $profileIds = $this->getAssignedQuranTeacherProfileIds();
 
         $trialRequest = QuranTrialRequest::whereIn('teacher_id', $profileIds)
-            ->with(['student.studentProfile', 'trialSession.meeting', 'trialSession.attendances', 'academy', 'teacher.user'])
+            ->with(['student.studentProfile', 'trialSession.meeting', 'trialSession.meetingAttendances', 'academy', 'teacher.user'])
             ->findOrFail($trialRequestId);
 
         $teacher = $trialRequest->teacher?->user;
