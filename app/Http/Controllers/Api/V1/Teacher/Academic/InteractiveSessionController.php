@@ -373,7 +373,7 @@ class InteractiveSessionController extends Controller
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
-        $session = $this->resolveSession($id, $user, ['course.enrollments.student.user', 'attendances']);
+        $session = $this->resolveSession($id, $user, ['course.enrollments.student.user', 'meetingAttendances']);
 
         if (! $session) {
             return $this->notFound(__('Session not found.'));

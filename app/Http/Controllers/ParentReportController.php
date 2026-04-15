@@ -196,7 +196,7 @@ class ParentReportController extends Controller
 
             $totalSessions = $course->sessions()->count();
             $attendedSessions = $course->sessions()
-                ->whereHas('attendances', fn ($q) => $q->where('student_id', $child->user_id))
+                ->whereHas('meetingAttendances', fn ($q) => $q->where('student_id', $child->user_id))
                 ->count();
             $attendanceRate = $totalSessions > 0 ? round(($attendedSessions / $totalSessions) * 100) : 0;
 

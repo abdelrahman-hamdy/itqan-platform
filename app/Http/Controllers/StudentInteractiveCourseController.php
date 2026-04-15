@@ -2,14 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Academy;
-use App\Models\InteractiveCourseSession;
-use App\Models\User;
-use App\Models\InteractiveCourseEnrollment;
-use App\Models\InteractiveCourseHomework;
-use App\Enums\HomeworkSubmissionStatus;
-use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Enums\EnrollmentStatus;
+use App\Enums\HomeworkSubmissionStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Http\Requests\AddInteractiveSessionFeedbackRequest;
@@ -18,7 +12,13 @@ use App\Http\Requests\SubmitInteractiveCourseHomeworkRequest;
 use App\Http\Requests\UpdateInteractiveSessionContentRequest;
 use App\Http\Requests\UpdateInteractiveSessionHomeworkRequest;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\Academy;
 use App\Models\InteractiveCourse;
+use App\Models\InteractiveCourseEnrollment;
+use App\Models\InteractiveCourseHomework;
+use App\Models\InteractiveCourseHomeworkSubmission;
+use App\Models\InteractiveCourseSession;
+use App\Models\User;
 use App\Services\AcademyContextService;
 use App\Services\Attendance\InteractiveReportService;
 use App\Services\HomeworkService;
@@ -220,7 +220,6 @@ class StudentInteractiveCourseController extends Controller
             'course.gradeLevel',
             'course.enrolledStudents.student.user',
             'homework',
-            'attendances',
             'meetingAttendances',
         ])->findOrFail($sessionId);
 

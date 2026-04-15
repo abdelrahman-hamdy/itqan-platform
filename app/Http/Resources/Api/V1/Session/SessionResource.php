@@ -84,7 +84,7 @@ class SessionResource extends JsonResource
             ]),
 
             // Attendances (polymorphic)
-            'attendances' => $this->whenLoaded('attendances', fn () => AttendanceResource::collection($this->resource->attendances)
+            'attendances' => $this->whenLoaded('meetingAttendances', fn () => AttendanceResource::collection($this->resource->meetingAttendances)
             ),
 
             // Timestamps

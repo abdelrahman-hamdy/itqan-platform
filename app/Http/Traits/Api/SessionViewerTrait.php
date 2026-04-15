@@ -81,11 +81,11 @@ trait SessionViewerTrait
      */
     protected function formatAttendanceData($session): ?array
     {
-        if (! isset($session->attendances) || $session->attendances->isEmpty()) {
+        if (! isset($session->meetingAttendances) || $session->meetingAttendances->isEmpty()) {
             return null;
         }
 
-        $attendance = $session->attendances->first();
+        $attendance = $session->meetingAttendances->first();
 
         return [
             'status' => $attendance->status,

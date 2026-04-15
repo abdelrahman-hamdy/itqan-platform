@@ -112,14 +112,14 @@ class QuranSessionController extends BaseStudentSessionController
         $session = QuranSession::where('id', $id)
             ->where(function ($q) use ($user) {
                 $q->where('student_id', $user->id)
-                  ->orWhereHas('trialRequest', fn ($tr) => $tr->where('student_id', $user->id));
+                    ->orWhereHas('trialRequest', fn ($tr) => $tr->where('student_id', $user->id));
             })
             ->with([
                 'quranTeacher',
                 'individualCircle',
                 'circle',
                 'sessionHomework',
-                'attendances' => function ($q) use ($user) {
+                'meetingAttendances' => function ($q) use ($user) {
                     $q->where('student_id', $user->id);
                 },
             ])

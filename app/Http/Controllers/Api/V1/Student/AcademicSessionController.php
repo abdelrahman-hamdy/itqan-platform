@@ -114,7 +114,7 @@ class AcademicSessionController extends BaseStudentSessionController
             ->with([
                 'academicTeacher.user',
                 'academicSubscription.subject',
-                'attendances' => function ($q) use ($user) {
+                'meetingAttendances' => function ($q) use ($user) {
                     $q->where('student_id', $user->id);
                 },
             ])
@@ -206,7 +206,7 @@ class AcademicSessionController extends BaseStudentSessionController
             'topics_covered' => $session->topics_covered ?? [],
             'homework' => $session->homework_description,
             'homework_assigned' => $session->homework_assigned,
-            'homework_file' => $session->homework_file ? asset('storage/' . $session->homework_file) : null,
+            'homework_file' => $session->homework_file ? asset('storage/'.$session->homework_file) : null,
         ];
 
         return $base;

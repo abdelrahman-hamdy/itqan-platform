@@ -66,10 +66,10 @@ class ParentSessionController extends Controller
         $childUserIds = $this->verificationService->getChildUserIds($parent);
 
         if ($sessionType === 'quran') {
-            $session = QuranSession::with(['quranTeacher', 'student', 'individualCircle', 'circle', 'attendances'])
+            $session = QuranSession::with(['quranTeacher', 'student', 'individualCircle', 'circle', 'meetingAttendances'])
                 ->findOrFail($sessionId);
         } elseif ($sessionType === 'academic') {
-            $session = AcademicSession::with(['academicTeacher.user', 'student', 'academicIndividualLesson', 'attendances'])
+            $session = AcademicSession::with(['academicTeacher.user', 'student', 'academicIndividualLesson', 'meetingAttendances'])
                 ->findOrFail($sessionId);
         } else {
             abort(404, 'نوع الجلسة غير صحيح');
@@ -81,7 +81,7 @@ class ParentSessionController extends Controller
         $this->verificationService->verifySessionBelongsToChild($parent, $session);
 
         // Get attendance for this session
-        $attendance = $session->attendances->first();
+        $attendance = $session->meetingAttendances->first();
 
         // Calculate stats for the child using unified service
         // For group sessions, get the first enrolled child from parent's children

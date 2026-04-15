@@ -170,7 +170,7 @@ class StudentCourseService
             'enrollments.student.user',
             'sessions' => function ($query) use ($user) {
                 $query->with([
-                    'attendances' => function ($q) use ($user) {
+                    'meetingAttendances' => function ($q) use ($user) {
                         if ($user->studentProfile) {
                             $q->where('student_id', $user->studentProfile->id);
                         }
@@ -240,7 +240,6 @@ class StudentCourseService
             'course.gradeLevel',
             'course.enrolledStudents.student.user',
             'homework',
-            'attendances',
             'meetingAttendances',
             'studentReports',
         ])->find($sessionId);
@@ -272,7 +271,7 @@ class StudentCourseService
         }
 
         // Get attendance record for this student
-        $attendance = $session->attendances->where('student_id', $studentProfile->id)->first();
+        $attendance = $session->meetingAttendances->where('student_id', $studentProfile->id)->first();
 
         // Get homework submission if homework exists
         $homeworkSubmission = null;

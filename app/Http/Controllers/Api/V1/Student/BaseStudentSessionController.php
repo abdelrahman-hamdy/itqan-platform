@@ -29,8 +29,8 @@ abstract class BaseStudentSessionController extends Controller
 
         // Get attendance status if attendances are loaded
         $attendanceStatus = null;
-        if (isset($session->attendances) && $session->attendances->isNotEmpty()) {
-            $attendanceStatus = $session->attendances->first()->attendance_status ?? null;
+        if (isset($session->meetingAttendances) && $session->meetingAttendances->isNotEmpty()) {
+            $attendanceStatus = $session->meetingAttendances->first()->attendance_status ?? null;
         }
 
         return [

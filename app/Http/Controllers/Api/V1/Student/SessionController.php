@@ -211,7 +211,7 @@ class SessionController extends Controller
                     'quranTeacher',
                     'individualCircle',
                     'circle',
-                    'attendances' => fn ($q) => $q->where('user_id', $studentId),
+                    'meetingAttendances' => fn ($q) => $q->where('user_id', $studentId),
                 ])
                 ->first(),
             'quran_group' => QuranSession::where('id', $sessionId)
@@ -219,7 +219,7 @@ class SessionController extends Controller
                 ->with([
                     'quranTeacher',
                     'circle',
-                    'attendances' => fn ($q) => $q->where('user_id', $studentId),
+                    'meetingAttendances' => fn ($q) => $q->where('user_id', $studentId),
                 ])
                 ->first(),
             'academic' => AcademicSession::where('id', $sessionId)
@@ -227,7 +227,7 @@ class SessionController extends Controller
                 ->with([
                     'academicTeacher.user',
                     'academicSubscription',
-                    'attendances' => fn ($q) => $q->where('user_id', $studentId),
+                    'meetingAttendances' => fn ($q) => $q->where('user_id', $studentId),
                 ])
                 ->first(),
             'interactive' => InteractiveCourseSession::where('id', $sessionId)
@@ -323,8 +323,8 @@ class SessionController extends Controller
         }
 
         // Attendance info
-        if (isset($session->attendances) && $session->attendances->isNotEmpty()) {
-            $attendance = $session->attendances->first();
+        if (isset($session->meetingAttendances) && $session->meetingAttendances->isNotEmpty()) {
+            $attendance = $session->meetingAttendances->first();
             $base['attendance'] = [
                 'status' => $attendance->status,
                 'attended_at' => $attendance->attended_at?->toISOString(),

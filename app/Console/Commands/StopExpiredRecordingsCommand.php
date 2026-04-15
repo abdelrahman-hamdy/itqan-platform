@@ -90,9 +90,23 @@ class StopExpiredRecordingsCommand extends Command
                             'session_id' => $session->id,
                         ]);
                     } else {
-                        Log::warning('[RECORDINGS] No active recording to stop', [
-                            'session_id' => $session->id,
-                        ]);
+                        // stopRecording() returns false when the LiveKit exception is
+                        // caught internally (e.g. "No active recording found").  If the
+                        // recording has been overdue for more than 30 minutes it is stale
+                        // — mark it as failed so we stop retrying every minute.
+                        $minutesOverdue = now()->diffInMinutes($expectedEndTime);
+                        if ($minutesOverdue > 30) {
+                            $recordingRecord->markAsFailed('Recording stop timed out — '.$minutesOverdue.' minutes overdue');
+                            Log::warning('[RECORDINGS] Marking stale recording as failed', [
+                                'session_id' => $session->id,
+                                'recording_id' => $recordingRecord->id,
+                                'minutes_overdue' => $minutesOverdue,
+                            ]);
+                        } else {
+                            Log::warning('[RECORDINGS] No active recording to stop', [
+                                'session_id' => $session->id,
+                            ]);
+                        }
                     }
                 }
             } catch (Exception $e) {
