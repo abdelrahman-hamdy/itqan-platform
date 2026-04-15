@@ -1836,7 +1836,6 @@ document.addEventListener('DOMContentLoaded', function() {
         constructor() {
             this.sessionId = {{ $session->id }};
             this.roomName = {!! json_encode($session->meeting_room_name ?? 'session-' . $session->id) !!};
-            this.csrfToken = '{{ csrf_token() }}';
             this.isTracking = false;
             this.attendanceStatus = null;
         }
@@ -2088,55 +2087,45 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     async function startRecording() {
-        const response = await fetch('/api/interactive-courses/recording/start', {
+        const response = await fetchWithAuth('/api/interactive-courses/recording/start', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-            },
             body: JSON.stringify({
                 session_id: recordingState.sessionId,
                 meeting_room: window.meeting?.roomName || 'unknown_room'
             })
         });
-        
+
         if (!response.ok) {
             throw new Error(window.meetingTranslations.recording.start_failed);
         }
-        
+
         const data = await response.json();
         recordingState.isRecording = true;
         recordingState.recordingId = data.recording_id;
         recordingState.startTime = new Date();
-        
     }
-    
+
     async function stopRecording() {
         if (!recordingState.recordingId) {
             throw new Error(window.meetingTranslations.recording.no_active_recording);
         }
-        
-        const response = await fetch('/api/interactive-courses/recording/stop', {
+
+        const response = await fetchWithAuth('/api/interactive-courses/recording/stop', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-            },
             body: JSON.stringify({
                 recording_id: recordingState.recordingId,
                 session_id: recordingState.sessionId
             })
         });
-        
+
         if (!response.ok) {
             throw new Error(window.meetingTranslations.recording.stop_failed);
         }
-        
+
         const data = await response.json();
         recordingState.isRecording = false;
         recordingState.recordingId = null;
         recordingState.startTime = null;
-        
     }
     
     function showRecordingNotification(message, type = 'info') {
