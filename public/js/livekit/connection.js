@@ -45,6 +45,8 @@ class LiveKitConnection {
         this._wakeLock = null;
         this._keepAliveAudio = null;
         this._visibilityHandler = null;
+        this._noiseGateCtx = null;
+        this._noiseGateInterval = null;
     }
 
     /**
@@ -60,21 +62,21 @@ class LiveKitConnection {
             stopLocalTrackOnUnpublish: false,
             audioCaptureDefaults: {
                 echoCancellation: true,
-                noiseSuppression: true,
+                noiseSuppression: false, // RNNoise handles noise suppression instead
                 autoGainControl: true,
                 voiceIsolation: true,
                 channelCount: 1,
             },
             publishDefaults: {
-                audioPreset: { maxBitrate: 48_000 },
+                audioPreset: { maxBitrate: 32_000 },
                 dtx: true,
                 red: true,
             },
             reconnectPolicy: {
                 nextRetryDelayInMs: (context) => {
-                    // Aggressive reconnection: 7 retries with exponential backoff
-                    if (context.retryCount > 7) return null; // give up
-                    return Math.min(300 * Math.pow(2, context.retryCount), 10_000);
+                    // 15 retries with exponential backoff (better for mobile)
+                    if (context.retryCount > 15) return null;
+                    return Math.min(300 * Math.pow(2, context.retryCount), 15_000);
                 },
             },
         };
@@ -163,6 +165,10 @@ class LiveKitConnection {
 
         // Local track events - important for local participant
         this.room.on(window.LiveKit.RoomEvent.LocalTrackPublished, (publication, participant) => {
+            // Apply RNNoise noise suppression to outbound audio
+            if (publication.source === window.LiveKit.Track.Source.Microphone && publication.track) {
+                this.applyNoiseSuppression(publication.track);
+            }
             if (this.config.onTrackPublished) {
                 this.config.onTrackPublished(publication, participant);
             }
@@ -206,6 +212,15 @@ class LiveKitConnection {
             if (this.config.onDataReceived) {
                 this.config.onDataReceived(payload, participant);
             }
+        });
+
+        // Adaptive audio bitrate based on connection quality
+        this.room.on(window.LiveKit.RoomEvent.ConnectionQualityChanged, (quality, participant) => {
+            if (!participant.isLocal) return;
+            const bitrates = { excellent: 48_000, good: 32_000, poor: 16_000 };
+            const q = quality === window.LiveKit.ConnectionQuality.Excellent ? 'excellent'
+                    : quality === window.LiveKit.ConnectionQuality.Good ? 'good' : 'poor';
+            if (window.MT) window.MT.event('connection', 'quality_adaptive_bitrate', { quality: q, bitrate: bitrates[q] });
         });
 
     }
@@ -428,10 +443,15 @@ class LiveKitConnection {
      * Uses @shiguredo/noise-suppression (WASM, runs client-side, ~2ms latency).
      * Fails silently on unsupported browsers — audio works without suppression.
      */
+    /**
+     * Audio processing chain: Mic → Noise Gate → RNNoise → LiveKit
+     * Noise gate kills distant/ambient sounds that RNNoise alone lets through.
+     * RNNoise handles remaining noise with ML-based suppression.
+     * No gain boost — was causing sharp artifacts.
+     */
     async applyNoiseSuppression(localAudioTrack) {
         try {
-            // Skip on low-end devices — WASM AudioWorklet causes jitter on <4GB RAM
-            const mem = navigator.deviceMemory || 8; // defaults to 8 if unsupported (desktop)
+            const mem = navigator.deviceMemory || 8;
             const cores = navigator.hardwareConcurrency || 4;
             if (mem < 4 || cores < 4) {
                 if (window.MT) window.MT.event('audio', 'noise_suppression_skipped_low_end', { mem, cores });
@@ -442,33 +462,74 @@ class LiveKitConnection {
                 this.noiseProcessor.stopProcessing();
                 this.noiseProcessor = null;
             }
-            if (this._noiseGainCtx) {
-                this._noiseGainCtx.close();
-                this._noiseGainCtx = null;
-            }
-            const { NoiseSuppressionProcessor } = await import('/js/livekit/noise-suppression/noise_suppression.js');
-            if (!NoiseSuppressionProcessor.isSupported()) {
-                if (window.MT) window.MT.event('audio', 'noise_suppression_unsupported', {});
-                return;
-            }
-            this.noiseProcessor = new NoiseSuppressionProcessor();
-            const mediaTrack = localAudioTrack.mediaStreamTrack;
-            const denoisedTrack = await this.noiseProcessor.startProcessing(mediaTrack);
+            this._cleanupNoiseGate();
 
-            // RNNoise reduces volume as a side-effect of per-band gain attenuation.
-            // Apply a 1.5x gain boost to compensate without clipping.
+            const originalTrack = localAudioTrack.mediaStreamTrack;
+
+            // Step 1: Noise gate — mute audio below RMS threshold
             const ctx = new AudioContext({ sampleRate: 48000 });
-            const source = ctx.createMediaStreamSource(new MediaStream([denoisedTrack]));
-            const gain = ctx.createGain();
-            gain.gain.value = 1.5;
+            const source = ctx.createMediaStreamSource(new MediaStream([originalTrack]));
+            const analyser = ctx.createAnalyser();
+            analyser.fftSize = 2048;
+            analyser.smoothingTimeConstant = 0.3;
+            const gate = ctx.createGain();
+            gate.gain.value = 1;
             const dest = ctx.createMediaStreamDestination();
-            source.connect(gain).connect(dest);
-            this._noiseGainCtx = ctx;
+            source.connect(analyser);
+            analyser.connect(gate);
+            gate.connect(dest);
+            this._noiseGateCtx = ctx;
 
-            await localAudioTrack.replaceTrack(dest.stream.getAudioTracks()[0]);
-            if (window.MT) window.MT.event('audio', 'noise_suppression_enabled', { mem, cores, gain: 1.5 });
+            const dataArray = new Float32Array(analyser.fftSize);
+            const GATE_THRESHOLD = 0.008;
+            const GRACE_MS = 300;
+            let lastSpeechTime = 0;
+
+            this._noiseGateInterval = setInterval(() => {
+                analyser.getFloatTimeDomainData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) sum += dataArray[i] * dataArray[i];
+                const rms = Math.sqrt(sum / dataArray.length);
+                if (rms > GATE_THRESHOLD) {
+                    lastSpeechTime = Date.now();
+                    gate.gain.value = 1;
+                } else if (Date.now() - lastSpeechTime > GRACE_MS) {
+                    gate.gain.value = 0;
+                }
+            }, 20);
+
+            const gatedTrack = dest.stream.getAudioTracks()[0];
+
+            // Step 2: RNNoise on the gated track
+            try {
+                const { NoiseSuppressionProcessor } = await import('/js/livekit/noise-suppression/noise_suppression.js');
+                if (NoiseSuppressionProcessor.isSupported()) {
+                    this.noiseProcessor = new NoiseSuppressionProcessor();
+                    const denoisedTrack = await this.noiseProcessor.startProcessing(gatedTrack);
+                    await localAudioTrack.replaceTrack(denoisedTrack);
+                    if (window.MT) window.MT.event('audio', 'noise_gate_and_rnnoise_enabled', { mem, cores });
+                    return;
+                }
+            } catch (e) {
+                if (window.MT) window.MT.event('audio', 'rnnoise_failed_gate_only', { error: e.message });
+            }
+
+            // Fallback: noise gate only
+            await localAudioTrack.replaceTrack(gatedTrack);
+            if (window.MT) window.MT.event('audio', 'noise_gate_only_enabled', { mem, cores });
         } catch (e) {
-            console.warn('Noise suppression not available:', e.message);
+            console.warn('Noise processing not available:', e.message);
+        }
+    }
+
+    _cleanupNoiseGate() {
+        if (this._noiseGateInterval) {
+            clearInterval(this._noiseGateInterval);
+            this._noiseGateInterval = null;
+        }
+        if (this._noiseGateCtx) {
+            this._noiseGateCtx.close().catch(() => {});
+            this._noiseGateCtx = null;
         }
     }
 
@@ -587,10 +648,7 @@ class LiveKitConnection {
             this.noiseProcessor.stopProcessing();
             this.noiseProcessor = null;
         }
-        if (this._noiseGainCtx) {
-            this._noiseGainCtx.close();
-            this._noiseGainCtx = null;
-        }
+        this._cleanupNoiseGate();
         if (this.room && this.isConnected) {
             this.intentionalDisconnect = true;
             await this.room.disconnect();

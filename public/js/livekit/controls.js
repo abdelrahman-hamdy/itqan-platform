@@ -15,7 +15,7 @@
  */
 window.LiveKitAudioCaptureOptions = Object.freeze({
     echoCancellation: true,
-    noiseSuppression: true,
+    noiseSuppression: false, // RNNoise handles this — browser NS causes double-processing
     autoGainControl: true,
 });
 
