@@ -530,6 +530,29 @@ class LiveKitConnection {
             if (window.MT) window.MT.event('audio', 'rnnoise_fallback_to_original', {});
         } catch (e) {
             if (window.MT) window.MT.error('audio', 'rnnoise_fallback_failed', e, {});
+            // Last resort: ask the SDK to restart the mic entirely.
+            // This creates a fresh track + republish cycle, bypassing the
+            // dead original track and failed getUserMedia.
+            try {
+                const lp = this.room?.localParticipant;
+                if (lp) {
+                    await lp.setMicrophoneEnabled(false);
+                    await lp.setMicrophoneEnabled(true);
+                    this._stopRnnoiseHealthCheck();
+                    if (this.noiseProcessor) {
+                        try { this.noiseProcessor.stopProcessing(); } catch (_) {}
+                        this.noiseProcessor = null;
+                    }
+                    this._originalMicTrack = null;
+                    this._denoisedAudioTrack = null;
+                    if (window.MT) window.MT.event('audio', 'rnnoise_sdk_restart_succeeded', {});
+                }
+            } catch (sdkErr) {
+                if (window.MT) window.MT.error('audio', 'rnnoise_sdk_restart_failed', sdkErr, {});
+                window.dispatchEvent(new CustomEvent('livekit-audio-critical', {
+                    detail: { message: 'mic_disconnected' }
+                }));
+            }
         } finally {
             this._rnnoiseRecovering = false;
         }
@@ -593,7 +616,14 @@ class LiveKitConnection {
             } catch (e) {
                 console.warn('startAudio failed:', e.message);
             }
-            prompt.remove();
+            // Only dismiss if audio is actually playing now
+            if (this.room.canPlaybackAudio) {
+                prompt.remove();
+            } else {
+                const btn = document.getElementById('audioPlaybackBtn');
+                if (btn) btn.textContent = 'حاول مرة أخرى';
+                if (window.MT) window.MT.warn('audio', 'autoplay_unlock_failed_keep_prompt', {});
+            }
         });
 
         if (window.MT) window.MT.event('audio', 'autoplay_blocked_prompt_shown', {});

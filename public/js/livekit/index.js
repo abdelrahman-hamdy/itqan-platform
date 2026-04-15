@@ -82,6 +82,11 @@ class LiveKitMeeting {
             // CRITICAL FIX: Start continuous synchronization check
             this.startContinuousSync();
 
+            // Listen for critical audio failures from connection module
+            window.addEventListener('livekit-audio-critical', () => {
+                this.showNotification(t('connection.mic_disconnected') || 'Microphone disconnected — please check your audio device', 'error');
+            });
+
             this.isInitialized = true;
             this.isConnected = true;
 

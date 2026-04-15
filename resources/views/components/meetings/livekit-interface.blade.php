@@ -1900,24 +1900,41 @@ document.addEventListener('DOMContentLoaded', function() {
          */
         async recordLeave() {
             if (!this.isTracking) return; // Only record leave if we recorded join
-            
+
             try {
-                
-                const response = await fetch('/api/sessions/meeting/leave', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': this.csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({
-                        session_id: this.sessionId,
-                        session_type: window.sessionType || 'quran',
-                        room_name: this.roomName,
-                    }),
+                // Keep CSRF token fresh from meta tag before each request
+                this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
+
+                const leaveBody = JSON.stringify({
+                    session_id: this.sessionId,
+                    session_type: window.sessionType || 'quran',
+                    room_name: this.roomName,
                 });
-                
+                const leaveHeaders = {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                };
+
+                let response = await fetch('/api/sessions/meeting/leave', {
+                    method: 'POST',
+                    headers: leaveHeaders,
+                    credentials: 'same-origin',
+                    body: leaveBody,
+                });
+
+                // Handle expired CSRF token in long meetings — refresh and retry once
+                if (response.status === 419) {
+                    await refreshCSRFToken();
+                    this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
+                    response = await fetch('/api/sessions/meeting/leave', {
+                        method: 'POST',
+                        headers: { ...leaveHeaders, 'X-CSRF-TOKEN': this.csrfToken },
+                        credentials: 'same-origin',
+                        body: leaveBody,
+                    });
+                }
+
                 const data = await response.json();
                 
                 if (data.success) {
