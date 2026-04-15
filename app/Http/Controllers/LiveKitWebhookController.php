@@ -233,7 +233,7 @@ class LiveKitWebhookController extends Controller
      */
     private function tryStartAutoRecording(BaseSession $session, string $roomName): void
     {
-        if (! config('livekit.recordings.system_enabled', true)) {
+        if (! \App\Http\Controllers\Supervisor\SupervisorRecordingController::isRecordingSystemEnabled()) {
             return;
         }
 

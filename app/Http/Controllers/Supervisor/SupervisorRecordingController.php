@@ -82,7 +82,7 @@ class SupervisorRecordingController extends BaseSupervisorWebController
             'liveSessions' => $liveSessions,
             'tabCounts' => $tabCounts,
             'historyData' => $historyData,
-            'recordingSystemEnabled' => config('livekit.recordings.system_enabled', true),
+            'recordingSystemEnabled' => self::isRecordingSystemEnabled(),
         ]);
     }
 
@@ -438,27 +438,20 @@ class SupervisorRecordingController extends BaseSupervisorWebController
             abort(403);
         }
 
-        $currentValue = config('livekit.recordings.system_enabled', true);
+        $currentValue = self::isRecordingSystemEnabled();
         $newValue = ! $currentValue;
 
-        // Write to .env file
-        $envPath = base_path('.env');
-        $envContent = file_get_contents($envPath);
-
-        if (str_contains($envContent, 'LIVEKIT_RECORDING_ENABLED=')) {
-            $envContent = preg_replace('/LIVEKIT_RECORDING_ENABLED=.*/', 'LIVEKIT_RECORDING_ENABLED='.($newValue ? 'true' : 'false'), $envContent);
-        } else {
-            $envContent .= "\nLIVEKIT_RECORDING_ENABLED=".($newValue ? 'true' : 'false');
-        }
-
-        file_put_contents($envPath, $envContent);
-
-        // Clear config cache so the change takes effect
-        \Artisan::call('config:cache');
+        // Use cache — .env is read-only in production
+        \Illuminate\Support\Facades\Cache::forever('livekit_recording_system_enabled', $newValue);
 
         Log::info('[RECORDINGS] System toggled', ['enabled' => $newValue, 'by' => auth()->id()]);
 
         return back()->with('success', $newValue ? __('supervisor.recording.system_enabled') : __('supervisor.recording.system_disabled'));
+    }
+
+    public static function isRecordingSystemEnabled(): bool
+    {
+        return \Illuminate\Support\Facades\Cache::get('livekit_recording_system_enabled', config('livekit.recordings.system_enabled', true));
     }
 
     public function stopAllActive(Request $request, $subdomain = null): RedirectResponse
