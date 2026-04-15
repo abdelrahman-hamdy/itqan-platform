@@ -1849,6 +1849,8 @@ return [
         'system_enabled' => 'تم تفعيل نظام التسجيل التلقائي',
         'system_disabled' => 'تم إيقاف نظام التسجيل التلقائي',
         'all_stopped' => 'تم إيقاف :count تسجيل نشط',
+        'system_disable_btn' => 'إيقاف التسجيل',
+        'system_enable_btn' => 'تفعيل التسجيل',
 
         // Capacity dashboard
         'capacity_active' => 'التسجيلات النشطة',

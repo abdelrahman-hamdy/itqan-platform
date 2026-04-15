@@ -12,41 +12,54 @@
 @endphp
 
 <!-- Header -->
-<div class="flex items-center justify-between mb-6">
+<div class="flex items-center justify-between mb-4 flex-wrap gap-3">
     <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ __($t.'page_title') }}</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __($t.'page_subtitle') }}</p>
     </div>
-    <div class="flex items-center gap-3">
-        <!-- Recording System Toggle -->
-        <div class="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
-            <form method="POST" action="{{ route('manage.recording.toggle-system', ['subdomain' => $subdomain]) }}" class="inline">
-                @csrf
-                <button type="submit" class="flex items-center gap-2 text-sm font-medium {{ $recordingSystemEnabled ? 'text-green-700' : 'text-red-600' }}"
-                        onclick="return confirm('{{ $recordingSystemEnabled ? __($t.'confirm_disable_system') : __($t.'confirm_enable_system') }}')">
-                    <span class="relative flex h-3 w-3">
-                        @if($recordingSystemEnabled)
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                        @else
-                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                        @endif
-                    </span>
-                    {{ $recordingSystemEnabled ? __($t.'system_on') : __($t.'system_off') }}
-                </button>
-            </form>
+    <x-ui.timezone-clock />
+</div>
+
+<!-- Recording System Controls -->
+<div class="mb-4 p-3 rounded-xl border {{ $recordingSystemEnabled ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' }}">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+            <span class="relative flex h-4 w-4">
+                @if($recordingSystemEnabled)
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
+                @else
+                    <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500"></span>
+                @endif
+            </span>
+            <span class="text-sm font-bold {{ $recordingSystemEnabled ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200' }}">
+                {{ $recordingSystemEnabled ? __($t.'system_on') : __($t.'system_off') }}
+            </span>
+        </div>
+        <div class="flex items-center gap-2">
             @if($recordingSystemEnabled && ($capacityStatus['active_count'] ?? 0) > 0)
-                <span class="text-gray-300 dark:text-gray-600">|</span>
                 <form method="POST" action="{{ route('manage.recording.stop-all', ['subdomain' => $subdomain]) }}" class="inline">
                     @csrf
-                    <button type="submit" class="text-sm text-red-600 hover:text-red-800 font-medium"
+                    <button type="submit"
+                            class="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg"
                             onclick="return confirm('{{ __($t.'confirm_stop_all') }}')">
                         <i class="ri-stop-circle-line"></i> {{ __($t.'stop_all') }}
                     </button>
                 </form>
             @endif
+            <form method="POST" action="{{ route('manage.recording.toggle-system', ['subdomain' => $subdomain]) }}" class="inline">
+                @csrf
+                <button type="submit"
+                        class="px-3 py-1.5 text-sm font-medium text-white rounded-lg {{ $recordingSystemEnabled ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' }}"
+                        onclick="return confirm('{{ $recordingSystemEnabled ? __($t.'confirm_disable_system') : __($t.'confirm_enable_system') }}')">
+                    @if($recordingSystemEnabled)
+                        <i class="ri-pause-circle-line"></i> {{ __('supervisor.recording.system_disable_btn', 'إيقاف التسجيل') }}
+                    @else
+                        <i class="ri-play-circle-line"></i> {{ __('supervisor.recording.system_enable_btn', 'تفعيل التسجيل') }}
+                    @endif
+                </button>
+            </form>
         </div>
-        <x-ui.timezone-clock />
     </div>
 </div>
 

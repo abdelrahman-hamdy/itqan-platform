@@ -1847,6 +1847,8 @@ return [
         'system_enabled' => 'Auto-recording system enabled',
         'system_disabled' => 'Auto-recording system disabled',
         'all_stopped' => ':count active recording(s) stopped',
+        'system_disable_btn' => 'Disable Recording',
+        'system_enable_btn' => 'Enable Recording',
         'capacity_active' => 'Active Recordings',
         'capacity_max' => 'Maximum',
         'capacity_queued' => 'Queued',
