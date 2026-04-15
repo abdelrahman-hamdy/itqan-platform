@@ -2,13 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Str;
-use Exception;
-use Agence104\LiveKit\RoomServiceClient;
-use Illuminate\Validation\ValidationException;
-use Livekit\TrackType;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
+use Agence104\LiveKit\RoomServiceClient;
 use Agence104\LiveKit\VideoGrant;
 use App\Enums\UserType;
 use App\Http\Requests\GetLiveKitTokenRequest;
@@ -18,9 +14,13 @@ use App\Http\Requests\MuteParticipantRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Services\LiveKitService;
 use App\Services\RoomPermissionService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Livekit\TrackType;
 
 class LiveKitController extends Controller
 {
@@ -127,25 +127,43 @@ class LiveKitController extends Controller
                 return $this->serverError('LiveKit service not configured');
             }
 
-            // Use room service client to mute/unmute
             $roomService = new RoomServiceClient(
                 config('livekit.api_url'),
                 config('livekit.api_key'),
                 config('livekit.api_secret')
             );
 
-            $result = $roomService->mutePublishedTrack(
-                $roomName,
-                $participantIdentity,
-                $trackSid,
-                $muted
-            );
+            if ($muted) {
+                $roomService->mutePublishedTrack(
+                    $roomName,
+                    $participantIdentity,
+                    $trackSid,
+                    true
+                );
+            } else {
+                // LiveKit rejects mutePublishedTrack(false) without allow_remote_unmute;
+                // use data channel to ask the client to unmute locally.
+                $roomService->sendData(
+                    $roomName,
+                    json_encode([
+                        'type' => 'teacher_control',
+                        'command' => 'request_unmute',
+                        'target_identity' => $participantIdentity,
+                        'track_sid' => $trackSid,
+                        'auto_unmute' => true,
+                    ]),
+                    1, // RELIABLE
+                    [$participantIdentity],
+                    'teacher_control'
+                );
+            }
 
             Log::info('Participant mute/unmute action', [
                 'room' => $roomName,
                 'participant' => $participantIdentity,
                 'track_sid' => $trackSid,
                 'muted' => $muted,
+                'method' => $muted ? 'server_mute' : 'data_channel_unmute',
                 'teacher' => auth()->id(),
             ]);
 
@@ -341,39 +359,67 @@ class LiveKitController extends Controller
                 return $this->notFound('Room not found or LiveKit server unavailable');
             }
 
-            $mutedCount = 0;
+            $affectedCount = 0;
 
             if ($participantsResponse && method_exists($participantsResponse, 'getParticipants')) {
-                foreach ($participantsResponse->getParticipants() as $participant) {
-                    // Parse metadata to check if participant is student
-                    $metadata = $participant->getMetadata() ? json_decode($participant->getMetadata(), true) : [];
+                $studentIdentities = [];
 
-                    // Check if participant is student based on identity or metadata
+                foreach ($participantsResponse->getParticipants() as $participant) {
+                    $metadata = $participant->getMetadata() ? json_decode($participant->getMetadata(), true) : [];
                     $identity = $participant->getIdentity();
                     $isStudent = (isset($metadata['role']) && $metadata['role'] === 'student') ||
                                  (! str_contains($identity, 'teacher') && ! str_contains($identity, 'admin'));
 
-                    if ($isStudent) {
-                        // Find audio tracks and mute them
+                    if (! $isStudent) {
+                        continue;
+                    }
+
+                    if ($muted) {
                         foreach ($participant->getTracks() as $track) {
-                            if ($track->getType() === TrackType::AUDIO) { // Audio type = 0
+                            if ($track->getType() === TrackType::AUDIO) {
                                 try {
                                     $roomService->mutePublishedTrack(
                                         $roomName,
-                                        $participant->getIdentity(),
+                                        $identity,
                                         $track->getSid(),
-                                        $muted
+                                        true
                                     );
-                                    $mutedCount++;
+                                    $affectedCount++;
                                 } catch (Exception $e) {
                                     Log::warning('Failed to mute individual student', [
-                                        'participant' => $participant->getIdentity(),
+                                        'participant' => $identity,
                                         'track_sid' => $track->getSid(),
                                         'error' => $e->getMessage(),
                                     ]);
                                 }
                             }
                         }
+                    } else {
+                        $studentIdentities[] = $identity;
+                        $affectedCount++;
+                    }
+                }
+
+                // Data channel unmute: ask clients to unmute locally
+                if (! $muted && ! empty($studentIdentities)) {
+                    try {
+                        $roomService->sendData(
+                            $roomName,
+                            json_encode([
+                                'type' => 'teacher_control',
+                                'command' => 'request_unmute',
+                                'auto_unmute' => true,
+                                'allow_self_unmute' => true,
+                            ]),
+                            1, // RELIABLE
+                            $studentIdentities,
+                            'teacher_control'
+                        );
+                    } catch (Exception $e) {
+                        Log::warning('Failed to send bulk unmute via data channel', [
+                            'room' => $roomName,
+                            'error' => $e->getMessage(),
+                        ]);
                     }
                 }
             }
@@ -381,13 +427,14 @@ class LiveKitController extends Controller
             Log::info('Bulk mute/unmute students action', [
                 'room' => $roomName,
                 'muted' => $muted,
-                'affected_tracks' => $mutedCount,
+                'affected_count' => $affectedCount,
+                'method' => $muted ? 'server_mute' : 'data_channel_unmute',
                 'teacher' => auth()->id(),
             ]);
 
             return $this->success([
                 'muted' => $muted,
-                'affected_participants' => $mutedCount,
+                'affected_participants' => $affectedCount,
             ]);
 
         } catch (Exception $e) {
@@ -455,33 +502,63 @@ class LiveKitController extends Controller
             $affectedCount = 0;
 
             if ($participantsResponse && method_exists($participantsResponse, 'getParticipants')) {
+                $studentIdentities = [];
+
                 foreach ($participantsResponse->getParticipants() as $participant) {
                     $metadata = $participant->getMetadata() ? json_decode($participant->getMetadata(), true) : [];
                     $identity = $participant->getIdentity();
                     $isStudent = (isset($metadata['role']) && $metadata['role'] === 'student') ||
                                  (! str_contains($identity, 'teacher') && ! str_contains($identity, 'admin'));
 
-                    if ($isStudent) {
-                        // Find video tracks and disable/enable them
+                    if (! $isStudent) {
+                        continue;
+                    }
+
+                    if ($disabled) {
                         foreach ($participant->getTracks() as $track) {
-                            if ($track->getType() === TrackType::VIDEO) { // Video type = 1
+                            if ($track->getType() === TrackType::VIDEO) {
                                 try {
                                     $roomService->mutePublishedTrack(
                                         $roomName,
-                                        $participant->getIdentity(),
+                                        $identity,
                                         $track->getSid(),
-                                        $disabled
+                                        true
                                     );
                                     $affectedCount++;
                                 } catch (Exception $e) {
                                     Log::warning('Failed to control student camera', [
-                                        'participant' => $participant->getIdentity(),
+                                        'participant' => $identity,
                                         'track_sid' => $track->getSid(),
                                         'error' => $e->getMessage(),
                                     ]);
                                 }
                             }
                         }
+                    } else {
+                        $studentIdentities[] = $identity;
+                        $affectedCount++;
+                    }
+                }
+
+                // Data channel: notify clients that camera is allowed again
+                if (! $disabled && ! empty($studentIdentities)) {
+                    try {
+                        $roomService->sendData(
+                            $roomName,
+                            json_encode([
+                                'type' => 'teacher_control',
+                                'command' => 'request_enable_camera',
+                                'auto_enable' => false, // Camera re-enable should be manual
+                            ]),
+                            1, // RELIABLE
+                            $studentIdentities,
+                            'teacher_control'
+                        );
+                    } catch (Exception $e) {
+                        Log::warning('Failed to send camera enable via data channel', [
+                            'room' => $roomName,
+                            'error' => $e->getMessage(),
+                        ]);
                     }
                 }
             }
@@ -489,7 +566,8 @@ class LiveKitController extends Controller
             Log::info('Bulk camera control action', [
                 'room' => $roomName,
                 'disabled' => $disabled,
-                'affected_tracks' => $affectedCount,
+                'affected_count' => $affectedCount,
+                'method' => $disabled ? 'server_mute' : 'data_channel',
                 'teacher' => auth()->id(),
             ]);
 

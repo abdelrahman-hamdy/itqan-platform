@@ -212,15 +212,24 @@ class LiveKitConnection {
             }
         });
 
-        // Adaptive audio bitrate based on connection quality
+        // Adaptive audio bitrate based on connection quality.
+        // Uses the standard WebRTC RTCRtpSender.setParameters() API to
+        // adjust maxBitrate on the fly. Previous code called a non-existent
+        // `setPublishingQuality()` which silently did nothing.
         this.room.on(window.LiveKit.RoomEvent.ConnectionQualityChanged, (quality, participant) => {
             if (!participant.isLocal) return;
             const bitrates = { excellent: 48_000, good: 32_000, poor: 16_000 };
             const q = quality === window.LiveKit.ConnectionQuality.Excellent ? 'excellent'
                     : quality === window.LiveKit.ConnectionQuality.Good ? 'good' : 'poor';
             const pub = this.room.localParticipant.getTrackPublication(window.LiveKit.Track.Source.Microphone);
-            if (pub && pub.track) {
-                pub.track.setPublishingQuality?.(bitrates[q]);
+            if (pub?.track?.sender) {
+                try {
+                    const params = pub.track.sender.getParameters();
+                    if (params.encodings && params.encodings.length > 0) {
+                        params.encodings[0].maxBitrate = bitrates[q];
+                        pub.track.sender.setParameters(params).catch(() => {});
+                    }
+                } catch (_) { /* sender may not support getParameters on all browsers */ }
             }
             if (window.MT) window.MT.event('connection', 'quality_adaptive_bitrate', { quality: q, bitrate: bitrates[q] });
         });
@@ -444,6 +453,11 @@ class LiveKitConnection {
      * Apply RNNoise ML noise suppression directly to the mic track.
      * No noise gate, no gain boost — just RNNoise on raw mic audio.
      * Fails silently on unsupported browsers or stereo mics.
+     *
+     * SAFETY: keeps a reference to the original MediaStreamTrack so that if
+     * the denoised track silently dies (AudioWorklet crash, WASM OOM, tab
+     * backgrounded too long) we can fall back to raw mic audio instead of
+     * publishing silence.
      */
     async applyNoiseSuppression(localAudioTrack) {
         try {
@@ -465,13 +479,87 @@ class LiveKitConnection {
                 return;
             }
 
+            // Keep reference to the original track BEFORE replacing so we can
+            // fall back if the denoised track dies later.
+            this._originalMicTrack = localAudioTrack.mediaStreamTrack;
+            this._denoisedAudioTrack = localAudioTrack; // LiveKit LocalAudioTrack wrapper
+
             this.noiseProcessor = new NoiseSuppressionProcessor();
             const denoisedTrack = await this.noiseProcessor.startProcessing(localAudioTrack.mediaStreamTrack);
+
+            // Monitor the denoised track — if it ends unexpectedly, fall back.
+            denoisedTrack.addEventListener('ended', () => {
+                if (window.MT) window.MT.warn('audio', 'rnnoise_track_ended_unexpectedly', {});
+                this._fallbackToOriginalMic();
+            });
+
             await localAudioTrack.replaceTrack(denoisedTrack);
+            this._startRnnoiseHealthCheck();
             if (window.MT) window.MT.event('audio', 'rnnoise_enabled', { mem, cores });
         } catch (e) {
-            // Stereo mic or unsupported browser — user gets raw audio with browser AEC
             if (window.MT) window.MT.event('audio', 'rnnoise_failed', { error: e.message });
+        }
+    }
+
+    /**
+     * Fall back to the original (raw) microphone track when RNNoise dies.
+     * This prevents silent publishing — the teacher's audio continues with
+     * browser-native AEC instead of RNNoise.
+     */
+    async _fallbackToOriginalMic() {
+        if (!this._originalMicTrack || !this._denoisedAudioTrack) return;
+        if (this._rnnoiseRecovering) return;
+        this._rnnoiseRecovering = true;
+
+        try {
+            if (this._originalMicTrack.readyState !== 'live') {
+                if (window.MT) window.MT.warn('audio', 'rnnoise_fallback_original_dead', {});
+                const opts = window.LiveKitAudioCaptureOptions || { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 };
+                const newStream = await navigator.mediaDevices.getUserMedia({ audio: opts });
+                this._originalMicTrack = newStream.getAudioTracks()[0];
+            }
+
+            await this._denoisedAudioTrack.replaceTrack(this._originalMicTrack);
+            this._stopRnnoiseHealthCheck();
+
+            if (this.noiseProcessor) {
+                try { this.noiseProcessor.stopProcessing(); } catch (_) {}
+                this.noiseProcessor = null;
+            }
+
+            if (window.MT) window.MT.event('audio', 'rnnoise_fallback_to_original', {});
+        } catch (e) {
+            if (window.MT) window.MT.error('audio', 'rnnoise_fallback_failed', e, {});
+        } finally {
+            this._rnnoiseRecovering = false;
+        }
+    }
+
+    /**
+     * Periodically verify the denoised track is still alive.
+     * MediaStreamTrack.onended does not always fire (browser-dependent),
+     * so we poll readyState as a safety net every 5 seconds.
+     */
+    _startRnnoiseHealthCheck() {
+        this._stopRnnoiseHealthCheck();
+        this._rnnoiseHealthInterval = setInterval(() => {
+            if (!this.noiseProcessor) {
+                this._stopRnnoiseHealthCheck();
+                return;
+            }
+            const pub = this.room?.localParticipant?.getTrackPublication(window.LiveKit.Track.Source.Microphone);
+            const currentTrack = pub?.track?.mediaStreamTrack;
+            if (currentTrack && currentTrack.readyState === 'ended') {
+                if (window.MT) window.MT.warn('audio', 'rnnoise_health_check_dead_track', {});
+                this._fallbackToOriginalMic();
+            }
+        }, 5000);
+    }
+
+    _stopRnnoiseHealthCheck() {
+        if (this._rnnoiseHealthInterval) {
+            clearInterval(this._rnnoiseHealthInterval);
+            this._rnnoiseHealthInterval = null;
         }
     }
 
@@ -586,10 +674,13 @@ class LiveKitConnection {
         this._releaseWakeLock();
         this._stopKeepAliveAudio();
         this._teardownVisibilityHandler();
+        this._stopRnnoiseHealthCheck();
         if (this.noiseProcessor) {
             this.noiseProcessor.stopProcessing();
             this.noiseProcessor = null;
         }
+        this._originalMicTrack = null;
+        this._denoisedAudioTrack = null;
         if (this.room && this.isConnected) {
             this.intentionalDisconnect = true;
             await this.room.disconnect();
@@ -723,6 +814,10 @@ class LiveKitConnection {
             clearTimeout(this.stabilityTimerId);
             this.stabilityTimerId = null;
         }
+
+        this._stopRnnoiseHealthCheck();
+        this._originalMicTrack = null;
+        this._denoisedAudioTrack = null;
 
         // Record leave when destroying connection
         if (this.isConnected) {

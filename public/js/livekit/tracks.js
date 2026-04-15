@@ -320,14 +320,8 @@ class LiveKitTracks {
                     // Some mobile browsers need an explicit .play() after attach
                     // even when autoplay is set — e.g. Safari with strict autoplay
                     // policies on the meeting origin.
-                    const playPromise = audioElement.play();
-                    if (playPromise && typeof playPromise.catch === 'function') {
-                        playPromise.catch((playErr) => {
-                            if (window.MT) window.MT.error('tracks', 'audio_play_failed', playErr, {
-                                participant: participantId,
-                            });
-                        });
-                    }
+                    // Fire-and-forget with retry backoff if autoplay is blocked.
+                    this._playAudioWithRetry(audioElement, participantId).catch(() => {});
 
                     if (window.MT) window.MT.event('tracks', 'audio_attached', {
                         participant: participantId,
@@ -642,8 +636,13 @@ class LiveKitTracks {
         this.updateMicrophoneStatusIcon(participantId, false);
         this.updateOverlayMicStatus(participantId, false);
 
-        // Detach track
+        // Detach track and remove orphaned audio element from DOM
         track.detach();
+        const audioEl = document.getElementById(`audio-${participantId}`);
+        if (audioEl && audioEl.parentNode) {
+            audioEl.srcObject = null;
+            audioEl.remove();
+        }
 
         // Remove track reference
         if (this.participantTracks.has(participantId)) {
@@ -892,6 +891,39 @@ class LiveKitTracks {
         }
 
         return audioElement;
+    }
+
+    /**
+     * Play an audio element with exponential backoff retry.
+     * Browsers (especially iOS Safari) may reject play() due to autoplay
+     * policy. We retry a few times in case a user gesture unlocks playback
+     * between attempts (e.g. tapping the autoplay prompt).
+     * @param {HTMLAudioElement} audioElement
+     * @param {string} participantId — for telemetry
+     * @param {number} maxRetries — default 3
+     */
+    async _playAudioWithRetry(audioElement, participantId, maxRetries = 3) {
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                await audioElement.play();
+                if (window.MT && attempt > 0) {
+                    window.MT.event('tracks', 'audio_play_retry_succeeded', {
+                        participant: participantId, attempt,
+                    });
+                }
+                return; // success
+            } catch (playErr) {
+                if (attempt === maxRetries) {
+                    if (window.MT) window.MT.error('tracks', 'audio_play_failed', playErr, {
+                        participant: participantId,
+                        attempts: attempt + 1,
+                    });
+                } else {
+                    // Wait before retrying: 500ms, 1s, 2s
+                    await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
+                }
+            }
+        }
     }
 
         /**

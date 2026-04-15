@@ -808,7 +808,7 @@ class LiveKitMeeting {
     }
 
     /**
-     * CRITICAL FIX: Perform comprehensive sync check
+     * CRITICAL FIX: Perform comprehensive sync check (video + audio)
      */
     async performSyncCheck() {
         const room = this.connection.getRoom();
@@ -816,11 +816,11 @@ class LiveKitMeeting {
 
         for (const [identity, participant] of room.remoteParticipants) {
             const state = this.participantStates.get(identity);
-            
+
             if (!state || !state.tracksSynced) {
                 await this.processParticipantTracksSync(participant);
             }
-            
+
             // Check for missing video elements
             if (participant.videoTracks && participant.videoTracks.size > 0) {
                 for (const publication of participant.videoTracks.values()) {
@@ -832,6 +832,9 @@ class LiveKitMeeting {
                     }
                 }
             }
+
+            // Check for missing or stale audio elements
+            await this._fixStaleAudio(participant);
         }
     }
 
@@ -1080,6 +1083,9 @@ class LiveKitMeeting {
                 this.showNotification(t('connection.reconnected'), 'success');
                 // Hide loading overlay and show meeting interface again
                 this.performSmoothTransition();
+                // Re-verify all audio elements after reconnection —
+                // the SDK re-subscribes tracks but audio elements may be stale
+                this.verifyAllAudioElements();
                 break;
         }
     }
@@ -1771,7 +1777,7 @@ class LiveKitMeeting {
     }
 
     /**
-     * Check and fix missing tracks for participants
+     * Check and fix missing tracks for participants (video + audio)
      */
     async checkAndFixMissingTracks() {
         const room = this.connection.getRoom();
@@ -1792,6 +1798,58 @@ class LiveKitMeeting {
                     }
                 });
             }
+
+            await this._fixStaleAudio(participant);
+        }
+    }
+
+    /**
+     * Check a single participant's audio and re-attach if stale.
+     * Shared by performSyncCheck, checkAndFixMissingTracks, and verifyAllAudioElements.
+     * @returns {boolean} true if a fix was applied
+     */
+    async _fixStaleAudio(participant) {
+        if (!participant.audioTrackPublications || participant.audioTrackPublications.size === 0) return false;
+        const identity = participant.identity;
+        let fixed = false;
+
+        for (const publication of participant.audioTrackPublications.values()) {
+            if (!publication.track || publication.isMuted) continue;
+
+            const audioEl = document.getElementById(`audio-${identity}`);
+            const needsFix = !audioEl
+                || !audioEl.srcObject
+                || audioEl.srcObject.getAudioTracks().length === 0
+                || audioEl.srcObject.getAudioTracks()[0].readyState === 'ended'
+                || audioEl.paused;
+
+            if (needsFix) {
+                if (window.MT) window.MT.warn('tracks', 'audio_sync_reattach', {
+                    participant: identity,
+                    missing: !audioEl,
+                    no_src: audioEl && !audioEl.srcObject,
+                    paused: audioEl && audioEl.paused,
+                });
+                await this.tracks.handleAudioTrackSubscribed(publication.track, publication, participant);
+                fixed = true;
+            }
+        }
+        return fixed;
+    }
+
+    /**
+     * Re-verify all remote audio elements after reconnection.
+     */
+    async verifyAllAudioElements() {
+        const room = this.connection?.getRoom();
+        if (!room) return;
+
+        let fixCount = 0;
+        for (const [, participant] of room.remoteParticipants) {
+            if (await this._fixStaleAudio(participant)) fixCount++;
+        }
+        if (window.MT && fixCount > 0) {
+            window.MT.event('tracks', 'audio_verify_post_reconnect', { fixed: fixCount });
         }
     }
 }

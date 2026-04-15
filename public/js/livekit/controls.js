@@ -583,6 +583,26 @@ class LiveKitControls {
     }
 
     /**
+     * Handle teacher_control commands received via data channel.
+     * Used when the server sends control commands (e.g., remote unmute
+     * requests) directly to participants.
+     */
+    handleTeacherControlCommand(data) {
+        if (!data.command) return;
+
+        switch (data.command) {
+            case 'request_unmute':
+                if (this.userRole === 'student' && data.auto_unmute) {
+                    this.autoUnmuteStudentWithPermission(this.localParticipant?.sid);
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    /**
      * Automatically unmute student when granted permission
      * @param {string} participantSid - Student participant SID
      */
@@ -2505,6 +2525,10 @@ class LiveKitControls {
 
                 case 'globalAudioControl':
                     this.handleGlobalAudioControlEvent(data, participant);
+                    break;
+
+                case 'teacher_control':
+                    this.handleTeacherControlCommand(data);
                     break;
 
                 case 'testMessage':
