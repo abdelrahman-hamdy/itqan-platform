@@ -21,8 +21,9 @@ use Illuminate\Support\Facades\Route;
 
 // Webhooks (no authentication required - validated via signatures)
 // Rate limited to prevent abuse, CSRF excluded since webhooks use signature validation
-Route::prefix('webhooks')->middleware(['throttle:60,1'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])->group(function () {
+Route::prefix('webhooks')->middleware(['throttle:60,1'])->group(function () {
     // Payment gateway webhooks (validated via HMAC)
+    // CSRF exempted via validateCsrfTokens(except: [...]) in bootstrap/app.php
     Route::post('paymob', [PaymobWebhookController::class, 'handle'])->name('webhooks.paymob');
     Route::post('easykash', [EasyKashWebhookController::class, 'handle'])->name('webhooks.easykash');
     Route::post('tap', [TapWebhookController::class, 'handle'])->name('webhooks.tap');

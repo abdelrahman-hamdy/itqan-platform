@@ -44,8 +44,9 @@ Route::prefix('livekit')->middleware(['auth'])->group(function () {
 
 // Webhooks (no authentication required - validated via signatures)
 // Rate limited to prevent abuse, CSRF excluded since webhooks use signature validation
-Route::prefix('webhooks')->middleware(['throttle:60,1'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])->group(function () {
+Route::prefix('webhooks')->middleware(['throttle:60,1'])->group(function () {
     // LiveKit webhooks
+    // CSRF exempted via validateCsrfTokens(except: [...]) in bootstrap/app.php
     Route::post('livekit', [LiveKitWebhookController::class, 'handleWebhook'])->name('webhooks.livekit');
     Route::get('livekit/health', [LiveKitWebhookController::class, 'health'])->name('webhooks.livekit.health');
 });

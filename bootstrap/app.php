@@ -75,7 +75,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'webhooks/livekit',   // LiveKit webhook endpoint
             'webhooks/paymob',    // Paymob payment webhook
             'webhooks/easykash',  // EasyKash payment webhook
+            'webhooks/tap',       // Tap payment webhook
             'api/payments/easykash/callback',  // EasyKash payment callback
+            'api/sessions/meeting/telemetry',  // sendBeacon cannot set CSRF headers
+            'api/sessions/meeting/leave',      // sendBeacon cannot set CSRF headers
             '*/logout',           // Logout should work even with expired CSRF token
         ]);
     })
@@ -96,8 +99,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle CSRF token mismatch gracefully — redirect back with input instead of showing 419 page
         $exceptions->render(function (TokenMismatchException $e, $request) {
-            if ($request->expectsJson()) {
-                return null; // Let default 419 JSON response handle it (csrfFetch retries automatically)
+            if ($request->expectsJson() || $request->hasHeader('X-Livewire')) {
+                return null; // Let default 419 JSON response handle it (Livewire/csrfFetch retry automatically)
             }
 
             $request->session()->regenerateToken();

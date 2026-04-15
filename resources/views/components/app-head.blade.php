@@ -31,7 +31,7 @@
 <!-- Periodic CSRF token refresh — keeps session alive and prevents 419 errors on idle pages -->
 <script>
 (function() {
-    const interval = {{ (int) config('session.lifetime', 120) * 60 * 1000 / 4 }};
+    const interval = Math.min({{ (int) config('session.lifetime', 120) * 60 * 1000 / 4 }}, 900000);
     function refreshToken() {
         fetch('/sanctum/csrf-cookie', { method: 'GET', credentials: 'same-origin' })
             .then(function() {
