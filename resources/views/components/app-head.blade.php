@@ -28,25 +28,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
-<!-- Livewire 419 handler — silently refreshes CSRF token instead of showing "Page Expired" dialog -->
+<!-- Prevents Livewire's default "Page Expired" confirm-dialog on stale CSRF tokens (mobile tab-switch) -->
 <script>
 document.addEventListener('livewire:init', function() {
-    var isRefreshing = false;
+    let isRefreshing = false;
     Livewire.hook('request', function(bundle) {
         bundle.fail(function(ctx) {
             if (ctx.status === 419 && !isRefreshing) {
                 ctx.preventDefault();
                 isRefreshing = true;
                 fetch('/sanctum/csrf-cookie', { method: 'GET', credentials: 'same-origin' })
-                    .then(function() {
-                        var match = document.cookie.match('(?:^|; )XSRF-TOKEN=([^;]*)');
+                    .then(function(response) {
+                        if (!response.ok) throw new Error(response.status);
+                        let match = document.cookie.match('(?:^|; )XSRF-TOKEN=([^;]*)');
                         if (match) {
-                            var token = decodeURIComponent(match[1]);
-                            var meta = document.querySelector('meta[name="csrf-token"]');
+                            let token = decodeURIComponent(match[1]);
+                            let meta = document.querySelector('meta[name="csrf-token"]');
                             if (meta) meta.setAttribute('content', token);
                         }
-                        isRefreshing = false;
-                        Livewire.all().forEach(function(c) { c.$refresh(); });
+                        try { Livewire.all().forEach(function(c) { c.$refresh(); }); }
+                        finally { isRefreshing = false; }
                     })
                     .catch(function() {
                         isRefreshing = false;
