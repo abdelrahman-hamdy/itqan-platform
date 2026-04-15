@@ -53,9 +53,9 @@
                         class="px-3 py-1.5 text-sm font-medium text-white rounded-lg {{ $recordingSystemEnabled ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' }}"
                         onclick="return confirm('{{ $recordingSystemEnabled ? __($t.'confirm_disable_system') : __($t.'confirm_enable_system') }}')">
                     @if($recordingSystemEnabled)
-                        <i class="ri-pause-circle-line"></i> {{ __('supervisor.recording.system_disable_btn', 'إيقاف التسجيل') }}
+                        <i class="ri-pause-circle-line"></i> {{ __($t.'system_disable_btn') }}
                     @else
-                        <i class="ri-play-circle-line"></i> {{ __('supervisor.recording.system_enable_btn', 'تفعيل التسجيل') }}
+                        <i class="ri-play-circle-line"></i> {{ __($t.'system_enable_btn') }}
                     @endif
                 </button>
             </form>
