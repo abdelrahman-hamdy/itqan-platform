@@ -83,7 +83,7 @@
         </p>
         <button onclick="history.length > 1 ? history.back() : (window.location.href = '/')" class="btn">
             {{ app()->getLocale() === 'ar' ? 'إعادة المحاولة' : 'Try Again' }}
-        </a>
+        </button>
         <p class="timer">
             {{ app()->getLocale() === 'ar' ? 'يمكنك المحاولة بعد دقيقة' : 'You can try again after a minute' }}
         </p>
