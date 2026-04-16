@@ -55,7 +55,7 @@ class CourseController extends Controller
                 'currency' => $course->currency ?? getCurrencyCode(null, $course->academy),
                 'start_date' => $course->start_date?->toDateString(),
                 'end_date' => $course->end_date?->toDateString(),
-                'created_at' => $course->created_at->toISOString(),
+                'created_at' => $course->created_at?->toISOString(),
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($courses),
         ], __('Courses retrieved successfully'));
@@ -64,7 +64,7 @@ class CourseController extends Controller
     /**
      * Get course detail.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
@@ -146,7 +146,7 @@ class CourseController extends Controller
                     'duration_minutes' => $session->duration_minutes,
                     'status' => $session->status->value ?? $session->status,
                 ])->toArray(),
-                'created_at' => $course->created_at->toISOString(),
+                'created_at' => $course->created_at?->toISOString(),
             ],
         ], __('Course retrieved successfully'));
     }
@@ -154,7 +154,7 @@ class CourseController extends Controller
     /**
      * Get course students.
      */
-    public function students(Request $request, int $id): JsonResponse
+    public function students(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
@@ -222,7 +222,7 @@ class CourseController extends Controller
                     'status' => $enrollment->status,
                     'progress_percentage' => $enrollment->progress_percentage ?? 0,
                     'completed_sessions' => $enrollment->completed_sessions ?? 0,
-                    'enrolled_at' => $enrollment->created_at->toISOString(),
+                    'enrolled_at' => $enrollment->created_at?->toISOString(),
                     'certificate' => $certificateData,
                     'can_chat' => $canChat,
                 ];
@@ -234,7 +234,7 @@ class CourseController extends Controller
     /**
      * Get certificates for a course.
      */
-    public function certificates(Request $request, int $id): JsonResponse
+    public function certificates(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;

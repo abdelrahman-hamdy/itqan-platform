@@ -126,7 +126,7 @@ class RecordedCourseController extends Controller
     /**
      * Get a specific recorded course details.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -244,7 +244,7 @@ class RecordedCourseController extends Controller
     /**
      * Get lessons for a specific course (flat list).
      */
-    public function lessons(Request $request, int $id): JsonResponse
+    public function lessons(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -314,7 +314,7 @@ class RecordedCourseController extends Controller
      * @param  int  $id  Course ID
      * @param  int  $lessonId  Lesson ID
      */
-    public function lesson(Request $request, int $id, int $lessonId): JsonResponse
+    public function lesson(Request $request, string $id, int $lessonId): JsonResponse
     {
         $user = $request->user();
 
@@ -401,7 +401,7 @@ class RecordedCourseController extends Controller
      * @param  int  $id  Course ID
      * @param  int  $lessonId  Lesson ID
      */
-    public function updateProgress(Request $request, int $id, int $lessonId): JsonResponse
+    public function updateProgress(Request $request, string $id, int $lessonId): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'current_position_seconds' => ['required', 'integer', 'min:0'],
@@ -474,7 +474,7 @@ class RecordedCourseController extends Controller
      * @param  int  $id  Course ID
      * @param  int  $lessonId  Lesson ID
      */
-    public function materials(Request $request, int $id, int $lessonId): JsonResponse
+    public function materials(Request $request, string $id, int $lessonId): JsonResponse
     {
         $user = $request->user();
 
@@ -520,7 +520,7 @@ class RecordedCourseController extends Controller
      * @param  int  $id  Course ID
      * @param  int  $lessonId  Lesson ID
      */
-    public function addNote(Request $request, int $id, int $lessonId): JsonResponse
+    public function addNote(Request $request, string $id, int $lessonId): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'note' => ['required', 'string', 'max:2000'],
@@ -581,7 +581,7 @@ class RecordedCourseController extends Controller
      * @param  int  $id  Course ID
      * @param  int  $lessonId  Lesson ID
      */
-    public function rate(Request $request, int $id, int $lessonId): JsonResponse
+    public function rate(Request $request, string $id, int $lessonId): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
@@ -637,7 +637,7 @@ class RecordedCourseController extends Controller
      * @param  int  $id  Course ID
      * @param  int  $lessonId  Lesson ID
      */
-    public function toggleBookmark(Request $request, int $id, int $lessonId): JsonResponse
+    public function toggleBookmark(Request $request, string $id, int $lessonId): JsonResponse
     {
         $user = $request->user();
 
@@ -690,7 +690,7 @@ class RecordedCourseController extends Controller
      *
      * @param  int  $id  Course ID
      */
-    public function bookmarks(Request $request, int $id): JsonResponse
+    public function bookmarks(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 

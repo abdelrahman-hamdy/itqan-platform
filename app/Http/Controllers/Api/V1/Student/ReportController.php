@@ -81,7 +81,7 @@ class ReportController extends Controller
     /**
      * Get a single report by session type and session ID.
      */
-    public function show(Request $request, string $type, int $sessionId): JsonResponse
+    public function show(Request $request, string $type, string $sessionId): JsonResponse
     {
         $user = $request->user();
 
@@ -151,7 +151,7 @@ class ReportController extends Controller
     /**
      * Get formatted Quran reports for a student.
      */
-    private function getQuranReports(int $studentId, ?string $dateFrom, ?string $dateTo): Collection
+    private function getQuranReports(string $studentId, ?string $dateFrom, ?string $dateTo): Collection
     {
         $query = StudentSessionReport::where('student_id', $studentId)
             ->whereNotNull('evaluated_at')
@@ -167,7 +167,7 @@ class ReportController extends Controller
     /**
      * Get formatted Academic reports for a student.
      */
-    private function getAcademicReports(int $studentId, ?string $dateFrom, ?string $dateTo): Collection
+    private function getAcademicReports(string $studentId, ?string $dateFrom, ?string $dateTo): Collection
     {
         $query = AcademicSessionReport::where('student_id', $studentId)
             ->whereNotNull('evaluated_at')
@@ -183,7 +183,7 @@ class ReportController extends Controller
     /**
      * Get formatted Interactive reports for a student.
      */
-    private function getInteractiveReports(int $studentId, ?string $dateFrom, ?string $dateTo): Collection
+    private function getInteractiveReports(string $studentId, ?string $dateFrom, ?string $dateTo): Collection
     {
         $query = InteractiveSessionReport::where('student_id', $studentId)
             ->whereNotNull('evaluated_at')
@@ -199,7 +199,7 @@ class ReportController extends Controller
     /**
      * Get a single Quran report with full detail.
      */
-    private function getQuranReportDetail(int $studentId, int $sessionId): ?array
+    private function getQuranReportDetail(string $studentId, int $sessionId): ?array
     {
         $report = StudentSessionReport::where('student_id', $studentId)
             ->where('session_id', $sessionId)
@@ -216,7 +216,7 @@ class ReportController extends Controller
     /**
      * Get a single Academic report with full detail.
      */
-    private function getAcademicReportDetail(int $studentId, int $sessionId): ?array
+    private function getAcademicReportDetail(string $studentId, int $sessionId): ?array
     {
         $report = AcademicSessionReport::where('student_id', $studentId)
             ->where('session_id', $sessionId)
@@ -233,7 +233,7 @@ class ReportController extends Controller
     /**
      * Get a single Interactive report with full detail.
      */
-    private function getInteractiveReportDetail(int $studentId, int $sessionId): ?array
+    private function getInteractiveReportDetail(string $studentId, int $sessionId): ?array
     {
         $report = InteractiveSessionReport::where('student_id', $studentId)
             ->where('session_id', $sessionId)

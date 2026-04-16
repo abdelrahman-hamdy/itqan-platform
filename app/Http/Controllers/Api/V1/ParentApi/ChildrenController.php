@@ -42,7 +42,7 @@ class ChildrenController extends Controller
                 'email' => $rel->student->email,
                 'phone' => $rel->student->phone,
                 'birth_date' => $rel->student->birth_date?->toDateString(),
-                'linked_at' => $rel->created_at->toISOString(),
+                'linked_at' => $rel->created_at?->toISOString(),
             ])->toArray(),
             'total' => $children->count(),
         ], __('Children retrieved successfully'));
@@ -118,7 +118,7 @@ class ChildrenController extends Controller
     /**
      * Get a specific child.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -159,7 +159,7 @@ class ChildrenController extends Controller
                 ] : null,
                 'enrollment_date' => $student->enrollment_date?->toDateString(),
                 'relationship' => $relationship->relationship_type,
-                'linked_at' => $relationship->created_at->toISOString(),
+                'linked_at' => $relationship->created_at?->toISOString(),
             ],
         ], __('Child retrieved successfully'));
     }
@@ -167,7 +167,7 @@ class ChildrenController extends Controller
     /**
      * Set a child as active (for parent dashboard focus).
      */
-    public function setActive(Request $request, int $id): JsonResponse
+    public function setActive(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -194,7 +194,7 @@ class ChildrenController extends Controller
     /**
      * Unlink a child.
      */
-    public function unlink(Request $request, int $id): JsonResponse
+    public function unlink(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();

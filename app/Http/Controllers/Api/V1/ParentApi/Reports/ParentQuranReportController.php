@@ -23,7 +23,7 @@ class ParentQuranReportController extends BaseParentReportController
     /**
      * Get Quran progress report for children.
      */
-    public function progress(Request $request, ?int $childId = null): JsonResponse
+    public function progress(Request $request, ?string $childId = null): JsonResponse
     {
         $result = $this->validateParentAccess($request);
         if ($result instanceof JsonResponse) {
@@ -60,7 +60,7 @@ class ParentQuranReportController extends BaseParentReportController
     /**
      * Get Quran attendance report for children.
      */
-    public function attendance(Request $request, ?int $childId = null): JsonResponse
+    public function attendance(Request $request, ?string $childId = null): JsonResponse
     {
         $result = $this->validateParentAccess($request);
         if ($result instanceof JsonResponse) {
@@ -103,7 +103,7 @@ class ParentQuranReportController extends BaseParentReportController
     /**
      * Get Quran subscription report.
      */
-    public function subscription(Request $request, int $id): JsonResponse
+    public function subscription(Request $request, string $id): JsonResponse
     {
         $result = $this->validateParentAccess($request);
         if ($result instanceof JsonResponse) {

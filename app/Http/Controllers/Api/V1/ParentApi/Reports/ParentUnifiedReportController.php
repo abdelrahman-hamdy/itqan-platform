@@ -26,7 +26,7 @@ class ParentUnifiedReportController extends BaseParentReportController
     /**
      * Get overall progress report for all children or a specific child.
      */
-    public function progress(Request $request, ?int $childId = null): JsonResponse
+    public function progress(Request $request, ?string $childId = null): JsonResponse
     {
         $result = $this->validateParentAccess($request);
         if ($result instanceof JsonResponse) {
@@ -81,7 +81,7 @@ class ParentUnifiedReportController extends BaseParentReportController
     /**
      * Get overall attendance report for all children or a specific child.
      */
-    public function attendance(Request $request, ?int $childId = null): JsonResponse
+    public function attendance(Request $request, ?string $childId = null): JsonResponse
     {
         $result = $this->validateParentAccess($request);
         if ($result instanceof JsonResponse) {
@@ -195,7 +195,7 @@ class ParentUnifiedReportController extends BaseParentReportController
     /**
      * Get Course progress for a student.
      */
-    protected function getCourseProgress(int $studentId): array
+    protected function getCourseProgress(string $studentId): array
     {
         $enrollments = CourseSubscription::where('student_id', $studentId)
             ->with(['interactiveCourse', 'recordedCourse'])

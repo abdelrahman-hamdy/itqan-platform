@@ -103,7 +103,7 @@ class CircleController extends Controller
     /**
      * Get details of a specific Quran circle.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $academy = $request->attributes->get('academy') ?? current_academy();
 
@@ -145,7 +145,7 @@ class CircleController extends Controller
         ], __('Circle retrieved successfully'));
     }
 
-    public function requestSponsoredEnrollment(Request $request, int $id): JsonResponse
+    public function requestSponsoredEnrollment(Request $request, string $id): JsonResponse
     {
         $user = auth()->user();
         $academy = $request->attributes->get('academy') ?? current_academy();

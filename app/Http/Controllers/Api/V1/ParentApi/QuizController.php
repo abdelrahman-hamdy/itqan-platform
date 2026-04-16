@@ -70,7 +70,7 @@ class QuizController extends Controller
                     'time_taken_minutes' => $attempt->time_taken_minutes,
                     'started_at' => $attempt->started_at?->toISOString(),
                     'completed_at' => $attempt->completed_at?->toISOString(),
-                    'created_at' => $attempt->created_at->toISOString(),
+                    'created_at' => $attempt->created_at?->toISOString(),
                 ];
             }
         }
@@ -103,7 +103,7 @@ class QuizController extends Controller
     /**
      * Get quizzes for a specific child.
      */
-    public function childQuizzes(Request $request, int $childId): JsonResponse
+    public function childQuizzes(Request $request, string $childId): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -155,7 +155,7 @@ class QuizController extends Controller
                 'time_taken_minutes' => $attempt->time_taken_minutes,
                 'started_at' => $attempt->started_at?->toISOString(),
                 'completed_at' => $attempt->completed_at?->toISOString(),
-                'created_at' => $attempt->created_at->toISOString(),
+                'created_at' => $attempt->created_at?->toISOString(),
             ])->toArray(),
             'stats' => $this->getChildQuizStats($student->id),
             'pagination' => PaginationHelper::fromPaginator($attempts),
@@ -165,7 +165,7 @@ class QuizController extends Controller
     /**
      * Get a specific quiz result.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -229,7 +229,7 @@ class QuizController extends Controller
     /**
      * Get quiz stats for a child.
      */
-    protected function getChildQuizStats(int $studentId): array
+    protected function getChildQuizStats(string $studentId): array
     {
         $attempts = QuizAttempt::where('student_id', $studentId)->get();
 

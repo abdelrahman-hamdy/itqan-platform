@@ -171,10 +171,10 @@ class ChatController extends Controller
                         'body' => $conversation->lastMessage->body,
                         'type' => $conversation->lastMessage->type,
                         'is_mine' => $conversation->lastMessage->sendable?->id === $user->id,
-                        'created_at' => $conversation->lastMessage->created_at->toISOString(),
+                        'created_at' => $conversation->lastMessage->created_at?->toISOString(),
                     ] : null,
                     'unread_count' => $unreadCount,
-                    'updated_at' => $conversation->updated_at->toISOString(),
+                    'updated_at' => $conversation->updated_at?->toISOString(),
                     'current_user_id' => $user->id,
                 ];
             })->toArray(),
@@ -413,7 +413,7 @@ class ChatController extends Controller
                     'student' => $studentParticipant,
                 ] : null,
                 'current_user_id' => $user->id,
-                'created_at' => $conversation->created_at->toISOString(),
+                'created_at' => $conversation->created_at?->toISOString(),
             ],
         ], __('Conversation retrieved successfully'));
     }
@@ -464,7 +464,7 @@ class ChatController extends Controller
                             ? asset('storage/'.$sender->avatar)
                             : null,
                     ],
-                    'created_at' => $message->created_at->toISOString(),
+                    'created_at' => $message->created_at?->toISOString(),
                 ];
             })->toArray(),
             'pagination' => PaginationHelper::fromPaginator($messages),
@@ -564,7 +564,7 @@ class ChatController extends Controller
                     'mime' => $attachment->mime_type,
                 ]] : [],
                 'is_mine' => true,
-                'created_at' => $message->created_at->toISOString(),
+                'created_at' => $message->created_at?->toISOString(),
             ],
         ], __('Message sent'));
     }
@@ -654,7 +654,7 @@ class ChatController extends Controller
     /**
      * Edit a message
      */
-    public function editMessage(Request $request, int $messageId): JsonResponse
+    public function editMessage(Request $request, string $messageId): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'body' => ['required', 'string', 'max:5000'],
@@ -700,7 +700,7 @@ class ChatController extends Controller
     /**
      * Delete a message
      */
-    public function deleteMessage(Request $request, int $messageId): JsonResponse
+    public function deleteMessage(Request $request, string $messageId): JsonResponse
     {
         $user = $request->user();
         $message = Message::find($messageId);
@@ -920,10 +920,10 @@ class ChatController extends Controller
                         'body' => $conversation->lastMessage->body,
                         'type' => $conversation->lastMessage->type,
                         'is_mine' => $conversation->lastMessage->sendable?->id === $user->id,
-                        'created_at' => $conversation->lastMessage->created_at->toISOString(),
+                        'created_at' => $conversation->lastMessage->created_at?->toISOString(),
                     ] : null,
                     'unread_count' => $unreadCount,
-                    'updated_at' => $conversation->updated_at->toISOString(),
+                    'updated_at' => $conversation->updated_at?->toISOString(),
                     'current_user_id' => $user->id,
                 ];
             })->toArray(),
@@ -994,8 +994,8 @@ class ChatController extends Controller
                 'type' => $conversation->type,
                 'name' => $conversation->name,
                 'description' => $conversation->description ?? null,
-                'created_at' => $conversation->created_at->toISOString(),
-                'updated_at' => $conversation->updated_at->toISOString(),
+                'created_at' => $conversation->created_at?->toISOString(),
+                'updated_at' => $conversation->updated_at?->toISOString(),
                 'participants_count' => count($participants),
                 'is_supervised' => $isSupervisedChat,
             ],
@@ -1057,7 +1057,7 @@ class ChatController extends Controller
                             'id' => $sender?->id,
                             'name' => $sender?->name,
                         ],
-                        'sent_at' => $message->created_at->toISOString(),
+                        'sent_at' => $message->created_at?->toISOString(),
                     ];
                 })
                 ->values()

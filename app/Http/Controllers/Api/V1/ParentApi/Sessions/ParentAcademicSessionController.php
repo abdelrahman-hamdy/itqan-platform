@@ -79,7 +79,7 @@ class ParentAcademicSessionController extends BaseParentSessionController
     /**
      * Get a specific Academic session.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();

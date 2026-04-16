@@ -18,7 +18,7 @@ class ParentInteractiveReportController extends BaseParentReportController
     /**
      * Get Interactive Course progress report for children.
      */
-    public function progress(Request $request, ?int $childId = null): JsonResponse
+    public function progress(Request $request, ?string $childId = null): JsonResponse
     {
         $result = $this->validateParentAccess($request);
         if ($result instanceof JsonResponse) {
@@ -55,7 +55,7 @@ class ParentInteractiveReportController extends BaseParentReportController
     /**
      * Get course subscription (enrollment) report.
      */
-    public function subscription(Request $request, int $id): JsonResponse
+    public function subscription(Request $request, string $id): JsonResponse
     {
         $result = $this->validateParentAccess($request);
         if ($result instanceof JsonResponse) {
@@ -89,7 +89,7 @@ class ParentInteractiveReportController extends BaseParentReportController
     /**
      * Get Course progress for a student.
      */
-    protected function getCourseProgress(int $studentId): array
+    protected function getCourseProgress(string $studentId): array
     {
         $enrollments = CourseSubscription::where('student_id', $studentId)
             ->with(['interactiveCourse', 'recordedCourse'])

@@ -331,7 +331,7 @@ class DashboardController extends Controller
                         'session_type' => 'quran',
                         'session_id' => $session->id,
                         'description' => 'أكملت جلسة قرآنية مع '.($session->student?->name ?? 'طالب'),
-                        'timestamp' => $session->ended_at?->toISOString() ?? $session->updated_at->toISOString(),
+                        'timestamp' => $session->ended_at?->toISOString() ?? $session->updated_at?->toISOString(),
                     ];
                 }
             }
@@ -354,7 +354,7 @@ class DashboardController extends Controller
                         'session_type' => 'academic',
                         'session_id' => $session->id,
                         'description' => 'أكملت جلسة أكاديمية مع '.($session->student?->name ?? 'طالب'),
-                        'timestamp' => $session->ended_at?->toISOString() ?? $session->updated_at->toISOString(),
+                        'timestamp' => $session->ended_at?->toISOString() ?? $session->updated_at?->toISOString(),
                     ];
                 }
             }

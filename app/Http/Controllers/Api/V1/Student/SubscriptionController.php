@@ -144,7 +144,7 @@ class SubscriptionController extends Controller
     /**
      * Get a specific subscription.
      */
-    public function show(Request $request, string $type, int $id): JsonResponse
+    public function show(Request $request, string $type, string $id): JsonResponse
     {
         // Validate type parameter - quran_group is treated as quran for lookup
         if (! in_array($type, ['quran', 'quran_group', 'academic', 'course'])) {
@@ -212,7 +212,7 @@ class SubscriptionController extends Controller
     /**
      * Get sessions for a specific subscription.
      */
-    public function sessions(Request $request, string $type, int $id): JsonResponse
+    public function sessions(Request $request, string $type, string $id): JsonResponse
     {
         // Validate type parameter
         if (! in_array($type, ['quran', 'quran_group', 'academic', 'course'])) {
@@ -316,7 +316,7 @@ class SubscriptionController extends Controller
     /**
      * Toggle auto-renew for a subscription.
      */
-    public function toggleAutoRenew(Request $request, string $type, int $id): JsonResponse
+    public function toggleAutoRenew(Request $request, string $type, string $id): JsonResponse
     {
         // Validate type parameter (only quran, quran_group, and academic support auto-renew)
         if (! in_array($type, ['quran', 'quran_group', 'academic'])) {
@@ -366,7 +366,7 @@ class SubscriptionController extends Controller
     /**
      * Cancel a subscription.
      */
-    public function cancel(Request $request, string $type, int $id): JsonResponse
+    public function cancel(Request $request, string $type, string $id): JsonResponse
     {
         // Validate type parameter
         if (! in_array($type, ['quran', 'quran_group', 'academic', 'course'])) {
@@ -438,7 +438,7 @@ class SubscriptionController extends Controller
     /**
      * Get report data for a subscription using the same services as the web app.
      */
-    public function report(Request $request, string $type, int $id): JsonResponse
+    public function report(Request $request, string $type, string $id): JsonResponse
     {
         if (! in_array($type, ['quran', 'quran_group', 'academic'])) {
             return $this->error(
@@ -583,7 +583,7 @@ class SubscriptionController extends Controller
     /**
      * Renew or resubscribe to a subscription.
      */
-    public function renew(Request $request, string $type, int $id): JsonResponse
+    public function renew(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
         $subscription = $this->findSubscription($user, $type, $id);
@@ -630,7 +630,7 @@ class SubscriptionController extends Controller
     /**
      * Find a subscription owned by the given user.
      */
-    protected function findSubscription($user, string $type, int $id)
+    protected function findSubscription($user, string $type, string $id)
     {
         $modelClass = match ($type) {
             'quran', 'quran_group' => \App\Models\QuranSubscription::class,
@@ -703,7 +703,7 @@ class SubscriptionController extends Controller
                 : null,
             'paid_until' => ($subscription->ends_at ?? $subscription->end_date)?->toDateString(),
             ...$this->formatCycleFields($subscription),
-            'created_at' => $subscription->created_at->toISOString(),
+            'created_at' => $subscription->created_at?->toISOString(),
         ];
 
         // Add group circle info for quran_group type

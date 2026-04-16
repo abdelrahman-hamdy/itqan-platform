@@ -105,7 +105,7 @@ class AcademicSessionController extends BaseStudentSessionController
     /**
      * Get a specific Academic session.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -139,7 +139,7 @@ class AcademicSessionController extends BaseStudentSessionController
     /**
      * Submit feedback for an Academic session.
      */
-    public function submitFeedback(Request $request, int $id): JsonResponse
+    public function submitFeedback(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'rating' => ['required', 'integer', 'min:1', 'max:5'],

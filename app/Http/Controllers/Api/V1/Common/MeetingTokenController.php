@@ -35,7 +35,7 @@ class MeetingTokenController extends Controller
     /**
      * Get meeting token for a session.
      */
-    public function getToken(Request $request, string $sessionType, int $sessionId): JsonResponse
+    public function getToken(Request $request, string $sessionType, string $sessionId): JsonResponse
     {
         $user = $request->user();
         $session = $this->getSession($sessionType, $sessionId, $user->id);
@@ -144,7 +144,7 @@ class MeetingTokenController extends Controller
     /**
      * Get meeting info without token.
      */
-    public function getInfo(Request $request, string $sessionType, int $sessionId): JsonResponse
+    public function getInfo(Request $request, string $sessionType, string $sessionId): JsonResponse
     {
         $user = $request->user();
         $session = $this->getSession($sessionType, $sessionId, $user->id);
@@ -186,7 +186,7 @@ class MeetingTokenController extends Controller
     /**
      * Start or create a meeting for a session (teacher only).
      */
-    public function startMeeting(Request $request, string $sessionType, int $sessionId): JsonResponse
+    public function startMeeting(Request $request, string $sessionType, string $sessionId): JsonResponse
     {
         $user = $request->user();
         $session = $this->getSession($sessionType, $sessionId, $user->id);
@@ -268,7 +268,7 @@ class MeetingTokenController extends Controller
     /**
      * End a meeting (teacher only).
      */
-    public function endMeeting(Request $request, string $sessionType, int $sessionId): JsonResponse
+    public function endMeeting(Request $request, string $sessionType, string $sessionId): JsonResponse
     {
         $user = $request->user();
         $session = $this->getSession($sessionType, $sessionId, $user->id);
@@ -328,7 +328,7 @@ class MeetingTokenController extends Controller
     /**
      * Get participants currently in the meeting.
      */
-    public function getParticipants(Request $request, string $sessionType, int $sessionId): JsonResponse
+    public function getParticipants(Request $request, string $sessionType, string $sessionId): JsonResponse
     {
         $user = $request->user();
         $session = $this->getSession($sessionType, $sessionId, $user->id);
@@ -379,7 +379,7 @@ class MeetingTokenController extends Controller
     /**
      * Remove a participant from the meeting (teacher only).
      */
-    public function kickParticipant(Request $request, string $sessionType, int $sessionId): JsonResponse
+    public function kickParticipant(Request $request, string $sessionType, string $sessionId): JsonResponse
     {
         $user = $request->user();
         $session = $this->getSession($sessionType, $sessionId, $user->id);
@@ -451,7 +451,7 @@ class MeetingTokenController extends Controller
     /**
      * Get session by type and ID.
      */
-    protected function getSession(string $type, int $id, int $userId)
+    protected function getSession(string $type, string $id, int $userId)
     {
         return match ($type) {
             'quran' => QuranSession::where('id', $id)

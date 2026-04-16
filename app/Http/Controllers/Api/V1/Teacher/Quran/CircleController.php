@@ -61,7 +61,7 @@ class CircleController extends Controller
                 'completed_sessions' => $circle->subscription?->completed_sessions_count ?? 0,
                 'remaining_sessions' => $circle->subscription?->remaining_sessions ?? 0,
                 'schedule' => $circle->schedule ?? [],
-                'created_at' => $circle->created_at->toISOString(),
+                'created_at' => $circle->created_at?->toISOString(),
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($circles),
         ], __('Individual circles retrieved successfully'));
@@ -70,7 +70,7 @@ class CircleController extends Controller
     /**
      * Get individual circle detail.
      */
-    public function individualShow(Request $request, int $id): JsonResponse
+    public function individualShow(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -165,7 +165,7 @@ class CircleController extends Controller
                 'progress' => [
                     'total_memorized_pages' => $circle->total_memorized_pages,
                 ],
-                'created_at' => $circle->created_at->toISOString(),
+                'created_at' => $circle->created_at?->toISOString(),
             ],
         ], __('Circle retrieved successfully'));
     }
@@ -204,7 +204,7 @@ class CircleController extends Controller
                 'max_students' => $circle->max_students,
                 'level' => $circle->level,
                 'schedule' => $circle->schedule ?? [],
-                'created_at' => $circle->created_at->toISOString(),
+                'created_at' => $circle->created_at?->toISOString(),
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($circles),
         ], __('Group circles retrieved successfully'));
@@ -213,7 +213,7 @@ class CircleController extends Controller
     /**
      * Get group circle detail.
      */
-    public function groupShow(Request $request, int $id): JsonResponse
+    public function groupShow(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -275,7 +275,7 @@ class CircleController extends Controller
                     'scheduled_at' => $s->scheduled_at?->toISOString(),
                     'status' => $s->status->value ?? $s->status,
                 ])->toArray(),
-                'created_at' => $circle->created_at->toISOString(),
+                'created_at' => $circle->created_at?->toISOString(),
             ],
         ], __('Circle retrieved successfully'));
     }
@@ -283,7 +283,7 @@ class CircleController extends Controller
     /**
      * Get students in a group circle.
      */
-    public function groupStudents(Request $request, int $id): JsonResponse
+    public function groupStudents(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -357,7 +357,7 @@ class CircleController extends Controller
     /**
      * Get certificates for a group circle.
      */
-    public function groupCertificates(Request $request, int $id): JsonResponse
+    public function groupCertificates(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 

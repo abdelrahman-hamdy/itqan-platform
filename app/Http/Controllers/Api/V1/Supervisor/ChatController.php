@@ -65,11 +65,11 @@ class ChatController extends Controller
                         'id' => $group->conversation->lastMessage->id,
                         'body' => $group->conversation->lastMessage->body,
                         'sender_name' => $group->conversation->lastMessage->sendable?->name,
-                        'created_at' => $group->conversation->lastMessage->created_at->toISOString(),
+                        'created_at' => $group->conversation->lastMessage->created_at?->toISOString(),
                     ] : null,
                     'unread_count' => $unreadCount,
                     'metadata' => $group->metadata ?? [],
-                    'created_at' => $group->created_at->toISOString(),
+                    'created_at' => $group->created_at?->toISOString(),
                 ];
             })->toArray(),
             'pagination' => PaginationHelper::fromPaginator($groups),
@@ -79,7 +79,7 @@ class ChatController extends Controller
     /**
      * Get members of a supervised group
      */
-    public function getGroupMembers(Request $request, int $id): JsonResponse
+    public function getGroupMembers(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 

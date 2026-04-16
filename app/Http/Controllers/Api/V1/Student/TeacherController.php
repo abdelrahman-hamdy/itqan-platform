@@ -88,7 +88,7 @@ class TeacherController extends Controller
     /**
      * Get a specific Quran teacher.
      */
-    public function showQuranTeacher(Request $request, int $id): JsonResponse
+    public function showQuranTeacher(Request $request, string $id): JsonResponse
     {
         $academy = $request->attributes->get('academy') ?? current_academy();
 
@@ -235,7 +235,7 @@ class TeacherController extends Controller
     /**
      * Get a specific Academic teacher.
      */
-    public function showAcademicTeacher(Request $request, int $id): JsonResponse
+    public function showAcademicTeacher(Request $request, string $id): JsonResponse
     {
         $academy = $request->attributes->get('academy') ?? current_academy();
 

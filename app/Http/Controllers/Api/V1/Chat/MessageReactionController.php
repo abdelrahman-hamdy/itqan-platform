@@ -28,7 +28,7 @@ class MessageReactionController extends Controller
      * @param int $messageId
      * @return JsonResponse
      */
-    public function store(Request $request, int $messageId): JsonResponse
+    public function store(Request $request, string $messageId): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'emoji' => ['required', 'string', 'max:10'],
@@ -93,7 +93,7 @@ class MessageReactionController extends Controller
      * @param string $emoji
      * @return JsonResponse
      */
-    public function destroy(Request $request, int $messageId, string $emoji): JsonResponse
+    public function destroy(Request $request, string $messageId, string $emoji): JsonResponse
     {
         $user = $request->user();
         $message = Message::find($messageId);
@@ -129,7 +129,7 @@ class MessageReactionController extends Controller
      * @param int $messageId
      * @return JsonResponse
      */
-    public function index(Request $request, int $messageId): JsonResponse
+    public function index(Request $request, string $messageId): JsonResponse
     {
         $message = Message::find($messageId);
 

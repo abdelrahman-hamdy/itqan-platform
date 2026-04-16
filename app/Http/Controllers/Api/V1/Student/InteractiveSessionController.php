@@ -136,7 +136,7 @@ class InteractiveSessionController extends BaseStudentSessionController
     /**
      * Get a specific Interactive session.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $studentProfileId = $user->studentProfile?->id;
@@ -177,7 +177,7 @@ class InteractiveSessionController extends BaseStudentSessionController
     /**
      * Submit feedback for an Interactive session.
      */
-    public function submitFeedback(Request $request, int $id): JsonResponse
+    public function submitFeedback(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'rating' => ['required', 'integer', 'min:1', 'max:5'],

@@ -78,7 +78,7 @@ class HomeworkController extends Controller
                     'due_date' => $hw->due_date?->toDateString(),
                     'submissions_count' => $hw->submissions?->count() ?? 0,
                     'pending_submissions' => $hw->submissions?->whereIn('submission_status', [HomeworkSubmissionStatus::SUBMITTED->value, HomeworkSubmissionStatus::LATE->value])->count() ?? 0,
-                    'created_at' => $hw->created_at->toISOString(),
+                    'created_at' => $hw->created_at?->toISOString(),
                 ];
             }
         }
@@ -101,7 +101,7 @@ class HomeworkController extends Controller
     /**
      * Get homework detail.
      */
-    public function show(Request $request, string $type, int $id): JsonResponse
+    public function show(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
@@ -272,7 +272,7 @@ class HomeworkController extends Controller
     /**
      * Update homework.
      */
-    public function update(Request $request, string $type, int $id): JsonResponse
+    public function update(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -344,7 +344,7 @@ class HomeworkController extends Controller
      *
      * @param  int  $id  For academic: session_id, For interactive: homework_id
      */
-    public function submissions(Request $request, string $type, int $id): JsonResponse
+    public function submissions(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;

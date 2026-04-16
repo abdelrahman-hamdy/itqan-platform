@@ -297,7 +297,7 @@ class HomeworkController extends Controller
     /**
      * Get a specific homework assignment.
      */
-    public function show(Request $request, string $type, int $id): JsonResponse
+    public function show(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -469,7 +469,7 @@ class HomeworkController extends Controller
     /**
      * Get homework for a specific child.
      */
-    public function childHomework(Request $request, int $childId): JsonResponse
+    public function childHomework(Request $request, string $childId): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();

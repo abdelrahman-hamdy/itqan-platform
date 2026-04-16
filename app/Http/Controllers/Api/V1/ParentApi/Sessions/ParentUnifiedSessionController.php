@@ -89,7 +89,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
     /**
      * Get a specific session by type and ID.
      */
-    public function show(Request $request, string $type, int $id): JsonResponse
+    public function show(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -504,7 +504,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
     /**
      * Get interactive session with enrollment check.
      */
-    protected function getInteractiveSession(int $id, array $childUserIds)
+    protected function getInteractiveSession(string $id, array $childUserIds)
     {
         $enrolledCourseIds = CourseSubscription::whereIn('student_id', $childUserIds)
             ->pluck('interactive_course_id');

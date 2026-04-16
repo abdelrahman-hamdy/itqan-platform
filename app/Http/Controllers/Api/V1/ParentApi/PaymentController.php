@@ -76,7 +76,7 @@ class PaymentController extends Controller
                 'payable_type' => class_basename($payment->payable_type ?? ''),
                 'payable_id' => $payment->payable_id,
                 'paid_at' => $payment->paid_at?->toISOString(),
-                'created_at' => $payment->created_at->toISOString(),
+                'created_at' => $payment->created_at?->toISOString(),
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($payments),
         ], __('Payments retrieved successfully'));
@@ -85,7 +85,7 @@ class PaymentController extends Controller
     /**
      * Get a specific payment.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -124,7 +124,7 @@ class PaymentController extends Controller
                 'payable_details' => $this->getPayableDetails($payment),
                 'metadata' => $payment->metadata,
                 'paid_at' => $payment->paid_at?->toISOString(),
-                'created_at' => $payment->created_at->toISOString(),
+                'created_at' => $payment->created_at?->toISOString(),
             ],
         ], __('Payment retrieved successfully'));
     }
@@ -216,7 +216,7 @@ class PaymentController extends Controller
     /**
      * Get subscription by type.
      */
-    protected function getSubscription(string $type, int $id, int $userId)
+    protected function getSubscription(string $type, string $id, int $userId)
     {
         return match ($type) {
             'quran' => QuranSubscription::where('id', $id)

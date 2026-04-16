@@ -129,7 +129,7 @@ class SessionController extends Controller
     /**
      * Get session detail.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
@@ -181,7 +181,7 @@ class SessionController extends Controller
                     ] : null,
                     'started_at' => $session->started_at?->toISOString(),
                     'ended_at' => $session->ended_at?->toISOString(),
-                    'created_at' => $session->created_at->toISOString(),
+                    'created_at' => $session->created_at?->toISOString(),
                 ],
             ], __('Session retrieved successfully'));
         }
@@ -212,7 +212,7 @@ class SessionController extends Controller
                     'status' => $interactiveSession->status->value ?? $interactiveSession->status,
                     'meeting_url' => $interactiveSession->meeting_link,
                     'materials' => $interactiveSession->materials ?? [],
-                    'created_at' => $interactiveSession->created_at->toISOString(),
+                    'created_at' => $interactiveSession->created_at?->toISOString(),
                 ],
             ], __('Session retrieved successfully'));
         }
@@ -223,7 +223,7 @@ class SessionController extends Controller
     /**
      * Complete a session.
      */
-    public function complete(Request $request, int $id): JsonResponse
+    public function complete(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
@@ -308,7 +308,7 @@ class SessionController extends Controller
     /**
      * Cancel a session.
      */
-    public function cancel(Request $request, int $id): JsonResponse
+    public function cancel(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
@@ -361,7 +361,7 @@ class SessionController extends Controller
     /**
      * Reschedule a session.
      */
-    public function reschedule(Request $request, int $id): JsonResponse
+    public function reschedule(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
@@ -423,7 +423,7 @@ class SessionController extends Controller
         return $this->success([
             'session' => [
                 'id' => $session->id,
-                'scheduled_at' => $session->scheduled_at->toISOString(),
+                'scheduled_at' => $session->scheduled_at?->toISOString(),
                 'rescheduled_from' => $oldScheduledAt->toISOString(),
             ],
         ], __('Session rescheduled successfully'));
@@ -432,7 +432,7 @@ class SessionController extends Controller
     /**
      * Mark student absent for a session.
      */
-    public function markAbsent(Request $request, int $id): JsonResponse
+    public function markAbsent(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
@@ -487,7 +487,7 @@ class SessionController extends Controller
     /**
      * Update session evaluation.
      */
-    public function updateEvaluation(Request $request, int $id): JsonResponse
+    public function updateEvaluation(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
@@ -547,7 +547,7 @@ class SessionController extends Controller
     /**
      * Update session notes.
      */
-    public function updateNotes(Request $request, int $id): JsonResponse
+    public function updateNotes(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;

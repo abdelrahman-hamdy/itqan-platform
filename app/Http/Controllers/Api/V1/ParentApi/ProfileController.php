@@ -44,7 +44,7 @@ class ProfileController extends Controller
                 'address' => $parentProfile->address,
                 'preferred_contact_method' => $parentProfile->preferred_contact_method,
                 'children_count' => $parentProfile->students()->count(),
-                'created_at' => $parentProfile->created_at->toISOString(),
+                'created_at' => $parentProfile->created_at?->toISOString(),
             ],
         ], __('Profile retrieved successfully'));
     }

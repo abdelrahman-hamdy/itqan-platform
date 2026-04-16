@@ -62,7 +62,7 @@ class LessonController extends Controller
                 'completed_sessions' => $lesson->subscription?->completed_sessions_count ?? 0,
                 'remaining_sessions' => $lesson->subscription?->remaining_sessions ?? 0,
                 'schedule' => $lesson->schedule ?? [],
-                'created_at' => $lesson->created_at->toISOString(),
+                'created_at' => $lesson->created_at?->toISOString(),
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($lessons),
         ], __('Lessons retrieved successfully'));
@@ -71,7 +71,7 @@ class LessonController extends Controller
     /**
      * Get lesson detail.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
@@ -162,7 +162,7 @@ class LessonController extends Controller
                     'status' => $s->status->value ?? $s->status,
                     'homework' => $s->homework,
                 ])->toArray(),
-                'created_at' => $lesson->created_at->toISOString(),
+                'created_at' => $lesson->created_at?->toISOString(),
             ],
         ], __('Lesson retrieved successfully'));
     }

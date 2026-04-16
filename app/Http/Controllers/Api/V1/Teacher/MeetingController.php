@@ -85,7 +85,7 @@ class MeetingController extends Controller
     /**
      * Get meeting token.
      */
-    public function token(Request $request, string $sessionType, int $sessionId): JsonResponse
+    public function token(Request $request, string $sessionType, string $sessionId): JsonResponse
     {
         $user = $request->user();
 
@@ -144,7 +144,7 @@ class MeetingController extends Controller
     /**
      * Get session based on type and verify teacher access.
      */
-    protected function getSession($user, string $type, int $id)
+    protected function getSession($user, string $type, string $id)
     {
         // API-003: Add explicit academy_id verification for defense in depth
         $userAcademyId = $user->academy_id;
@@ -198,7 +198,7 @@ class MeetingController extends Controller
      * API-004: Uses consistent prefix pattern matching LiveKitService convention
      * so webhook controller can parse the prefix for optimized session lookup.
      */
-    protected function generateRoomName(string $type, int $id): string
+    protected function generateRoomName(string $type, string $id): string
     {
         $prefix = match ($type) {
             'quran' => 'quran',

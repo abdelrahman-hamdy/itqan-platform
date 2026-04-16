@@ -66,6 +66,23 @@ class SessionResource extends JsonResource
             'session_notes' => $this->resource->session_notes,
             'teacher_feedback' => $this->resource->teacher_feedback,
 
+            // Student feedback
+            'student_rating' => $this->resource->student_rating,
+            'student_feedback' => $this->resource->student_feedback,
+
+            // Admin/supervisor-only fields
+            'admin_notes' => $this->when(
+                $request->user()?->hasRole('super_admin') || $request->user()?->hasRole('supervisor') || $request->user()?->hasRole('academy_admin'),
+                $this->resource->admin_notes
+            ),
+
+            // Forgiveness data
+            'forgiven_at' => $this->when($this->resource->forgiven_at !== null, $this->resource->forgiven_at?->toISOString()),
+            'forgiven_reason' => $this->when($this->resource->forgiven_at !== null, $this->resource->forgiven_reason),
+
+            // Counting flag
+            'counts_for_teacher' => $this->resource->counts_for_teacher,
+
             // Cancellation
             'cancelled_at' => $this->resource->cancelled_at?->toISOString(),
             'cancellation_reason' => $this->when($this->resource->cancelled_at, $this->resource->cancellation_reason),

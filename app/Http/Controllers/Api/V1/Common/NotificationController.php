@@ -78,7 +78,7 @@ class NotificationController extends Controller
                     'data' => $notification->data,
                     'read' => $notification->read_at !== null,
                     'read_at' => $notification->read_at?->toISOString(),
-                    'created_at' => $notification->created_at->toISOString(),
+                    'created_at' => $notification->created_at?->toISOString(),
                     'action_url' => $notification->data['action_url'] ?? $notification->action_url ?? null,
                     'is_important' => (bool) ($notification->is_important ?? $notification->data['is_important'] ?? false),
                     'metadata' => $metadata,

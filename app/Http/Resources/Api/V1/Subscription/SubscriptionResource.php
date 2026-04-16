@@ -109,6 +109,29 @@ class SubscriptionResource extends JsonResource
                 : null,
             'paid_until' => $this->ends_at?->toISOString(),
 
+            // Cycle tracking
+            'current_cycle_id' => $this->current_cycle_id,
+            'cycle_count' => (int) ($this->cycle_count ?? 1),
+            'current_cycle' => $this->whenLoaded('currentCycle', function () {
+                $cycle = $this->currentCycle;
+
+                return [
+                    'id' => $cycle->id,
+                    'cycle_number' => $cycle->cycle_number,
+                    'state' => $cycle->cycle_state,
+                    'billing_cycle' => $cycle->billing_cycle,
+                    'starts_at' => $cycle->starts_at?->toDateString(),
+                    'ends_at' => $cycle->ends_at?->toDateString(),
+                    'total_sessions' => (int) $cycle->total_sessions,
+                    'sessions_used' => (int) $cycle->sessions_used,
+                    'sessions_remaining' => max(0, (int) $cycle->total_sessions - (int) $cycle->sessions_used),
+                    'total_price' => (float) ($cycle->total_price ?? 0),
+                    'final_price' => (float) ($cycle->final_price ?? 0),
+                    'currency' => $cycle->currency,
+                    'payment_status' => $cycle->payment_status,
+                ];
+            }),
+
             // Notes
             'notes' => $this->notes,
 

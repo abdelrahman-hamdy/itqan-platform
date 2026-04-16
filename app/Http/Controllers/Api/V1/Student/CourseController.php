@@ -117,7 +117,7 @@ class CourseController extends Controller
     /**
      * Get a specific interactive course.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academy = $request->attributes->get('academy') ?? current_academy();
@@ -182,7 +182,7 @@ class CourseController extends Controller
                     'id' => $enrollment->id,
                     'status' => $enrollment->status,
                     'progress_percentage' => $enrollment->progress_percentage ?? 0,
-                    'enrolled_at' => $enrollment->created_at->toISOString(),
+                    'enrolled_at' => $enrollment->created_at?->toISOString(),
                     'completed_sessions' => $enrollment->completed_sessions ?? 0,
                 ] : null,
                 'start_date' => $course->start_date?->toDateString(),
@@ -209,7 +209,7 @@ class CourseController extends Controller
     /**
      * Get quizzes for an interactive course.
      */
-    public function quizzes(Request $request, int $id): JsonResponse
+    public function quizzes(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academy = $request->attributes->get('academy') ?? current_academy();
@@ -289,7 +289,7 @@ class CourseController extends Controller
     /**
      * Get materials for an interactive course (shared files from sessions).
      */
-    public function materials(Request $request, int $id): JsonResponse
+    public function materials(Request $request, string $id): JsonResponse
     {
         $academy = $request->attributes->get('academy') ?? current_academy();
 
@@ -312,7 +312,7 @@ class CourseController extends Controller
     /**
      * Get progress for an enrolled student in an interactive course.
      */
-    public function progress(Request $request, int $id): JsonResponse
+    public function progress(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $academy = $request->attributes->get('academy') ?? current_academy();
@@ -376,7 +376,7 @@ class CourseController extends Controller
                 'quizzes_taken' => $quizzesTaken,
                 'average_quiz_score' => $averageScore,
                 'certificate_progress' => $progressPercentage / 100,
-                'enrolled_at' => $enrollment->created_at->toISOString(),
+                'enrolled_at' => $enrollment->created_at?->toISOString(),
             ],
         ], __('Progress retrieved successfully'));
     }
@@ -384,7 +384,7 @@ class CourseController extends Controller
     /**
      * Get approved reviews for an interactive course.
      */
-    public function reviews(Request $request, int $id): JsonResponse
+    public function reviews(Request $request, string $id): JsonResponse
     {
         $academy = $request->attributes->get('academy') ?? current_academy();
 
@@ -416,7 +416,7 @@ class CourseController extends Controller
                 'id' => $review->id,
                 'rating' => $review->rating,
                 'comment' => $review->review,
-                'created_at' => $review->created_at->toISOString(),
+                'created_at' => $review->created_at?->toISOString(),
                 'is_verified' => true,
                 'reviewer_id' => $review->user?->id,
                 'reviewer_name' => $review->user?->name ?? '',

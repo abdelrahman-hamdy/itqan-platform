@@ -27,7 +27,7 @@ class InteractiveSessionController extends Controller
      * Verifies the session's course is assigned to the teacher's academic profile.
      * Optionally eager-loads the given relationships.
      */
-    protected function resolveSession(int $id, \App\Models\User $user, array $with = []): ?InteractiveCourseSession
+    protected function resolveSession(string $id, \App\Models\User $user, array $with = []): ?InteractiveCourseSession
     {
         $courseIds = $user->academicTeacherProfile?->assignedCourses()?->pluck('id') ?? collect();
 
@@ -109,7 +109,7 @@ class InteractiveSessionController extends Controller
     /**
      * Show interactive session detail with course, attendance, homework, and notes.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -163,7 +163,7 @@ class InteractiveSessionController extends Controller
      *
      * Accepts optional homework, lesson_content, and notes.
      */
-    public function complete(Request $request, int $id): JsonResponse
+    public function complete(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -254,7 +254,7 @@ class InteractiveSessionController extends Controller
     /**
      * Cancel an interactive session with a reason.
      */
-    public function cancel(Request $request, int $id): JsonResponse
+    public function cancel(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -304,7 +304,7 @@ class InteractiveSessionController extends Controller
     /**
      * Reschedule an interactive session to a new time.
      */
-    public function reschedule(Request $request, int $id): JsonResponse
+    public function reschedule(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -352,7 +352,7 @@ class InteractiveSessionController extends Controller
         return $this->success([
             'session' => [
                 'id' => $session->id,
-                'scheduled_at' => $session->fresh()->scheduled_at->toISOString(),
+                'scheduled_at' => $session->fresh()->scheduled_at?->toISOString(),
                 'rescheduled_from' => $oldScheduledAt?->toISOString(),
             ],
         ], __('Session rescheduled successfully'));
@@ -365,7 +365,7 @@ class InteractiveSessionController extends Controller
      * at the enrollment/attendance level, not on the session itself.
      * This endpoint marks all enrolled students who have no attendance record as absent.
      */
-    public function markAbsent(Request $request, int $id): JsonResponse
+    public function markAbsent(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -449,7 +449,7 @@ class InteractiveSessionController extends Controller
     /**
      * Update session evaluation (lesson content, homework, notes, rating).
      */
-    public function updateEvaluation(Request $request, int $id): JsonResponse
+    public function updateEvaluation(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -521,7 +521,7 @@ class InteractiveSessionController extends Controller
     /**
      * Update session notes only.
      */
-    public function updateNotes(Request $request, int $id): JsonResponse
+    public function updateNotes(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -564,7 +564,7 @@ class InteractiveSessionController extends Controller
      * Uses meeting_attendances table via DB query to avoid enum cast issues,
      * consistent with the Academic and Quran session controllers.
      */
-    public function attendance(Request $request, int $id): JsonResponse
+    public function attendance(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -632,7 +632,7 @@ class InteractiveSessionController extends Controller
     /**
      * Override a single attendance record for an interactive session.
      */
-    public function overrideAttendance(Request $request, int $id, int $attendanceId): JsonResponse
+    public function overrideAttendance(Request $request, string $id, int $attendanceId): JsonResponse
     {
         $user = $request->user();
 

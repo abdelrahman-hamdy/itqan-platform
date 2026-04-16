@@ -208,7 +208,7 @@ class EarningsController extends Controller
                 'is_disputed' => $earning->is_disputed,
                 'session_completed_at' => $earning->session_completed_at?->toISOString(),
                 'date' => $earning->session_completed_at?->toDateString(),
-                'created_at' => $earning->created_at->toISOString(),
+                'created_at' => $earning->created_at?->toISOString(),
             ];
         })->toArray();
 
@@ -271,7 +271,7 @@ class EarningsController extends Controller
                 'calculation_method' => $e->calculation_method,
                 'session_completed_at' => $e->session_completed_at?->toDateString(),
                 'earning_month' => $e->earning_month?->format('Y-m'),
-                'created_at' => $e->created_at->toISOString(),
+                'created_at' => $e->created_at?->toISOString(),
             ])->toArray(),
             'total_finalized' => (float) $totalFinalized,
             'total_pending' => (float) $totalPending,

@@ -29,7 +29,7 @@ class ReportController extends Controller
     /**
      * Get progress report for all children or a specific child.
      */
-    public function progress(Request $request, ?int $childId = null): JsonResponse
+    public function progress(Request $request, ?string $childId = null): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -97,7 +97,7 @@ class ReportController extends Controller
     /**
      * Get attendance report for all children or a specific child.
      */
-    public function attendance(Request $request, ?int $childId = null): JsonResponse
+    public function attendance(Request $request, ?string $childId = null): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -177,7 +177,7 @@ class ReportController extends Controller
     /**
      * Get subscription report.
      */
-    public function subscription(Request $request, string $type, int $id): JsonResponse
+    public function subscription(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -330,7 +330,7 @@ class ReportController extends Controller
     /**
      * Get Course progress for a student.
      */
-    protected function getCourseProgress(int $studentId): array
+    protected function getCourseProgress(string $studentId): array
     {
         $enrollments = CourseSubscription::where('student_id', $studentId)
             ->with(['interactiveCourse', 'recordedCourse'])

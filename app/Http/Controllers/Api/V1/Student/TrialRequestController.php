@@ -47,7 +47,7 @@ class TrialRequestController extends Controller
     /**
      * Get a specific trial request.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $student = $user->studentProfile;
@@ -135,7 +135,7 @@ class TrialRequestController extends Controller
     /**
      * Cancel a trial request.
      */
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $student = $user->studentProfile;

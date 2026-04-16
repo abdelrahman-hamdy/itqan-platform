@@ -72,7 +72,7 @@ class SubscriptionController extends Controller
                     'needs_renewal' => $sub->needsRenewal(),
                     'grace_period_ends_at' => $sub->getGracePeriodEndsAt()?->toDateString(),
                     'paid_until' => ($sub->ends_at ?? $sub->end_date)?->toDateString(),
-                    'created_at' => $sub->created_at->toISOString(),
+                    'created_at' => $sub->created_at?->toISOString(),
                 ];
             }
 
@@ -103,7 +103,7 @@ class SubscriptionController extends Controller
                     'needs_renewal' => $sub->needsRenewal(),
                     'grace_period_ends_at' => $sub->getGracePeriodEndsAt()?->toDateString(),
                     'paid_until' => ($sub->ends_at ?? $sub->end_date)?->toDateString(),
-                    'created_at' => $sub->created_at->toISOString(),
+                    'created_at' => $sub->created_at?->toISOString(),
                 ];
             }
 
@@ -127,7 +127,7 @@ class SubscriptionController extends Controller
                     'price' => $sub->course?->price ?? 0,
                     'currency' => $sub->currency ?? getCurrencyCode(),
                     'payment_status' => $sub->payment_status ?? 'paid',
-                    'enrolled_at' => $sub->created_at->toISOString(),
+                    'enrolled_at' => $sub->created_at?->toISOString(),
                 ];
             }
         }
@@ -156,7 +156,7 @@ class SubscriptionController extends Controller
     /**
      * Get a specific subscription.
      */
-    public function show(Request $request, string $type, int $id): JsonResponse
+    public function show(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -245,7 +245,7 @@ class SubscriptionController extends Controller
                     'status' => $s->status->value ?? $s->status,
                 ])->toArray() ?? [],
                 ...$this->formatCycleFields($subscription),
-                'created_at' => $subscription->created_at->toISOString(),
+                'created_at' => $subscription->created_at?->toISOString(),
             ]);
         }
 
@@ -281,7 +281,7 @@ class SubscriptionController extends Controller
                     'status' => $s->status->value ?? $s->status,
                 ])->toArray() ?? [],
                 ...$this->formatCycleFields($subscription),
-                'created_at' => $subscription->created_at->toISOString(),
+                'created_at' => $subscription->created_at?->toISOString(),
             ]);
         }
 
@@ -307,14 +307,14 @@ class SubscriptionController extends Controller
             'progress_percentage' => $subscription->progress_percentage ?? 0,
             'completed_sessions' => $subscription->completed_sessions ?? 0,
             'payment_status' => $subscription->payment_status ?? 'paid',
-            'enrolled_at' => $subscription->created_at->toISOString(),
+            'enrolled_at' => $subscription->created_at?->toISOString(),
         ]);
     }
 
     /**
      * Toggle auto-renewal for a child's subscription.
      */
-    public function toggleAutoRenew(Request $request, string $type, int $id): JsonResponse
+    public function toggleAutoRenew(Request $request, string $type, string $id): JsonResponse
     {
         $subscription = $this->resolveChildSubscription($request, $type, $id);
 
@@ -334,7 +334,7 @@ class SubscriptionController extends Controller
     /**
      * Cancel a child's subscription.
      */
-    public function cancel(Request $request, string $type, int $id): JsonResponse
+    public function cancel(Request $request, string $type, string $id): JsonResponse
     {
         $subscription = $this->resolveChildSubscription($request, $type, $id, true);
 
@@ -360,7 +360,7 @@ class SubscriptionController extends Controller
     /**
      * Resolve a subscription belonging to one of the parent's children.
      */
-    private function resolveChildSubscription(Request $request, string $type, int $id, bool $includeCourse = false)
+    private function resolveChildSubscription(Request $request, string $type, string $id, bool $includeCourse = false)
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();

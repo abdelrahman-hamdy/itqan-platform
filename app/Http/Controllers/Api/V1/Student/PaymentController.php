@@ -44,8 +44,9 @@ class PaymentController extends Controller
                 'payment_method' => $payment->payment_method,
                 'description' => $payment->description,
                 'subscription_type' => $payment->subscription_type,
+                'subscription_cycle_id' => $payment->subscription_cycle_id,
                 'paid_at' => $payment->paid_at?->toISOString(),
-                'created_at' => $payment->created_at->toISOString(),
+                'created_at' => $payment->created_at?->toISOString(),
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($payments),
             // API-002: Single aggregate query instead of two separate queries
@@ -68,7 +69,7 @@ class PaymentController extends Controller
     /**
      * Get a specific payment.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -99,10 +100,11 @@ class PaymentController extends Controller
                     'code' => $payment->payable->subscription_code,
                     'title' => $payment->payable->getSubscriptionTitle(),
                 ] : null,
+                'subscription_cycle_id' => $payment->subscription_cycle_id,
                 'transaction_id' => $payment->transaction_id,
                 'gateway' => $payment->gateway,
                 'paid_at' => $payment->paid_at?->toISOString(),
-                'created_at' => $payment->created_at->toISOString(),
+                'created_at' => $payment->created_at?->toISOString(),
                 'receipt_url' => $payment->status === PaymentStatus::COMPLETED
                     ? route('api.v1.student.payments.receipt', ['id' => $payment->id])
                     : null,
@@ -113,7 +115,7 @@ class PaymentController extends Controller
     /**
      * Get payment receipt.
      */
-    public function receipt(Request $request, int $id): JsonResponse
+    public function receipt(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 

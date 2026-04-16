@@ -62,6 +62,10 @@ class AttendanceResource extends JsonResource
             'session_start_time' => $this->session_start_time?->toISOString(),
             'session_end_time' => $this->session_end_time?->toISOString(),
 
+            // Subscription counting
+            'counts_for_subscription' => $this->counts_for_subscription,
+            'subscription_counted_at' => $this->subscription_counted_at?->toISOString(),
+
             // Calculation
             'is_calculated' => $this->is_calculated,
             'attendance_calculated_at' => $this->attendance_calculated_at?->toISOString(),

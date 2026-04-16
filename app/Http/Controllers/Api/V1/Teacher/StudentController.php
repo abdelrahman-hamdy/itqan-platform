@@ -116,7 +116,7 @@ class StudentController extends Controller
     /**
      * Get student detail.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -215,7 +215,7 @@ class StudentController extends Controller
     /**
      * Create a report for a student.
      */
-    public function createReport(Request $request, int $id): JsonResponse
+    public function createReport(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 

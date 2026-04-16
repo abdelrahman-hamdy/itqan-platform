@@ -61,7 +61,7 @@ class CertificateController extends Controller
                     'expires_at' => $cert->expires_at?->toDateString(),
                     'is_expired' => $cert->expires_at ? $cert->expires_at->isPast() : false,
                     'thumbnail_url' => $cert->thumbnail_url ? asset('storage/'.$cert->thumbnail_url) : null,
-                    'created_at' => $cert->created_at->toISOString(),
+                    'created_at' => $cert->created_at?->toISOString(),
                 ];
             }
         }
@@ -85,7 +85,7 @@ class CertificateController extends Controller
     /**
      * Get a specific certificate.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
@@ -140,7 +140,7 @@ class CertificateController extends Controller
                     'id' => $certificate->certificatable_id,
                     'name' => $certificate->certificatable->title ?? $certificate->certificatable->name ?? null,
                 ] : null,
-                'created_at' => $certificate->created_at->toISOString(),
+                'created_at' => $certificate->created_at?->toISOString(),
             ],
         ], __('Certificate retrieved successfully'));
     }
@@ -148,7 +148,7 @@ class CertificateController extends Controller
     /**
      * Get certificates for a specific child.
      */
-    public function childCertificates(Request $request, int $childId): JsonResponse
+    public function childCertificates(Request $request, string $childId): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();

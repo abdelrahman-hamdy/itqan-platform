@@ -92,7 +92,8 @@ class QuizController extends Controller
             })
             ->with([
                 'quiz' => function ($q) {
-                    $q->select('id', 'title', 'description', 'duration_minutes', 'passing_score', 'questions_count', 'created_at');
+                    $q->select('id', 'title', 'description', 'duration_minutes', 'passing_score', 'created_at')
+                        ->withCount('questions');
                 },
                 'attempts' => function ($q) use ($studentId) {
                     $q->where('student_id', $studentId)->latest();
@@ -159,7 +160,7 @@ class QuizController extends Controller
                     'passed' => $latestAttempt->passed,
                     'completed_at' => $latestAttempt->submitted_at?->toISOString(),
                 ] : null,
-                'assigned_at' => $assignment->created_at->toISOString(),
+                'assigned_at' => $assignment->created_at?->toISOString(),
             ];
         })->filter()->values();
 
@@ -188,7 +189,7 @@ class QuizController extends Controller
     /**
      * Get a specific quiz.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $studentProfile = $user->studentProfile;
@@ -256,7 +257,7 @@ class QuizController extends Controller
     /**
      * Start a quiz attempt.
      */
-    public function start(Request $request, int $id): JsonResponse
+    public function start(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $studentProfile = $user->studentProfile;
@@ -337,7 +338,7 @@ class QuizController extends Controller
     /**
      * Submit quiz answers.
      */
-    public function submit(Request $request, int $id): JsonResponse
+    public function submit(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'answers' => ['required', 'array'],
@@ -451,7 +452,7 @@ class QuizController extends Controller
     /**
      * Get quiz result.
      */
-    public function result(Request $request, int $id): JsonResponse
+    public function result(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
         $studentProfile = $user->studentProfile;

@@ -70,6 +70,7 @@ class Payment extends Model
         'payable_type',
         'payable_id',
         'save_card',
+        'subscription_cycle_id',
     ];
 
     /**
@@ -190,6 +191,11 @@ class Payment extends Model
     public function subscription(): MorphTo
     {
         return $this->payable();
+    }
+
+    public function subscriptionCycle(): BelongsTo
+    {
+        return $this->belongsTo(SubscriptionCycle::class);
     }
 
     // Scopes

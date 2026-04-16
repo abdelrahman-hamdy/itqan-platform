@@ -21,7 +21,7 @@ class ReportController extends Controller
      * Get report data for a Quran individual circle.
      * Returns subscription-like data for the mobile report screen.
      */
-    public function quranIndividualReport(Request $request, int $id): JsonResponse
+    public function quranIndividualReport(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -75,7 +75,7 @@ class ReportController extends Controller
                 'used' => $completedSessions,
                 'remaining' => $remainingSessions,
             ],
-            'created_at' => $circle->created_at->toISOString(),
+            'created_at' => $circle->created_at?->toISOString(),
             'quran_details' => [
                 'subscription_type' => 'individual',
                 'memorization_level' => $subscription?->memorization_level,
@@ -90,7 +90,7 @@ class ReportController extends Controller
     /**
      * Get sessions for a Quran individual circle report.
      */
-    public function quranIndividualSessions(Request $request, int $id): JsonResponse
+    public function quranIndividualSessions(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -136,7 +136,7 @@ class ReportController extends Controller
     /**
      * Get report data for a Quran group circle.
      */
-    public function quranGroupReport(Request $request, int $id): JsonResponse
+    public function quranGroupReport(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -175,7 +175,7 @@ class ReportController extends Controller
                 'used' => $completedSessions,
                 'remaining' => max(0, $totalSessions - $completedSessions),
             ],
-            'created_at' => $circle->created_at->toISOString(),
+            'created_at' => $circle->created_at?->toISOString(),
             'circle' => [
                 'id' => $circle->id,
                 'name' => $circle->name,
@@ -192,7 +192,7 @@ class ReportController extends Controller
     /**
      * Get sessions for a Quran group circle report.
      */
-    public function quranGroupSessions(Request $request, int $id): JsonResponse
+    public function quranGroupSessions(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -231,7 +231,7 @@ class ReportController extends Controller
      * Get full report for a Quran individual circle using QuranReportService.
      * Returns the same format as the student SubscriptionController::report().
      */
-    public function quranIndividualFullReport(Request $request, int $id): JsonResponse
+    public function quranIndividualFullReport(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -259,7 +259,7 @@ class ReportController extends Controller
      * Get per-student report summaries for a Quran group circle.
      * Returns a list of students with their key metrics.
      */
-    public function quranGroupStudentsReportSummary(Request $request, int $id): JsonResponse
+    public function quranGroupStudentsReportSummary(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -311,7 +311,7 @@ class ReportController extends Controller
     /**
      * Get full report for a specific student in a Quran group circle.
      */
-    public function quranGroupStudentReport(Request $request, int $circleId, int $studentId): JsonResponse
+    public function quranGroupStudentReport(Request $request, string $circleId, int $studentId): JsonResponse
     {
         $user = $request->user();
 

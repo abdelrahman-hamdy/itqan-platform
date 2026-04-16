@@ -124,7 +124,7 @@ class SessionController extends Controller
     /**
      * Get a specific session.
      */
-    public function show(Request $request, string $type, int $id): JsonResponse
+    public function show(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
         $session = $this->getSessionDetail($user->id, $type, $id);
@@ -141,7 +141,7 @@ class SessionController extends Controller
     /**
      * Submit feedback for a session.
      */
-    public function submitFeedback(Request $request, string $type, int $id): JsonResponse
+    public function submitFeedback(Request $request, string $type, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
@@ -202,7 +202,7 @@ class SessionController extends Controller
     /**
      * Get a specific session with details.
      */
-    private function getSessionDetail(int $studentId, string $type, int $sessionId): ?array
+    private function getSessionDetail(string $studentId, string $type, int $sessionId): ?array
     {
         $session = match ($type) {
             'quran' => QuranSession::where('id', $sessionId)
@@ -339,7 +339,7 @@ class SessionController extends Controller
     /**
      * Submit feedback for a session.
      */
-    private function submitSessionFeedback(int $studentId, string $type, int $sessionId, int $rating, ?string $feedback): bool
+    private function submitSessionFeedback(string $studentId, string $type, int $sessionId, int $rating, ?string $feedback): bool
     {
         $session = match ($type) {
             'quran' => QuranSession::where('id', $sessionId)

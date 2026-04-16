@@ -39,7 +39,7 @@ abstract class BaseParentSessionController extends Controller
      * @param  int|null  $childId  Optional filter for specific child
      * @return Collection
      */
-    protected function getChildren(int $parentProfileId, ?int $childId = null)
+    protected function getChildren(int $parentProfileId, ?string $childId = null)
     {
         $query = ParentStudentRelationship::where('parent_id', $parentProfileId)
             ->with('student.user');
@@ -97,7 +97,7 @@ abstract class BaseParentSessionController extends Controller
      * @param Request $request
      * @return JsonResponse|null Returns error response if validation fails, null if passes
      */
-    protected function validateParentAccess($request, ?int $childId = null): ?JsonResponse
+    protected function validateParentAccess($request, ?string $childId = null): ?JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();

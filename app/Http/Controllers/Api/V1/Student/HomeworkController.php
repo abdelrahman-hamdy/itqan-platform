@@ -65,7 +65,7 @@ class HomeworkController extends Controller
                     ] : null,
                     'submission' => $submission ? [
                         'id' => $submission->id,
-                        'submitted_at' => $submission->created_at->toISOString(),
+                        'submitted_at' => $submission->created_at?->toISOString(),
                         'grade' => $submission->grade,
                         'feedback' => $submission->feedback,
                         'status' => $submission->status,
@@ -174,7 +174,7 @@ class HomeworkController extends Controller
                         ] : null,
                         'submission' => $submission ? [
                             'id' => $submission->id,
-                            'submitted_at' => $submission->created_at->toISOString(),
+                            'submitted_at' => $submission->created_at?->toISOString(),
                             'grade' => $submission->grade,
                             'feedback' => $submission->feedback,
                             'status' => $submission->submission_status,
@@ -230,7 +230,7 @@ class HomeworkController extends Controller
     /**
      * Get a specific homework assignment.
      */
-    public function show(Request $request, string $type, int $id): JsonResponse
+    public function show(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -242,7 +242,7 @@ class HomeworkController extends Controller
         };
     }
 
-    private function showAcademicHomework($user, int $id): JsonResponse
+    private function showAcademicHomework($user, string $id): JsonResponse
     {
         $session = AcademicSession::where('id', $id)
             ->where('student_id', $user->id)
@@ -285,7 +285,7 @@ class HomeworkController extends Controller
                     'id' => $submission->id,
                     'content' => $submission->content,
                     'attachments' => $submission->attachments ?? [],
-                    'submitted_at' => $submission->created_at->toISOString(),
+                    'submitted_at' => $submission->created_at?->toISOString(),
                     'grade' => $submission->grade,
                     'max_grade' => 100,
                     'feedback' => $submission->feedback,
@@ -296,7 +296,7 @@ class HomeworkController extends Controller
         ], __('Homework retrieved successfully'));
     }
 
-    private function showQuranHomework($user, int $id): JsonResponse
+    private function showQuranHomework($user, string $id): JsonResponse
     {
         $session = QuranSession::where('id', $id)
             ->where('student_id', $user->id)
@@ -350,7 +350,7 @@ class HomeworkController extends Controller
         ], __('Homework retrieved successfully'));
     }
 
-    private function showInteractiveHomework($user, int $id): JsonResponse
+    private function showInteractiveHomework($user, string $id): JsonResponse
     {
         $studentProfileId = $user->studentProfile?->id;
 
@@ -399,7 +399,7 @@ class HomeworkController extends Controller
                     'id' => $submission->id,
                     'content' => $submission->content,
                     'attachments' => $submission->student_files ?? [],
-                    'submitted_at' => $submission->created_at->toISOString(),
+                    'submitted_at' => $submission->created_at?->toISOString(),
                     'grade' => $submission->grade,
                     'max_grade' => $hw->max_score,
                     'feedback' => $submission->feedback,
@@ -413,7 +413,7 @@ class HomeworkController extends Controller
     /**
      * Submit homework.
      */
-    public function submit(Request $request, string $type, int $id): JsonResponse
+    public function submit(Request $request, string $type, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'content' => ['required_without:attachments', 'nullable', 'string', 'max:10000'],
@@ -485,13 +485,13 @@ class HomeworkController extends Controller
                 'id' => $submission->id,
                 'content' => $submission->content,
                 'attachments' => $submission->student_files,
-                'submitted_at' => $submission->created_at->toISOString(),
+                'submitted_at' => $submission->created_at?->toISOString(),
                 'status' => $submission->submission_status,
             ],
         ], __('Homework submitted successfully'));
     }
 
-    private function submitInteractiveHomework($user, int $homeworkId, ?string $content, array $attachments): JsonResponse
+    private function submitInteractiveHomework($user, string $homeworkId, ?string $content, array $attachments): JsonResponse
     {
         $studentProfileId = $user->studentProfile?->id;
 
@@ -532,7 +532,7 @@ class HomeworkController extends Controller
                 'id' => $submission->id,
                 'content' => $submission->content,
                 'attachments' => $submission->student_files,
-                'submitted_at' => $submission->created_at->toISOString(),
+                'submitted_at' => $submission->created_at?->toISOString(),
                 'status' => $submission->submission_status,
             ],
         ], __('Homework submitted successfully'));
@@ -541,7 +541,7 @@ class HomeworkController extends Controller
     /**
      * Save homework as draft.
      */
-    public function saveDraft(Request $request, string $type, int $id): JsonResponse
+    public function saveDraft(Request $request, string $type, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'content' => ['nullable', 'string', 'max:10000'],
@@ -618,7 +618,7 @@ class HomeworkController extends Controller
                 'id' => $draft->id,
                 'content' => $draft->content,
                 'attachments' => $draft->student_files,
-                'saved_at' => $draft->updated_at->toISOString(),
+                'saved_at' => $draft->updated_at?->toISOString(),
                 'status' => 'draft',
             ],
         ], __('Draft saved successfully'));
@@ -627,7 +627,7 @@ class HomeworkController extends Controller
     /**
      * Submit homework revision.
      */
-    public function submitRevision(Request $request, string $type, int $id): JsonResponse
+    public function submitRevision(Request $request, string $type, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'content' => ['required_without:attachments', 'nullable', 'string', 'max:10000'],

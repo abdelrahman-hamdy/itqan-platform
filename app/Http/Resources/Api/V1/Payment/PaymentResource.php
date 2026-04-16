@@ -61,6 +61,9 @@ class PaymentResource extends JsonResource
                 'email' => $this->resource->user?->email,
             ]),
 
+            // Subscription cycle
+            'subscription_cycle_id' => $this->resource->subscription_cycle_id,
+
             // Dates
             'paid_at' => $this->resource->paid_at?->toISOString(),
             'refunded_at' => $this->resource->refunded_at?->toISOString(),
