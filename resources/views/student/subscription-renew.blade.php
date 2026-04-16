@@ -31,12 +31,15 @@
             },
             getPrice(cycle) {
                 const pkg = this.selectedPackage;
-                switch(cycle) {
-                    case 'monthly': return pkg.monthly_price || 0;
-                    case 'quarterly': return pkg.quarterly_price || 0;
-                    case 'yearly': return pkg.yearly_price || 0;
-                    default: return 0;
-                }
+                return pkg[`effective_${cycle}_price`] ?? pkg[`${cycle}_price`] ?? 0;
+            },
+            getOriginalPrice(cycle) {
+                const pkg = this.selectedPackage;
+                return pkg[`${cycle}_price`] ?? 0;
+            },
+            hasSaleFor(cycle) {
+                const pkg = this.selectedPackage;
+                return pkg[`sale_${cycle}_price`] != null;
             },
             formatPrice(price) {
                 return new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(price);
@@ -98,7 +101,14 @@
                                         </div>
                                     </div>
                                     <div class="text-left">
-                                        <div class="text-lg font-bold text-gray-900">{{ number_format($pkg['monthly_price'], 2) }}</div>
+                                        <div class="text-lg font-bold text-gray-900">
+                                            {{ number_format($pkg['sale_monthly_price'] ?? $pkg['monthly_price'], 2) }}
+                                        </div>
+                                        @if(!empty($pkg['sale_monthly_price']))
+                                            <div class="text-[11px] text-gray-400 line-through">
+                                                {{ number_format($pkg['monthly_price'], 2) }}
+                                            </div>
+                                        @endif
                                         <div class="text-xs text-gray-500">{{ $pkg['currency'] ?? 'SAR' }}/{{ __('student.subscriptions.billing_monthly') }}</div>
                                     </div>
                                     @if($currentPackageId == $pkg['id'])
@@ -136,8 +146,10 @@
                             <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col justify-center">
                                 <div class="text-sm font-medium text-gray-600">{{ $cycleLabel }}</div>
                                 <div class="text-xl font-bold text-gray-900 mt-1" x-text="formatPrice(getPrice('{{ $cycle }}'))">
-                                    {{ number_format($options['packages'][0]['monthly_price'] ?? 0, 2) }}
+                                    {{ number_format($options['packages'][0]['effective_'.$cycle.'_price'] ?? $options['packages'][0][$cycle.'_price'] ?? 0, 2) }}
                                 </div>
+                                <div class="text-[11px] text-gray-400 line-through h-4"
+                                     x-text="hasSaleFor('{{ $cycle }}') ? formatPrice(getOriginalPrice('{{ $cycle }}')) : ''"></div>
                                 <div class="text-xs text-gray-500" x-text="selectedPackage.currency || 'SAR'">SAR</div>
                                 @if($isCurrentCycle)
                                     <span class="inline-block mt-1 text-xs text-indigo-600 font-medium">{{ __('student.subscriptions.current_cycle') }}</span>

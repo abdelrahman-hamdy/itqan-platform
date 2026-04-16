@@ -286,6 +286,12 @@ class SubscriptionRenewalService
                 'monthly_price' => (float) $pkg->monthly_price,
                 'quarterly_price' => (float) ($pkg->quarterly_price ?? $pkg->monthly_price * 3),
                 'yearly_price' => (float) ($pkg->yearly_price ?? $pkg->monthly_price * 12),
+                'sale_monthly_price' => $pkg->sale_monthly_price !== null ? (float) $pkg->sale_monthly_price : null,
+                'sale_quarterly_price' => $pkg->sale_quarterly_price !== null ? (float) $pkg->sale_quarterly_price : null,
+                'sale_yearly_price' => $pkg->sale_yearly_price !== null ? (float) $pkg->sale_yearly_price : null,
+                'effective_monthly_price' => (float) PricingResolver::resolvePriceFromPackage($pkg, BillingCycle::MONTHLY),
+                'effective_quarterly_price' => (float) PricingResolver::resolvePriceFromPackage($pkg, BillingCycle::QUARTERLY),
+                'effective_yearly_price' => (float) PricingResolver::resolvePriceFromPackage($pkg, BillingCycle::YEARLY),
                 'currency' => $pkg->currency ?? 'SAR',
             ])->all(),
             'billing_cycles' => $billingCycles,
@@ -487,52 +493,47 @@ class SubscriptionRenewalService
         BillingCycle $billingCycle,
     ): array {
         $packageId = $options['package_id'] ?? $this->getPackageId($subscription);
-        $useCurrentPricing = $options['use_current_pricing'] ?? ($packageId !== $this->getPackageId($subscription));
+        $package = $packageId ? $this->findPackage($subscription, $packageId) : null;
 
-        if ($useCurrentPricing && $packageId) {
-            $package = $this->findPackage($subscription, $packageId);
-            if ($package) {
-                $finalPrice = $options['amount'] ?? PricingResolver::resolvePriceFromPackage($package, $billingCycle);
-                $discount = $this->resolveDiscount($subscription, $options);
+        // The current package record is always authoritative for pricing —
+        // reading from it honors any active sale_*_price that may have been set
+        // after the original purchase.  The subscription's own snapshot is only
+        // used as a fallback when the package row has been deleted.
+        if ($package) {
+            $finalPrice = $options['amount'] ?? PricingResolver::resolvePriceFromPackage($package, $billingCycle);
+            $discount = $this->resolveDiscount($subscription, $options);
 
-                return [
+            return [
+                'sessions_per_month' => $package->sessions_per_month,
+                'session_duration_minutes' => $package->session_duration_minutes,
+                'package_id' => $package->id,
+                'package_snapshot' => [
+                    'id' => $package->id,
+                    'name' => $package->name,
                     'sessions_per_month' => $package->sessions_per_month,
                     'session_duration_minutes' => $package->session_duration_minutes,
-                    'package_id' => $package->id,
-                    'package_snapshot' => [
-                        'id' => $package->id,
-                        'name' => $package->name,
-                        'sessions_per_month' => $package->sessions_per_month,
-                        'session_duration_minutes' => $package->session_duration_minutes,
-                        'currency' => $package->currency ?? 'SAR',
-                    ],
-                    'price_fields' => [
-                        'package_name_ar' => $package->name,
-                        'package_name_en' => $package->name,
-                        'package_price_monthly' => (float) $package->monthly_price,
-                        'package_price_quarterly' => (float) ($package->quarterly_price ?? $package->monthly_price * 3),
-                        'package_price_yearly' => (float) ($package->yearly_price ?? $package->monthly_price * 12),
-                        'total_price' => $finalPrice,
-                        'discount_amount' => $discount,
-                        'final_price' => max(0, $finalPrice - $discount),
-                    ],
-                ];
-            }
+                    'currency' => $package->currency ?? 'SAR',
+                ],
+                'price_fields' => [
+                    'package_name_ar' => $package->name,
+                    'package_name_en' => $package->name,
+                    'package_price_monthly' => (float) $package->monthly_price,
+                    'package_price_quarterly' => (float) ($package->quarterly_price ?? $package->monthly_price * 3),
+                    'package_price_yearly' => (float) ($package->yearly_price ?? $package->monthly_price * 12),
+                    'total_price' => $finalPrice,
+                    'discount_amount' => $discount,
+                    'final_price' => max(0, $finalPrice - $discount),
+                ],
+            ];
         }
 
+        // Package deleted — fall back to the subscription's frozen snapshot.
         $finalPrice = $options['amount'] ?? $subscription->getPriceForBillingCycle();
         $discount = $this->resolveDiscount($subscription, $options);
 
-        // sessions_per_month may be NULL on the subscription row (it's a
-        // package-level field not always snapshotted). Fall back to the actual
-        // package record to avoid the hardcoded 8 default.
-        $pkg = ($subscription->sessions_per_month === null && $packageId)
-            ? $this->findPackage($subscription, $packageId)
-            : null;
-
         return [
-            'sessions_per_month' => $subscription->sessions_per_month ?? $pkg?->sessions_per_month,
-            'session_duration_minutes' => $subscription->session_duration_minutes ?? $pkg?->session_duration_minutes,
+            'sessions_per_month' => $subscription->sessions_per_month,
+            'session_duration_minutes' => $subscription->session_duration_minutes,
             'package_id' => $this->getPackageId($subscription),
             'package_snapshot' => $this->packageSnapshotFromSubscription($subscription),
             'price_fields' => [
