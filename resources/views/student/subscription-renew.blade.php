@@ -146,7 +146,7 @@
                             <div class="text-center p-4 rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all h-full flex flex-col justify-center">
                                 <div class="text-sm font-medium text-gray-600">{{ $cycleLabel }}</div>
                                 <div class="text-xl font-bold text-gray-900 mt-1" x-text="formatPrice(getPrice('{{ $cycle }}'))">
-                                    {{ number_format($options['packages'][0]['effective_'.$cycle.'_price'] ?? $options['packages'][0][$cycle.'_price'] ?? 0, 2) }}
+                                    {{ number_format($options['packages'][0]['effective_'.$cycle.'_price'] ?? 0, 2) }}
                                 </div>
                                 <div class="text-[11px] text-gray-400 line-through h-4"
                                      x-text="hasSaleFor('{{ $cycle }}') ? formatPrice(getOriginalPrice('{{ $cycle }}')) : ''"></div>
