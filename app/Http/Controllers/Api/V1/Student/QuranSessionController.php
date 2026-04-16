@@ -120,7 +120,7 @@ class QuranSessionController extends BaseStudentSessionController
                 'circle',
                 'sessionHomework',
                 'meetingAttendances' => function ($q) use ($user) {
-                    $q->where('student_id', $user->id);
+                    $q->where('user_id', $user->id);
                 },
             ])
             ->first();

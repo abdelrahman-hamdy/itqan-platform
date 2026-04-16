@@ -115,7 +115,7 @@ class AcademicSessionController extends BaseStudentSessionController
                 'academicTeacher.user',
                 'academicSubscription.subject',
                 'meetingAttendances' => function ($q) use ($user) {
-                    $q->where('student_id', $user->id);
+                    $q->where('user_id', $user->id);
                 },
             ])
             ->first();
