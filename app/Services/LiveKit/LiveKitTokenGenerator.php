@@ -266,9 +266,12 @@ class LiveKitTokenGenerator
     }
 
     /**
-     * Get user avatar data for meeting metadata
+     * Get user avatar data for meeting metadata.
+     *
+     * Public so controllers that return the same metadata in their HTTP
+     * response body can stay in lockstep with the JWT metadata claim.
      */
-    private function getUserAvatarData(User $user): array
+    public function getUserAvatarData(User $user): array
     {
         // Detect user type
         $userType = $user->user_type ?? UserType::STUDENT->value;

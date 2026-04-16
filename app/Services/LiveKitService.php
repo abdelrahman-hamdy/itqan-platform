@@ -166,6 +166,17 @@ class LiveKitService implements LiveKitServiceInterface
     }
 
     /**
+     * Get avatar metadata for a user — same shape that is embedded in the
+     * JWT metadata claim. Exposed so the mobile token endpoint can echo the
+     * same fields in its HTTP response body, keeping the wire + the JWT in
+     * lockstep without forcing the client to parse the JWT itself.
+     */
+    public function getUserAvatarData(User $user): array
+    {
+        return $this->tokenGenerator->getUserAvatarData($user);
+    }
+
+    /**
      * Start recording for a room using LiveKit Egress
      *
      * Delegates to LiveKitRecordingManager

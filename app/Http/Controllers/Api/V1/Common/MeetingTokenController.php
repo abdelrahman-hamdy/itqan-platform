@@ -82,6 +82,12 @@ class MeetingTokenController extends Controller
                 ]
             );
 
+            // Reuse the same avatar resolver the JWT metadata uses, so the
+            // HTTP body + the JWT's metadata claim carry identical info.
+            // Mobile clients can then populate participant.metadata /
+            // participant.name without parsing the JWT.
+            $avatarData = $this->liveKitService->getUserAvatarData($user);
+
             return $this->success([
                 'token' => $token,
                 'room_name' => $meeting->room_name,
@@ -90,6 +96,11 @@ class MeetingTokenController extends Controller
                     'identity' => (string) $user->id,
                     'name' => $user->name,
                     'role' => $role,
+                    'user_id' => $user->id,
+                    'avatar_url' => $avatarData['avatarUrl'],
+                    'default_avatar_url' => $avatarData['defaultAvatarUrl'],
+                    'user_type' => $avatarData['userType'],
+                    'gender' => $avatarData['gender'],
                 ],
                 'session' => [
                     'id' => $session->id,
