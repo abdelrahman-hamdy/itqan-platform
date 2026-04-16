@@ -454,12 +454,11 @@ class MeetingTokenController extends Controller
     protected function getSession(string $type, string $id, int $userId)
     {
         return match ($type) {
+            // quran_sessions.quran_teacher_id and student_id both reference users.id
             'quran' => QuranSession::where('id', $id)
                 ->where(function ($q) use ($userId) {
                     $q->where('student_id', $userId)
-                        ->orWhereHas('quranTeacher', function ($q) use ($userId) {
-                            $q->where('user_id', $userId);
-                        });
+                        ->orWhere('quran_teacher_id', $userId);
                 })
                 ->with(['meeting', 'quranTeacher'])
                 ->first(),
