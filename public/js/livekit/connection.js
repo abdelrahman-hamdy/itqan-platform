@@ -41,7 +41,13 @@ class LiveKitConnection {
         // reconnects again, and resets the counter each cycle — bypassing
         // maxReconnectAttempts entirely.
         this.stabilityTimerId = null;
-        this.stabilityWindowMs = 30000;
+        this.stabilityWindowMs = 10000;
+        // Adaptive-bitrate hysteresis: require N consecutive same-quality
+        // events before changing encoder bitrate. Stops thrashing — the
+        // previous code renegotiated RTP every quality event (12+ times per
+        // session), and each renegotiation is an audible micro-glitch.
+        this._qualityStreak = { q: null, count: 0 };
+        this._currentAudioBitrate = null;
         this._wakeLock = null;
         this._keepAliveAudio = null;
         this._visibilityHandler = null;
@@ -56,17 +62,22 @@ class LiveKitConnection {
         return {
             adaptiveStream: true,
             dynacast: true,
-            disconnectOnPageLeave: false,
+            disconnectOnPageLeave: true,
             stopLocalTrackOnUnpublish: false,
             audioCaptureDefaults: {
+                // Native WebRTC noise suppression is on by default. The ML-based
+                // RNNoise post-processor is opt-in via localStorage (see
+                // applyNoiseSuppression) because it failed ~41 times/day in
+                // production, each failure an audible glitch. Native NS is
+                // rock-solid and runs in C++.
                 echoCancellation: true,
-                noiseSuppression: false, // RNNoise handles noise suppression instead
+                noiseSuppression: true,
                 autoGainControl: true,
                 voiceIsolation: false,
                 channelCount: 1,
             },
             publishDefaults: {
-                audioPreset: { maxBitrate: 32_000 },
+                audioPreset: { maxBitrate: 48_000 },
                 dtx: true,
                 red: true,
             },
@@ -212,26 +223,40 @@ class LiveKitConnection {
             }
         });
 
-        // Adaptive audio bitrate based on connection quality.
-        // Uses the standard WebRTC RTCRtpSender.setParameters() API to
-        // adjust maxBitrate on the fly. Previous code called a non-existent
-        // `setPublishingQuality()` which silently did nothing.
+        // Adaptive audio bitrate with hysteresis — only apply a downshift after
+        // 3 consecutive "poor" events (~30 s sustained bad network) and an
+        // upshift after 6 consecutive "excellent" (~60 s sustained good).
+        // "good" does not by itself trigger a change; it holds the last value.
+        // This replaces a previous handler that flipped on every quality event
+        // (12 flips/session observed in production telemetry) — each flip is
+        // an RTP renegotiation and an audible micro-glitch.
         this.room.on(window.LiveKit.RoomEvent.ConnectionQualityChanged, (quality, participant) => {
             if (!participant.isLocal) return;
-            const bitrates = { excellent: 48_000, good: 32_000, poor: 16_000 };
+            const bitrates = { excellent: 64_000, good: 48_000, poor: 32_000 };
             const q = quality === window.LiveKit.ConnectionQuality.Excellent ? 'excellent'
                     : quality === window.LiveKit.ConnectionQuality.Good ? 'good' : 'poor';
+
+            const streak = this._qualityStreak;
+            streak.count = streak.q === q ? streak.count + 1 : 1;
+            streak.q = q;
+
+            const target = q === 'poor' && streak.count >= 3 ? bitrates.poor
+                         : q === 'excellent' && streak.count >= 6 ? bitrates.excellent
+                         : null;
+            if (target === null || target === this._currentAudioBitrate) return;
+
             const pub = this.room.localParticipant.getTrackPublication(window.LiveKit.Track.Source.Microphone);
             if (pub?.track?.sender) {
                 try {
                     const params = pub.track.sender.getParameters();
                     if (params.encodings && params.encodings.length > 0) {
-                        params.encodings[0].maxBitrate = bitrates[q];
+                        params.encodings[0].maxBitrate = target;
                         pub.track.sender.setParameters(params).catch(() => {});
+                        this._currentAudioBitrate = target;
                     }
                 } catch (_) { /* sender may not support getParameters on all browsers */ }
             }
-            if (window.MT) window.MT.event('connection', 'quality_adaptive_bitrate', { quality: q, bitrate: bitrates[q] });
+            if (window.MT) window.MT.event('connection', 'quality_adaptive_bitrate', { quality: q, bitrate: target, streak: streak.count });
         });
 
     }
@@ -308,6 +333,9 @@ class LiveKitConnection {
             this.recordAttendanceJoin();
         } else if (state === 'disconnected') {
             this.isConnecting = false;
+
+            // Stop telemetry — no point sending stats for a dead room
+            if (window.MT) window.MT.stopStatsPolling();
 
             // Cancel any pending stability timer — the connection didn't stay
             // up long enough to count as successful.
@@ -461,6 +489,15 @@ class LiveKitConnection {
      */
     async applyNoiseSuppression(localAudioTrack) {
         try {
+            // Opt-in only. Default is native WebRTC noiseSuppression (see
+            // getRoomOptions). RNNoise is gated behind an explicit user
+            // preference because the WASM pipeline failed ~41 times/day in
+            // production — each failure an audible glitch.
+            if (typeof localStorage === 'undefined' || localStorage.getItem('enhanced_nr') !== '1') {
+                if (window.MT) window.MT.event('audio', 'rnnoise_disabled_default', {});
+                return;
+            }
+
             const mem = navigator.deviceMemory || 8;
             const cores = navigator.hardwareConcurrency || 4;
             if (mem < 4 || cores < 4) {
@@ -701,6 +738,7 @@ class LiveKitConnection {
      * Disconnect from the room
      */
     async disconnect() {
+        if (window.MT) window.MT.stopStatsPolling();
         this._releaseWakeLock();
         this._stopKeepAliveAudio();
         this._teardownVisibilityHandler();
