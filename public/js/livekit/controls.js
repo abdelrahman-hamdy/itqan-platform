@@ -213,16 +213,25 @@ class LiveKitControls {
     /**
      * Enforce room permissions on UI buttons
      */
-    enforcePermissionsOnUI() {
+    async enforcePermissionsOnUI() {
         if (!this.roomPermissions) return;
 
         const micButton = document.getElementById('toggleMic');
         const cameraButton = document.getElementById('toggleCamera');
 
-        // Microphone permission
-        if (!this.roomPermissions.microphoneAllowed) {
+        // Microphone permission — sync global audio state from server
+        const micDisabled = !this.roomPermissions.microphoneAllowed;
+        const stateChanged = this.globalAudioControlsState.allStudentsMuted !== micDisabled;
 
-            if (micButton) {
+        if (stateChanged) {
+            this.globalAudioControlsState.allStudentsMuted = micDisabled;
+            this.globalAudioControlsState.studentsCanSelfUnmute = !micDisabled;
+            this.globalAudioControlsState.teacherControlsAudio = micDisabled;
+            this.globalStateExplicitlySet = micDisabled;
+        }
+
+        if (micDisabled) {
+            if (micButton && !micButton.disabled) {
                 micButton.disabled = true;
                 micButton.classList.add('opacity-50', 'cursor-not-allowed');
                 micButton.title = t('permissions.mic_not_allowed_by_teacher');
@@ -230,10 +239,11 @@ class LiveKitControls {
 
             // Ensure mic is muted if permission disabled
             if (this.isAudioEnabled && this.localParticipant) {
-                this.toggleMicrophone(); // This will mute it
+                await this.localParticipant.setMicrophoneEnabled(false);
+                this.isAudioEnabled = false;
             }
         } else {
-            if (micButton) {
+            if (micButton && micButton.disabled) {
                 micButton.disabled = false;
                 micButton.classList.remove('opacity-50', 'cursor-not-allowed');
                 micButton.title = t('control_states.toggle_mic');
@@ -266,14 +276,19 @@ class LiveKitControls {
      * Poll for permission changes every 5 seconds
      */
     startPermissionPolling() {
-        // Clear existing interval if any
         if (this.permissionPollingInterval) {
             clearInterval(this.permissionPollingInterval);
         }
 
-        // Poll every 5 seconds
-        this.permissionPollingInterval = setInterval(() => {
-            this.fetchAndEnforceRoomPermissions();
+        this._permissionPollInFlight = false;
+        this.permissionPollingInterval = setInterval(async () => {
+            if (this._permissionPollInFlight) return;
+            this._permissionPollInFlight = true;
+            try {
+                await this.fetchAndEnforceRoomPermissions();
+            } finally {
+                this._permissionPollInFlight = false;
+            }
         }, 5000);
 
     }
@@ -459,19 +474,14 @@ class LiveKitControls {
 
             // Check audio permissions for students (teachers have full control)
             if (this.userRole === 'student' && newState) {
+                // Hard check: server-side room permissions (survives page refresh)
+                if (this.roomPermissions && !this.roomPermissions.microphoneAllowed) {
+                    this.showPermissionDeniedNotification();
+                    return;
+                }
+
                 // Student trying to unmute - check permissions with enhanced validation
                 if (!this.canStudentUnmute()) {
-                    this.showPermissionDeniedNotification();
-                    return;
-                }
-
-                // TRIPLE SAFETY CHECK: Prevent any bypass attempts
-                if (this.globalAudioControlsState.allStudentsMuted === true) {
-                    this.showPermissionDeniedNotification();
-                    return;
-                }
-
-                if (this.globalAudioControlsState.studentsCanSelfUnmute === false) {
                     this.showPermissionDeniedNotification();
                     return;
                 }
