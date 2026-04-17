@@ -946,6 +946,56 @@ class LiveKitConnection {
         this.reconnectAttempts = 0;
 
     }
+
+    /**
+     * Synchronous teardown for page-unload paths. The async `disconnect()`
+     * relies on `await`, which browsers do not honour during `beforeunload` —
+     * so the RNNoise TransformStream + WebAssembly pipeline and local
+     * MediaStreamTracks linger past document teardown. That combination hangs
+     * the compositor and produces a black tab until the user reloads again.
+     * This method releases those resources immediately.
+     */
+    destroySync() {
+        this.intentionalDisconnect = true;
+
+        if (this.reconnectTimeoutId) { clearTimeout(this.reconnectTimeoutId); this.reconnectTimeoutId = null; }
+        if (this.stabilityTimerId)    { clearTimeout(this.stabilityTimerId);   this.stabilityTimerId = null; }
+
+        this._stopRnnoiseHealthCheck();
+        this._releaseWakeLock();
+        this._stopKeepAliveAudio();
+        this._teardownVisibilityHandler();
+
+        if (this.noiseProcessor) {
+            try { this.noiseProcessor.stopProcessing(); } catch (_) {}
+            this.noiseProcessor = null;
+        }
+        this._originalMicTrack = null;
+        this._denoisedAudioTrack = null;
+
+        // Stop every local MediaStreamTrack so the browser releases mic/camera
+        // hardware and GPU-backed Insertable Streams buffers before the new
+        // document starts loading.
+        try {
+            const lp = this.room?.localParticipant;
+            if (lp) {
+                const pubs = lp.trackPublications?.values?.() ?? [];
+                for (const pub of pubs) {
+                    try { pub.track?.mediaStreamTrack?.stop(); } catch (_) {}
+                }
+            }
+        } catch (_) {}
+
+        if (this.room) {
+            try { this.room.removeAllListeners(); } catch (_) {}
+            try { this.room.disconnect(); } catch (_) {}
+            this.room = null;
+        }
+
+        this.localParticipant = null;
+        this.isConnected = false;
+        this.isConnecting = false;
+    }
 }
 
 // Make class globally available

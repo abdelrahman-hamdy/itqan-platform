@@ -892,6 +892,10 @@
 
     // Check session status and update UI accordingly (with exponential backoff on errors)
     function checkSessionStatus() {
+        if (window._meetingEndedIntentionally || window.meeting?.isDestroyed) {
+            stopSessionStatusPolling();
+            return;
+        }
         fetchWithAuth(`/web-api/sessions/{{ $session->id }}/status?type={{ $sessionTypeForApi }}`)
             .then(response => {
                 if (!response.ok) throw new Error(response.status);
@@ -1780,24 +1784,55 @@ function completeSession(sessionId) {
 
     });
 
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', async () => {
-        // Stop session status polling (prevents memory leak)
+    // Cleanup on page unload — MUST be synchronous. `beforeunload` covers
+    // reload/close on desktop; `pagehide` covers mobile Safari + bfcache where
+    // `beforeunload` doesn't fire. Guard with a flag so we only tear down once.
+    let _meetingUnloadRan = false;
+    const _meetingUnloadHandler = () => {
+        if (_meetingUnloadRan) return;
+        _meetingUnloadRan = true;
+        window._meetingEndedIntentionally = true;
+
+        // Stop all polling intervals
         stopSessionStatusPolling();
 
-        if (window.meeting && typeof window.meeting.destroy === 'function') {
-            try {
-                await window.meeting.destroy();
-            } catch (error) {
+        // Stop telemetry stats
+        if (window.MT) window.MT.stopStatsPolling();
+
+        if (window.meeting) {
+            // Stop track sync interval
+            if (typeof window.meeting.stopTrackSyncCheck === 'function') {
+                window.meeting.stopTrackSyncCheck();
             }
-        } else if (window.destroyCurrentMeeting) {
-            // Fallback cleanup
-            try {
-                await window.destroyCurrentMeeting();
-            } catch (error) {
+
+            // Stop controls timers (permission polling, meeting timer)
+            if (window.meeting.controls && typeof window.meeting.controls.destroy === 'function') {
+                window.meeting.controls.destroy();
             }
+
+            // Full synchronous teardown: stops the RNNoise TransformStream,
+            // all local media tracks (mic/camera), wake lock, keepalive audio,
+            // and fires room.disconnect() without awaiting. Without this, the
+            // RNNoise WASM pipeline + Insertable Streams hold the compositor
+            // and the reloaded tab renders black until a second reload.
+            if (window.meeting.connection && typeof window.meeting.connection.destroySync === 'function') {
+                try { window.meeting.connection.destroySync(); } catch (_) {}
+            }
+
+            window.meeting.isDestroyed = true;
         }
-    });
+
+        // Best-effort attendance leave (sendBeacon works during page unload)
+        if (typeof attendanceTracker !== 'undefined' && attendanceTracker?.isTracking) {
+            attendanceTracker.stopPeriodicUpdates();
+            navigator.sendBeacon('/api/sessions/meeting/leave', JSON.stringify({
+                session_id: attendanceTracker.sessionId,
+                room_name: attendanceTracker.roomName,
+            }));
+        }
+    };
+    window.addEventListener('beforeunload', _meetingUnloadHandler);
+    window.addEventListener('pagehide', _meetingUnloadHandler);
 
 
 
@@ -2174,20 +2209,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Cleanup attendance tracking on page unload
-    window.addEventListener('beforeunload', () => {
-        if (attendanceTracker) {
-            // Stop periodic updates
-            attendanceTracker.stopPeriodicUpdates();
-            
-            if (attendanceTracker.isTracking) {
-                // Send leave event synchronously (best effort)
-                navigator.sendBeacon('/api/sessions/meeting/leave', JSON.stringify({
-                    session_id: attendanceTracker.sessionId,
-                    room_name: attendanceTracker.roomName,
-                }));
-            }
-        }
-    });
+    // Attendance cleanup is handled by the main beforeunload handler above
 </script>
 
