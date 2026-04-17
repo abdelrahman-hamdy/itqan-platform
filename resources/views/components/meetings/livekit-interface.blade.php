@@ -1674,7 +1674,7 @@ function completeSession(sessionId) {
                 csrfToken: '{{ csrf_token() }}',
                 roomName: {!! json_encode($session->meeting_room_name ?? 'session-' . $session->id) !!},
                 participantName: {!! json_encode(trim(auth()->user()->first_name . ' ' . auth()->user()->last_name)) !!},
-                role: '{{ in_array($userType, ["quran_teacher", "academic_teacher"]) ? "teacher" : (in_array($userType, ["observer", "supervisor"]) ? "observer" : "student") }}',
+                role: '{{ in_array($userType, ["quran_teacher", "academic_teacher"]) ? "teacher" : ($userType === "observer" ? "observer" : "student") }}',
                 // Avatar data for local participant
                 avatarUrl: {!! json_encode($currentUserAvatarUrl) !!},
                 defaultAvatarUrl: '{{ $currentUserDefaultAvatarUrl }}',
