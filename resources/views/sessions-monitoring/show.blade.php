@@ -127,9 +127,13 @@
                     :session-type="$sessionType"
                 />
             @else
+                {{-- Participant mode: pass the actual user type so admins /
+                     super admins get a publishing UI instead of being forced
+                     into observer mode. The explicit silent-observer path is
+                     the @if branch above (observer-interface component). --}}
                 <x-meetings.livekit-interface
                     :session="$session"
-                    user-type="observer"
+                    :user-type="auth()->user()->user_type"
                 />
             @endif
         </div>
