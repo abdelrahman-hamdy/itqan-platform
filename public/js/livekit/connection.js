@@ -4,6 +4,50 @@
  */
 
 /**
+ * Computes encoder bitrate targets from LiveKit connection-quality events
+ * using hysteresis, so transient flips don't renegotiate the RTP encoding
+ * (each renegotiation is an audible micro-glitch).
+ */
+class AdaptiveBitrateController {
+    // Require 3 consecutive "poor" quality events (~30 s) to downshift and
+    // 6 consecutive "excellent" (~60 s) to upshift. "good" holds position.
+    // Numbers chosen from telemetry: the adaptive handler was flipping
+    // 12 times per 5-hour session; these streak thresholds bring it to ~1–2.
+    static DOWNSHIFT_STREAK = 3;
+    static UPSHIFT_STREAK = 6;
+    static BITRATES = Object.freeze({ excellent: 64_000, good: 48_000, poor: 32_000 });
+
+    constructor() {
+        this.reset();
+    }
+
+    reset() {
+        this._streak = { q: null, count: 0 };
+        this._lastApplied = null;
+    }
+
+    // Returns `{ quality, bitrate, streak }` when a change should be applied,
+    // or `null` when the quality event is a no-op (streak not reached, "good",
+    // or repeat of the already-applied bitrate).
+    update(quality) {
+        const q = quality === window.LiveKit.ConnectionQuality.Excellent ? 'excellent'
+                : quality === window.LiveKit.ConnectionQuality.Good ? 'good' : 'poor';
+        this._streak.count = this._streak.q === q ? this._streak.count + 1 : 1;
+        this._streak.q = q;
+
+        const target = q === 'poor' && this._streak.count >= AdaptiveBitrateController.DOWNSHIFT_STREAK
+                ? AdaptiveBitrateController.BITRATES.poor
+            : q === 'excellent' && this._streak.count >= AdaptiveBitrateController.UPSHIFT_STREAK
+                ? AdaptiveBitrateController.BITRATES.excellent
+            : null;
+        if (target === null || target === this._lastApplied) return null;
+
+        this._lastApplied = target;
+        return { quality: q, bitrate: target, streak: this._streak.count };
+    }
+}
+
+/**
  * Connection manager for LiveKit Room
  */
 class LiveKitConnection {
@@ -42,12 +86,7 @@ class LiveKitConnection {
         // maxReconnectAttempts entirely.
         this.stabilityTimerId = null;
         this.stabilityWindowMs = 10000;
-        // Adaptive-bitrate hysteresis: require N consecutive same-quality
-        // events before changing encoder bitrate. Stops thrashing — the
-        // previous code renegotiated RTP every quality event (12+ times per
-        // session), and each renegotiation is an audible micro-glitch.
-        this._qualityStreak = { q: null, count: 0 };
-        this._currentAudioBitrate = null;
+        this._bitrateController = new AdaptiveBitrateController();
         // Session-wide RNNoise opt-in flag. Read once at construction so each
         // mic publish doesn't hit localStorage again (sync I/O on some
         // browsers). Toggling the pref mid-session is not supported — user
@@ -71,11 +110,10 @@ class LiveKitConnection {
             disconnectOnPageLeave: true,
             stopLocalTrackOnUnpublish: false,
             audioCaptureDefaults: {
-                // Native WebRTC noise suppression is on by default. The ML-based
-                // RNNoise post-processor is opt-in via localStorage (see
-                // applyNoiseSuppression) because it failed ~41 times/day in
-                // production, each failure an audible glitch. Native NS is
-                // rock-solid and runs in C++.
+                // Native WebRTC NS by default; the ML-based RNNoise
+                // post-processor is opt-in (see applyNoiseSuppression).
+                // RNNoise failed ~41×/day in production — each failure
+                // is an audible glitch — so it can't be the default.
                 echoCancellation: true,
                 noiseSuppression: true,
                 autoGainControl: true,
@@ -229,40 +267,22 @@ class LiveKitConnection {
             }
         });
 
-        // Adaptive audio bitrate with hysteresis — only apply a downshift after
-        // 3 consecutive "poor" events (~30 s sustained bad network) and an
-        // upshift after 6 consecutive "excellent" (~60 s sustained good).
-        // "good" does not by itself trigger a change; it holds the last value.
-        // This replaces a previous handler that flipped on every quality event
-        // (12 flips/session observed in production telemetry) — each flip is
-        // an RTP renegotiation and an audible micro-glitch.
         this.room.on(window.LiveKit.RoomEvent.ConnectionQualityChanged, (quality, participant) => {
             if (!participant.isLocal) return;
-            const bitrates = { excellent: 64_000, good: 48_000, poor: 32_000 };
-            const q = quality === window.LiveKit.ConnectionQuality.Excellent ? 'excellent'
-                    : quality === window.LiveKit.ConnectionQuality.Good ? 'good' : 'poor';
-
-            const streak = this._qualityStreak;
-            streak.count = streak.q === q ? streak.count + 1 : 1;
-            streak.q = q;
-
-            const target = q === 'poor' && streak.count >= 3 ? bitrates.poor
-                         : q === 'excellent' && streak.count >= 6 ? bitrates.excellent
-                         : null;
-            if (target === null || target === this._currentAudioBitrate) return;
+            const change = this._bitrateController.update(quality);
+            if (!change) return;
 
             const pub = this.room.localParticipant.getTrackPublication(window.LiveKit.Track.Source.Microphone);
             if (pub?.track?.sender) {
                 try {
                     const params = pub.track.sender.getParameters();
                     if (params.encodings && params.encodings.length > 0) {
-                        params.encodings[0].maxBitrate = target;
+                        params.encodings[0].maxBitrate = change.bitrate;
                         pub.track.sender.setParameters(params).catch(() => {});
-                        this._currentAudioBitrate = target;
                     }
                 } catch (_) { /* sender may not support getParameters on all browsers */ }
             }
-            if (window.MT) window.MT.event('connection', 'quality_adaptive_bitrate', { quality: q, bitrate: target, streak: streak.count });
+            if (window.MT) window.MT.event('connection', 'quality_adaptive_bitrate', change);
         });
 
     }
@@ -320,12 +340,10 @@ class LiveKitConnection {
         if (state === 'connected') {
             this.isConnecting = false;
 
-            // Reset adaptive-bitrate state: the encoder restarts at
-            // publishDefaults.audioPreset.maxBitrate on every (re)connect,
-            // so the cached value would falsely suppress the first real
-            // quality-driven change after a reconnect.
-            this._qualityStreak = { q: null, count: 0 };
-            this._currentAudioBitrate = null;
+            // The encoder restarts at publishDefaults.audioPreset.maxBitrate
+            // on every (re)connect, so a cached target from the prior session
+            // would falsely suppress the first real quality-driven change.
+            this._bitrateController.reset();
 
             // Defer the reconnectAttempts reset until the connection has been
             // stable for stabilityWindowMs. A rapid connect → disconnect cycle
@@ -502,10 +520,8 @@ class LiveKitConnection {
      */
     async applyNoiseSuppression(localAudioTrack) {
         try {
-            // Opt-in only. Default is native WebRTC noiseSuppression (see
-            // getRoomOptions). RNNoise is gated because the WASM pipeline
-            // failed ~41 times/day in production — each failure an audible
-            // glitch. Flag cached in the constructor.
+            // Opt-in — RNNoise failed ~41×/day in production. Flag cached
+            // in the constructor; native NS is the default (see getRoomOptions).
             if (!this._enhancedNrEnabled) {
                 if (window.MT) window.MT.event('audio', 'rnnoise_disabled_default', {});
                 return;
