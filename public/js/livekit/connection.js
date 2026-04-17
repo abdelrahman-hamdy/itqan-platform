@@ -48,6 +48,12 @@ class LiveKitConnection {
         // session), and each renegotiation is an audible micro-glitch.
         this._qualityStreak = { q: null, count: 0 };
         this._currentAudioBitrate = null;
+        // Session-wide RNNoise opt-in flag. Read once at construction so each
+        // mic publish doesn't hit localStorage again (sync I/O on some
+        // browsers). Toggling the pref mid-session is not supported — user
+        // has to reload.
+        this._enhancedNrEnabled = typeof localStorage !== 'undefined'
+            && localStorage.getItem('enhanced_nr') === '1';
         this._wakeLock = null;
         this._keepAliveAudio = null;
         this._visibilityHandler = null;
@@ -314,6 +320,13 @@ class LiveKitConnection {
         if (state === 'connected') {
             this.isConnecting = false;
 
+            // Reset adaptive-bitrate state: the encoder restarts at
+            // publishDefaults.audioPreset.maxBitrate on every (re)connect,
+            // so the cached value would falsely suppress the first real
+            // quality-driven change after a reconnect.
+            this._qualityStreak = { q: null, count: 0 };
+            this._currentAudioBitrate = null;
+
             // Defer the reconnectAttempts reset until the connection has been
             // stable for stabilityWindowMs. A rapid connect → disconnect cycle
             // will cancel the timer via the 'disconnected' branch below, so the
@@ -490,10 +503,10 @@ class LiveKitConnection {
     async applyNoiseSuppression(localAudioTrack) {
         try {
             // Opt-in only. Default is native WebRTC noiseSuppression (see
-            // getRoomOptions). RNNoise is gated behind an explicit user
-            // preference because the WASM pipeline failed ~41 times/day in
-            // production — each failure an audible glitch.
-            if (typeof localStorage === 'undefined' || localStorage.getItem('enhanced_nr') !== '1') {
+            // getRoomOptions). RNNoise is gated because the WASM pipeline
+            // failed ~41 times/day in production — each failure an audible
+            // glitch. Flag cached in the constructor.
+            if (!this._enhancedNrEnabled) {
                 if (window.MT) window.MT.event('audio', 'rnnoise_disabled_default', {});
                 return;
             }
