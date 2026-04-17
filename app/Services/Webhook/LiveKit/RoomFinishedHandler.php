@@ -4,6 +4,7 @@ namespace App\Services\Webhook\LiveKit;
 
 use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
+use App\Jobs\SummarizeSessionTelemetryJob;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendanceEvent;
 use App\Services\MeetingAttendanceService;
@@ -56,6 +57,7 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
         $this->closeUnclosedEvents($session, $endTime);
         $this->updateSessionStatus($session, $endTime);
         $this->calculateFinalAttendance($session);
+        SummarizeSessionTelemetryJob::dispatch($session::class, $session->id);
     }
 
     /**

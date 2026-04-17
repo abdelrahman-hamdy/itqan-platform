@@ -234,6 +234,7 @@ abstract class BaseSession extends Model implements MeetingCapable
         'counts_for_teacher' => 'boolean',
         'counts_for_teacher_set_at' => 'datetime',
         'teacher_attendance_calculated_at' => 'datetime',
+        'telemetry_summary' => 'array',
     ];
 
     // ========================================

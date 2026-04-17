@@ -262,6 +262,10 @@ class MeetingTelemetry {
     async sampleStats() {
         const room = this.statsRoom;
         if (!room || !room.localParticipant) return;
+        if (room.state === 'disconnected') {
+            this.stopStatsPolling();
+            return;
+        }
         const lp = room.localParticipant;
 
         // Local audio sender stats — the most important signal for echo detection

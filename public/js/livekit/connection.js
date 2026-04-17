@@ -87,12 +87,14 @@ class LiveKitConnection {
         this.stabilityTimerId = null;
         this.stabilityWindowMs = 10000;
         this._bitrateController = new AdaptiveBitrateController();
-        // Session-wide RNNoise opt-in flag. Read once at construction so each
-        // mic publish doesn't hit localStorage again (sync I/O on some
-        // browsers). Toggling the pref mid-session is not supported — user
-        // has to reload.
+        // Session-wide RNNoise opt-in flag. Key is `enhanced_nr_v2`: the
+        // legacy v1 key is intentionally retired so users who opted in before
+        // native WebRTC noiseSuppression became the default don't end up
+        // running both at once — the double-NS stack produced the muffled /
+        // "underwater" voice that drove the echo-round-2 complaint. The
+        // v2 key is only writable from dev console; no UI exposes it.
         this._enhancedNrEnabled = typeof localStorage !== 'undefined'
-            && localStorage.getItem('enhanced_nr') === '1';
+            && localStorage.getItem('enhanced_nr_v2') === '1';
         this._wakeLock = null;
         this._keepAliveAudio = null;
         this._visibilityHandler = null;
@@ -258,6 +260,15 @@ class LiveKitConnection {
             if (this.config.onActiveSpeakersChanged) {
                 this.config.onActiveSpeakersChanged(speakers);
             }
+            // Broadcast whether the local participant is currently speaking
+            // so the soft-ducker (audio-ducking.js) can attenuate remote
+            // audio playback during local speech and reduce the echo the
+            // local mic picks back up.
+            const localSid = this.room.localParticipant?.sid;
+            const speaking = !!(localSid && speakers.some((s) => s.sid === localSid));
+            window.dispatchEvent(new CustomEvent('livekit-local-speaking', {
+                detail: { speaking },
+            }));
         });
 
         // Data received
