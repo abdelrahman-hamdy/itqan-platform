@@ -604,8 +604,20 @@ class LiveKitTracks {
         const participantId = participant.identity;
 
 
-        // Detach track
+        // Detach track from any attached elements (LiveKit removes the track
+        // from each element's srcObject MediaStream).
         track.detach();
+
+        // CRITICAL: null the srcObject so Chrome actually releases the video
+        // decoder. Without this, the HTMLVideoElement keeps a reference to
+        // the MediaStream and the GPU decoder stays alive — this is the
+        // primary cause of "meeting gets slower then tab dies with black
+        // screen" after participants toggle camera or rejoin.
+        const videoEl = document.getElementById(`video-${participantId}`);
+        if (videoEl) {
+            try { videoEl.srcObject = null; } catch (_) {}
+            videoEl.style.display = 'none';
+        }
 
         // Update video display - hide video, show camera off overlay
         this.updateVideoDisplay(participantId, false);
@@ -668,6 +680,13 @@ class LiveKitTracks {
 
         // Detach track
         track.detach();
+
+        // Null srcObject on any lingering screen-share video element before
+        // DOM removal so Chrome frees the decoder.
+        const screenEl = document.getElementById(`video-${participantId}_screen`);
+        if (screenEl) {
+            try { screenEl.srcObject = null; } catch (_) {}
+        }
 
         // Remove screen share element
         this.removeScreenShareElement(participantId);
@@ -1241,14 +1260,19 @@ class LiveKitTracks {
         if (this.participantTracks.has(participantId)) {
             const tracks = this.participantTracks.get(participantId);
 
-            // Remove video element
-            if (tracks.video && tracks.video.parentNode) {
-                tracks.video.remove();
+            // CRITICAL: null srcObject before removing. DOM removal alone does
+            // not release the GPU video decoder — only clearing srcObject
+            // does. Skipping this causes decoder accumulation on every
+            // participant leave/rejoin, which gradually starves the renderer
+            // and produces the "tab eventually goes black" symptom.
+            if (tracks.video) {
+                try { tracks.video.srcObject = null; } catch (_) {}
+                if (tracks.video.parentNode) tracks.video.remove();
             }
 
-            // Remove audio element
-            if (tracks.audio && tracks.audio.parentNode) {
-                tracks.audio.remove();
+            if (tracks.audio) {
+                try { tracks.audio.srcObject = null; } catch (_) {}
+                if (tracks.audio.parentNode) tracks.audio.remove();
             }
 
             this.participantTracks.delete(participantId);
