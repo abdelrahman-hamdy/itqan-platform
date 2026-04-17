@@ -60,6 +60,16 @@ class LiveKitMeeting {
         }
 
         try {
+            // Pre-request mic permission BEFORE connecting so the browser dialog
+            // appears early and doesn't block an already-connected room.
+            if (this.config.role !== 'observer') {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(t => t.stop());
+                } catch (e) {
+                    // Permission denied or unavailable — handled later in setupMediaPermissions
+                }
+            }
 
             // Initialize modules in correct order
             await this.initializeModules();
@@ -79,8 +89,12 @@ class LiveKitMeeting {
             // Show meeting interface
             this.showMeetingInterface();
 
-            // CRITICAL FIX: Start continuous synchronization check
-            this.startContinuousSync();
+            // NOTE: startContinuousSync() is intentionally NOT called here.
+            // It shares the `trackSyncInterval` property with `startTrackSyncCheck()`
+            // (called from setupLocalMediaEnhanced), so the second assignment leaked
+            // the 3s timer forever — it kept iterating all remote participants and
+            // doing DOM work on every tick even after the user left the meeting.
+            // The 5s `startTrackSyncCheck()` covers the same ground.
 
             // Listen for critical audio failures from connection module
             this._audioFailureHandler = () => {

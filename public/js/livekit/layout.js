@@ -610,38 +610,33 @@ class LiveKitLayout {
     }
 
     /**
-     * Start monitoring video area size changes during focus mode
+     * Start monitoring video area size changes during focus mode.
+     * Uses ResizeObserver instead of setInterval(250ms) — the old polling loop
+     * called offsetWidth/offsetHeight 4× per second, forcing a layout reflow
+     * each time even when focus mode was inactive.
      */
     startFocusModeMonitoring() {
-        if (this.focusMonitoringInterval) {
-            return; // Already monitoring
-        }
+        if (this.focusResizeObserver) return;
 
-        let lastVideoAreaSize = null;
+        const videoArea = document.getElementById('videoArea');
+        if (!videoArea || typeof ResizeObserver === 'undefined') return;
 
-        this.focusMonitoringInterval = setInterval(() => {
-            if (!this.isFocusModeActive || !this._focusedElement) {
-                return;
-            }
-
-            const videoArea = document.getElementById('videoArea');
-            if (!videoArea) return;
-
-            const currentSize = `${videoArea.offsetWidth}x${videoArea.offsetHeight}`;
-
-            if (lastVideoAreaSize && lastVideoAreaSize !== currentSize) {
-                this.recalculateFocusedVideoSize();
-            }
-
-            lastVideoAreaSize = currentSize;
-        }, 250); // Check every 250ms
-
+        this.focusResizeObserver = new ResizeObserver(() => {
+            if (!this.isFocusModeActive || !this._focusedElement) return;
+            this.recalculateFocusedVideoSize();
+        });
+        this.focusResizeObserver.observe(videoArea);
     }
 
     /**
      * Stop monitoring video area size changes
      */
     stopFocusModeMonitoring() {
+        if (this.focusResizeObserver) {
+            this.focusResizeObserver.disconnect();
+            this.focusResizeObserver = null;
+        }
+        // Clean up legacy interval reference if any old code path set it
         if (this.focusMonitoringInterval) {
             clearInterval(this.focusMonitoringInterval);
             this.focusMonitoringInterval = null;
