@@ -184,8 +184,10 @@
     };
 
     window.ITQAN_ROLE_CONFIG = @json(\App\Enums\UserType::meetingDisplayConfigMap());
-    const STUDENT_FALLBACK = window.ITQAN_ROLE_CONFIG.student;
-    const AVATAR_TYPE_CONFIG = window.ITQAN_ROLE_CONFIG;
+    window.getRoleConfig = window.getRoleConfig || function (userType) {
+        var cfg = window.ITQAN_ROLE_CONFIG || {};
+        return cfg[userType] || cfg.student || { bg: 'bg-blue-100', text: 'text-blue-700' };
+    };
     const ROLE_LABELS = {
         teacher: @json(__('meetings.participants.teacher')),
         student: @json(__('meetings.participants.student')),
@@ -258,7 +260,7 @@
 
     // Shared avatar error handler (exposed on container for onerror access)
     window._observerAvatarError = function(imgEl, userType, name) {
-        var cfg = AVATAR_TYPE_CONFIG[userType] || AVATAR_TYPE_CONFIG['student'];
+        var cfg = window.getRoleConfig(userType);
         var initials = getInitials(name);
         imgEl.onerror = null;
         imgEl.parentElement.innerHTML = '<span class="font-semibold text-lg sm:text-xl ' + cfg.text + '">' + initials + '</span>';
@@ -269,7 +271,7 @@
     }
 
     function generateAvatarHtml(avatarUrl, defaultAvatarUrl, userType, name) {
-        var cfg = AVATAR_TYPE_CONFIG[userType] || AVATAR_TYPE_CONFIG['student'];
+        var cfg = window.getRoleConfig(userType);
         var initials = getInitials(name);
         var safeName = escapeAttr(name);
         var safeUserType = escapeAttr(userType);

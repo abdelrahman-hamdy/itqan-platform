@@ -81,7 +81,6 @@
     $currentUserType = $currentUser->user_type ?? 'student';
     $genderPrefix = $currentUserGender === 'female' ? 'female' : 'male';
 
-    // Build avatar URLs (avatar_kind comes from UserType::meetingDisplayConfig)
     $currentUserAvatarUrl = $currentUserAvatarPath ? asset('storage/' . $currentUserAvatarPath) : null;
     $currentUserAvatarKind = (\App\Enums\UserType::tryFrom($currentUserType)
         ?? \App\Enums\UserType::STUDENT)->meetingDisplayConfig()['avatar_kind'];
@@ -170,6 +169,10 @@
 <!-- JavaScript Translations Object -->
 <script>
     window.ITQAN_ROLE_CONFIG = @json(\App\Enums\UserType::meetingDisplayConfigMap());
+    window.getRoleConfig = function (userType) {
+        var cfg = window.ITQAN_ROLE_CONFIG || {};
+        return cfg[userType] || cfg.student || { bg: 'bg-blue-100', text: 'text-blue-700' };
+    };
     window.meetingTranslations = {
         status: {
             session_ready: @json(__('meetings.status.session_ready')),

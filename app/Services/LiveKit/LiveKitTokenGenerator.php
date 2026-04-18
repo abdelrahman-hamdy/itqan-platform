@@ -266,20 +266,14 @@ class LiveKitTokenGenerator
         return 'student';
     }
 
-    /**
-     * Check if user is a teacher
-     */
     private function isTeacher(User $user): bool
     {
-        return in_array($user->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
+        return UserType::tryFrom($user->user_type)?->isTeacher() ?? false;
     }
 
-    /**
-     * Check if user is an admin
-     */
     private function isAdmin(User $user): bool
     {
-        return in_array($user->user_type, [UserType::ADMIN->value, UserType::SUPER_ADMIN->value]);
+        return in_array(UserType::tryFrom($user->user_type), [UserType::ADMIN, UserType::SUPER_ADMIN], true);
     }
 
     /**

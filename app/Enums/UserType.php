@@ -174,10 +174,12 @@ enum UserType: string
     }
 
     /**
-     * Display config used inside the meeting UI (Tailwind classes for
-     * participant tiles, avatar asset kind, and the participant-list label
-     * key). Single source of truth — consumed by Blade templates and pushed
-     * to the JS layer via `window.ITQAN_ROLE_CONFIG`.
+     * Single source of truth for per-role meeting UI config.
+     * Consolidates four duplicated maps that previously lived in JS
+     * (participants.js, controls.js) and Blade (livekit-interface,
+     * observer-interface). Pushed to the JS layer via the
+     * `window.ITQAN_ROLE_CONFIG` injection so frontend lookups always
+     * agree with the server-side avatar URL composition.
      */
     public function meetingDisplayConfig(): array
     {

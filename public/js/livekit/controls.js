@@ -1902,7 +1902,7 @@ class LiveKitControls {
      * @returns {string} Avatar HTML
      */
     generateChatAvatarHtml(avatarData) {
-        const roleConfig = (window.ITQAN_ROLE_CONFIG && (window.ITQAN_ROLE_CONFIG[avatarData.userType] || window.ITQAN_ROLE_CONFIG.student)) || { bg: 'bg-blue-100', text: 'text-blue-700' };
+        const roleConfig = window.getRoleConfig(avatarData.userType);
         const config = { bgColor: roleConfig.bg, textColor: roleConfig.text };
 
         let avatarContent = '';
