@@ -323,15 +323,13 @@ class MeetingDataChannelHandler {
                 // Lower the hand
                 window.meeting.controls.isHandRaised = false;
 
-                // Hide hand raise indicator
+                // Hide hand raise indicator — the indicator change is the
+                // visible feedback; no toast needed.
                 window.meeting.controls.createHandRaiseIndicatorDirect(myParticipantId, false);
 
                 // Update control buttons
                 window.meeting.controls.updateControlButtons();
-
             }
-
-            this.showNotification(t('hand_raise.teacher_dismissed_hand'), 'info');
         }
     }
 

@@ -1081,8 +1081,9 @@ class LiveKitMeeting {
 
         switch (state) {
             case 'connected':
+                // Single "joined" toast is fired from setupMediaPermissions with
+                // the role-aware message (joined_teacher_mic_on / joined_student_muted).
                 this.isConnected = true;
-                this.showNotification(t('connection.connected'), 'success');
                 break;
             case 'disconnected':
                 this.isConnected = false;

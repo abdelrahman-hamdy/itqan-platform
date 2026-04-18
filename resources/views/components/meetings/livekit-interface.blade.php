@@ -698,11 +698,6 @@
         // Flag the disconnect as intentional so the UI shows "meeting ended" instead of "reconnecting"
         window._meetingEndedIntentionally = true;
 
-        // Show notification to user
-        if (typeof showNotification !== 'undefined') {
-            showNotification(window.meetingTranslations.messages.auto_terminated, 'info');
-        }
-
         // Disconnect from LiveKit room if connected
         if (window.meeting?.connection?.isRoomConnected()) {
             try {
@@ -1872,13 +1867,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (data.success) {
                     this.isTracking = true;
-                    
+
                     if (data.attendance_status) {
                         this.updateAttendanceUI(data.attendance_status);
                     }
-                    
-                    this.showNotification('✅ ' + data.message, 'success');
-                    
+
                     // CRITICAL FIX: Start periodic updates only when meeting join is successful
                     if (!this.updateInterval) {
                         this.startPeriodicUpdates();

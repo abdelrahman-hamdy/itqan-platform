@@ -920,52 +920,14 @@ class LiveKitControls {
 
             this.isHandRaised = !this.isHandRaised;
 
-
-            // Send hand raise state via data channel with enhanced data
-            const data = {
-                type: 'handRaise',
-                isRaised: this.isHandRaised,
-                participantId: this.localParticipant.identity,
-                participantSid: this.localParticipant.sid,
-                timestamp: new Date().toISOString(),
-                timeRaised: this.isHandRaised ? Date.now() : null
-            };
-
-
-            // Use the same reliable broadcasting as chat
-            const encoder = new TextEncoder();
-            const encodedData = encoder.encode(JSON.stringify(data));
-            const dataKind = window.LiveKit.DataPacket_Kind?.RELIABLE || 1;
-
-            await this.room.localParticipant.publishData(
-                encodedData,
-                dataKind,
-                {
-                    reliable: true,
-                    destinationSids: [] // Broadcast to all participants
-                }
-            );
-
-            // Mirror the raise/lower state into a LiveKit participant attribute
-            // so peers that only read attributes (mobile clients) can see web
-            // users' raised hands. Web peers keep using the DataChannel payload
-            // above for queue ordering, so this write is purely additive.
-            try {
-                await this.room.localParticipant.setAttributes({
-                    hand_raised: this.isHandRaised ? new Date().toISOString() : ''
-                });
-            } catch (e) {
-                console.warn('[handRaise] setAttributes failed:', e);
-            }
+            await this._broadcastHandRaiseState(this.isHandRaised);
 
             // ✅ IMMEDIATE: Show hand raise indicator for current user - SIMPLE DIRECT APPROACH
             this.createHandRaiseIndicatorDirect(this.localParticipant.identity, this.isHandRaised);
 
-            // Update local UI
+            // Update local UI — the hand indicator + sidebar list provide the
+            // state feedback; no extra toast.
             this.updateControlButtons();
-
-            const status = this.isHandRaised ? t('control_states.raised') : t('control_states.lowered');
-            this.showNotification(`${t('control_states.hand')}: ${status}`, 'success');
 
             // Notify state change
             this.notifyControlStateChange('handRaise', this.isHandRaised);
@@ -976,6 +938,44 @@ class LiveKitControls {
             // Revert state on error
             this.isHandRaised = !this.isHandRaised;
         }
+    }
+
+    /**
+     * Broadcast the local hand-raise state to every peer. Sends BOTH a
+     * `handRaise` DataChannel payload (so web peers' raised-hands queues
+     * update with full ordering metadata) and a `hand_raised` participant
+     * attribute (so mobile peers — which read attributes — see the change).
+     * The two writes are independent and run in parallel.
+     */
+    async _broadcastHandRaiseState(isRaised) {
+        const data = {
+            type: 'handRaise',
+            isRaised,
+            participantId: this.localParticipant.identity,
+            participantSid: this.localParticipant.sid,
+            timestamp: new Date().toISOString(),
+            timeRaised: isRaised ? Date.now() : null,
+        };
+
+        const encoder = new TextEncoder();
+        const encodedData = encoder.encode(JSON.stringify(data));
+        const dataKind = window.LiveKit.DataPacket_Kind?.RELIABLE || 1;
+
+        await Promise.all([
+            this.room.localParticipant.publishData(
+                encodedData,
+                dataKind,
+                {
+                    reliable: true,
+                    destinationSids: [] // Broadcast to all participants
+                }
+            ),
+            this.room.localParticipant.setAttributes({
+                hand_raised: isRaised ? new Date().toISOString() : ''
+            }).catch(e => {
+                console.warn('[handRaise] setAttributes failed:', e);
+            }),
+        ]);
     }
 
     // ===== RAISED HANDS MANAGEMENT METHODS =====
@@ -1015,13 +1015,9 @@ class LiveKitControls {
         this.updateRaisedHandsUI();
         this.updateRaisedHandsNotificationBadge();
 
-        const friendlyName = this._participantFriendlyName(participant);
-
-        // Show floating notification for teacher
-        this.showHandRaiseNotification(friendlyName);
-
-        // Show notification for teacher
-        this.showNotification(t('hand_raise.hand_raised_notification', { name: friendlyName }), 'info');
+        // Audio alert is the only attention prompt — the indicator + sidebar
+        // queue cover the visual feedback.
+        this.playHandRaiseSound();
     }
 
     /**
@@ -1138,9 +1134,6 @@ class LiveKitControls {
 
             // Trigger auto-unmute for the student (they will receive this via data channel)
             // The student's client will handle auto-unmuting when it receives the audioPermission event
-
-            // Show success notification
-            this.showNotification(t('hand_raise.granted_permission', { name: handRaise.identity }), 'success');
 
             // Show visual effect on participant video
             this.showPermissionGrantedEffect(participantSid);
@@ -1307,12 +1300,9 @@ class LiveKitControls {
             this.raisedHands = {};
             this.handRaiseNotificationCount = 0;
 
-            // Update UI
+            // Update UI — sidebar emptying is the visible feedback.
             this.updateRaisedHandsUI();
             this.updateRaisedHandsNotificationBadge();
-
-            // Show success notification
-            this.showNotification(t('hand_raise.all_hands_cleared'), 'success');
 
         } catch (error) {
             this.showNotification(t('hand_raise.clear_hands_error'), 'error');
@@ -2571,6 +2561,14 @@ class LiveKitControls {
             // Lower the hand
             this.isHandRaised = false;
 
+            // Propagate the lower to every peer (DataChannel handRaise=false +
+            // attribute clear). Without this the teacher who issued the lower
+            // sees their queue update via local removal, but other peers — and
+            // mobile clients in particular — never see the attribute clear.
+            this._broadcastHandRaiseState(false).catch(e => {
+                console.warn('[handRaise] broadcast on lower failed:', e);
+            });
+
             // Hide hand raise indicator
             this.createHandRaiseIndicatorDirect(myParticipantId, false);
 
@@ -2596,6 +2594,12 @@ class LiveKitControls {
 
             // Lower the hand
             this.isHandRaised = false;
+
+            // Propagate the lower to every peer so attribute readers (mobile)
+            // and other queue consumers see the clear, not just this client.
+            this._broadcastHandRaiseState(false).catch(e => {
+                console.warn('[handRaise] broadcast on clear-all failed:', e);
+            });
 
             // Hide hand raise indicator
             const myParticipantId = this.localParticipant?.identity;
@@ -2988,50 +2992,6 @@ class LiveKitControls {
             this.updateParticipantHandRaiseIndicator(this.localParticipant.sid, true);
         }
 
-    }
-
-    /**
-     * Show floating notification for new hand raise
-     * @param {string} studentName - Name of student who raised hand
-     */
-    showHandRaiseNotification(studentName) {
-        // Only show for teachers
-        if (!this.canControlStudentAudio()) {
-            return;
-        }
-
-
-        // Create floating notification element
-        const notification = document.createElement('div');
-        notification.className = 'hand-raise-notification fixed top-4 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
-        notification.innerHTML = `
-            <div class="flex items-center gap-3">
-                <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                    <i class="ri-hand text-sm"></i>
-                </div>
-                <span class="font-medium">${t('hand_raise.hand_raised_notification', {name: studentName})}</span>
-                <button onclick="this.remove()" class="text-white hover:text-gray-200 ml-2">
-                    <i class="ri-close-line"></i>
-                </button>
-            </div>
-        `;
-
-        // Add to page
-        document.body.appendChild(notification);
-
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateX(-50%) translateY(-20px)';
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
-            }
-        }, 5000);
-
-        // Play sound if available
-        this.playHandRaiseSound();
     }
 
     /**
