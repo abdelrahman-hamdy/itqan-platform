@@ -58,12 +58,25 @@ class MeetingTokenController extends Controller
         $isTeacher = $this->isTeacher($session, $sessionType, $user->id);
         $meeting = $session->meeting;
 
-        // Teacher is the first participant — auto-provision the LiveKit room,
-        // matching the web flow where the session page triggers startMeeting
-        // on teacher arrival. Students before the teacher still get
-        // MEETING_NOT_AVAILABLE, which is correct (they should wait).
-        if (! $meeting && $isTeacher) {
-            $meeting = $this->provisionMeetingRoom($session);
+        // Auto-provision the LiveKit room when it's missing. Two cases:
+        //   - Teacher is the first participant on a SCHEDULED session — mirrors
+        //     the web flow where the session page triggers startMeeting on
+        //     teacher arrival, and flips status SCHEDULED → READY.
+        //   - Any authorized participant arriving at a READY / ONGOING session
+        //     that's somehow lost its room (orphan state — e.g. status was
+        //     advanced manually, room expired, etc.). This mirrors
+        //     HasMeetings::ensureMeetingExists()'s recovery semantics.
+        // Students arriving on a SCHEDULED session before the teacher still
+        // get MEETING_NOT_AVAILABLE — they should wait for the teacher.
+        if (! $meeting) {
+            $status = $session->status->value ?? $session->status;
+            $sessionStarted = in_array($status, [
+                SessionStatus::READY->value,
+                SessionStatus::ONGOING->value,
+            ], true);
+            if ($isTeacher || $sessionStarted) {
+                $meeting = $this->provisionMeetingRoom($session);
+            }
         }
 
         if (! $meeting) {
