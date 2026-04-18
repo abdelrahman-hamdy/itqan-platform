@@ -17,6 +17,7 @@ class LiveKitParticipants {
      */
     constructor(config = {}) {
         this.config = config;
+        this.videoGridId = config.videoGridId || 'videoGrid';
         this.participants = new Map(); // participantId -> participant object
         this.participantElements = new Map(); // participantId -> DOM element
         this.localParticipant = null;
@@ -91,7 +92,7 @@ class LiveKitParticipants {
         const isLocal = participant === this.localParticipant;
 
 
-        const videoGrid = document.getElementById('videoGrid');
+        const videoGrid = document.getElementById(this.videoGridId);
         if (!videoGrid) {
             return;
         }

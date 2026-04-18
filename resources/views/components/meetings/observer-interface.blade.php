@@ -105,8 +105,8 @@
                     <span class="text-white">{{ __('meetings.info.participant') }}</span>
                 </div>
                 <div class="flex items-center gap-2 font-mono">
-                    <div id="observer-timer-dot" class="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
-                    <span id="observer-timer" class="text-white font-bold">00:00</span>
+                    <div id="meetingTimerDot" class="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                    <span id="meetingTimer" class="text-white font-bold">00:00</span>
                 </div>
             </div>
             {{-- Right: Fullscreen button --}}
@@ -188,15 +188,32 @@
         var cfg = window.ITQAN_ROLE_CONFIG || {};
         return cfg[userType] || cfg.student || { bg: 'bg-blue-100', text: 'text-blue-700' };
     };
-    const ROLE_LABELS = {
-        teacher: @json(__('meetings.participants.teacher')),
-        student: @json(__('meetings.participants.student')),
-        admin: @json(__('meetings.participants.admin')),
-        supervisor: @json(__('meetings.participants.supervisor')),
+    // `t()` is the translation helper LiveKitParticipants reads for role labels
+    // and badges. Outside the regular meeting JS bundle it isn't defined, so we
+    // resolve via window.meetingTranslations or fall back to the key.
+    window.t = window.t || function (key) {
+        var parts = String(key).split('.');
+        var node = window.meetingTranslations || {};
+        for (var i = 0; i < parts.length; i++) {
+            if (node && parts[i] in node) node = node[parts[i]];
+            else return key;
+        }
+        return typeof node === 'string' ? node : key;
+    };
+    window.meetingTranslations = window.meetingTranslations || {
+        participants: {
+            you: @json(__('meetings.participants.you')),
+            teacher: @json(__('meetings.participants.teacher')),
+            student: @json(__('meetings.participants.student')),
+            admin: @json(__('meetings.participants.admin')),
+            supervisor: @json(__('meetings.participants.supervisor')),
+            participant: @json(__('meetings.participants.participant')),
+        }
     };
 
     let room = null;
     let isConnected = false;
+    let participantsManager = null;
 
     // DOM Elements
     const statusEl = document.getElementById('observer-status');
@@ -254,121 +271,63 @@
         }
     }
 
-    function getInitials(name) {
-        return (name || '?').split(' ').map(function(n) { return n[0]; }).join('').toUpperCase().slice(0, 2);
-    }
-
-    // Shared avatar error handler (exposed on container for onerror access)
-    window._observerAvatarError = function(imgEl, userType, name) {
-        var cfg = window.getRoleConfig(userType);
-        var initials = getInitials(name);
-        imgEl.onerror = null;
-        imgEl.parentElement.innerHTML = '<span class="font-semibold text-lg sm:text-xl ' + cfg.text + '">' + initials + '</span>';
-    };
-
-    function escapeAttr(str) {
-        return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-
-    function generateAvatarHtml(avatarUrl, defaultAvatarUrl, userType, name) {
-        var cfg = window.getRoleConfig(userType);
-        var initials = getInitials(name);
-        var safeName = escapeAttr(name);
-        var safeUserType = escapeAttr(userType);
-        var content = '';
-        if (avatarUrl) {
-            content = '<img src="' + escapeAttr(avatarUrl) + '" alt="' + safeName + '" class="w-full h-full object-cover"'
-                + ' onerror="window._observerAvatarError(this,\'' + safeUserType + '\',\'' + safeName + '\')">';
-        } else if (defaultAvatarUrl) {
-            content = '<img src="' + escapeAttr(defaultAvatarUrl) + '" alt="' + safeName + '"'
-                + ' class="absolute object-cover" style="width:120%;height:120%;top:0;left:50%;transform:translateX(-50%)"'
-                + ' onerror="window._observerAvatarError(this,\'' + safeUserType + '\',\'' + safeName + '\')">';
-        } else {
-            content = '<span class="font-semibold text-lg sm:text-xl ' + cfg.text + '">' + initials + '</span>';
-        }
-        return '<div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden ' + cfg.bg + ' relative flex items-center justify-center">' + content + '</div>';
-    }
-
-    function getRoleLabel(metadata) {
-        var userType = metadata.userType || '';
-        if (userType === 'quran_teacher' || userType === 'academic_teacher' || metadata.role === 'teacher')
-            return ROLE_LABELS.teacher;
-        if (userType === 'supervisor' || userType === 'admin' || userType === 'super_admin')
-            return ROLE_LABELS.supervisor;
-        return ROLE_LABELS.student;
-    }
-
-    function createParticipantTile(participant) {
-        var tileId = 'tile-' + participant.sid;
-        if (document.getElementById(tileId)) return;
-
-        var metadata = JSON.parse(participant.metadata || '{}');
-        var name = metadata.name || participant.identity;
-        var userType = metadata.userType || 'student';
-        var avatarUrl = metadata.avatarUrl || null;
-        var defaultAvatarUrl = metadata.defaultAvatarUrl || null;
-        var isTeacher = metadata.role === 'teacher';
-        var roleLabel = getRoleLabel(metadata);
-        var avatarHtml = generateAvatarHtml(avatarUrl, defaultAvatarUrl, userType, name);
-
-        var teacherBadge = isTeacher
-            ? '<div class="absolute -top-1 -right-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-lg z-10">' + ROLE_LABELS.teacher + '</div>'
-            : '';
-
-        var tile = document.createElement('div');
-        tile.id = tileId;
-        tile.className = 'relative bg-gray-800 rounded-lg overflow-hidden aspect-video flex items-center justify-center group';
-        tile.innerHTML =
-            '<div class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 to-gray-800 z-10" data-placeholder>' +
-                '<div class="flex flex-col items-center text-center">' +
-                    '<div class="relative mb-3 shadow-lg transition-transform duration-200 group-hover:scale-110">' +
-                        avatarHtml +
-                        teacherBadge +
-                    '</div>' +
-                    '<p class="text-white text-sm sm:text-base font-medium px-2 text-center">' + escapeAttr(name) + '</p>' +
-                    '<p class="text-gray-300 text-xs mt-1">' + roleLabel + '</p>' +
-                '</div>' +
-            '</div>' +
-            '<div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2 flex items-center justify-between z-20">' +
-                '<span class="text-white text-xs font-medium truncate max-w-[70%]">' + escapeAttr(name) + '</span>' +
-            '</div>';
-
-        videoTilesEl.appendChild(tile);
-        updateVideoLayout();
-    }
-
-    function removeParticipantTile(participant) {
-        var tile = document.getElementById('tile-' + participant.sid);
-        if (tile) {
-            tile.remove();
-            updateVideoLayout();
-        }
-    }
-
     function attachTrack(track, participant) {
-        var tile = document.getElementById('tile-' + participant.sid);
-        if (!tile) return;
-
+        var participantId = participant.identity;
         if (track.kind === 'video') {
-            var videoEl = track.attach();
-            videoEl.className = 'absolute inset-0 w-full h-full object-cover z-0';
-            tile.insertBefore(videoEl, tile.firstChild);
-            var placeholder = tile.querySelector('[data-placeholder]');
-            if (placeholder) placeholder.classList.add('hidden');
+            var videoEl = document.getElementById('video-' + participantId);
+            if (!videoEl) return;
+            track.attach(videoEl);
+            videoEl.style.display = 'block';
+            videoEl.style.opacity = '1';
+            videoEl.style.visibility = 'visible';
+            var participantEl = document.getElementById('participant-' + participantId);
+            var placeholder = participantEl && participantEl.querySelector('.absolute.inset-0.flex.flex-col');
+            if (placeholder) {
+                placeholder.style.opacity = '0';
+                placeholder.style.visibility = 'hidden';
+            }
         } else if (track.kind === 'audio') {
             var audioEl = track.attach();
             audioEl.style.display = 'none';
-            tile.appendChild(audioEl);
+            var hostEl = document.getElementById('participant-' + participantId);
+            (hostEl || document.body).appendChild(audioEl);
         }
     }
 
     function detachTrack(track, participant) {
-        track.detach().forEach(function(el) { el.remove(); });
-        var tile = document.getElementById('tile-' + participant.sid);
-        if (tile && track.kind === 'video') {
-            var placeholder = tile.querySelector('[data-placeholder]');
-            if (placeholder) placeholder.classList.remove('hidden');
+        var participantId = participant.identity;
+        if (track.kind === 'video') {
+            track.detach();
+            var videoEl = document.getElementById('video-' + participantId);
+            if (videoEl) {
+                videoEl.style.display = 'none';
+                videoEl.style.opacity = '0';
+                videoEl.style.visibility = 'hidden';
+            }
+            var participantEl = document.getElementById('participant-' + participantId);
+            var placeholder = participantEl && participantEl.querySelector('.absolute.inset-0.flex.flex-col');
+            if (placeholder) {
+                placeholder.style.opacity = '1';
+                placeholder.style.visibility = 'visible';
+            }
+        } else {
+            track.detach().forEach(function(el) { el.remove(); });
         }
+    }
+
+    async function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load ' + src));
+            document.head.appendChild(s);
+        });
+    }
+
+    async function loadParticipantsModule() {
+        if (typeof LiveKitParticipants !== 'undefined') return;
+        return loadScript('{{ asset("js/livekit/participants.js") }}?v={{ filemtime(public_path("js/livekit/participants.js")) }}');
     }
 
     async function loadLiveKitSDK() {
@@ -415,28 +374,6 @@
         return response.json();
     }
 
-    // Timer
-    let timerInterval = null;
-    let timerSeconds = 0;
-    const timerEl = document.getElementById('observer-timer');
-
-    function startTimer() {
-        timerSeconds = 0;
-        if (timerEl) timerEl.textContent = '00:00';
-        timerInterval = setInterval(function() {
-            timerSeconds++;
-            var m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
-            var s = String(timerSeconds % 60).padStart(2, '0');
-            if (timerEl) timerEl.textContent = m + ':' + s;
-        }, 1000);
-    }
-
-    function stopTimer() {
-        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-        timerSeconds = 0;
-        if (timerEl) timerEl.textContent = '00:00';
-    }
-
     // Fullscreen
     const fullscreenBtn = document.getElementById('observer-fullscreen-btn');
     const fullscreenIcon = document.getElementById('observer-fullscreen-icon');
@@ -470,7 +407,7 @@
         if (waitingRetryTimer) { clearTimeout(waitingRetryTimer); waitingRetryTimer = null; }
 
         try {
-            await loadLiveKitSDK();
+            await Promise.all([loadLiveKitSDK(), loadParticipantsModule()]);
             const tokenData = await fetchObserverToken();
 
             // Room has no participants yet — wait and auto-retry
@@ -480,19 +417,27 @@
                 return;
             }
 
+            participantsManager = new LiveKitParticipants({
+                videoGridId: 'observer-video-tiles',
+                meetingConfig: { role: 'observer', userType: 'supervisor' },
+                onParticipantAdded: () => updateVideoLayout(),
+                onParticipantRemoved: () => updateVideoLayout(),
+                onParticipantClick: () => {},
+            });
+
             room = new window.LiveKit.Room({
                 adaptiveStream: true,
                 dynacast: true,
             });
 
             room.on(window.LiveKit.RoomEvent.ParticipantConnected, (participant) => {
-                createParticipantTile(participant);
+                participantsManager.addParticipant(participant);
                 updateParticipantCount();
                 subscribeToParticipantTracks(participant);
             });
 
             room.on(window.LiveKit.RoomEvent.ParticipantDisconnected, (participant) => {
-                removeParticipantTile(participant);
+                participantsManager.removeParticipant(participant.identity);
                 updateParticipantCount();
             });
 
@@ -504,10 +449,18 @@
                 detachTrack(track, participant);
             });
 
+            // Active speaker glow — same `ring-4 ring-blue-500 ring-opacity-75`
+            // treatment regular meetings use, applied via the shared participants
+            // module so observer tiles match the rest of the UI.
+            room.on(window.LiveKit.RoomEvent.ActiveSpeakersChanged, (speakers) => {
+                if (!participantsManager) return;
+                participantsManager.highlightActiveSpeakers(speakers.map(s => s.identity));
+            });
+
             room.on(window.LiveKit.RoomEvent.Disconnected, () => {
                 isConnected = false;
                 videoTilesEl.innerHTML = '';
-                stopTimer();
+                participantsManager = null;
                 showState('idle');
             });
 
@@ -515,10 +468,9 @@
 
             isConnected = true;
             showState('connected');
-            startTimer();
 
             room.remoteParticipants.forEach((participant) => {
-                createParticipantTile(participant);
+                participantsManager.addParticipant(participant);
                 subscribeToParticipantTracks(participant);
             });
 
@@ -546,7 +498,7 @@
         }
         isConnected = false;
         videoTilesEl.innerHTML = '';
-        stopTimer();
+        participantsManager = null;
         showState('idle');
     }
 
@@ -565,20 +517,30 @@
     // Initial state
     showState('idle');
 
-    // Initialize SmartSessionTimer for the idle header
-    @if($session->scheduled_at)
-    (function initObserverTimer() {
-        function loadTimerScript() {
-            return new Promise(function(resolve, reject) {
-                if (typeof SmartSessionTimer !== 'undefined') { resolve(); return; }
-                var s = document.createElement('script');
-                s.src = '{{ asset("js/session-timer.js") }}?v={{ time() }}';
-                s.onload = resolve;
-                s.onerror = reject;
-                document.head.appendChild(s);
-            });
-        }
+    // Phase-driven progress bar colour (kept out of `onTick` so phase changes
+    // re-paint immediately, not on the next tick).
+    function applyObserverPhaseColor(phase) {
+        var el = document.getElementById('observer-timer-progress');
+        if (!el) return;
+        var base = 'h-1.5 rounded-full transition-all duration-1000 ';
+        if (phase === 'session') el.className = base + 'bg-green-500';
+        else if (phase === 'overtime') el.className = base + 'bg-red-500';
+        else if (phase === 'preparation') el.className = base + 'bg-yellow-500';
+        else el.className = base + 'bg-blue-400';
+    }
 
+    function updateObserverProgress(timing) {
+        var el = document.getElementById('observer-timer-progress');
+        if (el && timing.percentage !== undefined) {
+            el.style.width = Math.min(timing.percentage, 100) + '%';
+        }
+    }
+
+    // SmartSessionTimer drives both the idle header and the in-meeting
+    // counter (via `meetingTimerElementId: 'meetingTimer'`). It also feeds
+    // `#meetingTimerDot` whose colour is hardcoded by the timer module.
+    @if($session->scheduled_at)
+    function initializeObserverSessionTimer() {
         var timerConfig = {
             sessionId: {{ $session->id }},
             scheduledAt: '{{ $session->scheduled_at->toISOString() }}',
@@ -588,32 +550,33 @@
             timerElementId: 'observer-session-timer',
             phaseElementId: 'observer-timer-phase',
             displayElementId: 'observer-time-display',
-            onPhaseChange: function() {},
+            meetingTimerElementId: 'meetingTimer',
+            onPhaseChange: function(newPhase) {
+                applyObserverPhaseColor(newPhase);
+            },
             onTick: function(timing) {
-                var progressEl = document.getElementById('observer-timer-progress');
-                if (progressEl && timing.progress !== undefined) {
-                    progressEl.style.width = Math.min(timing.progress, 100) + '%';
-                    // Color based on phase
-                    var phase = timing.phase || '';
-                    if (phase === 'session') {
-                        progressEl.className = 'h-1.5 rounded-full transition-all duration-1000 bg-green-500';
-                    } else if (phase === 'overtime') {
-                        progressEl.className = 'h-1.5 rounded-full transition-all duration-1000 bg-red-500';
-                    } else if (phase === 'preparation') {
-                        progressEl.className = 'h-1.5 rounded-full transition-all duration-1000 bg-yellow-500';
-                    } else {
-                        progressEl.className = 'h-1.5 rounded-full transition-all duration-1000 bg-blue-400';
-                    }
-                }
+                updateObserverProgress(timing);
             }
         };
 
-        loadTimerScript().then(function() {
-            if (typeof SmartSessionTimer !== 'undefined') {
-                window.observerSessionTimer = new SmartSessionTimer(timerConfig);
-            }
-        }).catch(function() {});
-    })();
+        if (typeof SmartSessionTimer !== 'undefined') {
+            window.observerSessionTimer = new SmartSessionTimer(timerConfig);
+        } else {
+            loadScript('{{ asset("js/session-timer.js") }}?v={{ filemtime(public_path("js/session-timer.js")) }}')
+                .then(function() {
+                    if (typeof SmartSessionTimer !== 'undefined') {
+                        window.observerSessionTimer = new SmartSessionTimer(timerConfig);
+                    }
+                })
+                .catch(function() {});
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeObserverSessionTimer);
+    } else {
+        initializeObserverSessionTimer();
+    }
     @endif
 })();
 </script>
