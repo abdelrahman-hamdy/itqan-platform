@@ -87,14 +87,10 @@ class LiveKitConnection {
         this.stabilityTimerId = null;
         this.stabilityWindowMs = 10000;
         this._bitrateController = new AdaptiveBitrateController();
-        // Session-wide RNNoise opt-in flag. Key is `enhanced_nr_v2`: the
-        // legacy v1 key is intentionally retired so users who opted in before
-        // native WebRTC noiseSuppression became the default don't end up
-        // running both at once — the double-NS stack produced the muffled /
-        // "underwater" voice that drove the echo-round-2 complaint. The
-        // v2 key is only writable from dev console; no UI exposes it.
-        this._enhancedNrEnabled = typeof localStorage !== 'undefined'
-            && localStorage.getItem('enhanced_nr_v2') === '1';
+        // Housekeeping: wipe the legacy RNNoise opt-in flag on any browser
+        // that still has it set. The ML denoiser was removed entirely after
+        // the Insertable-Streams pipeline progressively paralyzed Chrome tabs.
+        try { if (typeof localStorage !== 'undefined') localStorage.removeItem('enhanced_nr_v2'); } catch (_) {}
         this._wakeLock = null;
         this._keepAliveAudio = null;
         this._visibilityHandler = null;
@@ -112,10 +108,6 @@ class LiveKitConnection {
             disconnectOnPageLeave: true,
             stopLocalTrackOnUnpublish: false,
             audioCaptureDefaults: {
-                // Native WebRTC NS by default; the ML-based RNNoise
-                // post-processor is opt-in (see applyNoiseSuppression).
-                // RNNoise failed ~41×/day in production — each failure
-                // is an audible glitch — so it can't be the default.
                 echoCancellation: true,
                 noiseSuppression: true,
                 autoGainControl: true,
@@ -220,10 +212,6 @@ class LiveKitConnection {
 
         // Local track events - important for local participant
         this.room.on(window.LiveKit.RoomEvent.LocalTrackPublished, (publication, participant) => {
-            // Apply RNNoise noise suppression to outbound audio
-            if (publication.source === window.LiveKit.Track.Source.Microphone && publication.track) {
-                this.applyNoiseSuppression(publication.track);
-            }
             if (this.config.onTrackPublished) {
                 this.config.onTrackPublished(publication, participant);
             }
@@ -520,150 +508,6 @@ class LiveKitConnection {
 
 
     /**
-     * Apply RNNoise ML noise suppression directly to the mic track.
-     * No noise gate, no gain boost — just RNNoise on raw mic audio.
-     * Fails silently on unsupported browsers or stereo mics.
-     *
-     * SAFETY: keeps a reference to the original MediaStreamTrack so that if
-     * the denoised track silently dies (AudioWorklet crash, WASM OOM, tab
-     * backgrounded too long) we can fall back to raw mic audio instead of
-     * publishing silence.
-     */
-    async applyNoiseSuppression(localAudioTrack) {
-        try {
-            // Opt-in — RNNoise failed ~41×/day in production. Flag cached
-            // in the constructor; native NS is the default (see getRoomOptions).
-            if (!this._enhancedNrEnabled) {
-                if (window.MT) window.MT.event('audio', 'rnnoise_disabled_default', {});
-                return;
-            }
-
-            const mem = navigator.deviceMemory || 8;
-            const cores = navigator.hardwareConcurrency || 4;
-            if (mem < 4 || cores < 4) {
-                if (window.MT) window.MT.event('audio', 'noise_suppression_skipped_low_end', { mem, cores });
-                return;
-            }
-
-            if (this.noiseProcessor) {
-                this.noiseProcessor.stopProcessing();
-                this.noiseProcessor = null;
-            }
-
-            const { NoiseSuppressionProcessor } = await import('/js/livekit/noise-suppression/noise_suppression.js');
-            if (!NoiseSuppressionProcessor.isSupported()) {
-                if (window.MT) window.MT.event('audio', 'noise_suppression_unsupported', {});
-                return;
-            }
-
-            // Keep reference to the original track BEFORE replacing so we can
-            // fall back if the denoised track dies later.
-            this._originalMicTrack = localAudioTrack.mediaStreamTrack;
-            this._denoisedAudioTrack = localAudioTrack; // LiveKit LocalAudioTrack wrapper
-
-            this.noiseProcessor = new NoiseSuppressionProcessor();
-            const denoisedTrack = await this.noiseProcessor.startProcessing(localAudioTrack.mediaStreamTrack);
-
-            // Monitor the denoised track — if it ends unexpectedly, fall back.
-            denoisedTrack.addEventListener('ended', () => {
-                if (window.MT) window.MT.warn('audio', 'rnnoise_track_ended_unexpectedly', {});
-                this._fallbackToOriginalMic();
-            });
-
-            await localAudioTrack.replaceTrack(denoisedTrack);
-            this._startRnnoiseHealthCheck();
-            if (window.MT) window.MT.event('audio', 'rnnoise_enabled', { mem, cores });
-        } catch (e) {
-            if (window.MT) window.MT.event('audio', 'rnnoise_failed', { error: e.message });
-        }
-    }
-
-    /**
-     * Fall back to the original (raw) microphone track when RNNoise dies.
-     * This prevents silent publishing — the teacher's audio continues with
-     * browser-native AEC instead of RNNoise.
-     */
-    async _fallbackToOriginalMic() {
-        if (!this._originalMicTrack || !this._denoisedAudioTrack) return;
-        if (this._rnnoiseRecovering) return;
-        this._rnnoiseRecovering = true;
-
-        try {
-            if (this._originalMicTrack.readyState !== 'live') {
-                if (window.MT) window.MT.warn('audio', 'rnnoise_fallback_original_dead', {});
-                const opts = window.LiveKitAudioCaptureOptions || { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 };
-                const newStream = await navigator.mediaDevices.getUserMedia({ audio: opts });
-                this._originalMicTrack = newStream.getAudioTracks()[0];
-            }
-
-            await this._denoisedAudioTrack.replaceTrack(this._originalMicTrack);
-            this._stopRnnoiseHealthCheck();
-
-            if (this.noiseProcessor) {
-                try { this.noiseProcessor.stopProcessing(); } catch (_) {}
-                this.noiseProcessor = null;
-            }
-
-            if (window.MT) window.MT.event('audio', 'rnnoise_fallback_to_original', {});
-        } catch (e) {
-            if (window.MT) window.MT.error('audio', 'rnnoise_fallback_failed', e, {});
-            // Last resort: ask the SDK to restart the mic entirely.
-            // This creates a fresh track + republish cycle, bypassing the
-            // dead original track and failed getUserMedia.
-            try {
-                const lp = this.room?.localParticipant;
-                if (lp) {
-                    await lp.setMicrophoneEnabled(false);
-                    await lp.setMicrophoneEnabled(true);
-                    this._stopRnnoiseHealthCheck();
-                    if (this.noiseProcessor) {
-                        try { this.noiseProcessor.stopProcessing(); } catch (_) {}
-                        this.noiseProcessor = null;
-                    }
-                    this._originalMicTrack = null;
-                    this._denoisedAudioTrack = null;
-                    if (window.MT) window.MT.event('audio', 'rnnoise_sdk_restart_succeeded', {});
-                }
-            } catch (sdkErr) {
-                if (window.MT) window.MT.error('audio', 'rnnoise_sdk_restart_failed', sdkErr, {});
-                window.dispatchEvent(new CustomEvent('livekit-audio-critical', {
-                    detail: { message: 'mic_disconnected' }
-                }));
-            }
-        } finally {
-            this._rnnoiseRecovering = false;
-        }
-    }
-
-    /**
-     * Periodically verify the denoised track is still alive.
-     * MediaStreamTrack.onended does not always fire (browser-dependent),
-     * so we poll readyState as a safety net every 5 seconds.
-     */
-    _startRnnoiseHealthCheck() {
-        this._stopRnnoiseHealthCheck();
-        this._rnnoiseHealthInterval = setInterval(() => {
-            if (!this.noiseProcessor) {
-                this._stopRnnoiseHealthCheck();
-                return;
-            }
-            const pub = this.room?.localParticipant?.getTrackPublication(window.LiveKit.Track.Source.Microphone);
-            const currentTrack = pub?.track?.mediaStreamTrack;
-            if (currentTrack && currentTrack.readyState === 'ended') {
-                if (window.MT) window.MT.warn('audio', 'rnnoise_health_check_dead_track', {});
-                this._fallbackToOriginalMic();
-            }
-        }, 5000);
-    }
-
-    _stopRnnoiseHealthCheck() {
-        if (this._rnnoiseHealthInterval) {
-            clearInterval(this._rnnoiseHealthInterval);
-            this._rnnoiseHealthInterval = null;
-        }
-    }
-
-    /**
      * Show a prompt for iOS Safari users when audio autoplay is blocked.
      * Calls room.startAudio() on tap to unlock playback.
      */
@@ -782,13 +626,6 @@ class LiveKitConnection {
         this._releaseWakeLock();
         this._stopKeepAliveAudio();
         this._teardownVisibilityHandler();
-        this._stopRnnoiseHealthCheck();
-        if (this.noiseProcessor) {
-            this.noiseProcessor.stopProcessing();
-            this.noiseProcessor = null;
-        }
-        this._originalMicTrack = null;
-        this._denoisedAudioTrack = null;
         if (this.room && this.isConnected) {
             this.intentionalDisconnect = true;
             await this.room.disconnect();
@@ -923,10 +760,6 @@ class LiveKitConnection {
             this.stabilityTimerId = null;
         }
 
-        this._stopRnnoiseHealthCheck();
-        this._originalMicTrack = null;
-        this._denoisedAudioTrack = null;
-
         // Record leave when destroying connection
         if (this.isConnected) {
             this.recordAttendanceLeave();
@@ -950,8 +783,7 @@ class LiveKitConnection {
     /**
      * Synchronous teardown for page-unload paths. The async `disconnect()`
      * relies on `await`, which browsers do not honour during `beforeunload` —
-     * so the RNNoise TransformStream + WebAssembly pipeline and local
-     * MediaStreamTracks linger past document teardown. That combination hangs
+     * so local MediaStreamTracks linger past document teardown. That hangs
      * the compositor and produces a black tab until the user reloads again.
      * This method releases those resources immediately.
      */
@@ -961,17 +793,9 @@ class LiveKitConnection {
         if (this.reconnectTimeoutId) { clearTimeout(this.reconnectTimeoutId); this.reconnectTimeoutId = null; }
         if (this.stabilityTimerId)    { clearTimeout(this.stabilityTimerId);   this.stabilityTimerId = null; }
 
-        this._stopRnnoiseHealthCheck();
         this._releaseWakeLock();
         this._stopKeepAliveAudio();
         this._teardownVisibilityHandler();
-
-        if (this.noiseProcessor) {
-            try { this.noiseProcessor.stopProcessing(); } catch (_) {}
-            this.noiseProcessor = null;
-        }
-        this._originalMicTrack = null;
-        this._denoisedAudioTrack = null;
 
         // Stop every local MediaStreamTrack so the browser releases mic/camera
         // hardware and GPU-backed Insertable Streams buffers before the new

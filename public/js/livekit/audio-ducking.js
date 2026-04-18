@@ -17,10 +17,6 @@
  *
  * === Debugging audio quality (team-only, never user-facing) ===
  *
- *   Toggle the experimental RNNoise pipeline for the current browser:
- *     localStorage.setItem('enhanced_nr_v2', '1');  // enable (will reload)
- *     localStorage.removeItem('enhanced_nr_v2');    // revert to native NS
- *
  *   Per-session audio metrics land in storage/logs/meeting-telemetry-*.log.
  *   Interpretation keys:
  *     echo_return_loss_db              > 20 healthy, < 5 / negative = physical

@@ -69,6 +69,70 @@ class MeetingTelemetry {
         // user reports like "my earbuds don't work" with what the browser
         // actually sees.
         this.enumerateAudioDevices();
+
+        // Main-thread paralysis probe. A rolling summary of longtasks
+        // (>50ms synchronous blocking) is emitted every 10 s so we can tell
+        // "page went black at 02:15" from "page felt laggy because main
+        // thread was blocked 4.2 s out of every 10 s". Attribution
+        // (containerSrc) tells us which iframe/script was running.
+        this._startLongTaskProbe();
+    }
+
+    /**
+     * Aggregate longtask entries into 10-second buckets and ship to server.
+     * Using a single PerformanceObserver has near-zero overhead; the cost
+     * lives entirely in the tasks being observed.
+     */
+    _startLongTaskProbe() {
+        if (typeof PerformanceObserver !== 'function') return;
+        if (!PerformanceObserver.supportedEntryTypes?.includes('longtask')) return;
+
+        this._longTaskBucket = { count: 0, total_ms: 0, max_ms: 0, entries: [] };
+        try {
+            this._longTaskObs = new PerformanceObserver((list) => {
+                for (const e of list.getEntries()) {
+                    const dur = Math.round(e.duration);
+                    this._longTaskBucket.count++;
+                    this._longTaskBucket.total_ms += dur;
+                    if (dur > this._longTaskBucket.max_ms) this._longTaskBucket.max_ms = dur;
+                    // Keep up to 5 of the biggest offenders with attribution
+                    if (this._longTaskBucket.entries.length < 5 || dur > (this._longTaskBucket.entries[4]?.dur || 0)) {
+                        const attr = (e.attribution || []).slice(0, 2).map(a => ({
+                            type: a.containerType || null,
+                            src: (a.containerSrc || '').slice(-60),
+                            name: a.containerName || null,
+                        }));
+                        this._longTaskBucket.entries.push({ dur, attr });
+                        this._longTaskBucket.entries.sort((a, b) => b.dur - a.dur);
+                        if (this._longTaskBucket.entries.length > 5) this._longTaskBucket.entries.length = 5;
+                    }
+                }
+            });
+            this._longTaskObs.observe({ type: 'longtask', buffered: true });
+        } catch (_) { return; }
+
+        this._longTaskTimer = setInterval(() => {
+            const b = this._longTaskBucket;
+            if (b.count === 0) return;
+            // Also capture JS heap if exposed
+            const mem = performance.memory ? {
+                used_mb: Math.round(performance.memory.usedJSHeapSize / 1048576),
+                total_mb: Math.round(performance.memory.totalJSHeapSize / 1048576),
+            } : null;
+            this.event('perf', 'longtask_bucket', {
+                count: b.count,
+                total_ms: b.total_ms,
+                max_ms: b.max_ms,
+                top: b.entries,
+                heap: mem,
+            });
+            this._longTaskBucket = { count: 0, total_ms: 0, max_ms: 0, entries: [] };
+        }, 10_000);
+    }
+
+    _stopLongTaskProbe() {
+        try { this._longTaskObs?.disconnect(); } catch (_) {}
+        if (this._longTaskTimer) { clearInterval(this._longTaskTimer); this._longTaskTimer = null; }
     }
 
     /**
@@ -372,6 +436,7 @@ class MeetingTelemetry {
     destroy() {
         this.stopFlushTimer();
         this.stopStatsPolling();
+        this._stopLongTaskProbe();
         this.flushSync();
 
         if (this._unloadHandler) {
