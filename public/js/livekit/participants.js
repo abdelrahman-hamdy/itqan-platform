@@ -730,18 +730,25 @@ class LiveKitParticipants {
      * @param {string[]} activeSpeakerIds - Array of active speaker participant IDs
      */
     highlightActiveSpeakers(activeSpeakerIds) {
-        // Remove existing highlights
-        for (const element of this.participantElements.values()) {
-            element.classList.remove('ring-4', 'ring-blue-500', 'ring-opacity-75');
-        }
+        // Diff-based: only touch tiles whose speaking state actually changed.
+        // The event fires every ~150ms during active speech; iterating ALL tiles
+        // every time was the dominant DOM hit on large rooms.
+        const next = new Set(activeSpeakerIds);
+        const previous = this._activeSpeakerIds || new Set();
 
-        // Add highlights to active speakers
-        for (const participantId of activeSpeakerIds) {
-            const element = this.getParticipantElement(participantId);
-            if (element) {
-                element.classList.add('ring-4', 'ring-blue-500', 'ring-opacity-75');
+        for (const id of previous) {
+            if (!next.has(id)) {
+                const el = this.getParticipantElement(id);
+                if (el) el.classList.remove('ring-4', 'ring-blue-500', 'ring-opacity-75');
             }
         }
+        for (const id of next) {
+            if (!previous.has(id)) {
+                const el = this.getParticipantElement(id);
+                if (el) el.classList.add('ring-4', 'ring-blue-500', 'ring-opacity-75');
+            }
+        }
+        this._activeSpeakerIds = next;
     }
 
     /**

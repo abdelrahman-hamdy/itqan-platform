@@ -459,8 +459,10 @@
 
             room.on(window.LiveKit.RoomEvent.Disconnected, () => {
                 isConnected = false;
-                videoTilesEl.innerHTML = '';
-                participantsManager = null;
+                if (participantsManager) {
+                    participantsManager.destroy();
+                    participantsManager = null;
+                }
                 showState('idle');
             });
 
@@ -497,8 +499,10 @@
             room = null;
         }
         isConnected = false;
-        videoTilesEl.innerHTML = '';
-        participantsManager = null;
+        if (participantsManager) {
+            participantsManager.destroy();
+            participantsManager = null;
+        }
         showState('idle');
     }
 
@@ -529,11 +533,15 @@
         else el.className = base + 'bg-blue-400';
     }
 
+    var _lastObserverProgress = -1;
     function updateObserverProgress(timing) {
+        if (timing.percentage === undefined) return;
+        var pct = Math.min(timing.percentage, 100);
+        if (pct === _lastObserverProgress) return;
         var el = document.getElementById('observer-timer-progress');
-        if (el && timing.percentage !== undefined) {
-            el.style.width = Math.min(timing.percentage, 100) + '%';
-        }
+        if (!el) return;
+        el.style.width = pct + '%';
+        _lastObserverProgress = pct;
     }
 
     // SmartSessionTimer drives both the idle header and the in-meeting
