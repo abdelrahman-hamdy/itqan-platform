@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Http\Traits\Api\PaginatesResults;
 use App\Http\Traits\Api\SessionViewerTrait;
+use App\Models\BaseSession;
+use App\Services\SessionSettingsService;
 use BackedEnum;
 
 /**
@@ -33,6 +35,8 @@ abstract class BaseStudentSessionController extends Controller
             $attendanceStatus = $session->meetingAttendances->first()->attendance_status ?? null;
         }
 
+        [$prepMinutes, $bufferMinutes] = $this->resolveSessionTimingMinutes($session);
+
         return [
             'id' => $session->id,
             'type' => $type,
@@ -43,12 +47,34 @@ abstract class BaseStudentSessionController extends Controller
             'status_label' => $session->status->label ?? $session->status,
             'scheduled_at' => $session->scheduled_at?->toISOString(),
             'duration_minutes' => $session->duration_minutes ?? 60,
+            'preparation_minutes' => $prepMinutes,
+            'ending_buffer_minutes' => $bufferMinutes,
             'teacher' => $this->formatTeacherData($teacher),
             'meeting_url' => $session->meeting_link ?? null,
             'can_join' => $this->canJoinSession($session),
             'has_meeting' => ! empty($session->meeting_link),
             'attendance_status' => $attendanceStatus,
         ];
+    }
+
+    /**
+     * Resolve the academy-configured `[preparation_minutes, ending_buffer_minutes]`
+     * pair for a session via [SessionSettingsService]. Mobile clients use these
+     * to compute the join window — without them they fall back to defaults
+     * (10 / 5) and the local "Join" button can light up before the server's
+     * `MeetingTokenController::canJoinSession` agrees, producing a 400
+     * `MEETING_NOT_AVAILABLE` on the token request.
+     *
+     * @return array{0:int,1:int}
+     */
+    protected function resolveSessionTimingMinutes($session): array
+    {
+        if (! $session instanceof BaseSession) {
+            return [10, 5];
+        }
+        $svc = app(SessionSettingsService::class);
+
+        return [$svc->getPreparationMinutes($session), $svc->getBufferMinutes($session)];
     }
 
     /**

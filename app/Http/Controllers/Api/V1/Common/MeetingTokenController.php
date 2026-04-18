@@ -55,8 +55,16 @@ class MeetingTokenController extends Controller
             );
         }
 
-        // Get or create meeting
+        $isTeacher = $this->isTeacher($session, $sessionType, $user->id);
         $meeting = $session->meeting;
+
+        // Teacher is the first participant — auto-provision the LiveKit room,
+        // matching the web flow where the session page triggers startMeeting
+        // on teacher arrival. Students before the teacher still get
+        // MEETING_NOT_AVAILABLE, which is correct (they should wait).
+        if (! $meeting && $isTeacher) {
+            $meeting = $this->provisionMeetingRoom($session);
+        }
 
         if (! $meeting) {
             return $this->error(
@@ -66,8 +74,6 @@ class MeetingTokenController extends Controller
             );
         }
 
-        // Determine participant role
-        $isTeacher = $this->isTeacher($session, $sessionType, $user->id);
         $role = $isTeacher ? 'teacher' : 'student';
 
         try {
@@ -222,57 +228,37 @@ class MeetingTokenController extends Controller
             ], __('Meeting already exists.'));
         }
 
-        try {
-            $validated = $request->validate([
-                'max_participants' => ['sometimes', 'integer', 'min:2', 'max:200'],
-                'recording_enabled' => ['sometimes', 'boolean'],
-            ]);
+        $validated = $request->validate([
+            'max_participants' => ['sometimes', 'integer', 'min:2', 'max:200'],
+            'recording_enabled' => ['sometimes', 'boolean'],
+        ]);
 
-            $meetingUrl = $session->generateMeetingLink([
-                'max_participants' => $validated['max_participants'] ?? 50,
-                'recording_enabled' => $validated['recording_enabled'] ?? false,
-            ]);
+        $meeting = $this->provisionMeetingRoom($session, $validated);
 
-            // Refresh model to get updated meeting fields
-            $session->refresh();
-
-            // Update session status to READY if it's still scheduled
-            $status = $session->status->value ?? $session->status;
-            if ($status === SessionStatus::SCHEDULED->value) {
-                $session->update(['status' => SessionStatus::READY]);
-            }
-
-            Log::info('Meeting started via mobile API', [
-                'session_type' => $sessionType,
-                'session_id' => $session->id,
-                'user_id' => $user->id,
-                'room_name' => $session->meeting_room_name,
-            ]);
-
-            return $this->success([
-                'meeting_room_name' => $session->meeting_room_name,
-                'meeting_url' => $session->meeting_link,
-                'meeting_id' => $session->meeting_id,
-                'session_id' => $session->id,
-                'session_type' => $sessionType,
-                'livekit_url' => config('livekit.server_url'),
-                'already_exists' => false,
-            ], __('Meeting created successfully.'));
-
-        } catch (Throwable $e) {
-            Log::error('Failed to start meeting via mobile API', [
-                'session_id' => $session->id,
-                'session_type' => $sessionType,
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-            ]);
-
+        if (! $meeting) {
             return $this->error(
                 __('Failed to create meeting.'),
                 500,
                 'MEETING_CREATION_FAILED'
             );
         }
+
+        Log::info('Meeting started via mobile API', [
+            'session_type' => $sessionType,
+            'session_id' => $session->id,
+            'user_id' => $user->id,
+            'room_name' => $session->meeting_room_name,
+        ]);
+
+        return $this->success([
+            'meeting_room_name' => $session->meeting_room_name,
+            'meeting_url' => $session->meeting_link,
+            'meeting_id' => $session->meeting_id,
+            'session_id' => $session->id,
+            'session_type' => $sessionType,
+            'livekit_url' => config('livekit.server_url'),
+            'already_exists' => false,
+        ], __('Meeting created successfully.'));
     }
 
     /**
@@ -595,5 +581,47 @@ class MeetingTokenController extends Controller
         return $session instanceof BaseSession
             ? app(SessionSettingsService::class)->getBufferMinutes($session)
             : 15;
+    }
+
+    /**
+     * Provision the LiveKit room for $session if it doesn't exist yet, and
+     * flip SCHEDULED → READY (mirror of startMeeting's side effects). Used
+     * by both the explicit startMeeting endpoint and getToken's auto-create
+     * branch for teachers, so a teacher arriving on mobile no longer sees a
+     * 400 MEETING_NOT_AVAILABLE on first join.
+     *
+     * Idempotent: re-entry just returns the existing virtual meeting accessor.
+     * Returns null on failure (LiveKit error, missing academy, etc.).
+     */
+    private function provisionMeetingRoom(BaseSession $session, array $options = []): ?object
+    {
+        if ($session->meeting_room_name) {
+            return $session->meeting;
+        }
+
+        try {
+            $config = $session->getMeetingConfiguration();
+            $session->generateMeetingLink([
+                'max_participants' => $options['max_participants'] ?? $config['max_participants'],
+                'recording_enabled' => $options['recording_enabled'] ?? $config['recording_enabled'],
+            ]);
+
+            // generateMeetingLink() and update() both mutate the in-memory
+            // model, so the meeting accessor below sees the new
+            // meeting_room_name + status without a refresh round-trip.
+            $status = $session->status->value ?? $session->status;
+            if ($status === SessionStatus::SCHEDULED->value) {
+                $session->update(['status' => SessionStatus::READY]);
+            }
+
+            return $session->meeting;
+        } catch (Throwable $e) {
+            Log::error('Failed to auto-provision LiveKit room', [
+                'session_id' => $session->id,
+                'session_type' => $session->getMeetingSessionType(),
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Http\Traits\Api\HandlesAbsentReschedule;
 use App\Models\InteractiveCourseSession;
 use App\Models\InteractiveSessionReport;
+use App\Services\SessionSettingsService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -97,6 +98,8 @@ class InteractiveSessionController extends Controller
                 'session_number' => $session->session_number,
                 'scheduled_at' => $session->scheduled_at?->toISOString(),
                 'duration_minutes' => $session->duration_minutes ?? 60,
+                'preparation_minutes' => app(SessionSettingsService::class)->getPreparationMinutes($session),
+                'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                 'status' => $session->status->value ?? $session->status,
                 'meeting_url' => $session->meeting_link,
                 'attendance_count' => $session->attendance_count ?? 0,
@@ -136,6 +139,8 @@ class InteractiveSessionController extends Controller
                 'description' => $session->description,
                 'scheduled_at' => $session->scheduled_at?->toISOString(),
                 'duration_minutes' => $session->duration_minutes ?? 60,
+                'preparation_minutes' => app(SessionSettingsService::class)->getPreparationMinutes($session),
+                'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                 'status' => $session->status->value ?? $session->status,
                 'meeting_url' => $session->meeting_link,
                 'lesson_content' => $session->lesson_content,

@@ -11,6 +11,7 @@ use App\Http\Traits\Api\HandlesAbsentReschedule;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\InteractiveCourseSession;
+use App\Services\SessionSettingsService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -67,6 +68,8 @@ class SessionController extends Controller
                 'subject' => $session->academicSubscription?->subject?->name ?? $session->academicSubscription?->subject_name,
                 'scheduled_at' => $session->scheduled_at?->toISOString(),
                 'duration_minutes' => $session->duration_minutes ?? 60,
+                'preparation_minutes' => app(SessionSettingsService::class)->getPreparationMinutes($session),
+                'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                 'status' => $session->status->value ?? $session->status,
                 'meeting_url' => $session->meeting_link,
             ];
@@ -107,6 +110,8 @@ class SessionController extends Controller
                 'session_number' => $session->session_number,
                 'scheduled_at' => $session->scheduled_at?->toISOString(),
                 'duration_minutes' => $session->duration_minutes ?? 60,
+                'preparation_minutes' => app(SessionSettingsService::class)->getPreparationMinutes($session),
+                'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                 'status' => $session->status->value ?? $session->status,
                 'meeting_url' => $session->meeting_link,
             ];
@@ -166,6 +171,8 @@ class SessionController extends Controller
                     ],
                     'scheduled_at' => $session->scheduled_at?->toISOString(),
                     'duration_minutes' => $session->duration_minutes ?? 60,
+                    'preparation_minutes' => app(SessionSettingsService::class)->getPreparationMinutes($session),
+                    'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                     'status' => $session->status->value ?? $session->status,
                     'meeting_url' => $session->meeting_link,
                     'homework' => $session->homework,
@@ -209,6 +216,8 @@ class SessionController extends Controller
                     'description' => $interactiveSession->description,
                     'scheduled_at' => $interactiveSession->scheduled_at?->toISOString(),
                     'duration_minutes' => $interactiveSession->duration_minutes ?? 60,
+                    'preparation_minutes' => app(SessionSettingsService::class)->getPreparationMinutes($interactiveSession),
+                    'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($interactiveSession),
                     'status' => $interactiveSession->status->value ?? $interactiveSession->status,
                     'meeting_url' => $interactiveSession->meeting_link,
                     'materials' => $interactiveSession->materials ?? [],

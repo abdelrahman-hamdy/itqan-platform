@@ -7,6 +7,7 @@ use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
+use App\Services\SessionSettingsService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -371,6 +372,8 @@ class UnifiedSessionFetchingService
             'scheduled_at_date' => $scheduledAtInTz?->translatedFormat('d M Y'),
             'scheduled_at_time' => $scheduledAtInTz?->format('h:i A'),
             'duration_minutes' => $session->duration_minutes ?? 30,
+            'preparation_minutes' => app(SessionSettingsService::class)->getPreparationMinutes($session),
+            'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
             'status' => $session->status instanceof SessionStatus ? $session->status->value : $session->status,
             'status_label' => $session->status instanceof SessionStatus ? $session->status->label() : $session->status,
             'teacher_name' => $this->getTeacherName($session, $type),

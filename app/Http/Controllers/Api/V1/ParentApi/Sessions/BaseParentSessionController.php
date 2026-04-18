@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Http\Traits\Api\SessionViewerTrait;
+use App\Models\BaseSession;
 use App\Models\ParentStudentRelationship;
+use App\Services\SessionSettingsService;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -72,6 +74,7 @@ abstract class BaseParentSessionController extends Controller
     protected function formatBaseSession(string $type, $session, $student): array
     {
         $teacher = $this->resolveSessionTeacher($session, $type);
+        [$prepMinutes, $bufferMinutes] = $this->resolveSessionTimingMinutes($session);
 
         return [
             'id' => $session->id,
@@ -84,11 +87,31 @@ abstract class BaseParentSessionController extends Controller
             'status' => is_object($session->status) ? $session->status->value : $session->status,
             'scheduled_at' => $session->scheduled_at?->toISOString(),
             'duration_minutes' => $session->duration_minutes ?? 60,
+            'preparation_minutes' => $prepMinutes,
+            'ending_buffer_minutes' => $bufferMinutes,
             'teacher' => $this->formatTeacherData($teacher),
             'meeting_url' => $session->meeting_link ?? null,
             'can_join' => $this->canJoinSession($session),
             'has_meeting' => ! empty($session->meeting_link),
         ];
+    }
+
+    /**
+     * Resolve the academy-configured `[preparation_minutes, ending_buffer_minutes]`
+     * pair for a session. Mobile uses these to compute its local "Join" window;
+     * omitting them caused a mobile-vs-server mismatch that produced 400
+     * `MEETING_NOT_AVAILABLE` on the token request.
+     *
+     * @return array{0:int,1:int}
+     */
+    protected function resolveSessionTimingMinutes($session): array
+    {
+        if (! $session instanceof BaseSession) {
+            return [10, 5];
+        }
+        $svc = app(SessionSettingsService::class);
+
+        return [$svc->getPreparationMinutes($session), $svc->getBufferMinutes($session)];
     }
 
     /**

@@ -10,6 +10,7 @@ use App\Http\Traits\Api\PaginatesResults;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use App\Services\SessionSettingsService;
 use App\Services\Unified\UnifiedSessionFetchingService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -189,6 +190,8 @@ class SessionController extends Controller
                 'status_label' => $session['status_label'],
                 'scheduled_at' => $session['scheduled_at']?->toISOString(),
                 'duration_minutes' => $session['duration_minutes'],
+                'preparation_minutes' => $session['preparation_minutes'] ?? 10,
+                'ending_buffer_minutes' => $session['ending_buffer_minutes'] ?? 5,
                 'teacher' => $session['teacher_name'] ? [
                     'name' => $session['teacher_name'],
                     'avatar' => $session['teacher_avatar'],
@@ -269,6 +272,8 @@ class SessionController extends Controller
             'status_label' => $session->status->label ?? $session->status,
             'scheduled_at' => $session->scheduled_at?->toISOString(),
             'duration_minutes' => $session->duration_minutes ?? 60,
+            'preparation_minutes' => app(SessionSettingsService::class)->getPreparationMinutes($session),
+            'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
             'teacher' => $teacher ? [
                 'id' => $teacher->id,
                 'name' => $teacher->name,

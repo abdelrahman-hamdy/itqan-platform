@@ -272,24 +272,14 @@ class LiveKitControls {
     }
 
     /**
-     * Poll for permission changes every 5 seconds
+     * Poll for permission changes — DISABLED 2026-04-18.
+     * The 5-second fetch loop ran for every student for the entire duration
+     * of every meeting, adding a recurring XHR + main-thread spike. Teacher-
+     * initiated permission changes already propagate via the LiveKit data
+     * channel (handleAudioPermissionGranted etc.), so the poll was redundant.
      */
     startPermissionPolling() {
-        if (this.permissionPollingInterval) {
-            clearInterval(this.permissionPollingInterval);
-        }
-
-        this._permissionPollInFlight = false;
-        this.permissionPollingInterval = setInterval(async () => {
-            if (this._permissionPollInFlight) return;
-            this._permissionPollInFlight = true;
-            try {
-                await this.fetchAndEnforceRoomPermissions();
-            } finally {
-                this._permissionPollInFlight = false;
-            }
-        }, 5000);
-
+        // no-op
     }
 
     /**
@@ -450,6 +440,15 @@ class LiveKitControls {
 
     /**
      * Toggle microphone on/off
+     *
+     * In-flight guard: `setMicrophoneEnabled(true)` takes seconds to complete
+     * (getUserMedia + WebRTC publication + SFU handshake). During that window,
+     * `this.localParticipant.isMicrophoneEnabled` still returns the OLD state,
+     * so rapid clicks all compute `newState = true` and stack concurrent
+     * `setMicrophoneEnabled(true)` calls. LiveKit SDK then logs "waiting for
+     * pending publication promise timed out" (10 s internal timeout) while
+     * the renderer is pinned inside WebRTC callbacks — this is the observed
+     * 30–40 s page paralysis. Ignore reentrant calls instead.
      */
     async toggleMicrophone() {
 
@@ -457,6 +456,12 @@ class LiveKitControls {
             this.showNotification(t('control_errors.not_connected'), 'error');
             return;
         }
+
+        if (this._micToggleInFlight) {
+            if (window.MT) window.MT.warn('mic', 'toggle_ignored_in_flight', { user_role: this.userRole });
+            return;
+        }
+        this._micToggleInFlight = true;
 
         try {
             // Get current state from SDK first
@@ -515,6 +520,8 @@ class LiveKitControls {
             // Reset state to match SDK
             this.isAudioEnabled = this.localParticipant.isMicrophoneEnabled;
             this.updateControlButtons();
+        } finally {
+            this._micToggleInFlight = false;
         }
     }
 
@@ -618,6 +625,11 @@ class LiveKitControls {
             return;
         }
 
+        // Share the toggle guard — server-driven auto-unmute must not race with
+        // a user click or another auto-unmute path.
+        if (this._micToggleInFlight) return;
+        this._micToggleInFlight = true;
+
         try {
 
             await this.localParticipant.setMicrophoneEnabled(true, window.LiveKitAudioCaptureOptions);
@@ -634,6 +646,8 @@ class LiveKitControls {
 
         } catch (error) {
             this.showNotification(t('permissions.auto_unmute_error'), 'error');
+        } finally {
+            this._micToggleInFlight = false;
         }
     }
 
@@ -646,6 +660,15 @@ class LiveKitControls {
             this.showNotification(t('control_errors.not_connected'), 'error');
             return;
         }
+
+        // Same race-condition guard as toggleMicrophone — concurrent
+        // setCameraEnabled(true) calls from rapid clicks stack WebRTC
+        // publications that time out and paralyze the renderer.
+        if (this._cameraToggleInFlight) {
+            if (window.MT) window.MT.warn('camera', 'toggle_ignored_in_flight', { user_role: this.userRole });
+            return;
+        }
+        this._cameraToggleInFlight = true;
 
         try {
             // Get current state from SDK first
@@ -708,6 +731,8 @@ class LiveKitControls {
             // Reset state to match SDK
             this.isVideoEnabled = this.localParticipant.isCameraEnabled;
             this.updateControlButtons();
+        } finally {
+            this._cameraToggleInFlight = false;
         }
     }
 
@@ -720,6 +745,12 @@ class LiveKitControls {
             this.showNotification(t('control_errors.not_connected'), 'error');
             return;
         }
+
+        if (this._screenToggleInFlight) {
+            if (window.MT) window.MT.warn('screen', 'toggle_ignored_in_flight', { user_role: this.userRole });
+            return;
+        }
+        this._screenToggleInFlight = true;
 
         try {
             const currentState = this.isScreenSharing;
@@ -755,6 +786,8 @@ class LiveKitControls {
             } else if (error.name === 'NotSupportedError') {
                 this.showNotification(t('control_errors.screen_share_not_supported'), 'error');
             }
+        } finally {
+            this._screenToggleInFlight = false;
         }
     }
 
@@ -2692,6 +2725,9 @@ class LiveKitControls {
      */
     async handleAudioPermissionGranted(data) {
 
+        if (this._micToggleInFlight) return;
+        this._micToggleInFlight = true;
+
         try {
             if (!this.isAudioEnabled) {
                 await this.localParticipant.setMicrophoneEnabled(true, window.LiveKitAudioCaptureOptions);
@@ -2708,6 +2744,8 @@ class LiveKitControls {
             this.showNotification(`🎤 ${t('student_control.mic_permission_granted_by', {name: data.grantedBy})}`, 'success');
 
         } catch (error) {
+        } finally {
+            this._micToggleInFlight = false;
         }
     }
 

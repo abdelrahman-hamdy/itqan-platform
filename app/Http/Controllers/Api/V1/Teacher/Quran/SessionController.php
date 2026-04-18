@@ -10,6 +10,7 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Http\Traits\Api\HandlesAbsentReschedule;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
+use App\Services\SessionSettingsService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -71,6 +72,8 @@ class SessionController extends Controller
                 'circle_type' => $session->circle_id ? 'group' : 'individual',
                 'scheduled_at' => $session->scheduled_at?->toISOString(),
                 'duration_minutes' => $session->duration_minutes ?? 60,
+                'preparation_minutes' => app(SessionSettingsService::class)->getPreparationMinutes($session),
+                'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                 'status' => $session->status->value ?? $session->status,
                 'meeting_url' => $session->meeting_link,
             ])->toArray(),
@@ -119,6 +122,8 @@ class SessionController extends Controller
                 ],
                 'scheduled_at' => $session->scheduled_at?->toISOString(),
                 'duration_minutes' => $session->duration_minutes ?? 60,
+                'preparation_minutes' => app(SessionSettingsService::class)->getPreparationMinutes($session),
+                'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                 'status' => $session->status->value ?? $session->status,
                 'meeting_url' => $session->meeting_link,
                 'homework' => [
