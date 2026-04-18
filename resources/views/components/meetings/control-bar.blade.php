@@ -32,7 +32,7 @@
     </button>
     @endif
 
-    @if($userType !== 'quran_teacher')
+    @if(!in_array($userType, ['quran_teacher', 'supervisor', 'admin', 'super_admin']))
     <!-- Hand Raise Button -->
     <button id="toggleHandRaise" aria-label="{{ __('meetings.controls.raise_hand') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95">
         <i class="ri-hand text-white text-xl" aria-hidden="true"></i>
