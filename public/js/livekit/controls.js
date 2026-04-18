@@ -15,7 +15,7 @@
  */
 window.LiveKitAudioCaptureOptions = Object.freeze({
     echoCancellation: true,
-    noiseSuppression: false, // RNNoise handles this — browser NS causes double-processing
+    noiseSuppression: true,
     autoGainControl: true,
 });
 
@@ -44,7 +44,6 @@ class LiveKitControls {
         this.isVideoEnabled = true;
         this.isScreenSharing = false;
         this.isHandRaised = false;
-        this.isRecording = false;
 
         // UI state
         this.isChatOpen = false;
@@ -298,13 +297,12 @@ class LiveKitControls {
      */
     setupControlButtons() {
 
-        // Observer mode: hide publish controls, show badge
+        // Observer mode: hide publish controls (badge is rendered by observer-interface.blade.php)
         if (this.isObserver()) {
             ['toggleMic', 'toggleCamera', 'toggleScreenShare', 'toggleHandRaise'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.style.display = 'none';
             });
-            this.showObserverBadge();
         }
 
         // Microphone toggle
@@ -369,12 +367,6 @@ class LiveKitControls {
         if (leaveButton) {
             leaveButton.addEventListener('click', () => this.showLeaveConfirmModal());
         } else {
-        }
-
-        // Recording toggle (teacher only)
-        const recordButton = document.getElementById('toggleRecording');
-        if (recordButton && this.isTeacher()) {
-            recordButton.addEventListener('click', () => this.toggleRecording());
         }
 
         // Raised hands button (role-based)
@@ -954,6 +946,18 @@ class LiveKitControls {
                 }
             );
 
+            // Mirror the raise/lower state into a LiveKit participant attribute
+            // so peers that only read attributes (mobile clients) can see web
+            // users' raised hands. Web peers keep using the DataChannel payload
+            // above for queue ordering, so this write is purely additive.
+            try {
+                await this.room.localParticipant.setAttributes({
+                    hand_raised: this.isHandRaised ? new Date().toISOString() : ''
+                });
+            } catch (e) {
+                console.warn('[handRaise] setAttributes failed:', e);
+            }
+
             // ✅ IMMEDIATE: Show hand raise indicator for current user - SIMPLE DIRECT APPROACH
             this.createHandRaiseIndicatorDirect(this.localParticipant.identity, this.isHandRaised);
 
@@ -1011,11 +1015,28 @@ class LiveKitControls {
         this.updateRaisedHandsUI();
         this.updateRaisedHandsNotificationBadge();
 
+        const friendlyName = this._participantFriendlyName(participant);
+
         // Show floating notification for teacher
-        this.showHandRaiseNotification(participantIdentity);
+        this.showHandRaiseNotification(friendlyName);
 
         // Show notification for teacher
-        this.showNotification(t('hand_raise.hand_raised_notification', { name: participantIdentity }), 'info');
+        this.showNotification(t('hand_raise.hand_raised_notification', { name: friendlyName }), 'info');
+    }
+
+    /**
+     * Resolve a friendly display name for a participant. Defers to the
+     * participants module (single source of truth — handles metadata-name
+     * priority + identity slug cleaning), falling back to the raw identity
+     * if the participants module hasn't initialized yet.
+     */
+    _participantFriendlyName(participant) {
+        if (!participant) return '';
+        const helper = window.meeting?.participants?.getParticipantDisplayName;
+        if (typeof helper === 'function') {
+            return helper.call(window.meeting.participants, participant);
+        }
+        return participant.identity || '';
     }
 
     /**
@@ -1209,7 +1230,7 @@ class LiveKitControls {
                         <i class="ri-hand text-white text-sm"></i>
                     </div>
                     <div>
-                        <p class="text-white font-medium text-sm">${handRaise.identity}</p>
+                        <p class="text-white font-medium text-sm">${this._participantFriendlyName(handRaise.participant) || handRaise.identity}</p>
                         <p class="text-gray-400 text-xs">${timeAgo}</p>
                     </div>
                 </div>
@@ -1529,57 +1550,6 @@ class LiveKitControls {
      */
     toggleSettings() {
         this.toggleSidebar('settings');
-    }
-
-    /**
-     * Toggle recording (teacher only)
-     */
-    async toggleRecording() {
-        if (!this.isTeacher()) {
-            this.showNotification(t('permissions.recording_not_allowed'), 'error');
-            return;
-        }
-
-
-        try {
-            this.isRecording = !this.isRecording;
-
-            if (this.isRecording) {
-                await this.startRecording();
-            } else {
-                await this.stopRecording();
-            }
-
-            // Update UI
-            this.updateControlButtons();
-
-            const status = this.isRecording ? t('recording.started') : t('recording.stopped');
-            this.showNotification(`${t('recording.title')}: ${status}`, 'success');
-
-            // Notify state change
-            this.notifyControlStateChange('recording', this.isRecording);
-
-        } catch (error) {
-            this.showNotification(t('recording.error'), 'error');
-            // Revert state on error
-            this.isRecording = !this.isRecording;
-        }
-    }
-
-    /**
-     * Start recording
-     */
-    async startRecording() {
-        // Implementation would depend on your recording setup
-        // This could involve calling a server endpoint to start recording
-    }
-
-    /**
-     * Stop recording
-     */
-    async stopRecording() {
-        // Implementation would depend on your recording setup
-        // This could involve calling a server endpoint to stop recording
     }
 
     /**
@@ -1932,16 +1902,8 @@ class LiveKitControls {
      * @returns {string} Avatar HTML
      */
     generateChatAvatarHtml(avatarData) {
-        // User type specific colors (matching Blade component)
-        const typeConfig = {
-            'quran_teacher': { bgColor: 'bg-yellow-100', textColor: 'text-yellow-700' },
-            'academic_teacher': { bgColor: 'bg-violet-100', textColor: 'text-violet-700' },
-            'supervisor': { bgColor: 'bg-orange-100', textColor: 'text-orange-700' },
-            'admin': { bgColor: 'bg-red-100', textColor: 'text-red-700' },
-            'student': { bgColor: 'bg-blue-100', textColor: 'text-blue-700' }
-        };
-
-        const config = typeConfig[avatarData.userType] || typeConfig['student'];
+        const roleConfig = (window.ITQAN_ROLE_CONFIG && (window.ITQAN_ROLE_CONFIG[avatarData.userType] || window.ITQAN_ROLE_CONFIG.student)) || { bg: 'bg-blue-100', text: 'text-blue-700' };
+        const config = { bgColor: roleConfig.bg, textColor: roleConfig.text };
 
         let avatarContent = '';
 
@@ -2191,27 +2153,6 @@ class LiveKitControls {
             }
         }
 
-        // Recording button (teacher only)
-        const recordButton = document.getElementById('toggleRecording');
-        if (recordButton && this.isTeacher()) {
-            const svg = recordButton.querySelector('svg');
-            if (this.isRecording) {
-                recordButton.classList.add('bg-red-600');
-                recordButton.classList.remove('bg-gray-600', 'bg-gray-700');
-                recordButton.title = t('controls.stop_recording');
-                if (svg) {
-                    svg.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1H9a1 1 0 01-1-1V7z" clip-rule="evenodd"/>';
-                }
-            } else {
-                recordButton.classList.remove('bg-red-600');
-                recordButton.classList.add('bg-gray-600');
-                recordButton.title = t('controls.start_recording');
-                if (svg) {
-                    svg.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>';
-                }
-            }
-        }
-
     }
 
     /**
@@ -2359,19 +2300,6 @@ class LiveKitControls {
         return this.userRole === 'observer';
     }
 
-    /**
-     * Show a small badge in the control bar indicating observer mode
-     */
-    showObserverBadge() {
-        const controlBar = document.querySelector('.control-bar, [id="controlBar"]');
-        if (!controlBar) return;
-        const badge = document.createElement('div');
-        badge.className = 'observer-badge';
-        badge.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#3b82f6;font-size:13px;font-weight:600;';
-        badge.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
-            '<span>\u0645\u0631\u0627\u0642\u0628\u0629 \u0641\u0642\u0637</span>';
-        controlBar.prepend(badge);
-    }
 
     /**
      * Check if current user can raise hand
@@ -2479,7 +2407,6 @@ class LiveKitControls {
             video: this.isVideoEnabled,
             screenShare: this.isScreenSharing,
             handRaise: this.isHandRaised,
-            recording: this.isRecording,
             chat: this.isChatOpen,
             participants: this.isParticipantsListOpen,
             settings: this.isSettingsOpen

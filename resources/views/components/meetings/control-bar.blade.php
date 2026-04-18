@@ -5,7 +5,6 @@
 
 @props([
     'userType' => 'student',
-    'showRecording' => false
 ])
 
 <!-- Control Bar - Always at bottom -->
@@ -61,15 +60,6 @@
         <div id="raisedHandsNotificationBadge" class="absolute -top-1 -end-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold hidden" aria-live="polite">
             <span id="raisedHandsBadgeCount">0</span>
         </div>
-    </button>
-    @endif
-
-    @if($showRecording)
-    <!-- Recording Button (Interactive Courses Only) -->
-    <button id="toggleRecording" aria-label="{{ __('meetings.controls.toggle_recording') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-red-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95 relative">
-        <i class="ri-record-circle-line text-xl" id="recordingIcon" aria-hidden="true"></i>
-        <span class="control-tooltip">{{ __('meetings.controls.toggle_recording') }}</span>
-        <div id="recordingIndicator" class="absolute -top-1 -end-1 w-3 h-3 bg-red-500 rounded-full animate-pulse hidden" aria-hidden="true"></div>
     </button>
     @endif
 

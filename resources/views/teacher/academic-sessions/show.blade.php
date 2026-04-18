@@ -24,15 +24,9 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <x-meetings.livekit-interface
                 :session="$session"
-                user-type="teacher"
+                user-type="academic_teacher"
             />
         </div>
-
-        <!-- Session Recordings -->
-        @if($session instanceof \App\Contracts\RecordingCapable
-            && $session->shouldShowRecordingToUser(auth()->user()))
-            <x-recordings.session-recordings :session="$session" view-type="teacher" />
-        @endif
 
         <!-- Session Content Management (for teachers) -->
         @if($viewType === 'teacher')

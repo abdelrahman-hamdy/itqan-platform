@@ -40,10 +40,8 @@
                     </h2>
 
                     <x-meetings.livekit-interface
-                        :meeting="$session->meeting"
                         :session="$session"
-                        participantName="{{ Auth::user()->name }}"
-                        participantType="student"
+                        user-type="student"
                     />
                 </div>
             @elseif($session->status === \App\Enums\SessionStatus::SCHEDULED)
@@ -81,13 +79,6 @@
                         {!! nl2br(e($session->lesson_content)) !!}
                     </div>
                 </div>
-            @endif
-
-            {{-- Session Recordings --}}
-            @if($session instanceof \App\Contracts\RecordingCapable
-                && $session->status === \App\Enums\SessionStatus::COMPLETED
-                && $session->shouldShowRecordingToUser(auth()->user()))
-                <x-recordings.session-recordings :session="$session" view-type="student" />
             @endif
 
             {{-- Homework Section --}}

@@ -9,8 +9,10 @@ use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\StudentProfile;
+use App\Models\BaseSession;
 use App\Services\LiveKitService;
 use App\Services\MeetingAttendanceService;
+use App\Services\SessionSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -74,11 +76,8 @@ class MeetingTokenController extends Controller
                 $meeting->room_name,
                 $user,
                 [
-                    'canPublish' => true,
-                    'canSubscribe' => true,
-                    'canPublishData' => true,
-                    'hidden' => false,
-                    'recorder' => false,
+                    'can_publish' => true,
+                    'can_subscribe' => true,
                 ]
             );
 
@@ -519,7 +518,9 @@ class MeetingTokenController extends Controller
     }
 
     /**
-     * Check if session can be joined.
+     * Check if session can be joined. Window matches the academy-configured
+     * preparation + ending-buffer settings so mobile UI, web UI, and this
+     * server-side gate all agree.
      */
     protected function canJoinSession($session, string $type): bool
     {
@@ -530,9 +531,8 @@ class MeetingTokenController extends Controller
         }
 
         $now = now();
-        $joinStart = $scheduledAt->copy()->subMinutes(10);
-        $duration = $session->duration_minutes ?? 60;
-        $joinEnd = $scheduledAt->copy()->addMinutes($duration + 15); // 15 min grace after
+        $joinStart = $this->getJoinWindowStart($session, $type);
+        $joinEnd = $this->getJoinWindowEnd($session, $type);
 
         $status = $session->status->value ?? $session->status;
 
@@ -569,7 +569,7 @@ class MeetingTokenController extends Controller
     {
         $scheduledAt = $this->getScheduledAt($session, $type);
 
-        return $scheduledAt?->copy()->subMinutes(10);
+        return $scheduledAt?->copy()->subMinutes($this->preparationMinutesFor($session));
     }
 
     /**
@@ -580,6 +580,20 @@ class MeetingTokenController extends Controller
         $scheduledAt = $this->getScheduledAt($session, $type);
         $duration = $session->duration_minutes ?? 60;
 
-        return $scheduledAt?->copy()->addMinutes($duration + 15);
+        return $scheduledAt?->copy()->addMinutes($duration + $this->bufferMinutesFor($session));
+    }
+
+    private function preparationMinutesFor($session): int
+    {
+        return $session instanceof BaseSession
+            ? app(SessionSettingsService::class)->getPreparationMinutes($session)
+            : 10;
+    }
+
+    private function bufferMinutesFor($session): int
+    {
+        return $session instanceof BaseSession
+            ? app(SessionSettingsService::class)->getBufferMinutes($session)
+            : 15;
     }
 }

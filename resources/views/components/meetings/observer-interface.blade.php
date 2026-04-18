@@ -183,22 +183,14 @@
         participants: @json(__('supervisor.observation.participants_count')),
     };
 
-    // Role labels
+    window.ITQAN_ROLE_CONFIG = @json(\App\Enums\UserType::meetingDisplayConfigMap());
+    const STUDENT_FALLBACK = window.ITQAN_ROLE_CONFIG.student;
+    const AVATAR_TYPE_CONFIG = window.ITQAN_ROLE_CONFIG;
     const ROLE_LABELS = {
         teacher: @json(__('meetings.participants.teacher')),
         student: @json(__('meetings.participants.student')),
         admin: @json(__('meetings.participants.admin')),
-        supervisor: @json(__('supervisor.observation.role_supervisor')),
-    };
-
-    // Avatar color config (matches LiveKitParticipants.generateAvatarHtml)
-    const AVATAR_TYPE_CONFIG = {
-        quran_teacher:    { bg: 'bg-yellow-100', text: 'text-yellow-700' },
-        academic_teacher: { bg: 'bg-violet-100', text: 'text-violet-700' },
-        supervisor:       { bg: 'bg-orange-100', text: 'text-orange-700' },
-        admin:            { bg: 'bg-red-100',    text: 'text-red-700'    },
-        super_admin:      { bg: 'bg-red-100',    text: 'text-red-700'    },
-        student:          { bg: 'bg-blue-100',   text: 'text-blue-700'   },
+        supervisor: @json(__('meetings.participants.supervisor')),
     };
 
     let room = null;
@@ -313,7 +305,7 @@
         var userType = metadata.userType || 'student';
         var avatarUrl = metadata.avatarUrl || null;
         var defaultAvatarUrl = metadata.defaultAvatarUrl || null;
-        var isTeacher = metadata.role === 'teacher' || userType === 'quran_teacher' || userType === 'academic_teacher';
+        var isTeacher = metadata.role === 'teacher';
         var roleLabel = getRoleLabel(metadata);
         var avatarHtml = generateAvatarHtml(avatarUrl, defaultAvatarUrl, userType, name);
 

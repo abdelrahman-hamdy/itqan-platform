@@ -192,9 +192,6 @@ return [
         'toggle_chat' => 'Show/hide chat',
         'toggle_participants' => 'Show/hide participants',
         'manage_raised_hands' => 'Manage raised hands',
-        'start_recording' => 'Start course recording',
-        'stop_recording' => 'Stop course recording',
-        'toggle_recording' => 'Start/stop course recording',
         'settings' => 'Settings',
         'leave_meeting' => 'Leave session',
         'start_mic' => 'Enable microphone',
@@ -228,22 +225,6 @@ return [
         'mic_settings' => 'Microphone Settings',
         'microphone_label' => 'Microphone',
         'mute_on_join' => 'Mute on join',
-    ],
-
-    // Recording
-    'recording' => [
-        'start_recording' => 'Start course recording',
-        'stop_recording' => 'Stop course recording',
-        'recording_stopped' => 'Recording stopped and saved successfully',
-        'recording_started' => 'Interactive course recording started',
-        'recording_error' => 'Recording error:',
-        'start_failed' => 'Failed to start recording',
-        'no_active_recording' => 'No active recording',
-        'stop_failed' => 'Failed to stop recording',
-        'title' => 'Recording',
-        'started' => 'started',
-        'stopped' => 'stopped',
-        'error' => 'Recording error',
     ],
 
     // Headers
@@ -285,6 +266,7 @@ return [
     'participants' => [
         'teacher' => 'Teacher',
         'student' => 'Student',
+        'supervisor' => 'Supervisor',
         'admin' => 'Admin',
         'participant' => 'Participant',
         'you' => '(You)',
@@ -307,10 +289,8 @@ return [
         'cannot_raise_hand' => 'You are not allowed to raise hand',
         'cannot_manage_audio' => 'You are not allowed to manage audio permissions',
         'cannot_manage_camera' => 'You are not allowed to manage camera permissions',
-        'cannot_record' => 'You are not allowed to record',
         'no_media_permissions' => 'No media permissions granted. You can only participate in chat.',
         'camera_control_not_allowed' => 'You are not allowed to manage camera permissions',
-        'recording_not_allowed' => 'You are not allowed to record',
         'mic_permission_granted' => 'You have been granted microphone permission',
     ],
 
@@ -326,9 +306,6 @@ return [
         'hand' => 'Hand',
         'raised' => 'raised',
         'lowered' => 'lowered',
-        'recording' => 'Recording',
-        'started' => 'started',
-        'stopped' => 'stopped',
         'toggle_mic' => 'Enable/Disable microphone',
         'toggle_camera' => 'Enable/Disable camera',
         'enable_mic' => 'Enable microphone',
@@ -339,8 +316,6 @@ return [
         'stop_screen_share' => 'Stop screen share',
         'raise_hand' => 'Raise hand',
         'lower_hand' => 'Lower hand',
-        'start_recording' => 'Start recording',
-        'stop_recording' => 'Stop recording',
         'hand_raised' => 'Hand raised',
     ],
 
@@ -353,7 +328,6 @@ return [
         'screen_share_denied' => 'Screen share permission denied',
         'screen_share_not_supported' => 'Screen share not supported in this browser',
         'hand_raise_error' => 'Error raising hand',
-        'recording_error' => 'Error with recording',
         'send_message_error' => 'Error sending message',
         'chat_data_error' => 'Error receiving chat data',
     ],
@@ -560,4 +534,19 @@ return [
     ],
 
     'ios_audio_hint' => 'For best audio quality, use headphones or the Itqan mobile app',
+
+    'alarm' => [
+        'title_from_teacher' => 'Incoming call from teacher :name',
+        'title_from_student' => 'Incoming call from student :name',
+        'body' => 'The session is starting — join now.',
+        'sent' => 'Alarm sent.',
+        'cooldown' => 'Please wait before sending another alarm.',
+        'forbidden' => 'You cannot alarm this participant.',
+        'not_found' => 'Alarm not found.',
+        'invalid_session_type' => 'Unsupported session type.',
+        'answered_title' => 'Alarm answered',
+        'answered_body' => 'The participant joined the session.',
+        'declined_title' => 'Alarm declined',
+        'declined_body' => 'The participant declined the call.',
+    ],
 ];

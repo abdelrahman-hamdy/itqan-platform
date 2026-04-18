@@ -40,6 +40,14 @@ class LiveKitTokenGenerator
         array $permissions = [],
         ?string $roleOverride = null
     ): string {
+        $unknownKeys = array_diff(array_keys($permissions), ['can_publish', 'can_subscribe', 'ttl']);
+        if (! empty($unknownKeys)) {
+            Log::warning('Ignored unknown permission keys passed to LiveKit token generator', [
+                'unknown_keys' => $unknownKeys,
+                'user_id' => $user->id,
+            ]);
+        }
+
         try {
             // Create participant identity and metadata with Arabic name
             $participantIdentity = $user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name);
@@ -71,6 +79,11 @@ class LiveKitTokenGenerator
             // Mark observer tokens as hidden so they don't appear in other participants' lists
             if ($roleOverride === 'observer') {
                 $videoGrant->setHidden(true);
+            } else {
+                // Non-observers may flip their `hand_raised` attribute via
+                // `setAttributes`; observers must not (they'd emit
+                // attribute events to other peers despite being hidden).
+                $videoGrant->setCanUpdateOwnMetadata(true);
             }
 
             // Additional permissions for teachers/admins (skip for observers)
@@ -246,6 +259,10 @@ class LiveKitTokenGenerator
             return 'teacher';
         }
 
+        if ($user->user_type === UserType::SUPERVISOR->value) {
+            return 'supervisor';
+        }
+
         return 'student';
     }
 
@@ -311,13 +328,9 @@ class LiveKitTokenGenerator
     private function getDefaultAvatarUrl(string $userType, string $gender): ?string
     {
         $genderPrefix = $gender === 'female' ? 'female' : 'male';
+        $avatarKind = (UserType::tryFrom($userType) ?? UserType::STUDENT)
+            ->meetingDisplayConfig()['avatar_kind'];
 
-        return match ($userType) {
-            UserType::QURAN_TEACHER->value => asset("app-design-assets/{$genderPrefix}-quran-teacher-avatar.png"),
-            UserType::ACADEMIC_TEACHER->value => asset("app-design-assets/{$genderPrefix}-academic-teacher-avatar.png"),
-            UserType::STUDENT->value => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
-            UserType::SUPERVISOR->value, UserType::ADMIN->value, UserType::SUPER_ADMIN->value => asset("app-design-assets/{$genderPrefix}-supervisor-avatar.png"),
-            default => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
-        };
+        return asset("app-design-assets/{$genderPrefix}-{$avatarKind}-avatar.png");
     }
 }

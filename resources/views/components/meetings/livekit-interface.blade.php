@@ -6,7 +6,7 @@
 
 @props([
 'session',
-'userType' => 'student'
+'userType',
 ])
 
 @php
@@ -81,14 +81,11 @@
     $currentUserType = $currentUser->user_type ?? 'student';
     $genderPrefix = $currentUserGender === 'female' ? 'female' : 'male';
 
-    // Build avatar URLs
+    // Build avatar URLs (avatar_kind comes from UserType::meetingDisplayConfig)
     $currentUserAvatarUrl = $currentUserAvatarPath ? asset('storage/' . $currentUserAvatarPath) : null;
-    $currentUserDefaultAvatarUrl = match($currentUserType) {
-        'quran_teacher' => asset("app-design-assets/{$genderPrefix}-quran-teacher-avatar.png"),
-        'academic_teacher' => asset("app-design-assets/{$genderPrefix}-academic-teacher-avatar.png"),
-        'supervisor', 'admin', 'super_admin' => asset("app-design-assets/{$genderPrefix}-supervisor-avatar.png"),
-        default => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
-    };
+    $currentUserAvatarKind = (\App\Enums\UserType::tryFrom($currentUserType)
+        ?? \App\Enums\UserType::STUDENT)->meetingDisplayConfig()['avatar_kind'];
+    $currentUserDefaultAvatarUrl = asset("app-design-assets/{$genderPrefix}-{$currentUserAvatarKind}-avatar.png");
 
     // Get status-specific messages
     $meetingMessage = '';
@@ -172,6 +169,7 @@
 
 <!-- JavaScript Translations Object -->
 <script>
+    window.ITQAN_ROLE_CONFIG = @json(\App\Enums\UserType::meetingDisplayConfigMap());
     window.meetingTranslations = {
         status: {
             session_ready: @json(__('meetings.status.session_ready')),
@@ -253,19 +251,6 @@
             connecting_meeting: @json(__('meetings.loading.connecting_meeting')),
             please_wait: @json(__('meetings.loading.please_wait')),
         },
-        recording: {
-            start_recording: @json(__('meetings.recording.start_recording')),
-            stop_recording: @json(__('meetings.recording.stop_recording')),
-            recording_stopped: @json(__('meetings.recording.recording_stopped')),
-            recording_started: @json(__('meetings.recording.recording_started')),
-            recording_error: @json(__('meetings.recording.recording_error')),
-            start_failed: @json(__('meetings.recording.start_failed')),
-            no_active_recording: @json(__('meetings.recording.no_active_recording')),
-            title: @json(__('meetings.recording.title')),
-            started: @json(__('meetings.recording.started')),
-            stopped: @json(__('meetings.recording.stopped')),
-            error: @json(__('meetings.recording.error')),
-        },
         confirm: {
             cancel_session: @json(__('meetings.confirm.cancel_session')),
             mark_absent: @json(__('meetings.confirm.mark_absent')),
@@ -322,10 +307,8 @@
             cannot_raise_hand: @json(__('meetings.permissions.cannot_raise_hand')),
             cannot_manage_audio: @json(__('meetings.permissions.cannot_manage_audio')),
             cannot_manage_camera: @json(__('meetings.permissions.cannot_manage_camera')),
-            cannot_record: @json(__('meetings.permissions.cannot_record')),
             no_media_permissions: @json(__('meetings.permissions.no_media_permissions')),
             camera_control_not_allowed: @json(__('meetings.permissions.camera_control_not_allowed')),
-            recording_not_allowed: @json(__('meetings.permissions.recording_not_allowed')),
             mic_permission_granted: @json(__('meetings.permissions.mic_permission_granted')),
         },
         // Controls (button labels and tooltips)
@@ -339,8 +322,6 @@
             stop_screen_share: @json(__('meetings.controls.stop_screen_share')),
             raise_hand: @json(__('meetings.controls.raise_hand')),
             lower_hand: @json(__('meetings.controls.lower_hand')),
-            start_recording: @json(__('meetings.controls.start_recording')),
-            stop_recording: @json(__('meetings.controls.stop_recording')),
         },
         // Control States
         control_states: {
@@ -354,9 +335,6 @@
             hand: @json(__('meetings.control_states.hand')),
             raised: @json(__('meetings.control_states.raised')),
             lowered: @json(__('meetings.control_states.lowered')),
-            recording: @json(__('meetings.control_states.recording')),
-            started: @json(__('meetings.control_states.started')),
-            stopped: @json(__('meetings.control_states.stopped')),
             toggle_mic: @json(__('meetings.control_states.toggle_mic')),
             toggle_camera: @json(__('meetings.control_states.toggle_camera')),
             enable_mic: @json(__('meetings.control_states.enable_mic')),
@@ -367,8 +345,6 @@
             stop_screen_share: @json(__('meetings.control_states.stop_screen_share')),
             raise_hand: @json(__('meetings.control_states.raise_hand')),
             lower_hand: @json(__('meetings.control_states.lower_hand')),
-            start_recording: @json(__('meetings.control_states.start_recording')),
-            stop_recording: @json(__('meetings.control_states.stop_recording')),
             hand_raised: @json(__('meetings.control_states.hand_raised')),
         },
         // Control Errors
@@ -380,7 +356,6 @@
             screen_share_denied: @json(__('meetings.control_errors.screen_share_denied')),
             screen_share_not_supported: @json(__('meetings.control_errors.screen_share_not_supported')),
             hand_raise_error: @json(__('meetings.control_errors.hand_raise_error')),
-            recording_error: @json(__('meetings.control_errors.recording_error')),
             send_message_error: @json(__('meetings.control_errors.send_message_error')),
             chat_data_error: @json(__('meetings.control_errors.chat_data_error')),
         },
@@ -1552,9 +1527,6 @@ function completeSession(sessionId) {
 </script>
 @endif
 
-<!-- Preload noise suppression WASM module during room connection (before mic publish) -->
-<link rel="modulepreload" href="{{ asset('js/livekit/noise-suppression/noise_suppression.js') }}?v={{ time() }}">
-
 <!-- Meeting Container -->
 <div id="meetingContainer" class="bg-white rounded-lg shadow-md overflow-hidden mt-8" style="display: none;">
     <!-- iOS Safari Audio Hint -->
@@ -1639,14 +1611,7 @@ function completeSession(sessionId) {
             <!-- Sidebar moved outside overflow-hidden container to prevent clipping -->
             <x-meetings.sidebar-panels :userType="$userType" />
 
-            @php
-                // Only show recording for Interactive Course sessions (Academic teachers only)
-                $isInteractiveCourse = ($session->session_type === 'interactive_course' ||
-                                      (isset($session->interactiveCourseSession) && $session->interactiveCourseSession) ||
-                                      (method_exists($session, 'session_type') && $session->session_type === 'interactive_course'));
-                $showRecording = $userType === 'academic_teacher' && $isInteractiveCourse;
-            @endphp
-            <x-meetings.control-bar :userType="$userType" :showRecording="$showRecording" />
+            <x-meetings.control-bar :userType="$userType" />
         </div>
     </div>
 </div>
@@ -2061,129 +2026,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Recording functionality for Interactive Courses only
-    let recordingState = {
-        isRecording: false,
-        recordingId: null,
-        startTime: null,
-        sessionId: {{ $session->id ?? 'null' }}
-    };
-    
-    function initializeRecordingControls() {
-        
-        const recordingBtn = document.getElementById('toggleRecording');
-        const recordingIcon = document.getElementById('recordingIcon');
-        const recordingIndicator = document.getElementById('recordingIndicator');
-        
-        if (recordingBtn) {
-            recordingBtn.addEventListener('click', toggleRecording);
-        }
-    }
-    
-    async function toggleRecording() {
-        const recordingBtn = document.getElementById('toggleRecording');
-        const recordingIcon = document.getElementById('recordingIcon');
-        const recordingIndicator = document.getElementById('recordingIndicator');
-
-        // Safety check - return if elements don't exist
-        if (!recordingBtn || !recordingIcon || !recordingIndicator) {
-            return;
-        }
-
-        try {
-            if (recordingState.isRecording) {
-                // Stop recording
-                await stopRecording();
-
-                // Update UI
-                recordingIcon.className = 'ri-record-circle-line text-xl';
-                recordingIndicator.classList.add('hidden');
-                recordingBtn.classList.remove('bg-red-600');
-                recordingBtn.classList.add('bg-gray-600');
-                recordingBtn.title = window.meetingTranslations.recording.start_recording;
-
-                showRecordingNotification('✅ ' + window.meetingTranslations.recording.recording_stopped, 'success');
-
-            } else {
-                // Start recording
-                await startRecording();
-
-                // Update UI
-                recordingIcon.className = 'ri-stop-circle-line text-xl';
-                recordingIndicator.classList.remove('hidden');
-                recordingBtn.classList.remove('bg-gray-600');
-                recordingBtn.classList.add('bg-red-600');
-                recordingBtn.title = window.meetingTranslations.recording.stop_recording;
-
-                showRecordingNotification('🎥 ' + window.meetingTranslations.recording.recording_started, 'success');
-            }
-        } catch (error) {
-            showRecordingNotification('❌ ' + window.meetingTranslations.recording.recording_error + ' ' + error.message, 'error');
-        }
-    }
-    
-    async function startRecording() {
-        const response = await fetchWithAuth('/api/interactive-courses/recording/start', {
-            method: 'POST',
-            body: JSON.stringify({
-                session_id: recordingState.sessionId,
-                meeting_room: window.meeting?.roomName || 'unknown_room'
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(window.meetingTranslations.recording.start_failed);
-        }
-
-        const data = await response.json();
-        recordingState.isRecording = true;
-        recordingState.recordingId = data.recording_id;
-        recordingState.startTime = new Date();
-    }
-
-    async function stopRecording() {
-        if (!recordingState.recordingId) {
-            throw new Error(window.meetingTranslations.recording.no_active_recording);
-        }
-
-        const response = await fetchWithAuth('/api/interactive-courses/recording/stop', {
-            method: 'POST',
-            body: JSON.stringify({
-                recording_id: recordingState.recordingId,
-                session_id: recordingState.sessionId
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(window.meetingTranslations.recording.stop_failed);
-        }
-
-        const data = await response.json();
-        recordingState.isRecording = false;
-        recordingState.recordingId = null;
-        recordingState.startTime = null;
-    }
-    
-    function showRecordingNotification(message, type = 'info') {
-        // Use unified toast system
-        if (window.toast) {
-            window.toast.show({ type: type, message: message, duration: 4000 });
-        } else {
-        }
-    }
-    
     // Initialize attendance tracker
     let attendanceTracker = null;
     document.addEventListener('DOMContentLoaded', () => {
         attendanceTracker = new AutoAttendanceTracker();
         // Make globally accessible for debugging
         window.attendanceTracker = attendanceTracker;
-        
-        // Initialize recording functionality (Interactive Courses only)
-        @if($showRecording ?? false)
-        initializeRecordingControls();
-        @endif
-        
+
         // CRITICAL FIX: Load initial status for students (especially for completed sessions)
         @if($userType === 'student')
             // Wait a moment for DOM to be fully ready, then load status

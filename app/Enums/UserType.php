@@ -172,4 +172,68 @@ enum UserType: string
     {
         return [self::QURAN_TEACHER, self::ACADEMIC_TEACHER];
     }
+
+    /**
+     * Display config used inside the meeting UI (Tailwind classes for
+     * participant tiles, avatar asset kind, and the participant-list label
+     * key). Single source of truth — consumed by Blade templates and pushed
+     * to the JS layer via `window.ITQAN_ROLE_CONFIG`.
+     */
+    public function meetingDisplayConfig(): array
+    {
+        return match ($this) {
+            self::QURAN_TEACHER => [
+                'bg' => 'bg-yellow-100',
+                'text' => 'text-yellow-700',
+                'avatar_kind' => 'quran-teacher',
+                'label_key' => 'meetings.participants.teacher',
+            ],
+            self::ACADEMIC_TEACHER => [
+                'bg' => 'bg-violet-100',
+                'text' => 'text-violet-700',
+                'avatar_kind' => 'academic-teacher',
+                'label_key' => 'meetings.participants.teacher',
+            ],
+            self::SUPERVISOR => [
+                'bg' => 'bg-orange-100',
+                'text' => 'text-orange-700',
+                'avatar_kind' => 'supervisor',
+                'label_key' => 'meetings.participants.supervisor',
+            ],
+            self::ADMIN, self::SUPER_ADMIN => [
+                'bg' => 'bg-red-100',
+                'text' => 'text-red-700',
+                'avatar_kind' => 'supervisor',
+                'label_key' => 'meetings.participants.admin',
+            ],
+            self::PARENT => [
+                'bg' => 'bg-gray-100',
+                'text' => 'text-gray-700',
+                'avatar_kind' => 'student',
+                'label_key' => 'meetings.participants.participant',
+            ],
+            self::STUDENT => [
+                'bg' => 'bg-blue-100',
+                'text' => 'text-blue-700',
+                'avatar_kind' => 'student',
+                'label_key' => 'meetings.participants.student',
+            ],
+        };
+    }
+
+    /**
+     * Map keyed by enum string value, with the localized label resolved.
+     * Designed for `@json(...)` injection into the meeting JS layer.
+     */
+    public static function meetingDisplayConfigMap(): array
+    {
+        $out = [];
+        foreach (self::cases() as $case) {
+            $config = $case->meetingDisplayConfig();
+            $config['label'] = __($config['label_key']);
+            $out[$case->value] = $config;
+        }
+
+        return $out;
+    }
 }

@@ -192,9 +192,6 @@ return [
         'toggle_chat' => 'إظهار/إخفاء الدردشة',
         'toggle_participants' => 'إظهار/إخفاء المشاركين',
         'manage_raised_hands' => 'إدارة الأيدي المرفوعة',
-        'start_recording' => 'بدء تسجيل الدورة',
-        'stop_recording' => 'إيقاف تسجيل الدورة',
-        'toggle_recording' => 'بدء/إيقاف تسجيل الدورة',
         'settings' => 'الإعدادات',
         'leave_meeting' => 'مغادرة الجلسة',
         'start_mic' => 'تشغيل الميكروفون',
@@ -228,22 +225,6 @@ return [
         'mic_settings' => 'إعدادات الميكروفون',
         'microphone_label' => 'الميكروفون',
         'mute_on_join' => 'كتم الصوت عند الدخول',
-    ],
-
-    // Recording
-    'recording' => [
-        'start_recording' => 'بدء تسجيل الدورة',
-        'stop_recording' => 'إيقاف تسجيل الدورة',
-        'recording_stopped' => 'تم إيقاف التسجيل وحفظه بنجاح',
-        'recording_started' => 'بدأ تسجيل الدورة التفاعلية',
-        'recording_error' => 'خطأ في التسجيل:',
-        'start_failed' => 'فشل في بدء التسجيل',
-        'no_active_recording' => 'لا يوجد تسجيل نشط',
-        'stop_failed' => 'فشل في إيقاف التسجيل',
-        'title' => 'التسجيل',
-        'started' => 'بدأ',
-        'stopped' => 'توقف',
-        'error' => 'خطأ في التسجيل',
     ],
 
     // Headers
@@ -285,7 +266,8 @@ return [
     'participants' => [
         'teacher' => 'معلم',
         'student' => 'طالب',
-        'admin' => 'مشرف',
+        'supervisor' => 'مشرف',
+        'admin' => 'مدير',
         'participant' => 'مشارك',
         'you' => '(أنت)',
         'joined' => 'انضم :name إلى الجلسة',
@@ -307,10 +289,8 @@ return [
         'cannot_raise_hand' => 'غير مسموح لك برفع اليد',
         'cannot_manage_audio' => 'غير مسموح لك بإدارة صلاحيات الصوت',
         'cannot_manage_camera' => 'غير مسموح لك بإدارة صلاحيات الكاميرا',
-        'cannot_record' => 'غير مسموح لك بالتسجيل',
         'no_media_permissions' => 'لم يتم منح أي صلاحيات للوسائط. ستتمكن من المشاركة بالدردشة فقط.',
         'camera_control_not_allowed' => 'غير مسموح لك بإدارة صلاحيات الكاميرا',
-        'recording_not_allowed' => 'غير مسموح لك بالتسجيل',
         'mic_permission_granted' => 'تم منحك إذن استخدام الميكروفون',
     ],
 
@@ -326,9 +306,6 @@ return [
         'hand' => 'اليد',
         'raised' => 'مرفوعة',
         'lowered' => 'مخفضة',
-        'recording' => 'التسجيل',
-        'started' => 'بدأ',
-        'stopped' => 'توقف',
         'toggle_mic' => 'تشغيل/إيقاف الميكروفون',
         'toggle_camera' => 'تشغيل/إيقاف الكاميرا',
         'enable_mic' => 'تشغيل الميكروفون',
@@ -339,8 +316,6 @@ return [
         'stop_screen_share' => 'إيقاف مشاركة الشاشة',
         'raise_hand' => 'رفع اليد',
         'lower_hand' => 'خفض اليد',
-        'start_recording' => 'بدء التسجيل',
-        'stop_recording' => 'إيقاف التسجيل',
         'hand_raised' => 'يد مرفوعة',
     ],
 
@@ -353,7 +328,6 @@ return [
         'screen_share_denied' => 'تم رفض إذن مشاركة الشاشة',
         'screen_share_not_supported' => 'مشاركة الشاشة غير مدعومة في هذا المتصفح',
         'hand_raise_error' => 'خطأ في رفع اليد',
-        'recording_error' => 'خطأ في التسجيل',
         'send_message_error' => 'خطأ في إرسال الرسالة',
         'chat_data_error' => 'خطأ في تلقي بيانات الدردشة',
     ],
@@ -560,4 +534,19 @@ return [
     ],
 
     'ios_audio_hint' => 'للحصول على أفضل جودة صوت، يُنصح باستخدام سماعات الأذن أو تطبيق إتقان',
+
+    'alarm' => [
+        'title_from_teacher' => 'مكالمة واردة من المعلم :name',
+        'title_from_student' => 'مكالمة واردة من الطالب :name',
+        'body' => 'الجلسة تبدأ الآن — انضم للدخول.',
+        'sent' => 'تم إرسال التنبيه.',
+        'cooldown' => 'يرجى الانتظار قبل إرسال تنبيه آخر.',
+        'forbidden' => 'لا يمكنك تنبيه هذا المشارك.',
+        'not_found' => 'التنبيه غير موجود.',
+        'invalid_session_type' => 'نوع جلسة غير مدعوم.',
+        'answered_title' => 'تم الرد على التنبيه',
+        'answered_body' => 'انضم المشارك إلى الجلسة.',
+        'declined_title' => 'تم رفض التنبيه',
+        'declined_body' => 'رفض المشارك المكالمة.',
+    ],
 ];

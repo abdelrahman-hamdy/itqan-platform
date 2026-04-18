@@ -352,33 +352,10 @@ class LiveKitParticipants {
             'xl': 'text-4xl'
         };
 
-        // User type specific colors (matching Blade component)
-        const typeConfig = {
-            'quran_teacher': {
-                bgColor: 'bg-yellow-100',
-                textColor: 'text-yellow-700'
-            },
-            'academic_teacher': {
-                bgColor: 'bg-violet-100',
-                textColor: 'text-violet-700'
-            },
-            'supervisor': {
-                bgColor: 'bg-orange-100',
-                textColor: 'text-orange-700'
-            },
-            'admin': {
-                bgColor: 'bg-red-100',
-                textColor: 'text-red-700'
-            },
-            'student': {
-                bgColor: 'bg-blue-100',
-                textColor: 'text-blue-700'
-            }
-        };
-
         const sizeClass = sizeClasses[size] || sizeClasses['md'];
         const textSizeClass = textSizeClasses[size] || textSizeClasses['md'];
-        const config = typeConfig[avatarData.userType] || typeConfig['student'];
+        const roleConfig = (window.ITQAN_ROLE_CONFIG && (window.ITQAN_ROLE_CONFIG[avatarData.userType] || window.ITQAN_ROLE_CONFIG.student)) || { bg: 'bg-blue-100', text: 'text-blue-700' };
+        const config = { bgColor: roleConfig.bg, textColor: roleConfig.text };
 
         // Determine what to show in the avatar
         let avatarContent = '';
@@ -420,9 +397,8 @@ class LiveKitParticipants {
      */
     getRoleLabel(avatarData, isLocal) {
         if (isLocal) return t('participants.you');
-        const userType = avatarData.userType;
-        if (userType === 'quran_teacher' || userType === 'academic_teacher') return t('participants.teacher');
-        if (userType === 'supervisor' || userType === 'admin' || userType === 'super_admin') return t('participants.admin');
+        const cfg = window.ITQAN_ROLE_CONFIG && window.ITQAN_ROLE_CONFIG[avatarData.userType];
+        if (cfg && cfg.label) return cfg.label;
         if (avatarData.isTeacher) return t('participants.teacher');
         return t('participants.student');
     }

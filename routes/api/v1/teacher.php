@@ -259,10 +259,6 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
     Route::prefix('meetings')->group(function () {
         Route::post('/create', [MeetingController::class, 'create'])
             ->name('api.v1.teacher.meetings.create');
-
-        Route::get('/{sessionType}/{sessionId}/token', [MeetingController::class, 'token'])
-            ->where('sessionType', 'quran|academic|interactive')
-            ->name('api.v1.teacher.meetings.token');
     });
 
     // Earnings

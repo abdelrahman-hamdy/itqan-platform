@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
-use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -79,65 +78,6 @@ class MeetingController extends Controller
             ], __('Meeting created successfully'));
         } catch (Exception $e) {
             return $this->error(__('Failed to create meeting.'), 500, 'MEETING_CREATE_FAILED');
-        }
-    }
-
-    /**
-     * Get meeting token.
-     */
-    public function token(Request $request, string $sessionType, string $sessionId): JsonResponse
-    {
-        $user = $request->user();
-
-        $session = $this->getSession($user, $sessionType, $sessionId);
-
-        if (! $session) {
-            return $this->notFound(__('Session not found.'));
-        }
-
-        // Check if meeting exists
-        if (! $session->meeting_room_name) {
-            return $this->error(__('No meeting exists for this session.'), 400, 'NO_MEETING');
-        }
-
-        // Check if session is within join window
-        $statusValue = $session->status->value ?? $session->status;
-        $canJoin = in_array($statusValue, [
-            SessionStatus::SCHEDULED->value,
-            SessionStatus::READY->value,
-            SessionStatus::ONGOING->value,
-        ]);
-
-        if (! $canJoin) {
-            return $this->error(__('This session is not available for joining.'), 400, 'SESSION_NOT_AVAILABLE');
-        }
-
-        try {
-            // Generate token with teacher permissions
-            $token = $this->liveKitService->generateParticipantToken(
-                $session->meeting_room_name,
-                $user,
-                [
-                    'canPublish' => true,
-                    'canSubscribe' => true,
-                    'canPublishData' => true,
-                    'hidden' => false,
-                    'recorder' => false,
-                ]
-            );
-
-            return $this->success([
-                'token' => $token,
-                'room_name' => $session->meeting_room_name,
-                'server_url' => config('livekit.url'),
-                'participant' => [
-                    'identity' => (string) $user->id,
-                    'name' => $user->name,
-                    'is_teacher' => true,
-                ],
-            ], __('Token generated successfully'));
-        } catch (Exception $e) {
-            return $this->error(__('Failed to generate token.'), 500, 'TOKEN_GENERATE_FAILED');
         }
     }
 
