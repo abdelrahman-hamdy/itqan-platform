@@ -48,7 +48,7 @@ class EarningsController extends Controller
         $page = (int) $request->input('page', 1);
 
         if (! $teacherType || ! $teacherId) {
-            return $this->success($this->emptyPayload($perPage), __('earnings.earnings_calculated'));
+            return $this->success($this->emptyPayload($perPage, $user?->academy), __('earnings.earnings_calculated'));
         }
 
         $baseQuery = TeacherEarning::forTeacher($teacherType, $teacherId)
@@ -80,7 +80,7 @@ class EarningsController extends Controller
             'stats' => $stats,
             'earnings' => $earnings,
             'pagination' => PaginationHelper::fromPaginator($paginated),
-            'currency' => getCurrencyCode(),
+            'currency' => getTeacherEarningsCurrency($user?->academy)->value,
         ];
         if ($filters !== null) {
             $payload['filters'] = $filters;
@@ -105,7 +105,7 @@ class EarningsController extends Controller
                 'payouts' => [],
                 'total_finalized' => 0,
                 'total_pending' => 0,
-                'currency' => getCurrencyCode(),
+                'currency' => getTeacherEarningsCurrency($user?->academy)->value,
                 'pagination' => PaginationHelper::fromArray(0, 1, $perPage),
             ], __('earnings.payouts'));
         }
@@ -138,7 +138,7 @@ class EarningsController extends Controller
             ])->toArray(),
             'total_finalized' => (float) $totalFinalized,
             'total_pending' => (float) $totalPending,
-            'currency' => getCurrencyCode(),
+            'currency' => getTeacherEarningsCurrency($user?->academy)->value,
             'pagination' => PaginationHelper::fromPaginator($finalizedEarnings),
         ], __('earnings.payouts'));
     }
@@ -166,7 +166,7 @@ class EarningsController extends Controller
     /**
      * Empty payload returned when the user has no teacher profile.
      */
-    private function emptyPayload(int $perPage): array
+    private function emptyPayload(int $perPage, $academy = null): array
     {
         return [
             'stats' => [
@@ -181,7 +181,7 @@ class EarningsController extends Controller
                 'available_months' => [],
                 'available_sources' => [],
             ],
-            'currency' => getCurrencyCode(),
+            'currency' => getTeacherEarningsCurrency($academy)->value,
         ];
     }
 
@@ -214,7 +214,7 @@ class EarningsController extends Controller
             'source_name' => $source['name'] ?? null,
             'amount' => (float) $earning->amount,
             'formatted_amount' => $earning->formatted_amount,
-            'currency' => getCurrencyCode(),
+            'currency' => getTeacherEarningsCurrency($user?->academy)->value,
             'calculation_method' => $earning->calculation_method,
             'calculation_method_label' => $earning->calculation_method_label,
             'duration_minutes' => $duration !== null ? (int) $duration : null,
