@@ -63,6 +63,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.is.supervisor' => \App\Http\Middleware\Api\EnsureUserIsSupervisor::class,
             'api.cache' => \App\Http\Middleware\Api\CacheHeaders::class,
             'api.log' => \App\Http\Middleware\Api\LogApiRequests::class,
+            'api.calendar.context' => \App\Http\Middleware\Api\ResolveCalendarContext::class,
 
             // Sanctum token ability enforcement
             'ability' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,

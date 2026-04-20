@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\Teacher\Academic\CourseController as AcademicCou
 use App\Http\Controllers\Api\V1\Teacher\Academic\InteractiveSessionController as AcademicInteractiveSessionController;
 use App\Http\Controllers\Api\V1\Teacher\Academic\LessonController as AcademicLessonController;
 use App\Http\Controllers\Api\V1\Teacher\Academic\SessionController as AcademicSessionController;
+use App\Http\Controllers\Api\V1\Teacher\Calendar\CalendarController;
 use App\Http\Controllers\Api\V1\Teacher\CertificateController;
 use App\Http\Controllers\Api\V1\Teacher\DashboardController;
 use App\Http\Controllers\Api\V1\Teacher\EarningsController;
@@ -43,6 +44,33 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
         Route::get('/{date}', [ScheduleController::class, 'day'])
             ->where('date', '[0-9]{4}-[0-9]{2}-[0-9]{2}')
             ->name('api.v1.teacher.schedule.day');
+    });
+
+    // Calendar (full scheduling system)
+    Route::prefix('calendar')->middleware('api.calendar.context')->group(function () {
+        Route::get('/events', [CalendarController::class, 'events'])
+            ->name('api.v1.teacher.calendar.events');
+
+        Route::get('/schedulable-items', [CalendarController::class, 'schedulableItems'])
+            ->name('api.v1.teacher.calendar.schedulable-items');
+
+        Route::post('/check-conflicts', [CalendarController::class, 'checkConflicts'])
+            ->name('api.v1.teacher.calendar.check-conflicts');
+
+        Route::post('/schedule', [CalendarController::class, 'schedule'])
+            ->name('api.v1.teacher.calendar.schedule');
+
+        Route::put('/sessions/{type}/{id}/reschedule', [CalendarController::class, 'reschedule'])
+            ->where(['type' => 'quran|academic|interactive', 'id' => '[0-9]+'])
+            ->name('api.v1.teacher.calendar.reschedule');
+
+        Route::put('/sessions/{type}/{id}', [CalendarController::class, 'updateSession'])
+            ->where(['type' => 'quran|academic|interactive', 'id' => '[0-9]+'])
+            ->name('api.v1.teacher.calendar.update-session');
+
+        Route::delete('/schedulable-items/{itemType}/{itemId}/future-sessions', [CalendarController::class, 'removeFutureSessions'])
+            ->where(['itemType' => 'group|individual|trial|private_lesson|interactive_course', 'itemId' => '[0-9]+'])
+            ->name('api.v1.teacher.calendar.remove-future-sessions');
     });
 
     // Quran Teacher Routes
