@@ -88,7 +88,6 @@ class LiveKitConnection {
         // the Insertable-Streams pipeline progressively paralyzed Chrome tabs.
         try { if (typeof localStorage !== 'undefined') localStorage.removeItem('enhanced_nr_v2'); } catch (_) {}
         this._wakeLock = null;
-        this._keepAliveAudio = null;
         this._visibilityHandler = null;
     }
 
@@ -341,9 +340,15 @@ class LiveKitConnection {
             if (window.MT) window.MT.event('connection', 'connect_succeeded', { ms: Date.now() - t0 });
             // Begin sampling WebRTC stats now that we have a live room
             if (window.MT) window.MT.startStatsPolling(this.room);
-            // Keep meeting alive when browser goes to background
+            // Keep meeting alive when browser goes to background. Wake lock
+            // alone is sufficient — the previous silent-audio-loop hack was
+            // playing a zero-sample WAV with loop=true, which on desktop
+            // Chrome produced an infinite play→end→seek→play cycle that
+            // pinned the audio thread at high CPU (hundreds of idle
+            // wake-ups/sec). Mobile Chrome throttles such audio; native
+            // apps don't hit this path at all — which is why it showed up
+            // only on desktop browsers.
             this._acquireWakeLock();
-            this._startKeepAliveAudio();
             this._setupVisibilityHandler();
         } catch (error) {
             this.isConnecting = false;
@@ -499,29 +504,6 @@ class LiveKitConnection {
     }
 
     /**
-     * Play a silent audio loop to prevent the OS from killing the tab.
-     * Uses a hidden <audio> element (not AudioContext) to avoid
-     * interfering with the noise suppression pipeline.
-     */
-    _startKeepAliveAudio() {
-        if (this._keepAliveAudio) return;
-        // Zero-length silent WAV (header only). Looping keeps the tab alive in background.
-        const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAABCxAgABAAgAZGF0YQAAAAA=';
-        this._keepAliveAudio = new Audio(silentWav);
-        this._keepAliveAudio.loop = true;
-        this._keepAliveAudio.volume = 0.01;
-        this._keepAliveAudio.play().catch(() => {});
-    }
-
-    _stopKeepAliveAudio() {
-        if (this._keepAliveAudio) {
-            this._keepAliveAudio.pause();
-            this._keepAliveAudio.src = '';
-            this._keepAliveAudio = null;
-        }
-    }
-
-    /**
      * Handle visibility changes — re-acquire wake lock when tab becomes
      * visible, and trigger immediate reconnection if connection was lost
      * while backgrounded.
@@ -555,7 +537,6 @@ class LiveKitConnection {
     async disconnect() {
         if (window.MT) window.MT.stopStatsPolling();
         this._releaseWakeLock();
-        this._stopKeepAliveAudio();
         this._teardownVisibilityHandler();
         if (this._activeSpeakerTimer) {
             clearTimeout(this._activeSpeakerTimer);
@@ -713,7 +694,6 @@ class LiveKitConnection {
         }
 
         this._releaseWakeLock();
-        this._stopKeepAliveAudio();
         this._teardownVisibilityHandler();
 
         // Stop every local MediaStreamTrack so the browser releases mic/camera
