@@ -189,15 +189,29 @@ class TeacherProfileController extends Controller
             return;
         }
 
+        // whereHas() doesn't work on morphTo — must be whereHasMorph() so
+        // Laravel knows which concrete table to subquery against.
         match ($sourceType) {
-            'individual_circle' => $query->where('session_type', QuranSession::class)
-                ->whereHas('session', fn ($q) => $q->where('individual_circle_id', $sourceId)),
-            'group_circle' => $query->where('session_type', QuranSession::class)
-                ->whereHas('session', fn ($q) => $q->where('circle_id', $sourceId)),
-            'academic_lesson' => $query->where('session_type', AcademicSession::class)
-                ->whereHas('session', fn ($q) => $q->where('academic_individual_lesson_id', $sourceId)),
-            'interactive_course' => $query->where('session_type', InteractiveCourseSession::class)
-                ->whereHas('session', fn ($q) => $q->where('course_id', $sourceId)),
+            'individual_circle' => $query->whereHasMorph(
+                'session',
+                [QuranSession::class],
+                fn ($q) => $q->where('individual_circle_id', $sourceId),
+            ),
+            'group_circle' => $query->whereHasMorph(
+                'session',
+                [QuranSession::class],
+                fn ($q) => $q->where('circle_id', $sourceId),
+            ),
+            'academic_lesson' => $query->whereHasMorph(
+                'session',
+                [AcademicSession::class],
+                fn ($q) => $q->where('academic_individual_lesson_id', $sourceId),
+            ),
+            'interactive_course' => $query->whereHasMorph(
+                'session',
+                [InteractiveCourseSession::class],
+                fn ($q) => $q->where('course_id', $sourceId),
+            ),
             default => null,
         };
     }
