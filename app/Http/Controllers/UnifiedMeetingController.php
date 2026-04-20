@@ -215,7 +215,28 @@ class UnifiedMeetingController extends Controller
                 }
             }
 
-            // Check if meeting exists
+            // Ensure meeting exists before token issuance. CreateSessionMeetingJob
+            // (dispatched from BaseSessionObserver on status transition to
+            // READY/ONGOING) is the primary creation path but runs async on the
+            // queue — a 30–120 s gap between "session becomes joinable" and
+            // "meeting row populated" is possible. When a user clicks join
+            // inside that gap, fall back to creating the meeting synchronously
+            // here so the token request succeeds instead of 404-ing.
+            //
+            // ensureMeetingExists() is idempotent: it short-circuits when
+            // meeting_room_name is already set, or when the session status
+            // isn't READY/ONGOING (in which case the old 404 below is still
+            // the correct response — caller is trying to join too early).
+            if (! $session->meeting_room_name) {
+                // Refresh first so any concurrent CreateSessionMeetingJob
+                // completion becomes visible to this request.
+                $session->refresh();
+                if (! $session->meeting_room_name) {
+                    $session->ensureMeetingExists();
+                    $session->refresh();
+                }
+            }
+
             if (! $session->meeting_room_name) {
                 return $this->notFound(__('meetings.api.meeting_not_created'));
             }

@@ -139,6 +139,11 @@ class AcademicIndividualLesson extends Model
         return $this->belongsTo(AcademicGradeLevel::class);
     }
 
+    public function gradeLevel(): BelongsTo
+    {
+        return $this->academicGradeLevel();
+    }
+
     public function sessions(): HasMany
     {
         return $this->hasMany(AcademicSession::class, 'academic_individual_lesson_id');

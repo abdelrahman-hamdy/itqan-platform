@@ -396,48 +396,93 @@ class LiveKitConnection {
     }
 
     /**
-     * Get LiveKit token from the unified session API
-     * @returns {Promise<string>} LiveKit token
+     * Get LiveKit token from the unified session API.
+     *
+     * Retries internally with exponential backoff (2, 4, 8, 16 s — 5 attempts
+     * total, ~30 s ceiling) on one specific condition: HTTP 404 with
+     * `error_code: RESOURCE_NOT_FOUND`. That response means the meeting
+     * record hasn't been provisioned yet — typically because the server-side
+     * CreateSessionMeetingJob is still on the queue. Retrying quietly gives
+     * the job a chance to finish before the user sees an error.
+     *
+     * Server-side (UnifiedMeetingController::getParticipantToken) now also
+     * does an on-demand synchronous fallback, so this client retry is
+     * defence-in-depth for the remaining race between the queue job and an
+     * ultra-fast click.
+     *
+     * All other errors (4xx non-404, 5xx, network) propagate immediately.
      */
     async getLiveKitToken() {
-        const t0 = Date.now();
-        if (window.MT) window.MT.event('connection', 'token_fetch_started', {});
-
-        try {
-            // Get session ID from window object (set in Blade template)
-            const sessionId = window.sessionId;
-            if (!sessionId) {
-                throw new Error('Session ID not found. Please refresh the page.');
-            }
-
-
-            // Get session type from window object (set in Blade template)
-            const sessionType = window.sessionType || 'quran';
-
-            // Use unified API endpoint for getting participant token
-            const response = await window.LiveKitAPI.post('/api/sessions/meeting/token', {
-                session_type: sessionType,
-                session_id: sessionId
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-            }
-
-            const data = await response.json();
-
-            if (!data.success || !data.data?.access_token) {
-                throw new Error('Invalid token response: ' + (data.message || data.error || 'Unknown error'));
-            }
-
-            if (window.MT) window.MT.event('connection', 'token_fetch_succeeded', { ms: Date.now() - t0 });
-            return data.data.access_token;
-
-        } catch (error) {
-            if (window.MT) window.MT.error('connection', 'token_fetch_failed', error, { ms: Date.now() - t0 });
-            throw error;
+        const sessionId = window.sessionId;
+        if (!sessionId) {
+            throw new Error('Session ID not found. Please refresh the page.');
         }
+        const sessionType = window.sessionType || 'quran';
+
+        const maxAttempts = 5;
+        const delays = [2000, 4000, 8000, 16000]; // between attempt N and N+1
+
+        let lastError = null;
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            const t0 = Date.now();
+            if (window.MT) window.MT.event('connection', 'token_fetch_started', { attempt });
+
+            try {
+                const response = await window.LiveKitAPI.post('/api/sessions/meeting/token', {
+                    session_type: sessionType,
+                    session_id: sessionId,
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (!data.success || !data.data?.access_token) {
+                        throw new Error('Invalid token response: ' + (data.message || data.error || 'Unknown error'));
+                    }
+                    if (window.MT) window.MT.event('connection', 'token_fetch_succeeded', {
+                        ms: Date.now() - t0,
+                        attempts: attempt,
+                    });
+                    return data.data.access_token;
+                }
+
+                // Non-OK response — parse body to decide whether to retry
+                const bodyText = await response.text();
+                let parsed = null;
+                try { parsed = JSON.parse(bodyText); } catch (_) { /* not JSON */ }
+
+                const isMeetingNotReady = response.status === 404
+                    && parsed?.error_code === 'RESOURCE_NOT_FOUND';
+
+                if (isMeetingNotReady && attempt < maxAttempts) {
+                    const delay = delays[attempt - 1];
+                    if (window.MT) window.MT.event('connection', 'token_fetch_meeting_preparing', {
+                        attempt,
+                        next_retry_ms: delay,
+                    });
+                    if (this.config.onMeetingPreparing) {
+                        this.config.onMeetingPreparing({ attempt, maxAttempts, nextRetryMs: delay });
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, delay));
+                    continue;
+                }
+
+                throw new Error(`HTTP error! status: ${response.status} - ${bodyText}`);
+            } catch (error) {
+                lastError = error;
+                if (window.MT) window.MT.error('connection', 'token_fetch_failed', error, {
+                    ms: Date.now() - t0,
+                    attempt,
+                });
+
+                // Network / thrown errors: only retry if we haven't hit the
+                // RESOURCE_NOT_FOUND condition above. Breaking here preserves
+                // fail-fast behavior for real errors (auth, 5xx, offline).
+                break;
+            }
+        }
+
+        throw lastError || new Error('Token fetch failed');
     }
 
 
