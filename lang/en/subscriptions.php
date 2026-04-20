@@ -142,7 +142,7 @@ return [
         'certificate_already_issued' => 'Certificate has already been issued.',
         'certificate_not_eligible' => 'Subscription is not eligible for a certificate.',
         'invalid_package' => 'The selected package is not available.',
-        'queued_cycle_exists' => 'A queued renewal cycle already exists for this subscription. Please wait until the current cycle ends.',
+        'queued_cycle_exists' => 'A renewal is already prepared for this subscription and will activate automatically when the current cycle ends.',
         'cannot_cancel_paid' => 'Cannot cancel a paid subscription. It will expire automatically at the end date.',
         'cancel_reason_student' => 'Cancelled by student',
         'cannot_delete_package_with_subscriptions' => 'Cannot delete package with linked subscriptions. Deactivate it instead.',

@@ -86,8 +86,30 @@ class SubscriptionRenewalService
             $replaceNow = $this->shouldReplaceImmediately($subscription, $currentCycle);
 
             // Enforce max one queued cycle per subscription thread.
-            if (! $replaceNow && $subscription->queuedCycle()->exists()) {
-                throw new Exception(__('subscriptions.errors.queued_cycle_exists'));
+            // Abandoned unpaid queued cycles (left over from a student starting a
+            // renewal and never completing payment) are silently replaced — they
+            // would otherwise block all future renewal attempts forever.
+            if (! $replaceNow) {
+                $existingQueued = $subscription->queuedCycle()->first();
+                if ($existingQueued !== null) {
+                    if ($existingQueued->payment_status === SubscriptionCycle::PAYMENT_PAID) {
+                        throw new Exception(__('subscriptions.errors.queued_cycle_exists'));
+                    }
+
+                    Log::info('Replacing abandoned unpaid queued cycle on retry', [
+                        'subscription_id' => $subscription->id,
+                        'old_cycle_id' => $existingQueued->id,
+                        'old_payment_id' => $existingQueued->payment_id,
+                        'actor_id' => auth()->id(),
+                    ]);
+
+                    if ($existingQueued->payment_id) {
+                        Payment::where('id', $existingQueued->payment_id)
+                            ->where('status', PaymentStatus::PENDING)
+                            ->delete();
+                    }
+                    $existingQueued->delete();
+                }
             }
 
             // Build per-cycle pricing & session counts (uses current or new package)
