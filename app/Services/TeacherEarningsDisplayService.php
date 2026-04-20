@@ -150,6 +150,168 @@ class TeacherEarningsDisplayService
     }
 
     /**
+     * Eager-load map for TeacherEarning::session morphTo across the three
+     * concrete session types. Use with: `->with(['session' => fn ($morphTo) =>
+     * $morphTo->morphWith($service->sessionMorphMap())])`.
+     */
+    public function sessionMorphMap(): array
+    {
+        return [
+            QuranSession::class => ['individualCircle', 'circle', 'student'],
+            AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
+            InteractiveCourseSession::class => ['course'],
+        ];
+    }
+
+    /**
+     * Apply month/source/date-range filters to a TeacherEarning query.
+     *
+     * Date range overrides month when set. Source format is `{type}_{id}`
+     * where type is one of: `individual_circle`, `group_circle`,
+     * `academic_lesson`, `interactive_course`.
+     */
+    public function applyFilters($query, ?string $month, ?string $source, ?string $startDate, ?string $endDate): void
+    {
+        if ($startDate || $endDate) {
+            if ($startDate) {
+                $query->where('session_completed_at', '>=', Carbon::parse($startDate)->startOfDay());
+            }
+            if ($endDate) {
+                $query->where('session_completed_at', '<=', Carbon::parse($endDate)->endOfDay());
+            }
+        } elseif ($month) {
+            $parts = explode('-', $month);
+            if (count($parts) === 2) {
+                $query->forMonth((int) $parts[0], (int) $parts[1]);
+            }
+        }
+
+        if ($source) {
+            $this->applySourceFilter($query, $source);
+        }
+    }
+
+    /**
+     * Apply a single-source filter. Source key format: `{type}_{id}`.
+     */
+    private function applySourceFilter($query, string $source): void
+    {
+        $lastUnderscore = strrpos($source, '_');
+        if ($lastUnderscore === false) {
+            return;
+        }
+
+        $sourceType = substr($source, 0, $lastUnderscore);
+        $sourceId = (int) substr($source, $lastUnderscore + 1);
+
+        if ($sourceId <= 0) {
+            return;
+        }
+
+        match ($sourceType) {
+            'individual_circle' => $query->where('session_type', QuranSession::class)
+                ->whereHas('session', fn ($q) => $q->where('individual_circle_id', $sourceId)),
+            'group_circle' => $query->where('session_type', QuranSession::class)
+                ->whereHas('session', fn ($q) => $q->where('circle_id', $sourceId)),
+            'academic_lesson' => $query->where('session_type', AcademicSession::class)
+                ->whereHas('session', fn ($q) => $q->where('academic_individual_lesson_id', $sourceId)),
+            'interactive_course' => $query->where('session_type', InteractiveCourseSession::class)
+                ->whereHas('session', fn ($q) => $q->where('course_id', $sourceId)),
+            default => null,
+        };
+    }
+
+    /**
+     * Compute the four headline stats (total / finalized / unpaid / duration)
+     * over an already-filtered TeacherEarning query in a single SQL round-trip.
+     */
+    public function computeStats($baseQuery): array
+    {
+        $row = (clone $baseQuery)->selectRaw("
+            COALESCE(SUM(amount), 0) as total_earnings,
+            COALESCE(SUM(CASE WHEN is_finalized = 1 THEN amount ELSE 0 END), 0) as finalized_amount,
+            COALESCE(SUM(CASE WHEN is_finalized = 0 AND is_disputed = 0 THEN amount ELSE 0 END), 0) as unpaid_amount,
+            COALESCE(SUM(JSON_EXTRACT(calculation_metadata, '$.duration_minutes')), 0) as total_duration_minutes
+        ")->first();
+
+        return [
+            'total_earnings' => (float) $row->total_earnings,
+            'finalized_amount' => (float) $row->finalized_amount,
+            'unpaid_amount' => (float) $row->unpaid_amount,
+            'total_duration_minutes' => (int) $row->total_duration_minutes,
+        ];
+    }
+
+    /**
+     * Build the dynamic sources list (for filter dropdowns) from the teacher's
+     * existing earnings. Each entry: `{ value, label, type }`.
+     */
+    public function buildSourcesList(string $teacherType, int $teacherId, int $academyId, $user): array
+    {
+        $allEarnings = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->with(['session' => fn ($morphTo) => $morphTo->morphWith($this->sessionMorphMap())])
+            ->get();
+
+        $sources = [];
+        foreach ($allEarnings as $earning) {
+            $source = $this->determineEarningSource($earning, $user);
+            if (! isset($sources[$source['key']])) {
+                $sources[$source['key']] = [
+                    'value' => $source['key'],
+                    'label' => $source['name'],
+                    'type' => $this->normalizeSourceType($source['type']),
+                ];
+            }
+        }
+
+        return array_values($sources);
+    }
+
+    /**
+     * Map TeacherEarning::session_type FQN to the public-facing source-type
+     * key used by the API (`quran_individual` / `quran_group` /
+     * `academic_lesson` / `interactive_course`). Returns `null` when the
+     * session record is missing entirely.
+     */
+    public function resolveApiSourceType(TeacherEarning $earning): ?string
+    {
+        $session = $earning->session;
+        if (! $session) {
+            return null;
+        }
+
+        if ($session instanceof QuranSession) {
+            return $session->individualCircle ? 'quran_individual' : 'quran_group';
+        }
+
+        if ($session instanceof AcademicSession) {
+            return 'academic_lesson';
+        }
+
+        if ($session instanceof InteractiveCourseSession) {
+            return 'interactive_course';
+        }
+
+        return null;
+    }
+
+    /**
+     * Map an internal source-type (`individual_circle` / `group_circle` /
+     * `academic_lesson` / `interactive_course`) to the public API key set.
+     */
+    private function normalizeSourceType(string $internalType): string
+    {
+        return match ($internalType) {
+            'individual_circle' => 'quran_individual',
+            'group_circle' => 'quran_group',
+            'academic_lesson' => 'academic_lesson',
+            'interactive_course' => 'interactive_course',
+            default => $internalType,
+        };
+    }
+
+    /**
      * Determine the source of an earning (which circle/course/class).
      */
     public function determineEarningSource($earning, $user): array
