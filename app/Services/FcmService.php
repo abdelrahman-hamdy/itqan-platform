@@ -12,19 +12,33 @@ use Kreait\Firebase\Messaging\Notification;
 
 class FcmService
 {
-    public function __construct(
-        private readonly Messaging $messaging
-    ) {
-        $path = config('firebase.projects.app.credentials')
-            ?: storage_path('app/firebase-credentials.json');
-        if (is_string($path) && ! file_exists($path)) {
-            // Push delivery silently no-ops in this state — surface it loudly
-            // in logs so dev environments don't ship features that *appear*
-            // to work (alarm endpoint returns "sent" but no device rings).
-            Log::warning('FcmService: Firebase credentials file is missing — push notifications will fail silently', [
-                'path' => $path,
-            ]);
+    private ?Messaging $messaging = null;
+    private bool $messagingResolutionAttempted = false;
+
+    /**
+     * Resolve Messaging lazily: a missing/broken
+     * `storage/app/firebase-credentials.json` would make Laravel's container
+     * blow up on every request that touches FcmService (route resolution,
+     * controllers, jobs). Deferring lets the rest of the app keep working
+     * while push delivery degrades to a no-op.
+     */
+    private function messaging(): ?Messaging
+    {
+        if ($this->messagingResolutionAttempted) {
+            return $this->messaging;
         }
+        $this->messagingResolutionAttempted = true;
+
+        try {
+            $this->messaging = app(Messaging::class);
+        } catch (\Throwable $e) {
+            Log::warning('FcmService: Firebase Messaging unavailable — push notifications will no-op', [
+                'error' => $e->getMessage(),
+            ]);
+            $this->messaging = null;
+        }
+
+        return $this->messaging;
     }
 
     /**
@@ -38,6 +52,11 @@ class FcmService
 
         if (empty($tokens)) {
             return ['sent' => 0, 'failed' => 0, 'invalidated' => 0];
+        }
+
+        $messaging = $this->messaging();
+        if ($messaging === null) {
+            return ['sent' => 0, 'failed' => count($tokens), 'invalidated' => 0];
         }
 
         $notification = Notification::create($title, $body);
@@ -54,7 +73,7 @@ class FcmService
         // FCM allows max 500 tokens per multicast
         foreach (array_chunk($tokens, 500) as $chunk) {
             try {
-                $report = $this->messaging->sendMulticast($message, $chunk);
+                $report = $messaging->sendMulticast($message, $chunk);
 
                 $totalSent += $report->successes()->count();
                 $totalFailed += $report->failures()->count();
