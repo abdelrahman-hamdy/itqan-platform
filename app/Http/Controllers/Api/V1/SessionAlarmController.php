@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\Api\ApiResponses;
 use App\Services\SessionAlarmService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,8 @@ use Illuminate\Http\Request;
  */
 class SessionAlarmController extends Controller
 {
+    use ApiResponses;
+
     public function __construct(
         private readonly SessionAlarmService $alarms,
     ) {}
@@ -31,10 +34,7 @@ class SessionAlarmController extends Controller
         ]);
 
         if (! in_array($sessionType, ['quran', 'academic', 'interactive'], true)) {
-            return response()->json([
-                'success' => false,
-                'message' => __('meetings.alarm.invalid_session_type'),
-            ], 422);
+            return $this->error(__('meetings.alarm.invalid_session_type'), 422);
         }
 
         $result = $this->alarms->alarm(
@@ -45,20 +45,20 @@ class SessionAlarmController extends Controller
         );
 
         return match ($result['status']) {
-            'sent' => response()->json([
-                'success' => true,
-                'call_id' => $result['call_id'],
-                'message' => __('meetings.alarm.sent'),
-            ]),
-            'cooldown' => response()->json([
-                'success' => false,
-                'retry_after' => $result['retry_after'] ?? SessionAlarmService::COOLDOWN_SECONDS,
-                'message' => __('meetings.alarm.cooldown'),
-            ], 429),
-            default => response()->json([
-                'success' => false,
-                'message' => __('meetings.alarm.forbidden'),
-            ], 403),
+            'sent' => $this->success(
+                ['call_id' => $result['call_id']],
+                __('meetings.alarm.sent'),
+            ),
+            'cooldown' => $this->error(
+                message: __('meetings.alarm.cooldown'),
+                status: 429,
+                errorCode: 'COOLDOWN',
+                meta: [
+                    'retry_after' => $result['retry_after']
+                        ?? SessionAlarmService::COOLDOWN_SECONDS,
+                ],
+            ),
+            default => $this->error(__('meetings.alarm.forbidden'), 403),
         };
     }
 
@@ -66,23 +66,17 @@ class SessionAlarmController extends Controller
     {
         $alarm = $this->alarms->markAnswered($callId, $request->user());
         if ($alarm === null) {
-            return response()->json([
-                'success' => false,
-                'message' => __('meetings.alarm.not_found'),
-            ], 404);
+            return $this->notFound(__('meetings.alarm.not_found'));
         }
-        return response()->json(['success' => true]);
+        return $this->success();
     }
 
     public function decline(Request $request, string $callId): JsonResponse
     {
         $alarm = $this->alarms->markDeclined($callId, $request->user());
         if ($alarm === null) {
-            return response()->json([
-                'success' => false,
-                'message' => __('meetings.alarm.not_found'),
-            ], 404);
+            return $this->notFound(__('meetings.alarm.not_found'));
         }
-        return response()->json(['success' => true]);
+        return $this->success();
     }
 }
