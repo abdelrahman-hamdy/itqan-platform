@@ -183,10 +183,10 @@ Schedule::command('subscriptions:cleanup-expired-pending --force')
     ->runInBackground()
     ->description('Cancel pending subscriptions not paid within the configured time limit');
 
-// Cleanup abandoned unpaid queued cycles (renewal attempts where the student
-// never completed payment). Without this they block all future renewals on
-// the same subscription.
-// Explicit 15-min mutex TTL — see feedback_schedule_mutex_short_ttl in memory.
+// Cleanup abandoned unpaid queued cycles. Safety net only — the renewal
+// service drops these inline on the next retry; this catches the ones whose
+// owner never returns. Explicit 15-min mutex TTL so a crashed run self-heals
+// (default is 24 h, which would freeze this command for a full day).
 Schedule::command('subscriptions:cleanup-abandoned-queued')
     ->name('cleanup-abandoned-queued-cycles')
     ->dailyAt('03:00')

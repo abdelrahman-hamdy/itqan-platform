@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Builder;
@@ -248,5 +249,28 @@ class SubscriptionCycle extends Model
         ];
 
         return self::create(array_merge($defaults, $overrides));
+    }
+
+    /**
+     * Drop this cycle and its linked payment, but only if both are still
+     * unpaid/pending. Refuses to touch a cycle whose payment has already
+     * completed — those represent real money and must never be discarded
+     * by an "abandoned attempt" cleanup path.
+     *
+     * Caller is responsible for opening a transaction.
+     */
+    public function deleteIfAbandoned(): bool
+    {
+        if ($this->payment_status !== self::PAYMENT_PENDING) {
+            return false;
+        }
+
+        if ($this->payment_id) {
+            Payment::where('id', $this->payment_id)
+                ->where('status', PaymentStatus::PENDING)
+                ->delete();
+        }
+
+        return (bool) $this->delete();
     }
 }

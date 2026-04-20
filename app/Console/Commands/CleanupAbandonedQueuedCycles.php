@@ -2,8 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\PaymentStatus;
-use App\Models\Payment;
 use App\Models\SubscriptionCycle;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -72,12 +70,13 @@ class CleanupAbandonedQueuedCycles extends Command
 
         DB::transaction(function () use ($stale, &$deletedCycles, &$deletedPayments) {
             foreach ($stale as $cycle) {
-                if ($cycle->payment_id) {
-                    $deletedPayments += Payment::where('id', $cycle->payment_id)
-                        ->where('status', PaymentStatus::PENDING)
-                        ->delete();
+                $hadPayment = (bool) $cycle->payment_id;
+                if ($cycle->deleteIfAbandoned()) {
+                    $deletedCycles++;
+                    if ($hadPayment) {
+                        $deletedPayments++;
+                    }
                 }
-                $deletedCycles += SubscriptionCycle::destroy($cycle->id);
             }
         });
 
@@ -87,7 +86,7 @@ class CleanupAbandonedQueuedCycles extends Command
             'cutoff_hours' => $hours,
         ]);
 
-        $this->info("Deleted {$deletedCycles} cycle(s) and {$deletedPayments} pending payment row(s).");
+        $this->info("Deleted {$deletedCycles} cycle(s) and up to {$deletedPayments} pending payment row(s).");
 
         return self::SUCCESS;
     }
