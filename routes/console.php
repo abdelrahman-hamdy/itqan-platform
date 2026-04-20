@@ -38,9 +38,13 @@ if ($isLocal) {
 
 // Update session statuses based on time
 // CRITICAL: Run every minute for immediate status updates (triggers BaseSessionObserver for meeting creation)
+// withoutOverlapping(5) — 5-minute mutex TTL so a crashed run self-heals on the
+// next tick. The default (1440 min / 24 h) froze the entire status pipeline
+// for 8 hours on 2026-04-20 when a run was interrupted at 09:04 UTC without
+// releasing the lock; see feedback_schedule_mutex_short_ttl in memory.
 $updateStatusesCommand = Schedule::command('sessions:update-statuses')
     ->name('update-session-statuses')
-    ->withoutOverlapping()
+    ->withoutOverlapping(5)
     ->runInBackground()
     ->description('Update session statuses based on current time and business rules');
 
