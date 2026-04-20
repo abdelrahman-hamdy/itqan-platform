@@ -29,8 +29,8 @@ return new class extends Migration
             $table->string('session_type', 50);
             $table->unsignedBigInteger('session_id');
 
-            $table->foreignId('caller_id')->constrained('users')->nullOnDelete();
-            $table->foreignId('target_id')->constrained('users')->nullOnDelete();
+            $table->foreignId('caller_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('target_id')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('answered_at')->nullable();
