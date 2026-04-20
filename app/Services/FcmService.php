@@ -14,7 +14,18 @@ class FcmService
 {
     public function __construct(
         private readonly Messaging $messaging
-    ) {}
+    ) {
+        $path = config('firebase.projects.app.credentials')
+            ?: storage_path('app/firebase-credentials.json');
+        if (is_string($path) && ! file_exists($path)) {
+            // Push delivery silently no-ops in this state — surface it loudly
+            // in logs so dev environments don't ship features that *appear*
+            // to work (alarm endpoint returns "sent" but no device rings).
+            Log::warning('FcmService: Firebase credentials file is missing — push notifications will fail silently', [
+                'path' => $path,
+            ]);
+        }
+    }
 
     /**
      * Send a push notification to all devices of a user.

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Common\MeetingTokenController;
 use App\Http\Controllers\Api\V1\Common\NotificationController;
 use App\Http\Controllers\Api\V1\Common\SupervisedChatController;
 use App\Http\Controllers\Api\V1\ProfileOptionsController;
+use App\Http\Controllers\Api\V1\SessionAlarmController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -72,6 +73,21 @@ Route::prefix('meetings')->middleware('throttle:30,1')->group(function () {
         ->where('sessionType', 'quran|academic|interactive')
         ->middleware('throttle:10,1')
         ->name('api.v1.meetings.kick');
+});
+
+// Session alarms — "ring the other participant" back into the meeting.
+// Heavy server-side rate limiting (2/min per user) keeps abusers in check;
+// SessionAlarmService additionally enforces a 30s per-pair cooldown.
+Route::prefix('sessions')->middleware('throttle:2,1')->group(function () {
+    Route::post('/{sessionType}/{sessionId}/alarm', [SessionAlarmController::class, 'alarm'])
+        ->where('sessionType', 'quran|academic|interactive')
+        ->name('api.v1.sessions.alarm');
+
+    Route::post('/alarms/{callId}/answer', [SessionAlarmController::class, 'answer'])
+        ->name('api.v1.sessions.alarm.answer');
+
+    Route::post('/alarms/{callId}/decline', [SessionAlarmController::class, 'decline'])
+        ->name('api.v1.sessions.alarm.decline');
 });
 
 // Chat (WireChat)
