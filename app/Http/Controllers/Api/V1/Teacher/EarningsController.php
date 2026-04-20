@@ -45,6 +45,7 @@ class EarningsController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $perPage = (int) $request->input('per_page', 15);
+        $page = (int) $request->input('page', 1);
 
         if (! $teacherType || ! $teacherId) {
             return $this->success($this->emptyPayload($perPage), __('earnings.earnings_calculated'));
@@ -65,19 +66,27 @@ class EarningsController extends Controller
             ->map(fn (TeacherEarning $earning) => $this->transformEarning($earning, $user))
             ->all();
 
-        $availableMonths = $this->earningsDisplayService->getAvailableMonths($teacherType, $teacherId, $academyId);
-        $availableSources = $this->earningsDisplayService->buildSourcesList($teacherType, $teacherId, $academyId, $user);
+        // Filter facets scan the teacher's full earning history; only return
+        // them on page 1 so subsequent page loads stay cheap. The mobile
+        // client caches them from the first response.
+        $filters = $page === 1
+            ? [
+                'available_months' => $this->earningsDisplayService->getAvailableMonths($teacherType, $teacherId, $academyId),
+                'available_sources' => $this->earningsDisplayService->buildSourcesList($teacherType, $teacherId, $academyId, $user),
+            ]
+            : null;
 
-        return $this->success([
+        $payload = [
             'stats' => $stats,
             'earnings' => $earnings,
             'pagination' => PaginationHelper::fromPaginator($paginated),
-            'filters' => [
-                'available_months' => $availableMonths,
-                'available_sources' => $availableSources,
-            ],
             'currency' => getCurrencyCode(),
-        ], __('earnings.earnings_calculated'));
+        ];
+        if ($filters !== null) {
+            $payload['filters'] = $filters;
+        }
+
+        return $this->success($payload, __('earnings.earnings_calculated'));
     }
 
     /**
@@ -176,58 +185,44 @@ class EarningsController extends Controller
         ];
     }
 
-    /**
-     * Map a single TeacherEarning row into the API response shape consumed by
-     * the mobile teacher earnings screen.
-     */
     private function transformEarning(TeacherEarning $earning, $user): array
     {
-        $sourceType = $this->earningsDisplayService->resolveApiSourceType($earning);
-        $sourceLabel = $sourceType
-            ? __('earnings.source_types.'.$this->sourceTypeToLangKey($sourceType))
+        $source = $this->earningsDisplayService->determineEarningSource($earning, $user);
+        $internalType = $source['type'];
+
+        $apiSourceType = match ($internalType) {
+            'individual_circle' => 'quran_individual',
+            'group_circle' => 'quran_group',
+            'academic_lesson' => 'academic_lesson',
+            'interactive_course' => 'interactive_course',
+            default => null,
+        };
+
+        $sourceLabel = $apiSourceType !== null
+            ? __('earnings.source_types.'.$internalType)
             : __('earnings.source_other');
 
-        $internal = $this->earningsDisplayService->determineEarningSource($earning, $user);
-        $sourceName = $internal['name'] ?? null;
-
-        $durationMinutes = null;
-        if (is_array($earning->calculation_metadata) && isset($earning->calculation_metadata['duration_minutes'])) {
-            $durationMinutes = (int) $earning->calculation_metadata['duration_minutes'];
-        }
-
+        $duration = $earning->calculation_metadata['duration_minutes'] ?? null;
         $status = $earning->is_disputed
             ? 'disputed'
             : ($earning->is_finalized ? 'finalized' : 'pending');
 
         return [
             'id' => $earning->id,
-            'source_type' => $sourceType,
+            'source_type' => $apiSourceType,
             'source_label' => $sourceLabel,
-            'source_name' => $sourceName,
+            'source_name' => $source['name'] ?? null,
             'amount' => (float) $earning->amount,
             'formatted_amount' => $earning->formatted_amount,
             'currency' => getCurrencyCode(),
             'calculation_method' => $earning->calculation_method,
             'calculation_method_label' => $earning->calculation_method_label,
-            'duration_minutes' => $durationMinutes,
+            'duration_minutes' => $duration !== null ? (int) $duration : null,
             'session_completed_at' => $earning->session_completed_at?->toISOString(),
             'earning_month' => $earning->earning_month?->format('Y-m'),
             'is_finalized' => (bool) $earning->is_finalized,
             'is_disputed' => (bool) $earning->is_disputed,
             'status' => $status,
         ];
-    }
-
-    /**
-     * Map the API source-type to the existing `earnings.source_types.*` lang
-     * key (which uses the older `individual_circle` / `group_circle` naming).
-     */
-    private function sourceTypeToLangKey(string $apiType): string
-    {
-        return match ($apiType) {
-            'quran_individual' => 'individual_circle',
-            'quran_group' => 'group_circle',
-            default => $apiType,
-        };
     }
 }

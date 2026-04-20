@@ -269,34 +269,6 @@ class TeacherEarningsDisplayService
     }
 
     /**
-     * Map TeacherEarning::session_type FQN to the public-facing source-type
-     * key used by the API (`quran_individual` / `quran_group` /
-     * `academic_lesson` / `interactive_course`). Returns `null` when the
-     * session record is missing entirely.
-     */
-    public function resolveApiSourceType(TeacherEarning $earning): ?string
-    {
-        $session = $earning->session;
-        if (! $session) {
-            return null;
-        }
-
-        if ($session instanceof QuranSession) {
-            return $session->individualCircle ? 'quran_individual' : 'quran_group';
-        }
-
-        if ($session instanceof AcademicSession) {
-            return 'academic_lesson';
-        }
-
-        if ($session instanceof InteractiveCourseSession) {
-            return 'interactive_course';
-        }
-
-        return null;
-    }
-
-    /**
      * Map an internal source-type (`individual_circle` / `group_circle` /
      * `academic_lesson` / `interactive_course`) to the public API key set.
      */
