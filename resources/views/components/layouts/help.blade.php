@@ -33,7 +33,10 @@
       dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
 <head>
-    <x-app-head :title="$pageTitle" />
+    <x-app-head :title="$pageTitle">
+        @livewireStyles
+        @stack('styles')
+    </x-app-head>
 </head>
 
 <body class="bg-gray-50 text-gray-900">
@@ -128,6 +131,8 @@
     </main>
 
     <x-ui.toast-container />
+
+    @livewireScripts
 
     @stack('scripts')
 

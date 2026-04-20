@@ -48,6 +48,7 @@
     }
   </style>
 
+  @livewireStyles
   @stack('styles')
 </head>
 
@@ -65,6 +66,8 @@
 
   <!-- Footer -->
   <x-academy-footer :academy="$academy" />
+
+  @livewireScripts
 
   <!-- Unified Confirmation Modal -->
   <x-ui.confirmation-modal />

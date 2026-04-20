@@ -166,6 +166,10 @@ return [
             'trial_booking' => 'Trial Session Booking',
         ],
 
+        'errors' => [
+            'payment_unavailable' => 'The payment system failed to load. Please refresh the page and try again.',
+        ],
+
         'quran' => [
             'title' => 'New Quran Subscription',
             'teacher_info' => [

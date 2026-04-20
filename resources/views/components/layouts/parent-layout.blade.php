@@ -2,6 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <x-app-head title="{{ $title ?? 'بوابة ولي الأمر' }}">
+        @livewireStyles
         @stack('styles')
     </x-app-head>
 </head>
@@ -22,6 +23,8 @@
             {{ $slot }}
         </div>
     </main>
+
+    @livewireScripts
 
     <!-- Unified Toast Notification System (handles session flash messages automatically) -->
     <x-ui.toast-container />

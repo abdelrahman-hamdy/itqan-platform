@@ -62,7 +62,9 @@
       }
     </style>
 
+    @livewireStyles
     {{ $head ?? '' }}
+    @stack('styles')
   </x-app-head>
 </head>
 
@@ -115,6 +117,8 @@
       @endisset
     </div>
   </main>
+
+  @livewireScripts
 
   <!-- Unified Toast Notification System -->
   <x-ui.toast-container />

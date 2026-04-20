@@ -421,6 +421,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const existingError = document.querySelector('.validation-error');
         if (existingError) existingError.remove();
 
+        if (typeof Livewire === 'undefined') {
+            showError('{{ __('public.booking.errors.payment_unavailable') }}');
+            return false;
+        }
+
         Livewire.dispatch('openGatewaySelection');
     });
 });

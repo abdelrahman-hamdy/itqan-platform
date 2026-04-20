@@ -5,6 +5,7 @@ import 'remixicon/fonts/remixicon.css';
 import 'flag-icons/css/flag-icons.min.css';
 import '../css/app.css';
 import Alpine from 'alpinejs';
+import collapse from '@alpinejs/collapse';
 // AOS, GSAP, Chart.js, phone-input: lazy-loaded below (only when needed)
 import tabsComponent from './components/tabs';
 import { initStickySidebar } from './components/sticky-sidebar';
@@ -26,6 +27,8 @@ if (document.querySelector('input[type="tel"], [data-phone-input]')) {
 // For pages without Livewire, we need to start Alpine ourselves.
 if (!window.Alpine) {
     window.Alpine = Alpine;
+    window.Alpine.plugin(collapse);
+    window.Alpine.__collapseRegistered = true;
     // Start Alpine after a short delay to allow for any late initialization
     document.addEventListener('DOMContentLoaded', () => {
         // Double-check Livewire hasn't started Alpine in the meantime
@@ -34,6 +37,15 @@ if (!window.Alpine) {
         }
     });
 }
+
+// When Livewire bundles its own Alpine, register the collapse plugin via alpine:init
+// (fires before Alpine processes the DOM, so x-collapse directives resolve correctly).
+document.addEventListener('alpine:init', () => {
+    if (window.Alpine && !window.Alpine.__collapseRegistered) {
+        window.Alpine.plugin(collapse);
+        window.Alpine.__collapseRegistered = true;
+    }
+});
 
 // Expose CSRF utilities globally for public/js files
 window.getCsrfToken = getCsrfToken;

@@ -35,6 +35,7 @@
             }
         </style>
 
+        @livewireStyles
         {{ $head ?? '' }}
         @stack('styles')
     </x-app-head>
@@ -64,6 +65,8 @@
 
     <!-- Unified Toast Notification System (handles session flash messages automatically) -->
     <x-ui.toast-container />
+
+    @livewireScripts
 
     @stack('scripts')
 </body>

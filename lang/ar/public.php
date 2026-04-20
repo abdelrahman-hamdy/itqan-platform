@@ -166,6 +166,10 @@ return [
             'trial_booking' => 'حجز جلسة تجريبية',
         ],
 
+        'errors' => [
+            'payment_unavailable' => 'تعذر تحميل نظام الدفع. يرجى تحديث الصفحة والمحاولة مرة أخرى.',
+        ],
+
         'quran' => [
             'title' => 'اشتراك قرآن جديد',
             'teacher_info' => [
