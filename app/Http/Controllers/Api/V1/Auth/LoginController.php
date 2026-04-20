@@ -175,11 +175,7 @@ class LoginController extends Controller
                 $platform = 'ios';
             }
 
-            // Reassign the FCM token to whoever is logging in now — see the
-            // matching cleanup in NotificationController::registerDeviceToken.
-            DeviceToken::where('token', $fcmToken)
-                ->where('user_id', '!=', $user->id)
-                ->delete();
+            DeviceToken::reassignTokenTo($fcmToken, $user->id);
 
             DeviceToken::updateOrCreate(
                 [
