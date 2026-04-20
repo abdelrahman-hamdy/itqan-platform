@@ -13,7 +13,6 @@ use App\Http\Controllers\Api\V1\Teacher\ProfileController;
 use App\Http\Controllers\Api\V1\Teacher\Quran\CircleController as QuranCircleController;
 use App\Http\Controllers\Api\V1\Teacher\Quran\SessionController as QuranSessionController;
 use App\Http\Controllers\Api\V1\Teacher\ReportController;
-use App\Http\Controllers\Api\V1\Teacher\SessionReportController;
 use App\Http\Controllers\Api\V1\Teacher\ScheduleController;
 use App\Http\Controllers\Api\V1\Teacher\StudentController;
 use App\Http\Controllers\Api\V1\Teacher\TrialRequestController;
@@ -288,21 +287,6 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
             ->middleware('throttle:3,1')
             ->name('api.v1.teacher.profile.delete');
     });
-
-    // Per-session, per-student report editor (mobile mirrors the web Edit Report modal).
-    Route::prefix('{type}/sessions/{id}')
-        ->where(['type' => 'quran|academic|interactive', 'id' => '[0-9]+'])
-        ->group(function () {
-            Route::get('/reports', [SessionReportController::class, 'index'])
-                ->name('api.v1.teacher.sessions.reports.index');
-
-            Route::put('/reports/{studentId}', [SessionReportController::class, 'update'])
-                ->where('studentId', '[0-9]+')
-                ->name('api.v1.teacher.sessions.reports.update');
-
-            Route::put('/lesson-content', [SessionReportController::class, 'updateLessonContent'])
-                ->name('api.v1.teacher.sessions.lesson-content.update');
-        });
 
     // Reports (circle report data for teacher view)
     Route::prefix('reports')->group(function () {
