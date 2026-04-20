@@ -224,6 +224,21 @@ class SessionSettingsService
     }
 
     /**
+     * Resolve a session model by its string type + primary key. Centralises
+     * the `'quran'|'academic'|'interactive' => class` switch that previously
+     * lived hand-rolled in SessionAlarmService and MeetingTokenController.
+     */
+    public function resolveSessionByType(string $type, string|int $id): ?BaseSession
+    {
+        return match ($type) {
+            'quran' => QuranSession::query()->find($id),
+            'academic' => AcademicSession::query()->find($id),
+            'interactive' => InteractiveCourseSession::query()->find($id),
+            default => null,
+        };
+    }
+
+    /**
      * Check if session is an individual (1-on-1) session
      */
     public function isIndividualSession(BaseSession $session): bool
