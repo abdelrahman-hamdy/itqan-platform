@@ -47,8 +47,10 @@ class EarningsController extends Controller
         $perPage = (int) $request->input('per_page', 15);
         $page = (int) $request->input('page', 1);
 
+        $currency = getTeacherEarningsCurrency($user?->academy)->value;
+
         if (! $teacherType || ! $teacherId) {
-            return $this->success($this->emptyPayload($perPage, $user?->academy), __('earnings.earnings_calculated'));
+            return $this->success($this->emptyPayload($perPage, $currency), __('earnings.earnings_calculated'));
         }
 
         $baseQuery = TeacherEarning::forTeacher($teacherType, $teacherId)
@@ -63,7 +65,7 @@ class EarningsController extends Controller
             ->paginate($perPage);
 
         $earnings = collect($paginated->items())
-            ->map(fn (TeacherEarning $earning) => $this->transformEarning($earning, $user))
+            ->map(fn (TeacherEarning $earning) => $this->transformEarning($earning, $user, $currency))
             ->all();
 
         // Filter facets scan the teacher's full earning history; only return
@@ -80,7 +82,7 @@ class EarningsController extends Controller
             'stats' => $stats,
             'earnings' => $earnings,
             'pagination' => PaginationHelper::fromPaginator($paginated),
-            'currency' => getTeacherEarningsCurrency($user?->academy)->value,
+            'currency' => $currency,
         ];
         if ($filters !== null) {
             $payload['filters'] = $filters;
@@ -99,13 +101,14 @@ class EarningsController extends Controller
         $academyId = $user->academy_id;
 
         $perPage = min((int) $request->input('per_page', 20), 100);
+        $currency = getTeacherEarningsCurrency($user?->academy)->value;
 
         if (! $teacherType || ! $teacherId) {
             return $this->success([
                 'payouts' => [],
                 'total_finalized' => 0,
                 'total_pending' => 0,
-                'currency' => getTeacherEarningsCurrency($user?->academy)->value,
+                'currency' => $currency,
                 'pagination' => PaginationHelper::fromArray(0, 1, $perPage),
             ], __('earnings.payouts'));
         }
@@ -138,7 +141,7 @@ class EarningsController extends Controller
             ])->toArray(),
             'total_finalized' => (float) $totalFinalized,
             'total_pending' => (float) $totalPending,
-            'currency' => getTeacherEarningsCurrency($user?->academy)->value,
+            'currency' => $currency,
             'pagination' => PaginationHelper::fromPaginator($finalizedEarnings),
         ], __('earnings.payouts'));
     }
@@ -163,10 +166,7 @@ class EarningsController extends Controller
         return [null, null];
     }
 
-    /**
-     * Empty payload returned when the user has no teacher profile.
-     */
-    private function emptyPayload(int $perPage, $academy = null): array
+    private function emptyPayload(int $perPage, string $currency): array
     {
         return [
             'stats' => [
@@ -181,11 +181,11 @@ class EarningsController extends Controller
                 'available_months' => [],
                 'available_sources' => [],
             ],
-            'currency' => getTeacherEarningsCurrency($academy)->value,
+            'currency' => $currency,
         ];
     }
 
-    private function transformEarning(TeacherEarning $earning, $user): array
+    private function transformEarning(TeacherEarning $earning, $user, string $currency): array
     {
         $source = $this->earningsDisplayService->determineEarningSource($earning, $user);
         $internalType = $source['type'];
@@ -214,7 +214,7 @@ class EarningsController extends Controller
             'source_name' => $source['name'] ?? null,
             'amount' => (float) $earning->amount,
             'formatted_amount' => $earning->formatted_amount,
-            'currency' => getTeacherEarningsCurrency($user?->academy)->value,
+            'currency' => $currency,
             'calculation_method' => $earning->calculation_method,
             'calculation_method_label' => $earning->calculation_method_label,
             'duration_minutes' => $duration !== null ? (int) $duration : null,
