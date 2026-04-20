@@ -75,18 +75,14 @@ class LiveKitConnection {
         this.localParticipant = null;
         this.isConnected = false;
         this.isConnecting = false;
-        this.reconnectAttempts = 0;
-        this.maxReconnectAttempts = 3;
         this.intentionalDisconnect = false;
-        this.reconnectTimeoutId = null;
-        // Stability timer: only reset reconnectAttempts after the connection
-        // has been stable for this long. Prevents infinite loops where a
-        // client connects (reaching 'connected'), immediately disconnects,
-        // reconnects again, and resets the counter each cycle — bypassing
-        // maxReconnectAttempts entirely.
-        this.stabilityTimerId = null;
-        this.stabilityWindowMs = 10000;
         this._bitrateController = new AdaptiveBitrateController();
+
+        // Debounce state for ActiveSpeakersChanged — SDK fires up to 10/s
+        // during speech; coalescing avoids a DOM rebuild storm.
+        this._activeSpeakerIds = new Set();
+        this._activeSpeakerTimer = null;
+
         // Housekeeping: wipe the legacy RNNoise opt-in flag on any browser
         // that still has it set. The ML denoiser was removed entirely after
         // the Insertable-Streams pipeline progressively paralyzed Chrome tabs.
@@ -115,15 +111,33 @@ class LiveKitConnection {
                 channelCount: 1,
             },
             publishDefaults: {
-                audioPreset: { maxBitrate: 48_000 },
+                // Fix #5: use the SDK's speech preset constant. The previous
+                // raw `{ maxBitrate: 48_000 }` object didn't match the
+                // AudioPreset type and may have been silently ignored,
+                // falling back to the music preset (worse for voice).
+                audioPreset: window.LiveKit.AudioPresets.speech,
                 dtx: true,
                 red: true,
+                // Fix #6: do NOT force videoCodec. Let the SDK negotiate so
+                // Safari gets H.264 (VP9 simulcast broken there) and Chrome
+                // gets VP9 where available. H.264 simulcast was unreliable
+                // on some browsers, silently disabling bandwidth adaptation
+                // and pulling the whole room down to the worst peer.
+                simulcast: true,
+                videoSimulcastLayers: [
+                    window.LiveKit.VideoPresets.h180,
+                    window.LiveKit.VideoPresets.h360,
+                    window.LiveKit.VideoPresets.h720,
+                ],
             },
+            // Fix #4: widen SDK reconnect window so mobile WiFi↔cellular
+            // handovers (10–15 s common) stay within ceiling. The custom
+            // handleDisconnection/reconnect layer below has been deleted
+            // (fix #3), so this is now the sole reconnect authority.
             reconnectPolicy: {
                 nextRetryDelayInMs: (context) => {
-                    // 4 SDK-level retries for brief blips, then hand off to fresh-token reconnect
-                    if (context.retryCount > 4) return null;
-                    return Math.min(500 * Math.pow(2, context.retryCount), 8_000);
+                    if (context.retryCount > 6) return null;
+                    return Math.min(500 * Math.pow(2, context.retryCount), 15_000);
                 },
             },
         };
@@ -137,7 +151,9 @@ class LiveKitConnection {
     getConnectOptions() {
         return {
             autoSubscribe: true,
-            maxRetries: 5,
+            // Fix #3: removed maxRetries:5 (was a third retry layer stacking
+            // on top of SDK reconnectPolicy and the now-deleted custom
+            // handleDisconnection path).
         };
     }
 
@@ -243,20 +259,34 @@ class LiveKitConnection {
             }
         });
 
-        // Active speakers changed
+        // Active speakers changed — debounced with set-equality guard
+        // (fix #7). Skip when the membership hasn't actually changed, and
+        // coalesce bursts into a single 250 ms callback. Mirrors the mobile
+        // pattern in itqan-mobile/lib/services/livekit_service.dart.
         this.room.on(window.LiveKit.RoomEvent.ActiveSpeakersChanged, (speakers) => {
-            if (this.config.onActiveSpeakersChanged) {
-                this.config.onActiveSpeakersChanged(speakers);
-            }
-            // Broadcast whether the local participant is currently speaking
-            // so the soft-ducker (audio-ducking.js) can attenuate remote
-            // audio playback during local speech and reduce the echo the
-            // local mic picks back up.
-            const localSid = this.room.localParticipant?.sid;
-            const speaking = !!(localSid && speakers.some((s) => s.sid === localSid));
-            window.dispatchEvent(new CustomEvent('livekit-local-speaking', {
-                detail: { speaking },
-            }));
+            // Cheap membership check first so we avoid allocating a Set on
+            // every SDK tick (~10/sec during speech). Only materialize the
+            // new set when the membership has actually changed.
+            const prev = this._activeSpeakerIds;
+            if (speakers.length === prev.size && speakers.every((s) => prev.has(s.identity))) return;
+            this._activeSpeakerIds = new Set(speakers.map((s) => s.identity));
+            if (this._activeSpeakerTimer) return; // already coalescing
+            this._activeSpeakerTimer = setTimeout(() => {
+                this._activeSpeakerTimer = null;
+                const currentSpeakers = speakers.filter((s) => this._activeSpeakerIds.has(s.identity));
+                if (this.config.onActiveSpeakersChanged) {
+                    this.config.onActiveSpeakersChanged(currentSpeakers);
+                }
+                // Broadcast whether the local participant is currently speaking
+                // so the soft-ducker (audio-ducking.js) can attenuate remote
+                // audio playback during local speech and reduce the echo the
+                // local mic picks back up.
+                const localSid = this.room?.localParticipant?.sid;
+                const speaking = !!(localSid && currentSpeakers.some((s) => s.sid === localSid));
+                window.dispatchEvent(new CustomEvent('livekit-local-speaking', {
+                    detail: { speaking },
+                }));
+            }, 250);
         });
 
         // Data received
@@ -331,133 +361,32 @@ class LiveKitConnection {
 
         if (window.MT) window.MT.event('connection', 'state_change', {
             state,
-            attempts: this.reconnectAttempts,
-            max_attempts: this.maxReconnectAttempts,
             reason: this.lastDisconnectReason || null,
         });
 
         if (state === 'connected') {
             this.isConnecting = false;
-
-            // The encoder restarts at publishDefaults.audioPreset.maxBitrate
-            // on every (re)connect, so a cached target from the prior session
-            // would falsely suppress the first real quality-driven change.
+            // The encoder restarts at publishDefaults.audioPreset on every
+            // (re)connect, so a cached target from the prior session would
+            // falsely suppress the first real quality-driven change.
             this._bitrateController.reset();
-
-            // Defer the reconnectAttempts reset until the connection has been
-            // stable for stabilityWindowMs. A rapid connect → disconnect cycle
-            // will cancel the timer via the 'disconnected' branch below, so the
-            // counter keeps climbing and maxReconnectAttempts eventually kicks in.
-            if (this.stabilityTimerId) clearTimeout(this.stabilityTimerId);
-            const attemptsAtConnect = this.reconnectAttempts;
-            this.stabilityTimerId = setTimeout(() => {
-                if (window.MT) window.MT.event('connection', 'stability_reached', {
-                    window_ms: this.stabilityWindowMs,
-                    attempts_cleared: attemptsAtConnect,
-                });
-                this.reconnectAttempts = 0;
-                this.stabilityTimerId = null;
-            }, this.stabilityWindowMs);
-
-            // CRITICAL FIX: Record attendance when successfully connected
             this.recordAttendanceJoin();
         } else if (state === 'disconnected') {
             this.isConnecting = false;
-
-            // Stop telemetry — no point sending stats for a dead room
             if (window.MT) window.MT.stopStatsPolling();
-
-            // Cancel any pending stability timer — the connection didn't stay
-            // up long enough to count as successful.
-            if (this.stabilityTimerId) {
-                clearTimeout(this.stabilityTimerId);
-                this.stabilityTimerId = null;
-                if (window.MT) window.MT.event('connection', 'stability_cancelled', { window_ms: this.stabilityWindowMs });
-            }
-
-            // CRITICAL FIX: Record attendance when disconnected
             this.recordAttendanceLeave();
-            this.handleDisconnection();
+            // Fix #3: deleted the handleDisconnection() call. SDK's built-in
+            // reconnectPolicy (widened in fix #4 to 6 retries / 15s cap)
+            // handles recovery. The UI layer owns any "rejoin" CTA.
         } else if (state === 'reconnecting') {
             this.isConnecting = true;
         }
 
         if (this.config.onConnectionStateChange) {
-            // Pass extra context so the UI can distinguish intentional vs unexpected disconnect
             this.config.onConnectionStateChange(state, {
                 intentional: this.intentionalDisconnect,
                 reason: this.lastDisconnectReason || null,
             });
-        }
-    }
-
-    /**
-     * Handle disconnection and attempt reconnection if needed.
-     * This fires AFTER the LiveKit SDK's internal reconnection retries are exhausted.
-     * It gets a fresh token and creates a new connection with exponential backoff.
-     */
-    handleDisconnection() {
-        if (this.intentionalDisconnect) {
-            if (window.MT) window.MT.event('connection', 'disconnect_intentional', {});
-            return;
-        }
-        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            if (window.MT) window.MT.warn('connection', 'reconnect_exhausted', {
-                attempts: this.reconnectAttempts,
-                max: this.maxReconnectAttempts,
-                reason: this.lastDisconnectReason || null,
-            });
-            return;
-        }
-
-        this.reconnectAttempts++;
-        const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 8000);
-
-        if (window.MT) window.MT.event('connection', 'reconnect_scheduled', {
-            attempt: this.reconnectAttempts,
-            max: this.maxReconnectAttempts,
-            delay_ms: delay,
-            reason: this.lastDisconnectReason || null,
-        });
-
-        if (this.reconnectTimeoutId) clearTimeout(this.reconnectTimeoutId);
-        this.reconnectTimeoutId = setTimeout(async () => {
-            this.reconnectTimeoutId = null;
-            if (this.intentionalDisconnect || !this.room) return;
-            try {
-                await this.reconnect();
-            } catch (error) {
-                // Will re-enter handleDisconnection via state change if still disconnected
-            }
-        }, delay);
-    }
-
-    /**
-     * Attempt to reconnect to the room
-     */
-    async reconnect() {
-        if (this.isConnecting || this.isConnected) {
-            return;
-        }
-
-        try {
-            this.isConnecting = true;
-
-            // Get a fresh token
-            const token = await this.getLiveKitToken();
-            if (!token) {
-                throw new Error('Failed to get fresh token for reconnection');
-            }
-
-            const serverUrl = this.config.serverUrl;
-            if (!serverUrl) {
-                throw new Error('LiveKit server URL not configured');
-            }
-            await this.room.connect(serverUrl, token, this.getConnectOptions());
-
-        } catch (error) {
-            this.isConnecting = false;
-            throw error;
         }
     }
 
@@ -604,9 +533,11 @@ class LiveKitConnection {
             // Re-acquire wake lock (browser releases it on background)
             this._acquireWakeLock();
             // If disconnected while backgrounded, trigger reconnection immediately
-            if (this.room && !this.isConnected && !this.isConnecting && !this.intentionalDisconnect) {
-                this.handleDisconnection();
-            }
+            // Fix #3: removed the manual handleDisconnection() reentry. The
+            // SDK's reconnectPolicy already tries to recover when the tab
+            // comes back to foreground — kicking off a second parallel
+            // reconnect here was part of the race that caused ghost
+            // connections.
         };
         document.addEventListener('visibilitychange', this._visibilityHandler);
     }
@@ -626,6 +557,10 @@ class LiveKitConnection {
         this._releaseWakeLock();
         this._stopKeepAliveAudio();
         this._teardownVisibilityHandler();
+        if (this._activeSpeakerTimer) {
+            clearTimeout(this._activeSpeakerTimer);
+            this._activeSpeakerTimer = null;
+        }
         if (this.room && this.isConnected) {
             this.intentionalDisconnect = true;
             await this.room.disconnect();
@@ -664,14 +599,6 @@ class LiveKitConnection {
      */
     isRoomConnecting() {
         return this.isConnecting;
-    }
-
-    /**
-     * Check if all reconnection attempts have been exhausted
-     * @returns {boolean}
-     */
-    isReconnectExhausted() {
-        return this.reconnectAttempts >= this.maxReconnectAttempts;
     }
 
     /**
@@ -748,19 +675,11 @@ class LiveKitConnection {
             window.MT.stopStatsPolling();
         }
 
-        // Clear pending reconnect timer
-        if (this.reconnectTimeoutId) {
-            clearTimeout(this.reconnectTimeoutId);
-            this.reconnectTimeoutId = null;
+        if (this._activeSpeakerTimer) {
+            clearTimeout(this._activeSpeakerTimer);
+            this._activeSpeakerTimer = null;
         }
 
-        // Clear pending stability timer
-        if (this.stabilityTimerId) {
-            clearTimeout(this.stabilityTimerId);
-            this.stabilityTimerId = null;
-        }
-
-        // Record leave when destroying connection
         if (this.isConnected) {
             this.recordAttendanceLeave();
         }
@@ -776,8 +695,6 @@ class LiveKitConnection {
         this.localParticipant = null;
         this.isConnected = false;
         this.isConnecting = false;
-        this.reconnectAttempts = 0;
-
     }
 
     /**
@@ -790,8 +707,10 @@ class LiveKitConnection {
     destroySync() {
         this.intentionalDisconnect = true;
 
-        if (this.reconnectTimeoutId) { clearTimeout(this.reconnectTimeoutId); this.reconnectTimeoutId = null; }
-        if (this.stabilityTimerId)    { clearTimeout(this.stabilityTimerId);   this.stabilityTimerId = null; }
+        if (this._activeSpeakerTimer) {
+            clearTimeout(this._activeSpeakerTimer);
+            this._activeSpeakerTimer = null;
+        }
 
         this._releaseWakeLock();
         this._stopKeepAliveAudio();

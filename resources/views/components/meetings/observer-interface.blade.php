@@ -340,17 +340,18 @@
             const script = document.createElement('script');
             script.src = '{{ asset($livekitSdkPath) }}?v={{ filemtime(public_path($livekitSdkPath)) }}';
             script.onload = () => {
-                setTimeout(() => {
-                    const names = ['LiveKit', 'LiveKitClient', 'LivekitClient', 'livekit'];
-                    for (const name of names) {
-                        if (typeof window[name] !== 'undefined') {
-                            window.LiveKit = window[name];
-                            resolve();
-                            return;
-                        }
+                // Fix #9: removed the 200ms setTimeout. `script.onload` fires
+                // only after the SDK has finished executing, so its globals
+                // are already registered.
+                const names = ['LiveKit', 'LiveKitClient', 'LivekitClient', 'livekit'];
+                for (const name of names) {
+                    if (typeof window[name] !== 'undefined') {
+                        window.LiveKit = window[name];
+                        resolve();
+                        return;
                     }
-                    reject(new Error('LiveKit SDK not found'));
-                }, 200);
+                }
+                reject(new Error('LiveKit SDK not found'));
             };
             script.onerror = () => reject(new Error('Failed to load LiveKit SDK'));
             document.head.appendChild(script);

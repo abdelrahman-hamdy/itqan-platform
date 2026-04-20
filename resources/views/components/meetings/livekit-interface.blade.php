@@ -168,6 +168,54 @@
 
 <!-- JavaScript Translations Object -->
 <script>
+    // Shared debug scaffolding for the meeting page. A single namespace so
+    // diagnostic state can't collide with Sentry/Datadog/LiveKit internals
+    // that also touch `window.__*`.
+    (function () {
+        const ns = window.__itqan = window.__itqan || {};
+        ns.pcs = ns.pcs || [];
+        ns.flag = ns.flag || function (name) {
+            try { return new URLSearchParams(location.search).get(name) === '1'; }
+            catch (_) { return false; }
+        };
+
+        // Hook RTCPeerConnection once, before LiveKit SDK loads, so HUD / tests
+        // can reach every peer connection regardless of SDK version.
+        if (!ns.pcHooked && typeof RTCPeerConnection !== 'undefined') {
+            ns.pcHooked = true;
+            let counter = 0;
+            const OrigPC = window.RTCPeerConnection;
+            const Hooked = function (...args) {
+                const pc = new OrigPC(...args);
+                pc.__debugId = 'pc' + (++counter);
+                pc.__debugCreatedAt = Date.now();
+                ns.pcs.push(pc);
+                // Drop closed PCs so long sessions don't accumulate them.
+                pc.addEventListener?.('connectionstatechange', () => {
+                    if (pc.connectionState === 'closed') {
+                        const i = ns.pcs.indexOf(pc);
+                        if (i !== -1) ns.pcs.splice(i, 1);
+                    }
+                });
+                return pc;
+            };
+            Hooked.prototype = OrigPC.prototype;
+            window.RTCPeerConnection = Hooked;
+            if (typeof webkitRTCPeerConnection !== 'undefined') window.webkitRTCPeerConnection = Hooked;
+        }
+    })();
+
+    // No-op fallback so ~36 scattered `if (window.MT) window.MT.event(...)`
+    // guards can drop the `if` once telemetry.js has fully initialized MT.
+    // telemetry.js replaces these with real implementations when it loads.
+    window.MT = window.MT || { event() {}, warn() {}, error() {}, updateContext() {}, stopStatsPolling() {}, destroy() {} };
+
+    // `?lite=1` kills every optional timer/poll: session timer, status poll,
+    // stats poll, track sync, attendance poll, long-task probe. Only LiveKit
+    // SDK + core UI + mic/camera controls remain — bisection flag for "is
+    // the lag from our code or from WebRTC itself?"
+    window.__liteMode = window.__itqan.flag('lite');
+
     window.ITQAN_ROLE_CONFIG = @json(\App\Enums\UserType::meetingDisplayConfigMap());
     window.getRoleConfig = function (userType) {
         var cfg = window.ITQAN_ROLE_CONFIG || {};
@@ -520,28 +568,23 @@
             script.src = '{{ asset($livekitSdkPath) }}?v={{ filemtime(public_path($livekitSdkPath)) }}';
 
             script.onload = () => {
-                // LiveKit script loaded
-                // Check for various possible global names
-                setTimeout(() => {
-                    const possibleNames = ['LiveKit', 'LiveKitClient', 'LivekitClient', 'livekit'];
-                    let livekitFound = null;
-
-                    for (const name of possibleNames) {
-                        if (typeof window[name] !== 'undefined') {
-                            livekitFound = window[name];
-                            window.LiveKit = livekitFound; // Normalize to LiveKit
-                            // LiveKit found
-                            break;
-                        }
+                // Fix #9: removed the arbitrary 200ms setTimeout. `script.onload`
+                // fires AFTER the SDK has finished executing, so the global
+                // is already present — waiting is a race-condition band-aid.
+                const possibleNames = ['LiveKit', 'LiveKitClient', 'LivekitClient', 'livekit'];
+                let livekitFound = null;
+                for (const name of possibleNames) {
+                    if (typeof window[name] !== 'undefined') {
+                        livekitFound = window[name];
+                        window.LiveKit = livekitFound;
+                        break;
                     }
-
-                    if (livekitFound) {
-                        // LiveKit SDK available
-                        resolve();
-                    } else {
-                        reject(new Error('LiveKit global not found'));
-                    }
-                }, 200);
+                }
+                if (livekitFound) {
+                    resolve();
+                } else {
+                    reject(new Error('LiveKit global not found'));
+                }
             };
 
             script.onerror = (error) => {
@@ -561,7 +604,6 @@
     // Track loading states
     let scriptsLoaded = {
         api: false,
-        dataChannel: false,
         connection: false,
         tracks: false,
         participants: false,
@@ -575,15 +617,11 @@
     let pollInterval = 10000; // Normal: 10 seconds
     const MAX_POLL_INTERVAL = 60000; // Max backoff: 60 seconds
 
-    function checkAllScriptsLoaded() {
-        const allLoaded = Object.values(scriptsLoaded).every(loaded => loaded);
-        if (allLoaded) {
-            // Store session configuration
-            window.sessionId = '{{ $session->id }}';
-            window.sessionType = '{{ $isAcademicSession ? 'academic' : ($isInteractiveCourseSession ? 'interactive' : 'quran') }}';
-            window.auth = @json(['user' => ['id' => auth()->id(), 'name' => auth()->user()->name]]);
-        }
-    }
+    // Session context MUST be set before module scripts load — modules
+    // read it at top level and need real values, not undefined.
+    window.sessionId = '{{ $session->id }}';
+    window.sessionType = '{{ $isAcademicSession ? 'academic' : ($isInteractiveCourseSession ? 'interactive' : 'quran') }}';
+    window.auth = @json(['user' => ['id' => auth()->id(), 'name' => auth()->user()->name]]);
 
     function loadScript(src, name, retries = 2) {
         return new Promise((resolve, reject) => {
@@ -591,7 +629,6 @@
             script.src = src;
             script.onload = () => {
                 scriptsLoaded[name] = true;
-                checkAllScriptsLoaded();
                 resolve();
             };
             script.onerror = () => {
@@ -607,12 +644,34 @@
         });
     }
 
-    // Load LiveKit scripts in order: telemetry FIRST (so it can capture downstream
-    // module load failures), then API helper, then session timer, then modules.
-    Promise.resolve()
-        .then(() => loadScript('{{ asset("js/livekit/telemetry.js") }}?v={{ time() }}', 'telemetry'))
+    // Fix #1: use filemtime() for cache-busting instead of time(). Same
+    // pattern as the SDK file above. Previously `?v={{ time() }}` changed
+    // every second, forcing every meeting page load to re-download all
+    // module scripts (~400 KB uncached).
+    //
+    // Fix #2: telemetry first (so window.MT exists for all subsequent
+    // modules), then Promise.all to parallel-load the rest. The previous
+    // .then() chain serialized 10 fetches across ~10 RTTs. Each class is
+    // just being *defined* at this stage (constructed later by
+    // initializeLiveKitMeeting()), so definition order doesn't matter.
+    @php
+        // Cleanup: dropped js/livekit/data-channel.js (dead code —
+        // MeetingDataChannelHandler defined but never instantiated anywhere;
+        // actual data path runs through connection.js RoomEvent.DataReceived
+        // → index.js handleDataReceived). File deleted.
+        $modules = [
+            'api' => 'js/livekit/api.js',
+            'sessionTimer' => 'js/session-timer.js',
+            'connection' => 'js/livekit/connection.js',
+            'tracks' => 'js/livekit/tracks.js',
+            'participants' => 'js/livekit/participants.js',
+            'controls' => 'js/livekit/controls.js',
+            'layout' => 'js/livekit/layout.js',
+            'index' => 'js/livekit/index.js',
+        ];
+    @endphp
+    loadScript('{{ asset("js/livekit/telemetry.js") }}?v={{ filemtime(public_path("js/livekit/telemetry.js")) }}', 'telemetry')
         .then(() => {
-            // Initialize the telemetry singleton with the meeting context
             try {
                 window.MT = new window.MeetingTelemetryClass({
                     sessionId: {{ $session->id }},
@@ -624,22 +683,17 @@
             } catch (e) {
                 console.error('Failed to init MeetingTelemetry', e);
             }
+
+            return Promise.all([
+                @foreach ($modules as $name => $path)
+                loadScript('{{ asset($path) }}?v={{ filemtime(public_path($path)) }}', '{{ $name }}'),
+                @endforeach
+            ]);
         })
-        .then(() => loadScript('{{ asset("js/livekit/api.js") }}?v={{ time() }}', 'api'))
-        .then(() => loadScript('{{ asset("js/session-timer.js") }}?v={{ time() }}', 'sessionTimer'))
-        .then(() => loadScript('{{ asset("js/livekit/data-channel.js") }}?v={{ time() }}', 'dataChannel'))
-        .then(() => loadScript('{{ asset("js/livekit/connection.js") }}?v={{ time() }}', 'connection'))
-        .then(() => loadScript('{{ asset("js/livekit/audio-ducking.js") }}?v={{ time() }}', 'audioDucking'))
-        .then(() => loadScript('{{ asset("js/livekit/tracks.js") }}?v={{ time() }}', 'tracks'))
-        .then(() => loadScript('{{ asset("js/livekit/participants.js") }}?v={{ time() }}', 'participants'))
-        .then(() => loadScript('{{ asset("js/livekit/controls.js") }}?v={{ time() }}', 'controls'))
-        .then(() => loadScript('{{ asset("js/livekit/layout.js") }}?v={{ time() }}', 'layout'))
-        .then(() => loadScript('{{ asset("js/livekit/index.js") }}?v={{ time() }}', 'index'))
         .then(() => {
             if (window.MT) window.MT.event('loader', 'all_scripts_loaded', { count: Object.keys(scriptsLoaded).length });
         })
         .catch((err) => {
-            // No longer silent — surface to telemetry so we can debug stuck-connecting reports
             if (window.MT) window.MT.error('loader', 'script_load_failed', err);
             else console.error('LiveKit script loading failed', err);
         });
@@ -684,10 +738,14 @@
     }
 
     // Defer initialization until DOM elements exist (timer HTML is rendered after this script block)
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeSessionTimer);
-    } else {
-        initializeSessionTimer();
+    // Skip entirely in lite mode — the session timer updates the DOM every
+    // second and was a confirmed LoAF long-frame source (invoker: TimerHandler).
+    if (!window.__liteMode) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeSessionTimer);
+        } else {
+            initializeSessionTimer();
+        }
     }
     @endif
 
@@ -758,10 +816,12 @@
     @if($userType === 'student')
     // Attendance tracking will be initialized by AutoAttendanceTracker when meeting starts
     @endif
-    
-    // Initialize Real-time Session Status Polling
-    initializeSessionStatusPolling();
-    
+
+    // Initialize Real-time Session Status Polling (skip in lite mode)
+    if (!window.__liteMode) {
+        initializeSessionStatusPolling();
+    }
+
     // Initialize Network Reconnection Handling
     initializeNetworkReconnection();
 
@@ -1673,6 +1733,32 @@ function completeSession(sessionId) {
                             btnText.textContent = window.meetingTranslations.buttons.connecting;
                         }
 
+                        // `?nochrome=1` URL flag: physically delete the app chrome
+                        // (nav + sidebar + notification-center Livewire component)
+                        // from the DOM before the meeting starts. This is the A/B
+                        // test for whether the meeting lag comes from Livewire +
+                        // Alpine components mounted in the Laravel app shell —
+                        // those components run on student/teacher pages but NOT
+                        // on the monitoring page (which is standalone HTML), and
+                        // that's the only functional difference between the
+                        // laggy and smooth paths confirmed so far. `.remove()`
+                        // also triggers Livewire's teardown so no background
+                        // Echo listeners keep running.
+                        try {
+                            if (window.__itqan.flag('nochrome')) {
+                                ['navigation', 'student-sidebar', 'teacher-sidebar',
+                                 'parent-sidebar', 'admin-sidebar', 'toast-container',
+                                 'student-sidebar-tooltip'].forEach((id) => {
+                                    const el = document.getElementById(id);
+                                    if (el && el.parentNode) el.parentNode.removeChild(el);
+                                });
+                                document.querySelectorAll('nav[aria-label="Breadcrumb"]')
+                                    .forEach((el) => el.parentNode?.removeChild(el));
+                                const main = document.getElementById('main-content');
+                                if (main) { main.style.paddingTop = '0'; main.style.paddingInline = '0'; }
+                            }
+                        } catch (_) {}
+
                         // Show meeting container and scroll to it
                         const meetingContainer = document.getElementById('meetingContainer');
                         if (meetingContainer) {
@@ -1683,6 +1769,206 @@ function completeSession(sessionId) {
 
                         // Initialize meeting with new modular system
                         window.meeting = await initializeLiveKitMeeting(meetingConfig);
+
+                        // `?hud=1` URL flag: show a live performance overlay
+                        // top-right. Captures real-time signals that telemetry
+                        // can't: video decoder lag (FPS/decode time), RTT,
+                        // jitter, packets lost, frames dropped, and peer-
+                        // connection count. Intended for the user to correlate
+                        // their perceived lag with actual numbers and compare
+                        // smooth vs laggy sessions side-by-side.
+                        try {
+                            if (window.__itqan.flag('hud')) {
+                                const hud = document.createElement('div');
+                                hud.id = 'mt-hud';
+                                hud.style.cssText = 'position:fixed;top:8px;right:8px;z-index:2147483647;background:rgba(0,0,0,.9);color:#0f0;font:11px/1.4 ui-monospace,monospace;padding:8px 10px;border-radius:6px;white-space:pre;min-width:280px;box-shadow:0 2px 10px rgba(0,0,0,.3);border:1px solid rgba(0,255,0,.3);';
+
+                                const hudBody = document.createElement('div');
+                                hudBody.id = 'mt-hud-body';
+
+                                const hudBtns = document.createElement('div');
+                                hudBtns.style.cssText = 'display:flex;gap:4px;margin-top:6px;';
+
+                                const copyBtn = document.createElement('button');
+                                copyBtn.textContent = '📋 Copy';
+                                copyBtn.style.cssText = 'flex:1;background:#0f0;color:#000;border:0;padding:4px 8px;border-radius:3px;font:bold 11px ui-monospace,monospace;cursor:pointer;';
+                                copyBtn.onclick = async () => {
+                                    // Build the heavy snapshot on demand, not every tick.
+                                    const snapshot = await buildHudSnapshot();
+                                    try {
+                                        await navigator.clipboard.writeText(snapshot);
+                                        copyBtn.textContent = '✓ Copied!';
+                                        setTimeout(() => copyBtn.textContent = '📋 Copy', 1500);
+                                    } catch (_) {
+                                        const ta = document.createElement('textarea');
+                                        ta.value = snapshot;
+                                        document.body.appendChild(ta);
+                                        ta.select();
+                                        try { document.execCommand('copy'); copyBtn.textContent = '✓ Copied!'; } catch (_) { copyBtn.textContent = '✗ Failed'; }
+                                        ta.remove();
+                                        setTimeout(() => copyBtn.textContent = '📋 Copy', 1500);
+                                    }
+                                };
+
+                                const hideBtn = document.createElement('button');
+                                hideBtn.textContent = '×';
+                                hideBtn.title = 'Hide HUD';
+                                hideBtn.style.cssText = 'background:#444;color:#fff;border:0;padding:4px 10px;border-radius:3px;font:bold 11px ui-monospace,monospace;cursor:pointer;';
+                                hideBtn.onclick = () => hud.remove();
+
+                                hudBtns.appendChild(copyBtn);
+                                hudBtns.appendChild(hideBtn);
+                                hud.appendChild(hudBody);
+                                hud.appendChild(hudBtns);
+                                document.body.appendChild(hud);
+
+                                let lastFrame = performance.now();
+                                let frames = 0, dropped = 0;
+                                let fpsSamples = [];
+                                const rafLoop = () => {
+                                    const now = performance.now();
+                                    const delta = now - lastFrame;
+                                    if (delta > 33) dropped++;
+                                    frames++;
+                                    fpsSamples.push(delta);
+                                    if (fpsSamples.length > 60) fpsSamples.shift();
+                                    lastFrame = now;
+                                    requestAnimationFrame(rafLoop);
+                                };
+                                requestAnimationFrame(rafLoop);
+
+                                // Last visible HUD line so the snapshot can include it verbatim.
+                                let lastVisible = '';
+
+                                // getAllPCs → live peer connections (closed ones are pruned at hook time).
+                                const getAllPCs = () => (window.__itqan?.pcs || []).filter(pc => pc.connectionState !== 'closed');
+
+                                // Walk a stats report and extract both a summary (for the live HUD
+                                // line) and optional per-entry dump lines (only when requested).
+                                const collectStats = async (pc, includeDump) => {
+                                    const summary = { rtt: '-', jitter: '-', lost: '-', decoderMs: '-', vCodec: '-', aCodec: '-', vRes: '-', vFps: '-', decoderImpl: '-' };
+                                    const dump = [];
+                                    let codecs;
+                                    try {
+                                        const s = await pc.getStats();
+                                        codecs = new Map();
+                                        s.forEach(r => { if (r.type === 'codec') codecs.set(r.id, r); });
+                                        const label = pc.__debugId || 'pc?';
+                                        s.forEach(r => {
+                                            if (r.type === 'candidate-pair' && r.state === 'succeeded' && r.currentRoundTripTime != null) {
+                                                summary.rtt = Math.round(r.currentRoundTripTime * 1000) + 'ms';
+                                                if (includeDump) dump.push(`  ${label} cand-pair local=${r.localCandidateId} remote=${r.remoteCandidateId} rtt=${((r.currentRoundTripTime||0)*1000).toFixed(1)}ms`);
+                                            }
+                                            if (r.type === 'inbound-rtp' && r.kind === 'video') {
+                                                if (r.jitter != null) summary.jitter = (r.jitter * 1000).toFixed(1) + 'ms';
+                                                if (r.packetsLost != null) summary.lost = r.packetsLost;
+                                                if (r.framesDecoded && r.totalDecodeTime != null) summary.decoderMs = ((r.totalDecodeTime / r.framesDecoded) * 1000).toFixed(1) + 'ms/frame';
+                                                if (r.frameWidth && r.frameHeight) summary.vRes = `${r.frameWidth}x${r.frameHeight}`;
+                                                if (r.framesPerSecond != null) summary.vFps = r.framesPerSecond + 'fps';
+                                                if (r.decoderImplementation) summary.decoderImpl = r.decoderImplementation;
+                                                if (r.codecId && codecs.has(r.codecId)) summary.vCodec = (codecs.get(r.codecId).mimeType || '').replace('video/', '');
+                                            }
+                                            if (r.type === 'inbound-rtp' && r.kind === 'audio' && r.codecId && codecs.has(r.codecId)) {
+                                                summary.aCodec = (codecs.get(r.codecId).mimeType || '').replace('audio/', '');
+                                            }
+                                            if (!includeDump) return;
+                                            if (r.type === 'inbound-rtp') {
+                                                dump.push(`  ${label} inbound ${r.kind} codec=${codecs.get(r.codecId)?.mimeType || '?'} ` +
+                                                    `${r.frameWidth ? r.frameWidth+'x'+r.frameHeight+'@'+(r.framesPerSecond||'?')+'fps ' : ''}` +
+                                                    `bytes=${r.bytesReceived} packetsLost=${r.packetsLost} jitter=${(r.jitter||0).toFixed(4)}s ` +
+                                                    `framesDecoded=${r.framesDecoded || 0} framesDropped=${r.framesDropped || 0} ` +
+                                                    `decoder=${r.decoderImplementation || '?'} powerEfficient=${r.powerEfficientDecoder} ` +
+                                                    `avgDecodeMs=${r.framesDecoded ? ((r.totalDecodeTime||0)/r.framesDecoded*1000).toFixed(2) : '?'}`);
+                                            }
+                                            if (r.type === 'outbound-rtp') {
+                                                dump.push(`  ${label} outbound ${r.kind} codec=${codecs.get(r.codecId)?.mimeType || '?'} ` +
+                                                    `bytes=${r.bytesSent} packetsSent=${r.packetsSent} ` +
+                                                    `${r.frameWidth ? r.frameWidth+'x'+r.frameHeight+' ' : ''}` +
+                                                    `encoder=${r.encoderImplementation || '?'} powerEfficient=${r.powerEfficientEncoder}`);
+                                            }
+                                            if (r.type === 'local-candidate' && ['relay','host','srflx'].includes(r.candidateType)) {
+                                                dump.push(`  ${label} local-candidate type=${r.candidateType} protocol=${r.protocol}`);
+                                            }
+                                        });
+                                    } catch (e) {
+                                        if (includeDump) dump.push(`  ${pc.__debugId || 'pc?'} getStats error: ${e.message}`);
+                                    }
+                                    return { summary, dump };
+                                };
+
+                                // Build the full multi-section snapshot on demand (Copy click).
+                                const buildHudSnapshot = async () => {
+                                    const lines = [
+                                        `=== Meeting HUD snapshot ===`,
+                                        `Time: ${new Date().toISOString()}`,
+                                        `Session: ${window.sessionId} (${window.sessionType || 'quran'})`,
+                                        `Role: ${meetingConfig.role}`,
+                                        `UA: ${navigator.userAgent}`,
+                                        `Cores: ${navigator.hardwareConcurrency || '?'}, DeviceMem: ${navigator.deviceMemory || '?'}GB`,
+                                        `Connection: ${navigator.connection?.effectiveType || '?'} downlink=${navigator.connection?.downlink || '?'}Mbps rtt=${navigator.connection?.rtt || '?'}ms`,
+                                        `URL: ${location.href}`,
+                                        ``,
+                                        `--- Live metrics ---`,
+                                        lastVisible,
+                                        ``,
+                                        `--- All inbound RTP (detailed) ---`,
+                                    ];
+                                    const pcs = getAllPCs();
+                                    if (pcs.length === 0) lines.push('No RTCPeerConnections alive (connection may not be established yet).');
+                                    for (const pc of pcs) {
+                                        const label = pc.__debugId || 'pc?';
+                                        lines.push(`${label} iceConnState=${pc.iceConnectionState} connState=${pc.connectionState} signalingState=${pc.signalingState} ageSec=${Math.round((Date.now() - (pc.__debugCreatedAt || Date.now())) / 1000)}`);
+                                        try { lines.push(`  ${label} senders=${pc.getSenders().length} receivers=${pc.getReceivers().length} transceivers=${pc.getTransceivers().length}`); } catch (_) {}
+                                        const { dump } = await collectStats(pc, true);
+                                        lines.push(...dump);
+                                    }
+                                    try {
+                                        const lp2 = window.meeting?.connection?.getRoom?.()?.localParticipant;
+                                        if (lp2) {
+                                            lines.push('', '--- Local state ---');
+                                            lines.push(`mic=${lp2.isMicrophoneEnabled} cam=${lp2.isCameraEnabled} screen=${lp2.isScreenShareEnabled}`);
+                                            lines.push(`trackPublications=${lp2.trackPublications?.size || 0}`);
+                                            lp2.trackPublications?.forEach(pub => lines.push(`  pub source=${pub.source} kind=${pub.kind} muted=${pub.isMuted} subscribed=${pub.isSubscribed}`));
+                                            lines.push(`micToggleInFlight=${window.meeting?.controls?._micToggleInFlight}`);
+                                            lines.push(`camToggleInFlight=${window.meeting?.controls?._cameraToggleInFlight}`);
+                                        }
+                                    } catch (_) {}
+                                    return lines.join('\n');
+                                };
+
+                                const hudTick = async () => {
+                                    try {
+                                        const room = window.meeting?.connection?.getRoom?.();
+                                        const avgDelta = fpsSamples.length ? fpsSamples.reduce((a, b) => a + b) / fpsSamples.length : 0;
+                                        const fps = avgDelta > 0 ? (1000 / avgDelta) : 0;
+                                        const maxDelta = fpsSamples.length ? Math.max(...fpsSamples) : 0;
+                                        const remotes = room?.remoteParticipants?.size || 0;
+
+                                        // Live summary — single getStats pass per PC, no dump overhead.
+                                        const s = { rtt: '-', jitter: '-', lost: '-', decoderMs: '-', vCodec: '-', aCodec: '-', vRes: '-', vFps: '-', decoderImpl: '-' };
+                                        for (const pc of getAllPCs()) {
+                                            const { summary } = await collectStats(pc, false);
+                                            Object.keys(s).forEach(k => { if (summary[k] !== '-') s[k] = summary[k]; });
+                                        }
+                                        const mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + 'MB' : '-';
+                                        const videoEls = document.querySelectorAll('video').length;
+                                        const audioEls = document.querySelectorAll('audio').length;
+                                        lastVisible =
+                                            `FPS avg ${fps.toFixed(1)} worst ${maxDelta.toFixed(0)}ms\n` +
+                                            `Dropped ${dropped}/${frames}\n` +
+                                            `Remotes ${remotes} | video ${videoEls} audio ${audioEls}\n` +
+                                            `RTT ${s.rtt} | Jitter ${s.jitter} | Lost ${s.lost}\n` +
+                                            `Video ${s.vCodec} ${s.vRes} ${s.vFps}\n` +
+                                            `Decoder ${s.decoderImpl} ${s.decoderMs}\n` +
+                                            `Audio ${s.aCodec}\n` +
+                                            `Heap ${mem}`;
+                                        hudBody.textContent = lastVisible;
+                                    } catch (_) {}
+                                };
+                                setInterval(hudTick, 500);
+                                hudTick();
+                            }
+                        } catch (_) {}
 
 
                         // CRITICAL FIX: Immediately record join when meeting starts

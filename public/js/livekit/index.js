@@ -42,12 +42,12 @@ class LiveKitMeeting {
         // Track synchronization interval
         this.trackSyncInterval = null;
 
-        
-        // CRITICAL FIX: Initialize loading overlay state properly
-        // Use setTimeout to ensure DOM is ready
-        setTimeout(() => {
-            this.initializeLoadingOverlay();
-        }, 100);
+        // Fix #9: Initialize the loading overlay directly. The previous
+        // `setTimeout(fn, 100)` was a race-condition band-aid (assumed the
+        // DOM settled within 100ms). This class is constructed by the blade
+        // loader only after DOMContentLoaded + all script <script> tags
+        // have loaded, so the DOM is already ready.
+        this.initializeLoadingOverlay();
     }
 
     /**
@@ -485,20 +485,11 @@ class LiveKitMeeting {
             this.forceSubscribeToAllTracks();
         }, 1000);
 
-        // Test hand raise functionality after meeting is fully initialized
-        setTimeout(() => {
-            if (this.participants && this.localParticipant) {
-                const localId = this.localParticipant.identity;
-                
-                // Test direct hand raise
-                if (this.participants.testHandRaiseDirectly) {
-                    this.participants.testHandRaiseDirectly(localId);
-                }
-            }
-        }, 3000);
-
-            // Start periodic track synchronization check for late joiners
+        // Late-joiner safety net: 5s loop iterates remote participants and
+        // re-attaches audio if it went stale. Skipped in `?lite=1`.
+        if (!window.__liteMode) {
             this.startTrackSyncCheck();
+        }
 
 
         } catch (error) {
