@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Api\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Services\SessionAlarmService;
@@ -33,10 +34,6 @@ class SessionAlarmController extends Controller
             'target_user_id' => ['required', 'integer', 'min:1'],
         ]);
 
-        if (! in_array($sessionType, ['quran', 'academic', 'interactive'], true)) {
-            return $this->error(__('meetings.alarm.invalid_session_type'), 422);
-        }
-
         $result = $this->alarms->alarm(
             $request->user(),
             $sessionType,
@@ -52,7 +49,7 @@ class SessionAlarmController extends Controller
             'cooldown' => $this->error(
                 message: __('meetings.alarm.cooldown'),
                 status: 429,
-                errorCode: 'COOLDOWN',
+                errorCode: ErrorCode::RATE_LIMIT_EXCEEDED,
                 meta: [
                     'retry_after' => $result['retry_after']
                         ?? SessionAlarmService::COOLDOWN_SECONDS,
