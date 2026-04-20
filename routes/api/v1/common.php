@@ -76,9 +76,10 @@ Route::prefix('meetings')->middleware('throttle:30,1')->group(function () {
 });
 
 // Session alarms — "ring the other participant" back into the meeting.
-// Heavy server-side rate limiting (2/min per user) keeps abusers in check;
-// SessionAlarmService additionally enforces a 30s per-pair cooldown.
-Route::prefix('sessions')->middleware('throttle:2,1')->group(function () {
+// Per-pair abuse is held back by SessionAlarmService's 30s cooldown
+// (server-authoritative). The route throttle is a coarse safety net only —
+// 2/min was too tight (failed legitimate retries during a flaky alarm).
+Route::prefix('sessions')->middleware('throttle:30,1')->group(function () {
     Route::post('/{sessionType}/{sessionId}/alarm', [SessionAlarmController::class, 'alarm'])
         ->where('sessionType', 'quran|academic|interactive')
         ->name('api.v1.sessions.alarm');
