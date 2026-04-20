@@ -182,6 +182,16 @@ class NotificationController extends Controller
         $user = $request->user();
 
         try {
+            // FCM tokens are device-bound, not user-bound. If a previous user
+            // signed in on this device and never logged out, their (user_id,
+            // token) row stays in the table and `sendToUser($prev)` pushes to
+            // the now-current user's device — they see notifications meant
+            // for someone else (the "missed call from me" bug). Reassign the
+            // token to whoever is registering now.
+            DeviceToken::where('token', $request->input('token'))
+                ->where('user_id', '!=', $user->id)
+                ->delete();
+
             $deviceToken = DeviceToken::updateOrCreate(
                 [
                     'user_id' => $user->id,
