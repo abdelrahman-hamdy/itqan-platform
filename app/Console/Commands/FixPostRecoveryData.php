@@ -123,7 +123,7 @@ class FixPostRecoveryData extends Command
         $dupCircles = $this->findDuplicateCircles();
         $this->info("Duplicate circles: {$dupCircles->count()} subscriptions affected");
         foreach ($dupCircles as $sub) {
-            $this->line("  Sub {$sub['subscription_id']}: circles [{$sub['circle_ids']}]");
+            $this->line("  Sub {$sub->subscription_id}: circles [{$sub->circle_ids}]");
         }
 
         // 2. Duplicate sessions (same circle + same time)
