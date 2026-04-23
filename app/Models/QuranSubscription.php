@@ -679,27 +679,42 @@ class QuranSubscription extends BaseSubscription
             return null;
         }
 
-        if ($this->individualCircle) {
+        // Check for existing circle via legacy subscription_id FK OR polymorphic education_unit link.
+        // Both must be checked to prevent duplicate circle creation when one link is stale/NULL.
+        $existingCircle = $this->individualCircle
+            ?? ($this->education_unit_id && $this->education_unit_type === 'individual_circle'
+                ? QuranIndividualCircle::find($this->education_unit_id)
+                : null);
+
+        if ($existingCircle) {
             // Sync authoritative subscription values onto the existing circle.
             // Prevents stale duration/session totals when a circle was created
             // from an earlier package/cancelled attempt and linked to this sub.
             $authoritativeDuration = $this->session_duration_minutes ?? $this->package?->session_duration_minutes;
             $syncData = [];
-            if ($authoritativeDuration && $this->individualCircle->default_duration_minutes !== $authoritativeDuration) {
+            if ($authoritativeDuration && $existingCircle->default_duration_minutes !== $authoritativeDuration) {
                 $syncData['default_duration_minutes'] = $authoritativeDuration;
             }
-            if ($this->total_sessions && $this->individualCircle->total_sessions !== $this->total_sessions) {
+            if ($this->total_sessions && $existingCircle->total_sessions !== $this->total_sessions) {
                 $syncData['total_sessions'] = $this->total_sessions;
             }
-            if ($this->sessions_remaining !== null && $this->individualCircle->sessions_remaining !== $this->sessions_remaining) {
+            if ($this->sessions_remaining !== null && $existingCircle->sessions_remaining !== $this->sessions_remaining) {
                 $syncData['sessions_remaining'] = $this->sessions_remaining;
             }
             if (! empty($syncData)) {
-                $this->individualCircle->updateQuietly($syncData);
-                $this->individualCircle->refresh();
+                $existingCircle->updateQuietly($syncData);
+                $existingCircle->refresh();
             }
 
-            return $this->individualCircle;
+            // Ensure both links are consistent
+            if (! $existingCircle->subscription_id) {
+                $existingCircle->updateQuietly(['subscription_id' => $this->id]);
+            }
+            if ($this->education_unit_id !== $existingCircle->id) {
+                $this->linkToEducationUnit($existingCircle);
+            }
+
+            return $existingCircle;
         }
 
         if (! $this->quran_teacher_id || ! $this->student_id) {

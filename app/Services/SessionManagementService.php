@@ -51,6 +51,17 @@ class SessionManagementService
                 throw new Exception('لا توجد جلسات متبقية في الاشتراك');
             }
 
+            // Guard: total session count must not exceed subscription limit
+            $subscription = $lockedCircle->subscription;
+            if ($subscription) {
+                $totalNonCancelled = QuranSession::where('individual_circle_id', $lockedCircle->id)
+                    ->where('status', '!=', SessionStatus::CANCELLED->value)
+                    ->count();
+                if ($totalNonCancelled >= $subscription->total_sessions) {
+                    throw new Exception('إجمالي الجلسات سيتجاوز حد الاشتراك');
+                }
+            }
+
             // Get duration from subscription -> package -> circle default
             if ($durationMinutes === null) {
                 $durationMinutes = $lockedCircle->subscription?->session_duration_minutes
@@ -59,7 +70,19 @@ class SessionManagementService
                     ?? 60;
             }
 
-            // Check for conflicts
+            // Convert to UTC early for duplicate check and DB comparison
+            $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
+
+            // Guard: prevent duplicate sessions at same time slot on same circle
+            $duplicateExists = QuranSession::where('individual_circle_id', $lockedCircle->id)
+                ->where('scheduled_at', $scheduledAtUtc)
+                ->where('status', '!=', SessionStatus::CANCELLED->value)
+                ->exists();
+            if ($duplicateExists) {
+                throw new Exception('توجد جلسة بالفعل في هذا التوقيت لهذه الحلقة');
+            }
+
+            // Check for teacher time-slot conflicts
             $this->validateTimeSlotAvailable($lockedCircle->quran_teacher_id, $scheduledAt, $durationMinutes);
 
             // Calculate session month and number (for legacy compatibility)
@@ -77,9 +100,6 @@ class SessionManagementService
             if (! $description) {
                 $description = $this->namingService->generateIndividualSessionDescription($lockedCircle, $scheduledAt);
             }
-
-            // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
-            $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
 
             return QuranSession::create([
                 'academy_id' => $lockedCircle->academy_id,
