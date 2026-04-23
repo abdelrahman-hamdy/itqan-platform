@@ -56,6 +56,11 @@ class FixPostRecoveryData extends Command
         910 => ['auth' => 449, 'ghost' => 189],
     ];
 
+    private const ACTIVE_STATUSES = [
+        SessionStatus::SCHEDULED,
+        SessionStatus::READY,
+    ];
+
     public function handle(): int
     {
         $dryRun = $this->option('dry-run');
@@ -64,7 +69,6 @@ class FixPostRecoveryData extends Command
         $this->info($dryRun ? '=== DRY RUN MODE ===' : '=== LIVE EXECUTION ===');
         $this->newLine();
 
-        // Phase 1: Audit always runs first
         $this->runAudit();
 
         if ($dryRun) {
@@ -95,7 +99,6 @@ class FixPostRecoveryData extends Command
             $this->runRecalculateCounters();
         }
 
-        // Save audit log
         $logPath = storage_path('logs/post-recovery-fix-'.now()->format('Y-m-d_His').'.json');
         file_put_contents($logPath, json_encode($this->auditLog, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
@@ -103,7 +106,6 @@ class FixPostRecoveryData extends Command
         $this->info("Summary: circles={$this->fixedCircles}, sessions={$this->fixedSessions}, overlimit={$this->fixedOverLimit}, counters={$this->fixedCounters}");
         $this->info("Audit log saved to: {$logPath}");
 
-        // Re-run audit to verify
         $this->newLine();
         $this->info('=== POST-FIX VERIFICATION ===');
         $this->runAudit();
@@ -111,30 +113,22 @@ class FixPostRecoveryData extends Command
         return self::SUCCESS;
     }
 
-    // ========================================================================
-    // Phase 1: Audit
-    // ========================================================================
-
     private function runAudit(): void
     {
         $this->info('--- Phase 1: Audit ---');
 
-        // 1. Duplicate circles
         $dupCircles = $this->findDuplicateCircles();
         $this->info("Duplicate circles: {$dupCircles->count()} subscriptions affected");
         foreach ($dupCircles as $sub) {
             $this->line("  Sub {$sub->subscription_id}: circles [{$sub->circle_ids}]");
         }
 
-        // 2. Duplicate sessions (same circle + same time)
         $dupSessions = $this->findDuplicateSessions();
         $this->info("Duplicate session groups: {$dupSessions->count()} ({$dupSessions->sum(fn ($g) => $g->dup_count - 1)} extra sessions)");
 
-        // 3. Over-limit subscriptions
         $overLimit = $this->findOverLimitSubscriptions();
         $this->info("Over-limit subscriptions: {$overLimit->count()}");
 
-        // 4. Counter mismatches
         $counterMismatches = $this->findCounterMismatches();
         $this->info("Counter mismatches (remaining=0 with scheduled): {$counterMismatches->count()}");
 
@@ -169,10 +163,10 @@ class FixPostRecoveryData extends Command
 
     private function findOverLimitSubscriptions(): \Illuminate\Support\Collection
     {
-        return collect(DB::select("
+        return collect(DB::select('
             SELECT qs.id as sub_id, qs.total_sessions, COUNT(qsess.id) as actual_sessions,
-                   SUM(CASE WHEN qsess.status = 'completed' THEN 1 ELSE 0 END) as completed,
-                   SUM(CASE WHEN qsess.status = 'scheduled' THEN 1 ELSE 0 END) as scheduled
+                   SUM(CASE WHEN qsess.status = ? THEN 1 ELSE 0 END) as completed,
+                   SUM(CASE WHEN qsess.status IN (?, ?) THEN 1 ELSE 0 END) as scheduled
             FROM quran_subscriptions qs
             JOIN quran_sessions qsess ON qsess.quran_subscription_id = qs.id
                 AND qsess.status != ?
@@ -181,28 +175,53 @@ class FixPostRecoveryData extends Command
             GROUP BY qs.id, qs.total_sessions
             HAVING actual_sessions > qs.total_sessions
             ORDER BY (actual_sessions - qs.total_sessions) DESC
-        ", [SessionStatus::CANCELLED->value]));
+        ', [
+            SessionStatus::COMPLETED->value,
+            SessionStatus::SCHEDULED->value,
+            SessionStatus::READY->value,
+            SessionStatus::CANCELLED->value,
+        ]));
     }
 
     private function findCounterMismatches(): \Illuminate\Support\Collection
     {
-        return collect(DB::select("
+        return collect(DB::select('
             SELECT qs.id, qs.sessions_remaining, COUNT(qsess.id) as scheduled_count
             FROM quran_subscriptions qs
             JOIN quran_sessions qsess ON qsess.quran_subscription_id = qs.id
-                AND qsess.status IN ('scheduled', 'ready')
+                AND qsess.status IN (?, ?)
                 AND qsess.deleted_at IS NULL
             WHERE qs.sessions_remaining <= 0
-              AND qs.status = 'active'
+              AND qs.status = ?
               AND qs.deleted_at IS NULL
             GROUP BY qs.id, qs.sessions_remaining
             HAVING scheduled_count > 0
-        "));
+        ', [
+            SessionStatus::SCHEDULED->value,
+            SessionStatus::READY->value,
+            'active',
+        ]));
     }
 
-    // ========================================================================
-    // Phase 2: Fix Duplicate Circles
-    // ========================================================================
+    private function findAuthCircle(QuranSubscription $sub): ?QuranIndividualCircle
+    {
+        if ($sub->education_unit_id) {
+            $circle = QuranIndividualCircle::withoutGlobalScopes()->find($sub->education_unit_id);
+            if ($circle) {
+                return $circle;
+            }
+        }
+
+        return QuranIndividualCircle::withoutGlobalScopes()
+            ->where('subscription_id', $sub->id)
+            ->where('is_active', true)
+            ->first();
+    }
+
+    private function statusValue(mixed $status): string
+    {
+        return $status instanceof SessionStatus ? $status->value : (string) $status;
+    }
 
     private function runFixDuplicateCircles(): void
     {
@@ -227,7 +246,6 @@ class FixPostRecoveryData extends Command
                     return;
                 }
 
-                // Skip if already deactivated (idempotent)
                 if (! $ghostCircle->is_active && $ghostCircle->subscription_id === null) {
                     $this->line("  Sub {$subId}: ghost circle {$ghostCircleId} already deactivated, skipping");
 
@@ -241,34 +259,30 @@ class FixPostRecoveryData extends Command
                     return;
                 }
 
-                // Step 1: Migrate ghost sessions to auth circle
-                $ghostSessions = QuranSession::withoutGlobalScopes()
+                // Collect IDs for audit log before bulk update
+                $ghostSessionIds = QuranSession::withoutGlobalScopes()
                     ->where('individual_circle_id', $ghostCircleId)
                     ->whereNull('deleted_at')
                     ->where('status', '!=', SessionStatus::CANCELLED->value)
-                    ->get();
+                    ->pluck('id');
 
-                $migratedCount = 0;
-                foreach ($ghostSessions as $session) {
-                    $session->update(['individual_circle_id' => $authCircleId]);
-                    $migratedCount++;
-
+                foreach ($ghostSessionIds as $sessionId) {
                     $this->auditLog[] = [
                         'phase' => 2,
                         'action' => 'migrate_session',
-                        'session_id' => $session->id,
+                        'session_id' => $sessionId,
                         'from_circle' => $ghostCircleId,
                         'to_circle' => $authCircleId,
                         'subscription_id' => $subId,
                     ];
                 }
 
-                // Also migrate cancelled/deleted sessions for completeness
+                // Bulk migrate all sessions (including cancelled/deleted) in one query
                 QuranSession::withoutGlobalScopes()
                     ->where('individual_circle_id', $ghostCircleId)
                     ->update(['individual_circle_id' => $authCircleId]);
 
-                // Step 2: Fix education_unit_id if inverted (Sub 849)
+                // Fix education_unit_id if it doesn't point to auth circle
                 if ($sub->education_unit_id != $authCircleId) {
                     $oldEduUnit = $sub->education_unit_id;
                     $sub->update([
@@ -285,12 +299,12 @@ class FixPostRecoveryData extends Command
                     ];
                 }
 
-                // Step 3: Deactivate ghost circle
                 $ghostCircle->update([
                     'is_active' => false,
                     'subscription_id' => null,
                 ]);
 
+                $migratedCount = $ghostSessionIds->count();
                 $this->auditLog[] = [
                     'phase' => 2,
                     'action' => 'deactivate_ghost_circle',
@@ -307,10 +321,6 @@ class FixPostRecoveryData extends Command
         $this->info("Phase 2 complete: {$this->fixedCircles} circles fixed");
         $this->newLine();
     }
-
-    // ========================================================================
-    // Phase 3: Fix Duplicate Sessions
-    // ========================================================================
 
     private function runFixDuplicateSessions(): void
     {
@@ -330,22 +340,25 @@ class FixPostRecoveryData extends Command
                     ->get();
 
                 if ($sessions->count() <= 1) {
-                    return; // Already resolved or only 1 left
+                    return;
                 }
 
-                // Score each session to pick winner
-                $scored = $sessions->map(function ($s) {
-                    $score = 0;
-                    $statusValue = $s->status instanceof SessionStatus ? $s->status->value : $s->status;
+                // Batch-load report counts to avoid N+1
+                $reportCounts = StudentSessionReport::withoutGlobalScopes()
+                    ->whereIn('session_id', $sessions->pluck('id'))
+                    ->whereNull('deleted_at')
+                    ->selectRaw('session_id, COUNT(*) as cnt')
+                    ->groupBy('session_id')
+                    ->pluck('cnt', 'session_id');
 
-                    if ($statusValue === SessionStatus::COMPLETED->value) {
+                $scored = $sessions->map(function ($s) use ($reportCounts) {
+                    $score = 0;
+
+                    if ($this->statusValue($s->status) === SessionStatus::COMPLETED->value) {
                         $score += 10000;
                     }
 
-                    $reportCount = StudentSessionReport::withoutGlobalScopes()
-                        ->where('session_id', $s->id)
-                        ->whereNull('deleted_at')
-                        ->count();
+                    $reportCount = $reportCounts[$s->id] ?? 0;
                     if ($reportCount > 0) {
                         $score += 1000 * $reportCount;
                     }
@@ -354,7 +367,6 @@ class FixPostRecoveryData extends Command
                         $score += 50;
                     }
 
-                    // Lower ID = older = slightly preferred as tiebreaker
                     $score += (10000000 - $s->id) * 0.0001;
 
                     return ['session' => $s, 'score' => $score];
@@ -377,20 +389,17 @@ class FixPostRecoveryData extends Command
     {
         $now = now();
 
-        // Soft-delete associated reports
         $reportCount = StudentSessionReport::withoutGlobalScopes()
             ->where('session_id', $loser->id)
             ->whereNull('deleted_at')
             ->update(['deleted_at' => $now]);
 
-        // Soft-delete associated teacher earnings
         $earningCount = TeacherEarning::withoutGlobalScopes()
-            ->where('session_type', 'quran_session')
+            ->where('session_type', (new QuranSession)->getMorphClass())
             ->where('session_id', $loser->id)
             ->whereNull('deleted_at')
             ->update(['deleted_at' => $now]);
 
-        // Soft-delete the session itself (direct update to avoid model events)
         QuranSession::withoutGlobalScopes()
             ->where('id', $loser->id)
             ->update([
@@ -405,7 +414,7 @@ class FixPostRecoveryData extends Command
             'winner_session_id' => $winner->id,
             'circle_id' => $loser->individual_circle_id,
             'scheduled_at' => $loser->scheduled_at?->toDateTimeString(),
-            'loser_status' => $loser->status instanceof SessionStatus ? $loser->status->value : $loser->status,
+            'loser_status' => $this->statusValue($loser->status),
             'was_subscription_counted' => (bool) $loser->subscription_counted,
             'deleted_reports' => $reportCount,
             'deleted_earnings' => $earningCount,
@@ -413,10 +422,6 @@ class FixPostRecoveryData extends Command
 
         $this->fixedSessions++;
     }
-
-    // ========================================================================
-    // Phase 4: Fix Over-Limit Subscriptions
-    // ========================================================================
 
     private function runFixOverLimitSubscriptions(): void
     {
@@ -430,7 +435,7 @@ class FixPostRecoveryData extends Command
             $scheduledAvailable = $info->scheduled;
 
             if ($excess <= 0) {
-                continue; // Already resolved by earlier phases
+                continue;
             }
 
             $toCancel = min($excess, $scheduledAvailable);
@@ -453,44 +458,33 @@ class FixPostRecoveryData extends Command
                     return;
                 }
 
-                // Find the auth circle
-                $circleId = $sub->education_unit_id;
-                if (! $circleId) {
-                    $circle = QuranIndividualCircle::withoutGlobalScopes()
-                        ->where('subscription_id', $subId)
-                        ->where('is_active', true)
-                        ->first();
-                    $circleId = $circle?->id;
-                }
-                if (! $circleId) {
-                    return;
-                }
+                $scheduledStatuses = array_map(fn ($s) => $s->value, self::ACTIVE_STATUSES);
 
-                // Get furthest-future scheduled sessions to cancel
                 $sessionsToCancel = QuranSession::withoutGlobalScopes()
                     ->where('quran_subscription_id', $subId)
-                    ->whereIn('status', [SessionStatus::SCHEDULED->value, 'ready'])
+                    ->whereIn('status', $scheduledStatuses)
                     ->whereNull('deleted_at')
                     ->orderByDesc('scheduled_at')
                     ->limit($toCancel)
                     ->get();
 
+                $sessionIds = $sessionsToCancel->pluck('id')->toArray();
                 $now = now();
+
+                // Bulk soft-delete reports and sessions
+                StudentSessionReport::withoutGlobalScopes()
+                    ->whereIn('session_id', $sessionIds)
+                    ->whereNull('deleted_at')
+                    ->update(['deleted_at' => $now]);
+
+                QuranSession::withoutGlobalScopes()
+                    ->whereIn('id', $sessionIds)
+                    ->update([
+                        'deleted_at' => $now,
+                        'cancellation_reason' => "[fix-post-recovery] Excess session beyond limit of {$sub->total_sessions}",
+                    ]);
+
                 foreach ($sessionsToCancel as $session) {
-                    // Soft-delete reports (shouldn't exist for scheduled, but be safe)
-                    StudentSessionReport::withoutGlobalScopes()
-                        ->where('session_id', $session->id)
-                        ->whereNull('deleted_at')
-                        ->update(['deleted_at' => $now]);
-
-                    // Soft-delete the session
-                    QuranSession::withoutGlobalScopes()
-                        ->where('id', $session->id)
-                        ->update([
-                            'deleted_at' => $now,
-                            'cancellation_reason' => "[fix-post-recovery] Excess session beyond limit of {$sub->total_sessions}",
-                        ]);
-
                     $this->auditLog[] = [
                         'phase' => 4,
                         'action' => 'soft_delete_excess_session',
@@ -498,7 +492,6 @@ class FixPostRecoveryData extends Command
                         'subscription_id' => $subId,
                         'scheduled_at' => $session->scheduled_at?->toDateTimeString(),
                     ];
-
                     $this->fixedOverLimit++;
                 }
 
@@ -521,54 +514,49 @@ class FixPostRecoveryData extends Command
         $this->newLine();
     }
 
-    // ========================================================================
-    // Phase 5: Recalculate Counters
-    // ========================================================================
-
     private function runRecalculateCounters(): void
     {
         $this->info('--- Phase 5: Recalculate Counters ---');
 
-        // Collect all affected subscription IDs from the audit log
         $affectedSubIds = collect($this->auditLog)
             ->pluck('subscription_id')
             ->filter()
+            ->unique()
+            ->merge(array_keys(self::CIRCLE_MAPPING))
             ->unique();
 
-        // Also include all subs from the circle mapping
-        $affectedSubIds = $affectedSubIds->merge(array_keys(self::CIRCLE_MAPPING))->unique();
+        $scheduledStatuses = array_map(fn ($s) => $s->value, self::ACTIVE_STATUSES);
 
         foreach ($affectedSubIds as $subId) {
-            DB::transaction(function () use ($subId) {
+            DB::transaction(function () use ($subId, $scheduledStatuses) {
                 $sub = QuranSubscription::withoutGlobalScopes()->lockForUpdate()->find($subId);
                 if (! $sub) {
                     return;
                 }
 
-                // Find the authoritative circle
-                $circle = null;
-                if ($sub->education_unit_id) {
-                    $circle = QuranIndividualCircle::withoutGlobalScopes()->find($sub->education_unit_id);
-                }
-                if (! $circle) {
-                    $circle = QuranIndividualCircle::withoutGlobalScopes()
-                        ->where('subscription_id', $sub->id)
-                        ->where('is_active', true)
-                        ->first();
-                }
+                $circle = $this->findAuthCircle($sub);
                 if (! $circle) {
                     $this->warn("  Sub {$subId}: no active circle found, skipping counter fix");
 
                     return;
                 }
 
-                // Count completed sessions that were counted towards subscription
-                $completedCounted = QuranSession::withoutGlobalScopes()
+                // Single query for all session counts
+                $counts = QuranSession::withoutGlobalScopes()
                     ->where('individual_circle_id', $circle->id)
-                    ->where('status', SessionStatus::COMPLETED->value)
-                    ->where('subscription_counted', true)
                     ->whereNull('deleted_at')
-                    ->count();
+                    ->selectRaw('
+                        SUM(CASE WHEN status = ? AND subscription_counted = 1 THEN 1 ELSE 0 END) as completed_counted,
+                        SUM(CASE WHEN status IN (?, ?) THEN 1 ELSE 0 END) as scheduled,
+                        SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed
+                    ', [
+                        SessionStatus::COMPLETED->value,
+                        ...$scheduledStatuses,
+                        SessionStatus::COMPLETED->value,
+                    ])
+                    ->first();
+
+                $completedCounted = (int) ($counts->completed_counted ?? 0);
 
                 $oldUsed = $sub->sessions_used;
                 $oldRemaining = $sub->sessions_remaining;
@@ -578,7 +566,6 @@ class FixPostRecoveryData extends Command
                 $newRemaining = max(0, $sub->total_sessions - $completedCounted);
                 $newCompleted = $completedCounted;
 
-                // Only update if something changed
                 if ($oldUsed === $newUsed && $oldRemaining === $newRemaining && $oldCompleted === $newCompleted) {
                     return;
                 }
@@ -598,7 +585,6 @@ class FixPostRecoveryData extends Command
                     'metadata' => $metadata ?: null,
                 ]);
 
-                // Update cycle counters if applicable
                 if ($sub->current_cycle_id) {
                     SubscriptionCycle::where('id', $sub->current_cycle_id)->update([
                         'sessions_used' => $newUsed,
@@ -606,18 +592,9 @@ class FixPostRecoveryData extends Command
                     ]);
                 }
 
-                // Recalculate circle session counts
                 $circle->update([
-                    'sessions_scheduled' => QuranSession::withoutGlobalScopes()
-                        ->where('individual_circle_id', $circle->id)
-                        ->whereIn('status', [SessionStatus::SCHEDULED->value, 'ready'])
-                        ->whereNull('deleted_at')
-                        ->count(),
-                    'sessions_completed' => QuranSession::withoutGlobalScopes()
-                        ->where('individual_circle_id', $circle->id)
-                        ->where('status', SessionStatus::COMPLETED->value)
-                        ->whereNull('deleted_at')
-                        ->count(),
+                    'sessions_scheduled' => (int) ($counts->scheduled ?? 0),
+                    'sessions_completed' => (int) ($counts->completed ?? 0),
                 ]);
 
                 $this->auditLog[] = [
