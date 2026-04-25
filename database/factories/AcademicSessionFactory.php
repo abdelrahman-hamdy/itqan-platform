@@ -72,4 +72,14 @@ class AcademicSessionFactory extends Factory
             'cancelled_at' => now(),
         ]);
     }
+
+    /**
+     * Configure a suspended session (subscription expiry/pause; recoverable)
+     */
+    public function suspended(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => SessionStatus::SUSPENDED,
+        ]);
+    }
 }

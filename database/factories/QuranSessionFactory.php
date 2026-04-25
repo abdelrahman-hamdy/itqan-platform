@@ -124,6 +124,16 @@ class QuranSessionFactory extends Factory
     }
 
     /**
+     * Create a suspended session (subscription expiry/pause; recoverable).
+     */
+    public function suspended(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => SessionStatus::SUSPENDED,
+        ]);
+    }
+
+    /**
      * Create a session ready to start.
      */
     public function ready(): static
