@@ -296,7 +296,8 @@ class CircleController extends Controller
         $circle = QuranCircle::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
             ->with(['students', 'students.quranSubscriptions' => function ($q) use ($id) {
-                $q->where('quran_circle_id', $id);
+                $q->whereIn('education_unit_type', ['quran_circle', QuranCircle::class])
+                    ->where('education_unit_id', $id);
             }])
             ->first();
 
