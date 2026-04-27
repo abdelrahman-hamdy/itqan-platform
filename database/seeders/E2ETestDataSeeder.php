@@ -101,7 +101,38 @@ class E2ETestDataSeeder extends Seeder
         // 9. Create recordings
         $this->createRecordings();
 
+        // 10. Register dummy FCM device tokens so the alarm feature is
+        //     exercisable end-to-end in dev. The tokens won't actually ring a
+        //     device — FCM rejects them — but the alarm controller + service
+        //     paths run fully and the audit row lands in `session_alarms`.
+        $this->ensureDummyDeviceTokens();
+
         $this->command->info('E2E test data seeding completed!');
+    }
+
+    private function ensureDummyDeviceTokens(): void
+    {
+        foreach ([
+            $this->quranTeacher,
+            $this->academicTeacher,
+            $this->student,
+        ] as $user) {
+            // Match on (user_id, token) to align with the unique index on
+            // `device_tokens`. The token value is deterministic per user so
+            // repeated seed runs update the existing row in place.
+            \App\Models\DeviceToken::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'token' => 'e2e-dummy-token-'.$user->id,
+                ],
+                [
+                    'platform' => 'android',
+                    'device_name' => 'E2E Dummy Device',
+                    'last_used_at' => now(),
+                ],
+            );
+        }
+        $this->command->info('Ensured dummy device tokens for e2e users.');
     }
 
     private function findUsers(): void

@@ -9,6 +9,7 @@ use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Http\Traits\Api\HandlesAbsentReschedule;
 use App\Models\QuranSession;
+use App\Models\QuranSessionHomework;
 use App\Models\StudentSessionReport;
 use App\Services\SessionSettingsService;
 use Exception;
@@ -96,16 +97,27 @@ class SessionController extends Controller
 
         $session = QuranSession::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
-            ->with(['student', 'individualCircle', 'circle', 'reports', 'subscription'])
+            ->with([
+                'student',
+                'individualCircle',
+                'circle.students',
+                'reports',
+                'subscription',
+                'sessionHomework',
+            ])
             ->first();
 
         if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
+        $students = $session->getStudentsForSession();
+        $reportsByStudent = $session->reports->keyBy('student_id');
+
         return $this->success([
             'session' => [
                 'id' => $session->id,
+                'type' => 'quran',
                 'title' => $session->title ?? 'جلسة قرآنية',
                 'student' => $session->student ? [
                     'id' => $session->student->id,
@@ -126,15 +138,21 @@ class SessionController extends Controller
                 'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                 'status' => $session->status->value ?? $session->status,
                 'meeting_url' => $session->meeting_link,
-                'homework' => [
-                    'memorization' => $session->quran_homework_memorization,
-                    'recitation' => $session->quran_homework_recitation,
-                    'review' => $session->quran_homework_review,
-                ],
-                'evaluation' => $this->formatEvaluation($session),
-                'notes' => $session->notes,
-                'teacher_notes' => $session->teacher_notes,
-                'report' => $this->formatReport($session->reports?->first()),
+                'lesson_content' => $session->lesson_content,
+                'session_notes' => $session->session_notes,
+                'teacher_feedback' => $session->teacher_feedback,
+                'student_rating' => $session->student_rating,
+                'student_feedback' => $session->student_feedback,
+                'homework' => $this->formatQuranHomework($session->sessionHomework),
+                'students' => $students->map(fn ($s) => [
+                    'id' => $s->id,
+                    'name' => $s->name,
+                    'avatar' => $s->avatar ? asset('storage/'.$s->avatar) : null,
+                ])->values()->toArray(),
+                'reports' => $students->map(fn ($s) => $this->formatReport($reportsByStudent->get($s->id), $s->id))
+                    ->filter()
+                    ->values()
+                    ->toArray(),
                 'started_at' => $session->started_at?->toISOString(),
                 'ended_at' => $session->ended_at?->toISOString(),
                 'created_at' => $session->created_at?->toISOString(),
@@ -175,12 +193,8 @@ class SessionController extends Controller
         $validator = Validator::make($request->all(), [
             'memorization_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
             'revision_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
-            'verses_memorized' => ['sometimes', 'integer', 'min:0'],
-            'pages_reviewed' => ['sometimes', 'integer', 'min:0'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'homework_memorization' => ['sometimes', 'nullable', 'string', 'max:500'],
-            'homework_recitation' => ['sometimes', 'nullable', 'string', 'max:500'],
-            'homework_review' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'lesson_content' => ['sometimes', 'nullable', 'string', 'max:5000'],
         ]);
 
         if ($validator->fails()) {
@@ -192,16 +206,13 @@ class SessionController extends Controller
             $session->update([
                 'status' => SessionStatus::COMPLETED,
                 'ended_at' => now(),
-                'verses_memorized' => $request->verses_memorized ?? $session->verses_memorized,
-                'pages_reviewed' => $request->pages_reviewed ?? $session->pages_reviewed,
-                'notes' => $request->notes ?? $session->notes,
-                'quran_homework_memorization' => $request->homework_memorization ?? $session->quran_homework_memorization,
-                'quran_homework_recitation' => $request->homework_recitation ?? $session->quran_homework_recitation,
-                'quran_homework_review' => $request->homework_review ?? $session->quran_homework_review,
+                'lesson_content' => $request->lesson_content ?? $session->lesson_content,
+                'session_notes' => $request->notes ?? $session->session_notes,
             ]);
 
-            // Create or update session report with evaluation
-            if ($request->filled('memorization_degree') || $request->filled('revision_degree')) {
+            // For 1:1 sessions, accept inline degrees and write to the per-student report.
+            // Group circles use the per-student report endpoint (PUT /reports/{studentId}).
+            if ($session->student_id && ($request->filled('memorization_degree') || $request->filled('revision_degree'))) {
                 $this->updateOrCreateReport($session, $user, $request);
             }
 
@@ -430,15 +441,18 @@ class SessionController extends Controller
             return $this->notFound(__('Session not found.'));
         }
 
+        if (! $session->student_id) {
+            return $this->error(
+                __('Use the per-student report endpoint for group sessions.'),
+                422,
+                'PER_STUDENT_REPORT_REQUIRED'
+            );
+        }
+
         $validator = Validator::make($request->all(), [
             'memorization_degree' => ['required', 'numeric', 'min:0', 'max:10'],
             'revision_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
-            'verses_memorized' => ['sometimes', 'integer', 'min:0'],
-            'pages_reviewed' => ['sometimes', 'integer', 'min:0'],
             'feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'homework_memorization' => ['sometimes', 'nullable', 'string', 'max:500'],
-            'homework_recitation' => ['sometimes', 'nullable', 'string', 'max:500'],
-            'homework_review' => ['sometimes', 'nullable', 'string', 'max:500'],
         ]);
 
         if ($validator->fails()) {
@@ -447,17 +461,12 @@ class SessionController extends Controller
 
         DB::beginTransaction();
         try {
-            // Update session progress fields
-            $session->update([
-                'verses_memorized' => $request->verses_memorized ?? $session->verses_memorized,
-                'pages_reviewed' => $request->pages_reviewed ?? $session->pages_reviewed,
-                'teacher_notes' => $request->feedback ?? $session->teacher_notes,
-                'quran_homework_memorization' => $request->homework_memorization ?? $session->quran_homework_memorization,
-                'quran_homework_recitation' => $request->homework_recitation ?? $session->quran_homework_recitation,
-                'quran_homework_review' => $request->homework_review ?? $session->quran_homework_review,
-            ]);
+            if ($request->filled('feedback')) {
+                $session->update([
+                    'teacher_feedback' => $request->feedback,
+                ]);
+            }
 
-            // Create or update session report with evaluation degrees
             $report = $this->updateOrCreateReport($session, $user, $request);
 
             DB::commit();
@@ -497,8 +506,8 @@ class SessionController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'teacher_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'session_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'teacher_feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
         if ($validator->fails()) {
@@ -506,15 +515,15 @@ class SessionController extends Controller
         }
 
         $session->update([
-            'notes' => $request->notes ?? $session->notes,
-            'teacher_notes' => $request->teacher_notes ?? $session->teacher_notes,
+            'session_notes' => $request->input('session_notes', $session->session_notes),
+            'teacher_feedback' => $request->input('teacher_feedback', $session->teacher_feedback),
         ]);
 
         return $this->success([
             'session' => [
                 'id' => $session->id,
-                'notes' => $session->notes,
-                'teacher_notes' => $session->teacher_notes,
+                'session_notes' => $session->session_notes,
+                'teacher_feedback' => $session->teacher_feedback,
             ],
         ], __('Notes updated successfully'));
     }
@@ -620,7 +629,7 @@ class SessionController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['required', Rule::in(AttendanceStatus::values())],
+            'status' => ['required', Rule::in(AttendanceStatus::writableValues())],
             'override_reason' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -653,28 +662,60 @@ class SessionController extends Controller
             'memorization_degree' => $report?->new_memorization_degree,
             'revision_degree' => $report?->reservation_degree,
             'overall_performance' => $report?->overall_performance,
-            'verses_memorized' => $session->verses_memorized,
-            'pages_reviewed' => $session->pages_reviewed,
             'evaluated_at' => $report?->evaluated_at?->toISOString(),
         ];
     }
 
     /**
-     * Format report data.
+     * Format report data, optionally seeded with a student id when no row exists yet.
      */
-    protected function formatReport(?StudentSessionReport $report): ?array
+    protected function formatReport(?StudentSessionReport $report, ?int $studentId = null): ?array
     {
-        if (! $report) {
+        if (! $report && $studentId === null) {
             return null;
         }
 
         return [
-            'id' => $report->id,
-            'memorization_degree' => $report->new_memorization_degree,
-            'revision_degree' => $report->reservation_degree,
-            'overall_performance' => $report->overall_performance,
-            'notes' => $report->notes,
-            'evaluated_at' => $report->evaluated_at?->toISOString(),
+            'id' => $report?->id,
+            'student_id' => $report?->student_id ?? $studentId,
+            'attendance_status' => $report?->attendance_status,
+            'attendance_percentage' => $report?->attendance_percentage,
+            'actual_attendance_minutes' => $report?->actual_attendance_minutes,
+            'memorization_degree' => $report?->new_memorization_degree,
+            'revision_degree' => $report?->reservation_degree,
+            'overall_performance' => $report?->overall_performance,
+            'notes' => $report?->notes,
+            'evaluated_at' => $report?->evaluated_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * Format Quran homework (oral evaluation, no submissions).
+     */
+    protected function formatQuranHomework(?QuranSessionHomework $homework): ?array
+    {
+        if (! $homework) {
+            return null;
+        }
+
+        return [
+            'id' => $homework->id,
+            'has_new_memorization' => (bool) $homework->has_new_memorization,
+            'has_review' => (bool) $homework->has_review,
+            'has_comprehensive_review' => (bool) $homework->has_comprehensive_review,
+            'new_memorization_pages' => $homework->new_memorization_pages,
+            'new_memorization_surah' => $homework->new_memorization_surah,
+            'new_memorization_from_verse' => $homework->new_memorization_from_verse,
+            'new_memorization_to_verse' => $homework->new_memorization_to_verse,
+            'review_pages' => $homework->review_pages,
+            'review_surah' => $homework->review_surah,
+            'review_from_verse' => $homework->review_from_verse,
+            'review_to_verse' => $homework->review_to_verse,
+            'comprehensive_review_surahs' => $homework->comprehensive_review_surahs ?? [],
+            'additional_instructions' => $homework->additional_instructions,
+            'due_date' => $homework->due_date?->toDateString(),
+            'difficulty_level' => $homework->difficulty_level,
+            'is_active' => (bool) $homework->is_active,
         ];
     }
 

@@ -687,8 +687,6 @@ return [
         'enrollment_deadline' => 'Enrollment Deadline',
         'is_published' => 'Published',
         'recording_enabled' => 'Recording Enabled',
-        'show_to_teacher' => 'Show Recording to Teacher',
-        'show_to_student' => 'Show Recording to Student',
         'supervisor_notes' => 'Supervisor Notes',
         'search_placeholder' => 'Search by course title...',
         'filter_by_subject' => 'Subject',

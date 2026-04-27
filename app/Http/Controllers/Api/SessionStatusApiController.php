@@ -430,12 +430,8 @@ class SessionStatusApiController extends Controller
     {
         // If session type is explicitly provided, use it directly (most reliable)
         if ($sessionType) {
-            return match ($sessionType) {
-                'academic' => AcademicSession::find($sessionId),
-                'interactive' => InteractiveCourseSession::find($sessionId),
-                'quran' => QuranSession::find($sessionId),
-                default => null,
-            };
+            return app(\App\Services\SessionSettingsService::class)
+                ->resolveSessionByType($sessionType, $sessionId);
         }
 
         // Fallback: Try to resolve based on user role and session existence

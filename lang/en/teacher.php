@@ -42,7 +42,6 @@ return [
         'quiz_management' => 'Quiz Management',
         'quizzes' => 'Quizzes',
         'session_reports' => 'Reports',
-        'recordings' => 'Recordings',
         'certificates' => 'Certificates',
         'financial_management' => 'Financial Management',
         'monthly_earnings' => 'Monthly Earnings',
@@ -1774,25 +1773,6 @@ return [
         'empty_students_description' => 'No students have been enrolled in your circles or lessons yet',
         'empty_students_filter_description' => 'No students match the selected filters',
         'no_report_available' => 'No Report',
-    ],
-
-    // ========================================
-    // Session Recordings (A5)
-    // ========================================
-    'recordings' => [
-        'page_title' => 'Session Recordings',
-        'page_description' => 'View and download recordings from interactive course sessions',
-        'breadcrumb' => 'Recordings',
-        'list_title' => 'Recordings List',
-        'empty_title' => 'No Recordings',
-        'empty_description' => 'No sessions have been recorded yet',
-        'empty_filter_description' => 'No recordings found for this course',
-        'view_all' => 'View All',
-        'total_recordings' => 'Total Recordings',
-        'all_courses' => 'All Courses',
-        'unknown_course' => 'Unknown Course',
-        'play' => 'Play',
-        'download' => 'Download',
     ],
 
     // ========================================

@@ -2,10 +2,8 @@
 
 namespace App\Services\Webhook\LiveKit;
 
-use App\Models\AcademicSession;
 use App\Models\BaseSession;
-use App\Models\InteractiveCourseSession;
-use App\Models\QuranSession;
+use App\Services\SessionSettingsService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -53,12 +51,8 @@ abstract class AbstractLiveKitEventHandler implements LiveKitEventHandlerInterfa
 
         [$type, $sessionId] = $parts;
 
-        return match ($type) {
-            'quran' => QuranSession::find($sessionId),
-            'academic' => AcademicSession::find($sessionId),
-            'interactive' => InteractiveCourseSession::find($sessionId),
-            default => null,
-        };
+        return app(SessionSettingsService::class)
+            ->resolveSessionByType($type, $sessionId);
     }
 
     /**

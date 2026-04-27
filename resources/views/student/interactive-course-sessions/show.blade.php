@@ -44,16 +44,6 @@
             </div>
         @endif
 
-        {{-- Session Recordings (for completed sessions, gated by visibility toggle) --}}
-        @if($session instanceof \App\Contracts\RecordingCapable
-            && $session->status === \App\Enums\SessionStatus::COMPLETED
-            && $session->shouldShowRecordingToUser(auth()->user()))
-            <x-recordings.session-recordings
-                :session="$session"
-                view-type="student"
-            />
-        @endif
-
         {{-- Homework Display (for completed sessions) --}}
         @if($session->status === \App\Enums\SessionStatus::COMPLETED && $session->homework_description)
             <x-sessions.homework-display

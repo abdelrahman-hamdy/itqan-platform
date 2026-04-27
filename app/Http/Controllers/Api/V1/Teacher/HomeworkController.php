@@ -12,6 +12,8 @@ use App\Models\AcademicSession;
 use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
+use App\Models\QuranSessionHomework;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -104,6 +106,11 @@ class HomeworkController extends Controller
     public function show(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
+
+        if ($type === 'quran') {
+            return $this->showQuranHomework($user, (int) $id);
+        }
+
         $academicTeacherId = $user->academicTeacherProfile?->id;
 
         if (! $academicTeacherId) {
@@ -197,14 +204,38 @@ class HomeworkController extends Controller
         $user = $request->user();
 
         $validator = Validator::make($request->all(), [
-            'session_type' => ['required', 'in:academic,interactive'],
+            'session_type' => ['required', 'in:academic,interactive,quran'],
             'session_id' => ['required', 'integer'],
-            'homework' => ['required', 'string', 'max:5000'],
-            'due_date' => ['sometimes', 'date', 'after:today'],
+            'homework' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'due_date' => ['sometimes', 'nullable', 'date'],
+            // Quran-specific (only used when session_type=quran)
+            'has_new_memorization' => ['sometimes', 'boolean'],
+            'has_review' => ['sometimes', 'boolean'],
+            'has_comprehensive_review' => ['sometimes', 'boolean'],
+            'new_memorization_pages' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'new_memorization_surah' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'new_memorization_from_verse' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'new_memorization_to_verse' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'review_pages' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'review_surah' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'review_from_verse' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'review_to_verse' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'comprehensive_review_surahs' => ['sometimes', 'array'],
+            'comprehensive_review_surahs.*' => ['string', 'max:120'],
+            'additional_instructions' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'difficulty_level' => ['sometimes', 'nullable', 'in:easy,medium,hard'],
         ]);
 
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
+        }
+
+        if ($request->session_type === 'quran') {
+            return $this->assignQuranHomework($user, $request);
+        }
+
+        if (! $request->filled('homework')) {
+            return $this->validationError(['homework' => [__('The homework field is required.')]]);
         }
 
         $academicTeacherId = $user->academicTeacherProfile?->id;
@@ -276,6 +307,10 @@ class HomeworkController extends Controller
     {
         $user = $request->user();
 
+        if ($type === 'quran') {
+            return $this->updateQuranHomework($user, $request, (int) $id);
+        }
+
         $validator = Validator::make($request->all(), [
             'title' => ['sometimes', 'string', 'max:255'],
             'homework' => ['sometimes', 'string', 'max:5000'],
@@ -337,6 +372,90 @@ class HomeworkController extends Controller
             'description' => $homework->description,
             'due_date' => $homework->due_date?->toDateString(),
         ], __('Homework updated successfully'));
+    }
+
+    /**
+     * Delete homework.
+     *
+     * - quran: removes the QuranSessionHomework row keyed by id.
+     * - academic: clears `homework_description` on the session (id = session id);
+     *   AcademicSession has no separate homework row to remove.
+     * - interactive: deletes the InteractiveCourseHomework row keyed by id.
+     */
+    public function destroy(Request $request, string $type, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($type === 'quran') {
+            $homework = QuranSessionHomework::find($id);
+
+            if (! $homework) {
+                return $this->notFound(__('Homework not found.'));
+            }
+
+            $session = $this->resolveQuranSession($user, $homework->session_id);
+
+            if (! $session) {
+                return $this->notFound(__('Session not found.'));
+            }
+
+            $homework->delete();
+
+            return $this->success([
+                'session_id' => $session->id,
+            ], __('Homework deleted successfully'));
+        }
+
+        $academicTeacherId = $user->academicTeacherProfile?->id;
+
+        if (! $academicTeacherId) {
+            return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        if ($type === 'academic') {
+            $session = AcademicSession::where('id', $id)
+                ->where('academic_teacher_id', $academicTeacherId)
+                ->first();
+
+            if (! $session) {
+                return $this->notFound(__('Session not found.'));
+            }
+
+            $session->update([
+                'homework_description' => null,
+                'homework_assigned' => false,
+            ]);
+
+            return $this->success([
+                'session_id' => $session->id,
+            ], __('Homework deleted successfully'));
+        }
+
+        $courseIds = $user->academicTeacherProfile?->assignedCourses()
+            ?->pluck('id') ?? collect();
+
+        $homework = InteractiveCourseHomework::where('id', $id)
+            ->whereHas('session', fn ($q) => $q->whereIn('course_id', $courseIds))
+            ->first();
+
+        if (! $homework) {
+            return $this->notFound(__('Homework not found.'));
+        }
+
+        $sessionId = $homework->interactive_course_session_id;
+        $homework->delete();
+
+        // Clear `homework_assigned` on the session if no other homework rows remain.
+        $remaining = InteractiveCourseHomework::where('interactive_course_session_id', $sessionId)
+            ->exists();
+        if (! $remaining) {
+            InteractiveCourseSession::where('id', $sessionId)
+                ->update(['homework_assigned' => false]);
+        }
+
+        return $this->success([
+            'homework_id' => (int) $id,
+        ], __('Homework deleted successfully'));
     }
 
     /**
@@ -588,5 +707,167 @@ class HomeworkController extends Controller
                 'revision_requested_at' => $submission->revision_requested_at?->toISOString(),
             ],
         ], __('Revision requested successfully. The student will be notified.'));
+    }
+
+    /**
+     * Resolve a Quran session owned by the teacher.
+     */
+    protected function resolveQuranSession($user, int $sessionId): ?QuranSession
+    {
+        if (! $user->quranTeacherProfile) {
+            return null;
+        }
+
+        return QuranSession::where('id', $sessionId)
+            ->where('quran_teacher_id', $user->id)
+            ->first();
+    }
+
+    /**
+     * Show Quran session homework (no submissions — evaluated orally).
+     */
+    protected function showQuranHomework($user, int $sessionId): JsonResponse
+    {
+        $session = $this->resolveQuranSession($user, $sessionId);
+
+        if (! $session) {
+            return $this->notFound(__('Session not found.'));
+        }
+
+        $homework = QuranSessionHomework::where('session_id', $session->id)->first();
+
+        if (! $homework) {
+            return $this->notFound(__('Homework not found.'));
+        }
+
+        return $this->success([
+            'homework' => $this->formatQuranHomework($session, $homework),
+        ], __('Homework retrieved successfully'));
+    }
+
+    /**
+     * Upsert Quran session homework (evaluated orally — no submissions table).
+     *
+     * Note: `quran_sessions.homework_assigned` is a JSON column (not the
+     * boolean it is on AcademicSession), and the QuranSession model declines
+     * to cast it. Trying to write `1` produces `SQLSTATE[22032] Invalid JSON
+     * text`. The QuranSessionHomework row's existence is the canonical
+     * "homework assigned" signal — we don't touch the column here.
+     */
+    protected function assignQuranHomework($user, Request $request): JsonResponse
+    {
+        $session = $this->resolveQuranSession($user, (int) $request->session_id);
+
+        if (! $session) {
+            return $this->notFound(__('Session not found.'));
+        }
+
+        $payload = $this->buildQuranHomeworkPayload($request, isUpdate: false);
+        $payload['created_by'] = $user->id;
+
+        $homework = QuranSessionHomework::updateOrCreate(
+            ['session_id' => $session->id],
+            $payload,
+        );
+
+        return $this->success([
+            'homework' => $this->formatQuranHomework($session, $homework),
+        ], __('Homework assigned successfully'));
+    }
+
+    /**
+     * Update an existing Quran session homework row by id.
+     */
+    protected function updateQuranHomework($user, Request $request, int $id): JsonResponse
+    {
+        $homework = QuranSessionHomework::find($id);
+
+        if (! $homework) {
+            return $this->notFound(__('Homework not found.'));
+        }
+
+        $session = $this->resolveQuranSession($user, $homework->session_id);
+
+        if (! $session) {
+            return $this->notFound(__('Session not found.'));
+        }
+
+        $homework->update($this->buildQuranHomeworkPayload($request, isUpdate: true));
+
+        return $this->success([
+            'homework' => $this->formatQuranHomework($session, $homework->fresh()),
+        ], __('Homework updated successfully'));
+    }
+
+    /**
+     * Build a fillable payload for QuranSessionHomework from request input.
+     * Only keys that were sent are returned (so update doesn't clobber unset fields).
+     */
+    protected function buildQuranHomeworkPayload(Request $request, bool $isUpdate): array
+    {
+        $keys = [
+            'has_new_memorization',
+            'has_review',
+            'has_comprehensive_review',
+            'new_memorization_pages',
+            'new_memorization_surah',
+            'new_memorization_from_verse',
+            'new_memorization_to_verse',
+            'review_pages',
+            'review_surah',
+            'review_from_verse',
+            'review_to_verse',
+            'comprehensive_review_surahs',
+            'additional_instructions',
+            'due_date',
+            'difficulty_level',
+        ];
+
+        $payload = [];
+        foreach ($keys as $key) {
+            if ($request->has($key)) {
+                $payload[$key] = $request->input($key);
+            }
+        }
+
+        if (! $isUpdate) {
+            $payload += [
+                'is_active' => true,
+                'has_new_memorization' => $payload['has_new_memorization'] ?? false,
+                'has_review' => $payload['has_review'] ?? false,
+                'has_comprehensive_review' => $payload['has_comprehensive_review'] ?? false,
+            ];
+        }
+
+        return $payload;
+    }
+
+    /**
+     * Format a QuranSessionHomework row for API responses.
+     */
+    protected function formatQuranHomework(QuranSession $session, QuranSessionHomework $homework): array
+    {
+        return [
+            'id' => $homework->id,
+            'type' => 'quran',
+            'session_id' => $session->id,
+            'evaluated_orally' => true,
+            'has_new_memorization' => (bool) $homework->has_new_memorization,
+            'has_review' => (bool) $homework->has_review,
+            'has_comprehensive_review' => (bool) $homework->has_comprehensive_review,
+            'new_memorization_pages' => $homework->new_memorization_pages,
+            'new_memorization_surah' => $homework->new_memorization_surah,
+            'new_memorization_from_verse' => $homework->new_memorization_from_verse,
+            'new_memorization_to_verse' => $homework->new_memorization_to_verse,
+            'review_pages' => $homework->review_pages,
+            'review_surah' => $homework->review_surah,
+            'review_from_verse' => $homework->review_from_verse,
+            'review_to_verse' => $homework->review_to_verse,
+            'comprehensive_review_surahs' => $homework->comprehensive_review_surahs ?? [],
+            'additional_instructions' => $homework->additional_instructions,
+            'due_date' => $homework->due_date?->toDateString(),
+            'difficulty_level' => $homework->difficulty_level,
+            'is_active' => (bool) $homework->is_active,
+        ];
     }
 }

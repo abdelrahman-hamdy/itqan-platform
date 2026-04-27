@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
  * - Teacher information
  * - Enrollment count
  * - Homework assignments
- * - Recording information
  *
  * @mixin InteractiveCourseSession
  */
@@ -67,13 +66,6 @@ class InteractiveSessionResource extends SessionResource
                     $this->resource->homework_assigned && $this->resource->homework_file,
                     fn () => $this->getFileUrl($this->resource->homework_file)
                 ),
-            ],
-
-            // Recording
-            'recording' => [
-                'enabled' => $this->resource->recording_enabled,
-                'url' => $this->when($this->resource->recording_url, $this->resource->recording_url),
-                'available_until' => $this->resource->recording_available_until?->toISOString(),
             ],
 
             // Session metadata

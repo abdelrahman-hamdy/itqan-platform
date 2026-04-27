@@ -221,9 +221,24 @@ class LiveKitService implements LiveKitServiceInterface
      *
      * Delegates to LiveKitRoomManager
      */
-    public function endMeeting(string $roomName): bool
+    public function endMeeting(string $roomName, bool $force = true): bool
     {
-        return $this->roomManager->endMeeting($roomName);
+        return $this->roomManager->endMeeting($roomName, $force);
+    }
+
+    /**
+     * True when the room has at least one active participant. Null return
+     * (treated as "not empty") on transient LiveKit API failures so the
+     * cron does not force-complete sessions just because a probe failed.
+     */
+    public function roomHasActiveParticipants(string $roomName): bool
+    {
+        $participants = $this->roomManager->listActiveParticipants($roomName);
+        if ($participants === null) {
+            return true;
+        }
+
+        return count($participants) > 0;
     }
 
     /**

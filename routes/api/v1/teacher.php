@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Teacher\Quran\CircleController as QuranCircleCon
 use App\Http\Controllers\Api\V1\Teacher\Quran\SessionController as QuranSessionController;
 use App\Http\Controllers\Api\V1\Teacher\ReportController;
 use App\Http\Controllers\Api\V1\Teacher\ScheduleController;
+use App\Http\Controllers\Api\V1\Teacher\SessionReportController;
 use App\Http\Controllers\Api\V1\Teacher\StudentController;
 use App\Http\Controllers\Api\V1\Teacher\TrialRequestController;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +61,9 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
         Route::post('/schedule', [CalendarController::class, 'schedule'])
             ->name('api.v1.teacher.calendar.schedule');
 
+        Route::get('/recommendations', [CalendarController::class, 'recommendations'])
+            ->name('api.v1.teacher.calendar.recommendations');
+
         Route::put('/sessions/{type}/{id}/reschedule', [CalendarController::class, 'reschedule'])
             ->where(['type' => 'quran|academic|interactive', 'id' => '[0-9]+'])
             ->name('api.v1.teacher.calendar.reschedule');
@@ -83,6 +87,9 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
 
             Route::get('/individual/{id}', [QuranCircleController::class, 'individualShow'])
                 ->name('api.v1.teacher.quran.circles.individual.show');
+
+            Route::get('/individual/{id}/certificates', [QuranCircleController::class, 'individualCertificates'])
+                ->name('api.v1.teacher.quran.circles.individual.certificates');
 
             Route::get('/group', [QuranCircleController::class, 'groupIndex'])
                 ->name('api.v1.teacher.quran.circles.group.index');
@@ -272,6 +279,10 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
             ->where('type', 'academic|interactive|quran')
             ->name('api.v1.teacher.homework.update');
 
+        Route::delete('/{type}/{id}', [HomeworkController::class, 'destroy'])
+            ->where('type', 'academic|interactive|quran')
+            ->name('api.v1.teacher.homework.destroy');
+
         Route::get('/{type}/{id}/submissions', [HomeworkController::class, 'submissions'])
             ->where('type', 'academic|interactive|quran')
             ->name('api.v1.teacher.homework.submissions');
@@ -315,6 +326,21 @@ Route::middleware(['api.is.teacher', 'ability:teacher:*'])->group(function () {
             ->middleware('throttle:3,1')
             ->name('api.v1.teacher.profile.delete');
     });
+
+    // Per-session, per-student report editor (mobile mirrors the web Edit Report modal).
+    Route::prefix('{type}/sessions/{id}')
+        ->where(['type' => 'quran|academic|interactive', 'id' => '[0-9]+'])
+        ->group(function () {
+            Route::get('/reports', [SessionReportController::class, 'index'])
+                ->name('api.v1.teacher.sessions.reports.index');
+
+            Route::put('/reports/{studentId}', [SessionReportController::class, 'update'])
+                ->where('studentId', '[0-9]+')
+                ->name('api.v1.teacher.sessions.reports.update');
+
+            Route::put('/lesson-content', [SessionReportController::class, 'updateLessonContent'])
+                ->name('api.v1.teacher.sessions.lesson-content.update');
+        });
 
     // Reports (circle report data for teacher view)
     Route::prefix('reports')->group(function () {

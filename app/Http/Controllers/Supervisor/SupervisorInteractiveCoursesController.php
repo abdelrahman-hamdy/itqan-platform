@@ -190,14 +190,10 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
             'enrollment_deadline' => 'nullable|date|before_or_equal:start_date',
             'is_published' => 'required|in:0,1',
             'recording_enabled' => 'required|in:0,1',
-            'show_recording_to_teacher' => 'required|in:0,1',
-            'show_recording_to_student' => 'required|in:0,1',
         ]);
 
         $validated['is_published'] = (bool) $validated['is_published'];
         $validated['recording_enabled'] = (bool) $validated['recording_enabled'];
-        $validated['show_recording_to_teacher'] = (bool) $validated['show_recording_to_teacher'];
-        $validated['show_recording_to_student'] = (bool) $validated['show_recording_to_student'];
         $validated['status'] = InteractiveCourseStatus::PUBLISHED;
 
         // Calculate duration_weeks
@@ -239,8 +235,6 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
             'enrollment_deadline' => 'nullable|date',
             'certificate_enabled' => 'required|in:0,1',
             'recording_enabled' => 'required|in:0,1',
-            'show_recording_to_teacher' => 'required|in:0,1',
-            'show_recording_to_student' => 'required|in:0,1',
             'supervisor_notes' => 'nullable|string|max:2000',
             'featured_image' => 'nullable|image|max:2048',
             'schedule_days' => 'nullable|array',
@@ -255,8 +249,6 @@ class SupervisorInteractiveCoursesController extends BaseSupervisorWebController
 
         $validated['certificate_enabled'] = (bool) $validated['certificate_enabled'];
         $validated['recording_enabled'] = (bool) $validated['recording_enabled'];
-        $validated['show_recording_to_teacher'] = (bool) $validated['show_recording_to_teacher'];
-        $validated['show_recording_to_student'] = (bool) $validated['show_recording_to_student'];
 
         // Handle featured image upload
         if ($request->hasFile('featured_image')) {

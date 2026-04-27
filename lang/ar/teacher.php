@@ -42,7 +42,6 @@ return [
         'quiz_management' => 'إدارة الاختبارات',
         'quizzes' => 'الاختبارات',
         'session_reports' => 'التقارير',
-        'recordings' => 'التسجيلات',
         'certificates' => 'الشهادات',
         'financial_management' => 'الإدارة المالية',
         'monthly_earnings' => 'الأرباح الشهرية',
@@ -1774,25 +1773,6 @@ return [
         'empty_students_description' => 'لم يتم تسجيل أي طلاب في حلقاتك أو دروسك بعد',
         'empty_students_filter_description' => 'لا يوجد طلاب يطابقون معايير التصفية',
         'no_report_available' => 'لا يوجد تقرير',
-    ],
-
-    // ========================================
-    // Session Recordings (A5)
-    // ========================================
-    'recordings' => [
-        'page_title' => 'تسجيلات الجلسات',
-        'page_description' => 'عرض وتحميل تسجيلات جلسات الدورات التفاعلية',
-        'breadcrumb' => 'التسجيلات',
-        'list_title' => 'قائمة التسجيلات',
-        'empty_title' => 'لا توجد تسجيلات',
-        'empty_description' => 'لم يتم تسجيل أي جلسات بعد',
-        'empty_filter_description' => 'لا توجد تسجيلات لهذه الدورة',
-        'view_all' => 'عرض الكل',
-        'total_recordings' => 'إجمالي التسجيلات',
-        'all_courses' => 'جميع الدورات',
-        'unknown_course' => 'دورة غير محددة',
-        'play' => 'تشغيل',
-        'download' => 'تحميل',
     ],
 
     // ========================================

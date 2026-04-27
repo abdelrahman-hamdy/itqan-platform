@@ -72,10 +72,14 @@ class LiveKitController extends Controller
             // Create access token
             $at = new AccessToken($apiKey, $apiSecret, $options);
 
-            // Create video grant with properties
+            // Create video grant with properties.
+            // `canUpdateOwnMetadata` is required for the hand-raise feature
+            // (mobile + web) which flips the `hand_raised` attribute via
+            // `setAttributes`; the server rejects those writes without it.
             $grantProperties = [
                 'roomJoin' => true,
                 'room' => $roomName,
+                'canUpdateOwnMetadata' => true,
             ];
 
             // Teachers get additional permissions

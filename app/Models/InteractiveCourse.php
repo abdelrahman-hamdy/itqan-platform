@@ -56,8 +56,6 @@ class InteractiveCourse extends Model
         'certificate_enabled',
         'certificate_template_style',
         'recording_enabled',
-        'show_recording_to_teacher',
-        'show_recording_to_student',
         'supervisor_notes',
     ];
 
@@ -85,8 +83,6 @@ class InteractiveCourse extends Model
         'certificate_enabled' => 'boolean',
         'certificate_template_style' => CertificateTemplateStyle::class,
         'recording_enabled' => 'boolean',
-        'show_recording_to_teacher' => 'boolean',
-        'show_recording_to_student' => 'boolean',
         'avg_rating' => 'decimal:2',
         'total_reviews' => 'integer',
     ];

@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\Teacher\Calendar\CheckConflictsRequest;
 use App\Http\Requests\Api\V1\Teacher\Calendar\RescheduleSessionRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
+use App\Models\AcademySettings;
 use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -44,6 +45,12 @@ class CalendarController extends Controller
     ) {}
 
     /**
+     * Per-request cache of the academy's teacher-reschedule deadline — the
+     * same value for every event in a month fetch, so we resolve it once.
+     */
+    private ?int $cachedDeadlineHours = null;
+
+    /**
      * GET /calendar/events?start=&end=
      *
      * Returns calendar events in the given date range for the effective teacher.
@@ -63,9 +70,11 @@ class CalendarController extends Controller
         $start = Carbon::parse($validated['start']);
         $end = Carbon::parse($validated['end']);
 
+        $deadlineHours = $this->resolveRescheduleDeadlineHours($teacher);
+
         $events = $this->calendarService
             ->getUserCalendar($teacher, $start, $end)
-            ->map(fn ($event) => $this->enrichEventForMobile($event))
+            ->map(fn ($event) => $this->enrichEventForMobile($event, $deadlineHours))
             ->values();
 
         return $this->success([
@@ -75,6 +84,7 @@ class CalendarController extends Controller
                 'end' => $end->toDateString(),
                 'timezone' => AcademyContextService::getTimezone(),
             ],
+            'reschedule_deadline_hours' => $deadlineHours,
             'total' => $events->count(),
         ]);
     }
@@ -108,10 +118,14 @@ class CalendarController extends Controller
                 return $this->error(__('calendar.invalid_tab_method'), 422, 'INVALID_TAB_METHOD');
             }
 
+            $items = $strategy->{$method}()
+                ->map(fn ($item) => $this->enrichItemForMobile(is_array($item) ? $item : (array) $item))
+                ->values();
+
             return $this->success([
                 'tab' => $validated['tab'],
                 'label' => $tabs[$validated['tab']]['label'] ?? null,
-                'items' => $strategy->{$method}()->values(),
+                'items' => $items,
             ]);
         }
 
@@ -292,6 +306,39 @@ class CalendarController extends Controller
     }
 
     /**
+     * GET /calendar/recommendations?item_id=&item_type=
+     *
+     * Delegates to the entity validator's getRecommendations() so the mobile
+     * scheduling form can surface "X days/week recommended" hints inline.
+     */
+    public function recommendations(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'teacher_id' => ['nullable', 'integer'],
+            'item_id' => ['required', 'integer'],
+            'item_type' => ['required', 'string', 'in:group,individual,trial,private_lesson,interactive_course'],
+        ]);
+
+        $teacher = $this->effectiveTeacher($request);
+        $teacherType = $request->attributes->get('effective_teacher_type');
+
+        try {
+            $strategy = $this->strategyFactory->make($teacherType)->forUser($teacher);
+            $item = ['id' => $validated['item_id']];
+            $validator = $strategy->getValidator($validated['item_type'], $item);
+            $recommendations = $validator->getRecommendations();
+
+            return $this->success([
+                'recommendations' => $recommendations,
+            ]);
+        } catch (InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 422, 'INVALID_ARGUMENT');
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 422, 'RECOMMENDATIONS_FAILED');
+        }
+    }
+
+    /**
      * DELETE /calendar/schedulable-items/{itemType}/{itemId}/future-sessions
      *
      * Remove all future scheduled sessions for a given entity (batch).
@@ -377,9 +424,10 @@ class CalendarController extends Controller
     }
 
     /**
-     * Add mobile-only extended props (can_delete, course_id) to the event array.
+     * Add mobile-only extended props (can_delete, course_id, deadline hours)
+     * to the event array.
      */
-    private function enrichEventForMobile(array $event): array
+    private function enrichEventForMobile(array $event, int $deadlineHours): array
     {
         $source = $event['source'] ?? null;
         $metadata = $event['metadata'] ?? [];
@@ -387,6 +435,7 @@ class CalendarController extends Controller
         // Teachers can't delete sessions on the web — only admins/supervisors can.
         // For the mobile quick-actions menu we expose can_delete=false for teachers.
         $event['can_delete'] = false;
+        $event['reschedule_deadline_hours'] = $deadlineHours;
 
         // Ensure course_id is present on course sessions (not currently surfaced)
         if ($source === 'course_session' && ! isset($metadata['course_id'])) {
@@ -396,5 +445,70 @@ class CalendarController extends Controller
         $event['metadata'] = $metadata;
 
         return $event;
+    }
+
+    /**
+     * Add mobile-only extended props to a schedulable item. Today we compute
+     * max_sessions_allowed — the dynamic cap mobile uses to bound the session
+     * stepper before submit. Mirrors the validators' runtime limits.
+     */
+    private function enrichItemForMobile(array $item): array
+    {
+        $item['max_sessions_allowed'] = $this->computeMaxSessionsAllowed($item);
+
+        return $item;
+    }
+
+    /** Per-submission upper bound across all validators. */
+    private const SCHEDULE_BATCH_HARD_CAP = 100;
+
+    /** Group circles project forward 12 months of monthly_sessions. */
+    private const GROUP_LOOKAHEAD_MONTHS = 12;
+
+    private function computeMaxSessionsAllowed(array $item): int
+    {
+        $type = $item['type'] ?? null;
+        $scheduled = (int) ($item['sessions_scheduled'] ?? 0);
+        $total = (int) ($item['sessions_count'] ?? $item['total_sessions'] ?? 0);
+        $remaining = isset($item['sessions_remaining'])
+            ? (int) $item['sessions_remaining']
+            : max(0, $total - $scheduled);
+
+        return match ($type) {
+            'group' => min(
+                self::SCHEDULE_BATCH_HARD_CAP,
+                max(1, (int) ($item['monthly_sessions'] ?? 4))
+                    * self::GROUP_LOOKAHEAD_MONTHS,
+            ),
+            'individual', 'private_lesson' => max(0, $remaining),
+            'trial' => 1,
+            'interactive_course' => max(0, $total - $scheduled),
+            default => self::SCHEDULE_BATCH_HARD_CAP,
+        };
+    }
+
+    /**
+     * Resolve the teacher-reschedule deadline hours for a given teacher's
+     * academy. Falls back to the default (24) when settings are missing.
+     * Memoized per-request — events() iterates many rows but every one
+     * shares the same academy setting.
+     */
+    private function resolveRescheduleDeadlineHours(User $teacher): int
+    {
+        if ($this->cachedDeadlineHours !== null) {
+            return $this->cachedDeadlineHours;
+        }
+
+        $academyId = $teacher->academy_id;
+        if (! $academyId) {
+            return $this->cachedDeadlineHours = 24;
+        }
+
+        $settings = AcademySettings::query()
+            ->where('academy_id', $academyId)
+            ->first();
+
+        return $this->cachedDeadlineHours =
+            (int) ($settings?->teacher_reschedule_deadline_hours ?? 24);
     }
 }

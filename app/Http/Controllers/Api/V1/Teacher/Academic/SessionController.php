@@ -150,18 +150,21 @@ class SessionController extends Controller
             ->first();
 
         if ($session) {
+            $studentRow = $session->student;
+            $reportRow = $session->reports?->first();
+
             return $this->success([
                 'session' => [
                     'id' => $session->id,
-                    'type' => 'individual',
+                    'type' => 'academic',
                     'title' => $session->title ?? $session->academicSubscription?->subject_name ?? 'جلسة أكاديمية',
-                    'student' => $session->student ? [
-                        'id' => $session->student->id,
-                        'name' => $session->student->name,
-                        'avatar' => $session->student->avatar
-                            ? asset('storage/'.$session->student->avatar)
+                    'student' => $studentRow ? [
+                        'id' => $studentRow->id,
+                        'name' => $studentRow->name,
+                        'avatar' => $studentRow->avatar
+                            ? asset('storage/'.$studentRow->avatar)
                             : null,
-                        'phone' => $session->student->phone,
+                        'phone' => $studentRow->phone,
                     ] : null,
                     'subject' => $session->academicSubscription?->subject ? [
                         'id' => $session->academicSubscription->subject->id,
@@ -175,17 +178,21 @@ class SessionController extends Controller
                     'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                     'status' => $session->status->value ?? $session->status,
                     'meeting_url' => $session->meeting_link,
-                    'homework' => $session->homework,
                     'lesson_content' => $session->lesson_content,
-                    'topics_covered' => $session->topics_covered ?? [],
-                    'notes' => $session->notes,
-                    'teacher_notes' => $session->teacher_notes,
-                    'report' => ($report = $session->reports?->first()) ? [
-                        'id' => $report->id,
-                        'rating' => $report->rating,
-                        'notes' => $report->notes,
-                        'teacher_feedback' => $report->teacher_feedback,
-                    ] : null,
+                    'homework_description' => $session->homework_description,
+                    'homework_file' => $session->homework_file,
+                    'homework_assigned' => (bool) $session->homework_assigned,
+                    'recording_url' => $session->recording_url,
+                    'session_notes' => $session->session_notes,
+                    'teacher_feedback' => $session->teacher_feedback,
+                    'student_rating' => $session->student_rating,
+                    'student_feedback' => $session->student_feedback,
+                    'students' => $studentRow ? [[
+                        'id' => $studentRow->id,
+                        'name' => $studentRow->name,
+                        'avatar' => $studentRow->avatar ? asset('storage/'.$studentRow->avatar) : null,
+                    ]] : [],
+                    'reports' => $studentRow ? [$this->formatAcademicReport($reportRow, $studentRow->id)] : [],
                     'started_at' => $session->started_at?->toISOString(),
                     'ended_at' => $session->ended_at?->toISOString(),
                     'created_at' => $session->created_at?->toISOString(),
@@ -220,7 +227,12 @@ class SessionController extends Controller
                     'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($interactiveSession),
                     'status' => $interactiveSession->status->value ?? $interactiveSession->status,
                     'meeting_url' => $interactiveSession->meeting_link,
-                    'materials' => $interactiveSession->materials ?? [],
+                    'lesson_content' => $interactiveSession->lesson_content,
+                    'homework_description' => $interactiveSession->homework_description,
+                    'homework_file' => $interactiveSession->homework_file,
+                    'homework_assigned' => (bool) $interactiveSession->homework_assigned,
+                    'session_notes' => $interactiveSession->session_notes,
+                    'teacher_feedback' => $interactiveSession->teacher_feedback,
                     'created_at' => $interactiveSession->created_at?->toISOString(),
                 ],
             ], __('Session retrieved successfully'));
@@ -259,12 +271,11 @@ class SessionController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'homework' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'lesson_content' => ['sometimes', 'nullable', 'string', 'max:5000'],
-            'topics_covered' => ['sometimes', 'array'],
-            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'rating' => ['sometimes', 'integer', 'min:1', 'max:5'],
-            'feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'homework_description' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'session_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'teacher_feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'homework_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
         ]);
 
         if ($validator->fails()) {
@@ -273,22 +284,38 @@ class SessionController extends Controller
 
         DB::beginTransaction();
         try {
-            $session->update([
+            $updateData = [
                 'status' => SessionStatus::COMPLETED,
                 'ended_at' => now(),
-                'homework' => $request->homework ?? $session->homework,
-                'lesson_content' => $request->lesson_content ?? $session->lesson_content,
-                'topics_covered' => $request->topics_covered ?? $session->topics_covered,
-                'notes' => $request->notes ?? $session->notes,
-            ]);
+            ];
+            if ($request->has('lesson_content')) {
+                $updateData['lesson_content'] = $request->lesson_content;
+            }
+            if ($request->has('homework_description')) {
+                $updateData['homework_description'] = $request->homework_description;
+                $updateData['homework_assigned'] = ! empty($request->homework_description);
+            }
+            if ($request->has('session_notes')) {
+                $updateData['session_notes'] = $request->session_notes;
+            }
+            if ($request->has('teacher_feedback')) {
+                $updateData['teacher_feedback'] = $request->teacher_feedback;
+            }
+            $session->update($updateData);
 
-            // Create report if rating provided
-            if ($request->filled('rating')) {
+            // For 1:1 sessions, allow inline homework_degree write to per-student report.
+            if ($session->student_id && $request->filled('homework_degree')) {
                 AcademicSessionReport::updateOrCreate(
-                    ['academic_session_id' => $session->id],
                     [
-                        'rating' => $request->rating,
-                        'teacher_feedback' => $request->feedback,
+                        'session_id' => $session->id,
+                        'student_id' => $session->student_id,
+                    ],
+                    [
+                        'teacher_id' => $user->id,
+                        'academy_id' => $session->academy_id,
+                        'homework_degree' => $request->homework_degree,
+                        'evaluated_at' => now(),
+                        'manually_evaluated' => true,
                     ]
                 );
             }
@@ -495,6 +522,9 @@ class SessionController extends Controller
 
     /**
      * Update session evaluation.
+     *
+     * Writes to real columns: lesson_content, homework_description, session_notes,
+     * teacher_feedback on the session, and homework_degree on the per-student report.
      */
     public function updateEvaluation(Request $request, string $id): JsonResponse
     {
@@ -514,32 +544,47 @@ class SessionController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'homework' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'lesson_content' => ['sometimes', 'nullable', 'string', 'max:5000'],
-            'topics_covered' => ['sometimes', 'array'],
-            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'rating' => ['sometimes', 'integer', 'min:1', 'max:5'],
-            'feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'homework_description' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'session_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'teacher_feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'homework_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
         ]);
 
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
         }
 
-        $session->update([
-            'homework' => $request->homework ?? $session->homework,
-            'lesson_content' => $request->lesson_content ?? $session->lesson_content,
-            'topics_covered' => $request->topics_covered ?? $session->topics_covered,
-            'notes' => $request->notes ?? $session->notes,
-        ]);
+        $updateData = [];
+        if ($request->has('lesson_content')) {
+            $updateData['lesson_content'] = $request->lesson_content;
+        }
+        if ($request->has('homework_description')) {
+            $updateData['homework_description'] = $request->homework_description;
+            $updateData['homework_assigned'] = ! empty($request->homework_description);
+        }
+        if ($request->has('session_notes')) {
+            $updateData['session_notes'] = $request->session_notes;
+        }
+        if ($request->has('teacher_feedback')) {
+            $updateData['teacher_feedback'] = $request->teacher_feedback;
+        }
+        if (! empty($updateData)) {
+            $session->update($updateData);
+        }
 
-        // Update or create report
-        if ($request->filled('rating') || $request->filled('feedback')) {
+        if ($session->student_id && $request->filled('homework_degree')) {
             AcademicSessionReport::updateOrCreate(
-                ['academic_session_id' => $session->id],
                 [
-                    'rating' => $request->rating ?? $session->reports?->first()?->rating,
-                    'teacher_feedback' => $request->feedback ?? $session->reports?->first()?->teacher_feedback,
+                    'session_id' => $session->id,
+                    'student_id' => $session->student_id,
+                ],
+                [
+                    'teacher_id' => $user->id,
+                    'academy_id' => $session->academy_id,
+                    'homework_degree' => $request->homework_degree,
+                    'evaluated_at' => now(),
+                    'manually_evaluated' => true,
                 ]
             );
         }
@@ -547,8 +592,10 @@ class SessionController extends Controller
         return $this->success([
             'session' => [
                 'id' => $session->id,
-                'homework' => $session->homework,
                 'lesson_content' => $session->lesson_content,
+                'homework_description' => $session->homework_description,
+                'session_notes' => $session->session_notes,
+                'teacher_feedback' => $session->teacher_feedback,
             ],
         ], __('Evaluation updated successfully'));
     }
@@ -583,8 +630,8 @@ class SessionController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'teacher_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'session_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'teacher_feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
         if ($validator->fails()) {
@@ -592,15 +639,15 @@ class SessionController extends Controller
         }
 
         $session->update([
-            'session_notes' => $request->notes ?? $session->session_notes,
-            'teacher_feedback' => $request->teacher_notes ?? $session->teacher_feedback,
+            'session_notes' => $request->input('session_notes', $session->session_notes),
+            'teacher_feedback' => $request->input('teacher_feedback', $session->teacher_feedback),
         ]);
 
         return $this->success([
             'session' => [
                 'id' => $session->id,
-                'notes' => $session->session_notes,
-                'teacher_notes' => $session->teacher_feedback,
+                'session_notes' => $session->session_notes,
+                'teacher_feedback' => $session->teacher_feedback,
             ],
         ], __('Notes updated successfully'));
     }
@@ -730,7 +777,7 @@ class SessionController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['required', Rule::in(AttendanceStatus::values())],
+            'status' => ['required', Rule::in(AttendanceStatus::writableValues())],
             'override_reason' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -750,5 +797,27 @@ class SessionController extends Controller
             ->update($updateData);
 
         return $this->success([], __('Attendance updated successfully'));
+    }
+
+    /**
+     * Format an academic per-student report (homework_degree + notes + attendance).
+     */
+    protected function formatAcademicReport(?AcademicSessionReport $report, ?int $studentId = null): ?array
+    {
+        if (! $report && $studentId === null) {
+            return null;
+        }
+
+        return [
+            'id' => $report?->id,
+            'student_id' => $report?->student_id ?? $studentId,
+            'attendance_status' => $report?->attendance_status,
+            'attendance_percentage' => $report?->attendance_percentage,
+            'actual_attendance_minutes' => $report?->actual_attendance_minutes,
+            'homework_degree' => $report?->homework_degree,
+            'overall_performance' => $report?->overall_performance,
+            'notes' => $report?->notes,
+            'evaluated_at' => $report?->evaluated_at?->toISOString(),
+        ];
     }
 }

@@ -116,8 +116,6 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
             'schedule_days.*' => Rule::in($weekDayValues),
             'schedule_time' => 'nullable|string',
             'recording_enabled' => 'required|in:0,1',
-            'show_recording_to_teacher' => 'required|in:0,1',
-            'show_recording_to_student' => 'required|in:0,1',
             'allow_sponsored_requests' => 'required|in:0,1',
             'is_enrolled_only' => 'required|in:0,1',
             'supervisor_notes' => 'nullable|string|max:2000',
@@ -125,8 +123,6 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
         ]);
 
         $validated['recording_enabled'] = (bool) $validated['recording_enabled'];
-        $validated['show_recording_to_teacher'] = (bool) $validated['show_recording_to_teacher'];
-        $validated['show_recording_to_student'] = (bool) $validated['show_recording_to_student'];
         $validated['allow_sponsored_requests'] = (bool) $validated['allow_sponsored_requests'];
         $validated['is_enrolled_only'] = (bool) $validated['is_enrolled_only'];
 

@@ -2,11 +2,11 @@
 
 namespace App\Services\LiveKit;
 
-use Exception;
 use Agence104\LiveKit\RoomCreateOptions;
 use Agence104\LiveKit\RoomServiceClient;
 use App\Models\Academy;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -390,29 +390,69 @@ class LiveKitRoomManager
     }
 
     /**
-     * End meeting by removing all participants and deleting room
+     * Return the active participant list for a room, or null if the room
+     * does not exist or the call failed. Shared choke point so every
+     * "is the room empty?" check hits the same API path.
      */
-    public function endMeeting(string $roomName): bool
+    public function listActiveParticipants(string $roomName): ?array
+    {
+        if (! $this->isConfigured()) {
+            return null;
+        }
+
+        try {
+            $response = $this->roomService->listParticipants($roomName);
+            if (! $response || ! method_exists($response, 'getParticipants')) {
+                return [];
+            }
+
+            return iterator_to_array($response->getParticipants(), false);
+        } catch (Exception $e) {
+            if (str_contains($e->getMessage(), 'room does not exist')) {
+                return [];
+            }
+
+            Log::warning('listActiveParticipants failed', ['room' => $roomName, 'error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+    /**
+     * End meeting by removing all participants and deleting the room.
+     *
+     * When `$force` is false, the call is a no-op if the room still has
+     * active participants — cron paths use this so they never kick students
+     * mid-lesson. Manual teacher-initiated ends pass the default `true`.
+     */
+    public function endMeeting(string $roomName, bool $force = true): bool
     {
         try {
             if (! $this->isConfigured()) {
                 throw new Exception('LiveKit room manager not configured properly');
             }
 
-            // Disconnect all participants
-            $participantsResponse = $this->roomService->listParticipants($roomName);
+            $participants = $this->listActiveParticipants($roomName) ?? [];
 
-            if ($participantsResponse && method_exists($participantsResponse, 'getParticipants')) {
-                foreach ($participantsResponse->getParticipants() as $participant) {
-                    $this->roomService->removeParticipant($roomName, $participant->getIdentity());
-                }
+            if (! $force && count($participants) > 0) {
+                Log::info('Skipping endMeeting — room still has active participants', [
+                    'room_name' => $roomName,
+                    'active_participants' => count($participants),
+                ]);
+
+                return false;
             }
 
-            // Delete room
+            foreach ($participants as $participant) {
+                $this->roomService->removeParticipant($roomName, $participant->getIdentity());
+            }
+
             $this->roomService->deleteRoom($roomName);
 
             Log::info('LiveKit room ended and deleted', [
                 'room_name' => $roomName,
+                'force' => $force,
+                'active_participants_removed' => count($participants),
             ]);
 
             return true;

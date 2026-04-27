@@ -15,7 +15,6 @@ use Illuminate\Http\Request;
  * - Student information
  * - Lesson content
  * - Homework assignments and submissions
- * - Recording information
  *
  * @mixin AcademicSession
  */
@@ -60,12 +59,6 @@ class AcademicSessionResource extends SessionResource
                     $this->homework_assigned && $this->homework_file,
                     fn () => $this->getFileUrl($this->homework_file)
                 ),
-            ],
-
-            // Recording
-            'recording' => [
-                'enabled' => $this->recording_enabled,
-                'url' => $this->when($this->recording_url, $this->recording_url),
             ],
 
             // Subscription

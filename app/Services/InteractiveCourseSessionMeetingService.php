@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use Exception;
 use App\Contracts\InteractiveCourseSessionMeetingServiceInterface;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourseSession;
 use App\Services\Traits\SessionMeetingTrait;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -139,17 +139,30 @@ class InteractiveCourseSessionMeetingService implements InteractiveCourseSession
     }
 
     /**
-     * End a meeting room for interactive course session
+     * End a meeting room for interactive course session.
+     *
+     * @param  bool  $force  When false, skip if the LiveKit room still has
+     *                       connected participants (cron path so we don't
+     *                       kick students mid-meeting).
      */
-    public function endMeeting(InteractiveCourseSession $session): bool
+    public function endMeeting(InteractiveCourseSession $session, bool $force = true): bool
     {
         if (! $session->meeting_room_name) {
             return false;
         }
 
         try {
-            // Close the LiveKit room
-            $this->livekitService->deleteRoom($session->meeting_room_name);
+            // Ask LiveKit to end the meeting; when force=false the service
+            // returns false without deleting the room if participants are
+            // still connected.
+            $terminated = $this->livekitService->endMeeting($session->meeting_room_name, $force);
+
+            if (! $terminated) {
+                // Room wasn't terminated because participants are still in it.
+                // Don't mark session as COMPLETED yet — let the next cron
+                // cycle re-check.
+                return false;
+            }
 
             // Update session status
             $session->update([
@@ -160,6 +173,7 @@ class InteractiveCourseSessionMeetingService implements InteractiveCourseSession
             Log::info('Interactive course meeting ended', [
                 'session_id' => $session->id,
                 'room_name' => $session->meeting_room_name,
+                'force' => $force,
             ]);
 
             return true;
@@ -276,7 +290,7 @@ class InteractiveCourseSessionMeetingService implements InteractiveCourseSession
 
         foreach ($completedWithMeetings as $session) {
             try {
-                if ($this->endMeeting($session)) {
+                if ($this->endMeeting($session, false)) {
                     $results['meetings_terminated']++;
                 }
                 $results['sessions_processed']++;

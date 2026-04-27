@@ -193,12 +193,25 @@ class LiveKitTracks {
             // Update state based on actual publication
             this.updateTrackState(participantId, publication, track);
 
+            // `?subaudio=1` skips all remote VIDEO subscriptions — diagnostic
+            // for "whole browser laggy" reports. If audio-only is smooth, we
+            // know Chrome's video-decode path is the culprit.
+            const subAudioOnly = !!window.__itqan?.flag?.('subaudio');
+
             // Handle screen share tracks differently
             if (publication.source === window.LiveKit.Track.Source.ScreenShare) {
+                if (subAudioOnly && !isLocal) {
+                    try { publication.setSubscribed?.(false); } catch (_) {}
+                    return;
+                }
                 await this.handleScreenShareTrackSubscribed(track, publication, participant);
             } else if (publication.source === window.LiveKit.Track.Source.ScreenShareAudio) {
                 await this.handleScreenShareAudioTrackSubscribed(track, publication, participant);
             } else if (track.kind === 'video') {
+                if (subAudioOnly && !isLocal) {
+                    try { publication.setSubscribed?.(false); } catch (_) {}
+                    return;
+                }
                 await this.handleVideoTrackSubscribed(track, publication, participant);
             } else if (track.kind === 'audio') {
                 await this.handleAudioTrackSubscribed(track, publication, participant);

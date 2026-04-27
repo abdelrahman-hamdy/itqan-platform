@@ -191,7 +191,7 @@
     {{-- Session Recordings (supervisors always see these) --}}
     @if($session instanceof \App\Contracts\RecordingCapable
         && $session->status === \App\Enums\SessionStatus::COMPLETED
-        && $session->shouldShowRecordingToUser(auth()->user()))
+        && $session->canUserAccessRecordings(auth()->user()))
         <x-recordings.session-recordings :session="$session" view-type="supervisor" />
     @endif
 

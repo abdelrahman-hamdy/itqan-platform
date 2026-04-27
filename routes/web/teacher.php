@@ -17,6 +17,7 @@ use App\Http\Controllers\QuranSessionController;
 use App\Http\Controllers\SessionReportShowController;
 use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\StudentReportController;
+use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\Teacher\AcademicLessonController;
 use App\Http\Controllers\Teacher\CalendarController;
 use App\Http\Controllers\Teacher\CertificateListController;
@@ -25,11 +26,9 @@ use App\Http\Controllers\Teacher\GroupCircleReportController;
 use App\Http\Controllers\Teacher\HomeworkGradingController;
 use App\Http\Controllers\Teacher\IndividualCircleReportController;
 use App\Http\Controllers\Teacher\QuizManagementController;
-use App\Http\Controllers\Teacher\RecordingListController;
 use App\Http\Controllers\Teacher\SessionHomeworkController;
 use App\Http\Controllers\Teacher\SessionReportListController;
 use App\Http\Controllers\Teacher\TrialSessionController;
-use App\Http\Controllers\SupportTicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
@@ -123,9 +122,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     */
 
     Route::middleware(['auth', 'role:academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
-
-        // Session Recordings (academic teacher only)
-        Route::get('/recordings', [RecordingListController::class, 'index'])->name('recordings.index');
 
         // Academic sessions list
         Route::get('/academic-sessions', [AcademicSessionController::class, 'index'])->name('academic-sessions.index');

@@ -157,6 +157,21 @@ enum AttendanceStatus: string
     }
 
     /**
+     * Status values that may be written by new code.
+     * Excludes the deprecated LATE / LEFT cases (kept readable for legacy rows).
+     *
+     * @return list<string>
+     */
+    public static function writableValues(): array
+    {
+        return [
+            self::ATTENDED->value,
+            self::PARTIALLY_ATTENDED->value,
+            self::ABSENT->value,
+        ];
+    }
+
+    /**
      * Get all status options for dropdown
      */
     public static function options(): array

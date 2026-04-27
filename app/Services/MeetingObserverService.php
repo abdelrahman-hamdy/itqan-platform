@@ -3,10 +3,10 @@
 namespace App\Services;
 
 use App\Contracts\MeetingObserverServiceInterface;
-use App\Models\AcademicTeacherProfile;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
 use App\Models\AcademicSession;
+use App\Models\AcademicTeacherProfile;
 use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -18,7 +18,8 @@ class MeetingObserverService implements MeetingObserverServiceInterface
 {
     public function __construct(
         private LiveKitTokenGenerator $tokenGenerator,
-        private LiveKitRoomManager $roomManager
+        private LiveKitRoomManager $roomManager,
+        private SessionSettingsService $sessionSettings,
     ) {}
 
     /**
@@ -95,12 +96,7 @@ class MeetingObserverService implements MeetingObserverServiceInterface
      */
     public function resolveSession(string $sessionType, int|string $sessionId): ?BaseSession
     {
-        return match ($sessionType) {
-            'quran' => QuranSession::find($sessionId),
-            'academic' => AcademicSession::find($sessionId),
-            'interactive' => InteractiveCourseSession::find($sessionId),
-            default => null,
-        };
+        return $this->sessionSettings->resolveSessionByType($sessionType, $sessionId);
     }
 
     private function isObserverRole(User $user): bool

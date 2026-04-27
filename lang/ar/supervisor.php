@@ -687,8 +687,6 @@ return [
         'enrollment_deadline' => 'آخر موعد للتسجيل',
         'is_published' => 'منشورة',
         'recording_enabled' => 'تفعيل التسجيل',
-        'show_to_teacher' => 'إظهار التسجيل للمعلم',
-        'show_to_student' => 'إظهار التسجيل للطالب',
         'supervisor_notes' => 'ملاحظات المشرف',
         'search_placeholder' => 'ابحث باسم الدورة...',
         'filter_by_subject' => 'المادة',

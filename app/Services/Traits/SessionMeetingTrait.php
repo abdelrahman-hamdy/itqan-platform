@@ -298,7 +298,7 @@ trait SessionMeetingTrait
     {
         try {
             if ($session->meeting_room_name) {
-                $this->livekitService->endMeeting($session->meeting_room_name);
+                $this->livekitService->endMeeting($session->meeting_room_name, false);
             }
 
             // All sessions auto-complete to COMPLETED. Attendance is tracked

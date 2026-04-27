@@ -4,7 +4,6 @@ namespace App\Models\Traits;
 
 use App\Enums\RecordingStatus;
 use App\Enums\SessionStatus;
-use App\Enums\UserType;
 use App\Models\SessionRecording;
 use App\Models\User;
 use App\Services\RecordingService;
@@ -193,31 +192,11 @@ trait HasRecording
     }
 
     /**
-     * Check if a user can access recordings of this session
+     * Check if a user can access recordings of this session.
      */
     public function canUserAccessRecordings(User $user): bool
     {
-        // Admins and supervisors can access all recordings
-        if (in_array($user->user_type, [UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
-            return true;
-        }
-
-        // Teachers can access recordings they created/taught
-        if ($user->user_type === UserType::ACADEMIC_TEACHER->value || $user->user_type === UserType::QURAN_TEACHER->value) {
-            // Check if this is their session
-            if (method_exists($this, 'canUserManageMeeting')) {
-                return $this->canUserManageMeeting($user);
-            }
-        }
-
-        // Students can access recordings if they're participants
-        if ($user->user_type === UserType::STUDENT->value) {
-            if (method_exists($this, 'isUserParticipant')) {
-                return $this->isUserParticipant($user);
-            }
-        }
-
-        return false;
+        return $user->canManageRecordings();
     }
 
     /**
@@ -228,62 +207,6 @@ trait HasRecording
         return $this->recordings()
             ->where('status', RecordingStatus::COMPLETED->value)
             ->exists();
-    }
-
-    /**
-     * Check if recordings should be shown to a specific user based on:
-     * 1. Base access rights (canUserAccessRecordings)
-     * 2. Parent entity's visibility toggles (show_recording_to_teacher/student)
-     */
-    public function shouldShowRecordingToUser(User $user): bool
-    {
-        // Must have base access rights first
-        if (! $this->canUserAccessRecordings($user)) {
-            return false;
-        }
-
-        // Admins and supervisors always see recordings (bypass toggle check)
-        if (in_array($user->user_type, [
-            UserType::SUPER_ADMIN->value,
-            UserType::ADMIN->value,
-            UserType::SUPERVISOR->value,
-        ])) {
-            return true;
-        }
-
-        $parent = $this->getRecordingVisibilityParent();
-
-        if (! $parent) {
-            return false;
-        }
-
-        if (in_array($user->user_type, [UserType::ACADEMIC_TEACHER->value, UserType::QURAN_TEACHER->value])) {
-            return (bool) ($parent->show_recording_to_teacher ?? false);
-        }
-
-        if ($user->user_type === UserType::STUDENT->value) {
-            return (bool) ($parent->show_recording_to_student ?? false);
-        }
-
-        return false;
-    }
-
-    /**
-     * Get the parent entity that holds recording visibility settings.
-     */
-    protected function getRecordingVisibilityParent(): ?object
-    {
-        if ($this instanceof \App\Models\InteractiveCourseSession) {
-            return $this->course;
-        }
-
-        if ($this instanceof \App\Models\QuranSession) {
-            return $this->session_type === 'individual'
-                ? $this->individualCircle
-                : $this->circle;
-        }
-
-        return null;
     }
 
     /**

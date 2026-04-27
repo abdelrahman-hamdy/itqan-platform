@@ -149,13 +149,7 @@ class InteractiveSessionController extends Controller
                 'session_notes' => $session->session_notes,
                 'teacher_feedback' => $session->teacher_feedback,
                 'attendance_count' => $session->attendance_count ?? 0,
-                'report' => ($report = $session->reports?->first()) ? [
-                    'id' => $report->id,
-                    'rating' => $report->rating,
-                    'notes' => $report->notes,
-                    'teacher_feedback' => $report->teacher_feedback,
-                    'homework_degree' => $report->homework_degree,
-                ] : null,
+                'report' => $this->formatInteractiveReport($session->reports?->first()),
                 'started_at' => $session->started_at?->toISOString(),
                 'ended_at' => $session->ended_at?->toISOString(),
                 'created_at' => $session->created_at?->toISOString(),
@@ -194,9 +188,8 @@ class InteractiveSessionController extends Controller
         $validator = Validator::make($request->all(), [
             'lesson_content' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'homework_description' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'rating' => ['sometimes', 'integer', 'min:1', 'max:5'],
-            'feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'session_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'teacher_feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
         if ($validator->fails()) {
@@ -219,23 +212,18 @@ class InteractiveSessionController extends Controller
                 $updateData['homework_assigned'] = ! empty($request->homework_description);
             }
 
-            if ($request->has('notes')) {
-                $updateData['session_notes'] = $request->notes;
+            if ($request->has('session_notes')) {
+                $updateData['session_notes'] = $request->session_notes;
+            }
+
+            if ($request->has('teacher_feedback')) {
+                $updateData['teacher_feedback'] = $request->teacher_feedback;
             }
 
             $session->update($updateData);
 
-            // Create report if rating provided
-            if ($request->filled('rating')) {
-                InteractiveSessionReport::updateOrCreate(
-                    ['session_id' => $session->id],
-                    [
-                        'academy_id' => $session->academy_id,
-                        'rating' => $request->rating,
-                        'teacher_feedback' => $request->feedback,
-                    ]
-                );
-            }
+            // Per-student homework_degree is set via the SessionReportController endpoint
+            // (interactive sessions can have many enrolled students).
 
             // Update attendance count
             $session->updateAttendanceCount();
@@ -471,10 +459,8 @@ class InteractiveSessionController extends Controller
         $validator = Validator::make($request->all(), [
             'lesson_content' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'homework_description' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'rating' => ['sometimes', 'integer', 'min:1', 'max:5'],
-            'feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'homework_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
+            'session_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'teacher_feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
         if ($validator->fails()) {
@@ -492,26 +478,19 @@ class InteractiveSessionController extends Controller
             $updateData['homework_assigned'] = ! empty($request->homework_description);
         }
 
-        if ($request->has('notes')) {
-            $updateData['session_notes'] = $request->notes;
+        if ($request->has('session_notes')) {
+            $updateData['session_notes'] = $request->session_notes;
+        }
+
+        if ($request->has('teacher_feedback')) {
+            $updateData['teacher_feedback'] = $request->teacher_feedback;
         }
 
         if (! empty($updateData)) {
             $session->update($updateData);
         }
 
-        // Update or create report
-        if ($request->filled('rating') || $request->filled('feedback') || $request->filled('homework_degree')) {
-            InteractiveSessionReport::updateOrCreate(
-                ['session_id' => $session->id],
-                array_filter([
-                    'academy_id' => $session->academy_id,
-                    'rating' => $request->rating ?? $session->reports?->first()?->rating,
-                    'teacher_feedback' => $request->feedback ?? $session->reports?->first()?->teacher_feedback,
-                    'homework_degree' => $request->homework_degree ?? $session->reports?->first()?->homework_degree,
-                ], fn ($v) => $v !== null)
-            );
-        }
+        // Per-student homework_degree is set via the SessionReportController endpoint.
 
         return $this->success([
             'session' => [
@@ -519,6 +498,8 @@ class InteractiveSessionController extends Controller
                 'lesson_content' => $session->lesson_content,
                 'homework_description' => $session->homework_description,
                 'homework_assigned' => (bool) $session->homework_assigned,
+                'session_notes' => $session->session_notes,
+                'teacher_feedback' => $session->teacher_feedback,
             ],
         ], __('Evaluation updated successfully'));
     }
@@ -541,8 +522,8 @@ class InteractiveSessionController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'teacher_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'session_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'teacher_feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
         if ($validator->fails()) {
@@ -550,15 +531,15 @@ class InteractiveSessionController extends Controller
         }
 
         $session->update([
-            'session_notes' => $request->notes ?? $session->session_notes,
-            'teacher_feedback' => $request->teacher_notes ?? $session->teacher_feedback,
+            'session_notes' => $request->input('session_notes', $session->session_notes),
+            'teacher_feedback' => $request->input('teacher_feedback', $session->teacher_feedback),
         ]);
 
         return $this->success([
             'session' => [
                 'id' => $session->id,
-                'notes' => $session->session_notes,
-                'teacher_notes' => $session->teacher_feedback,
+                'session_notes' => $session->session_notes,
+                'teacher_feedback' => $session->teacher_feedback,
             ],
         ], __('Notes updated successfully'));
     }
@@ -664,7 +645,7 @@ class InteractiveSessionController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['required', Rule::in(AttendanceStatus::values())],
+            'status' => ['required', Rule::in(AttendanceStatus::writableValues())],
             'override_reason' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -681,5 +662,27 @@ class InteractiveSessionController extends Controller
             ->update($updateData);
 
         return $this->success([], __('Attendance updated successfully'));
+    }
+
+    /**
+     * Format an interactive per-student report (homework_degree + notes + attendance).
+     */
+    protected function formatInteractiveReport(?InteractiveSessionReport $report): ?array
+    {
+        if (! $report) {
+            return null;
+        }
+
+        return [
+            'id' => $report->id,
+            'student_id' => $report->student_id,
+            'attendance_status' => $report->attendance_status,
+            'attendance_percentage' => $report->attendance_percentage,
+            'actual_attendance_minutes' => $report->actual_attendance_minutes,
+            'homework_degree' => $report->homework_degree,
+            'overall_performance' => $report->overall_performance,
+            'notes' => $report->notes,
+            'evaluated_at' => $report->evaluated_at?->toISOString(),
+        ];
     }
 }

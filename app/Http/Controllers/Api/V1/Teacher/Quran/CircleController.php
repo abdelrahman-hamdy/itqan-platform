@@ -10,6 +10,7 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\Certificate;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
+use App\Models\QuranSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -382,6 +383,65 @@ class CircleController extends Controller
         $certificates = Certificate::where('certificateable_type', (new QuranCircle)->getMorphClass())
             ->where('certificateable_id', $circle->id)
             ->whereIn('student_id', $studentIds)
+            ->with('student')
+            ->orderBy('issued_at', 'desc')
+            ->get();
+
+        return $this->success([
+            'circle' => [
+                'id' => $circle->id,
+                'name' => $circle->name,
+            ],
+            'certificates' => $certificates->map(fn ($cert) => [
+                'id' => $cert->id,
+                'certificate_number' => $cert->certificate_number,
+                'student' => [
+                    'id' => $cert->student?->id,
+                    'name' => $cert->student?->name,
+                    'avatar' => $cert->student?->avatar
+                        ? asset('storage/'.$cert->student->avatar)
+                        : null,
+                ],
+                'issued_at' => $cert->issued_at?->toISOString(),
+                'view_url' => $cert->view_url,
+                'download_url' => $cert->download_url,
+            ])->toArray(),
+            'total' => $certificates->count(),
+        ], __('Circle certificates retrieved successfully'));
+    }
+
+    /**
+     * Get certificates for an individual circle (single student).
+     */
+    public function individualCertificates(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->quranTeacherProfile) {
+            return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        $quranTeacherId = $user->id;
+
+        $circle = QuranIndividualCircle::where('id', $id)
+            ->where('quran_teacher_id', $quranTeacherId)
+            ->with(['student', 'subscription'])
+            ->first();
+
+        if (! $circle) {
+            return $this->notFound(__('Circle not found.'));
+        }
+
+        $studentId = $circle->student?->id;
+        $subscriptionId = $circle->subscription?->id;
+
+        $certificates = Certificate::query()
+            ->when($studentId, fn ($q) => $q->where('student_id', $studentId))
+            ->when(
+                $subscriptionId,
+                fn ($q) => $q->where('certificateable_type', (new QuranSubscription)->getMorphClass())
+                    ->where('certificateable_id', $subscriptionId)
+            )
             ->with('student')
             ->orderBy('issued_at', 'desc')
             ->get();

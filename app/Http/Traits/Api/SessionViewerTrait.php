@@ -4,7 +4,9 @@ namespace App\Http\Traits\Api;
 
 use App\Enums\SessionStatus;
 use App\Http\Helpers\PaginationHelper;
+use App\Models\BaseSession;
 use App\Models\User;
+use App\Services\SessionSettingsService;
 
 /**
  * Shared session viewing logic for both student and parent session controllers.
@@ -96,28 +98,26 @@ trait SessionViewerTrait
     }
 
     /**
-     * Check if a session can currently be joined.
-     *
-     * A session is joinable if the current time falls within the join window
-     * (10 minutes before start to end of duration) and the session is not
-     * cancelled or completed.
+     * Check if a session can currently be joined. Window matches the
+     * academy-configured preparation + ending-buffer settings — mobile UI,
+     * web UI, and the token-mint gate must all agree.
      */
-    protected function canJoinSession($session): bool
+    protected function canJoinSession(BaseSession $session): bool
     {
-        $now = now();
         $sessionTime = $session->scheduled_at;
-
         if (! $sessionTime) {
             return false;
         }
 
-        $joinStart = $sessionTime->copy()->subMinutes(10);
+        $settings = app(SessionSettingsService::class);
         $duration = $session->duration_minutes ?? 60;
-        $joinEnd = $sessionTime->copy()->addMinutes($duration);
+
+        $joinStart = $sessionTime->copy()->subMinutes($settings->getPreparationMinutes($session));
+        $joinEnd = $sessionTime->copy()->addMinutes($duration + $settings->getBufferMinutes($session));
 
         $status = $session->status->value ?? $session->status;
 
-        return $now->between($joinStart, $joinEnd)
+        return now()->between($joinStart, $joinEnd)
             && ! in_array($status, [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value]);
     }
 

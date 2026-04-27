@@ -2,8 +2,8 @@
 
 namespace App\Models\Traits;
 
-use App\Models\Academy;
 use App\Enums\UserType;
+use App\Models\Academy;
 use Illuminate\Database\Eloquent\Builder;
 
 trait HasRoles
@@ -123,6 +123,29 @@ trait HasRoles
     public function isEndUser(): bool
     {
         return in_array($this->user_type, [UserType::STUDENT->value, UserType::PARENT->value]);
+    }
+
+    /**
+     * Whether the user is permitted to view/manage session recordings.
+     *
+     * Recordings are administration-only: admins always pass; supervisors pass
+     * only when their profile grants the explicit `can_manage_recording`
+     * permission, with `canMonitorSessions()` retained as a compatibility
+     * fallback for supervisors provisioned before the dedicated flag existed.
+     */
+    public function canManageRecordings(): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if (! $this->isSupervisor()) {
+            return false;
+        }
+
+        $profile = $this->supervisorProfile;
+
+        return (bool) ($profile?->canManageRecording() || $profile?->canMonitorSessions());
     }
 
     /**

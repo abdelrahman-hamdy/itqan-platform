@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use Exception;
 use App\Contracts\SessionMeetingServiceInterface;
 use App\Enums\SessionStatus;
 use App\Models\QuranSession;
 use App\Services\Traits\SessionMeetingTrait;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -262,7 +262,7 @@ class SessionMeetingService implements SessionMeetingServiceInterface
 
         foreach ($completedWithMeetings as $session) {
             try {
-                if ($session->endMeeting()) {
+                if ($session->endMeeting(false)) {
                     $results['meetings_terminated']++;
                 }
 

@@ -379,9 +379,15 @@ trait HasMeetings
     }
 
     /**
-     * End the meeting and cleanup resources
+     * End the meeting and cleanup resources.
+     *
+     * @param  bool  $force  When false, skip termination if the LiveKit room
+     *                       still has connected participants. Cron paths
+     *                       (auto-complete) pass false so users are never
+     *                       kicked mid-meeting; manual teacher-initiated
+     *                       ends keep the default true.
      */
-    public function endMeeting(): bool
+    public function endMeeting(bool $force = true): bool
     {
         try {
             if (! $this->meeting_room_name) {
@@ -389,7 +395,7 @@ trait HasMeetings
             }
 
             $liveKitService = app(LiveKitService::class);
-            $success = $liveKitService->endMeeting($this->meeting_room_name);
+            $success = $liveKitService->endMeeting($this->meeting_room_name, $force);
 
             if ($success) {
                 $roomName = $this->meeting_room_name;
@@ -401,6 +407,7 @@ trait HasMeetings
                     'session_type' => $this->getMeetingSessionType(),
                     'session_id' => $this->id,
                     'room_name' => $roomName,
+                    'force' => $force,
                 ]);
             }
 

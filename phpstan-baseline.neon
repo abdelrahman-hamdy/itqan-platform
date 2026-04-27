@@ -5779,12 +5779,6 @@ parameters:
 			path: /Users/abdelrahmanhamdy/web/itqan/itqan-platform/app/Http/Controllers/Teacher/QuizManagementController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: /Users/abdelrahmanhamdy/web/itqan/itqan-platform/app/Http/Controllers/Teacher/RecordingListController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$additional_instructions\.$#'
 			identifier: property.notFound
 			count: 1

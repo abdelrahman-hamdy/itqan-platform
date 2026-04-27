@@ -4,6 +4,7 @@ namespace App\Http\Resources\Api\V1\Session;
 
 use App\Http\Resources\Api\V1\Attendance\AttendanceResource;
 use App\Models\BaseSession;
+use App\Services\SessionSettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -47,6 +48,11 @@ class SessionResource extends JsonResource
             'ended_at' => $this->resource->ended_at?->toISOString(),
             'duration_minutes' => $this->resource->duration_minutes,
             'actual_duration_minutes' => $this->resource->actual_duration_minutes,
+
+            // Session-timer phase thresholds — single-sourced through
+            // SessionSettingsService so web and mobile see identical values.
+            'preparation_minutes' => app(SessionSettingsService::class)->getPreparationMinutes($this->resource),
+            'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($this->resource),
 
             // Meeting data
             // SECURITY: meeting_password removed - use /api/v1/common/meetings/token endpoint instead

@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use Exception;
 use App\Contracts\AcademicSessionMeetingServiceInterface;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Services\Traits\SessionMeetingTrait;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -271,8 +271,7 @@ class AcademicSessionMeetingService implements AcademicSessionMeetingServiceInte
 
         foreach ($completedWithMeetings as $session) {
             try {
-                if ($session->meeting_room_name) {
-                    $this->livekitService->endMeeting($session->meeting_room_name);
+                if ($session->meeting_room_name && $this->livekitService->endMeeting($session->meeting_room_name, false)) {
                     $results['meetings_terminated']++;
                 }
 

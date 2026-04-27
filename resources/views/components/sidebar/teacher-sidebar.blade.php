@@ -80,12 +80,6 @@
             :label="__('teacher.sidebar.interactive_courses')"
             icon="ri-book-open-line"
             :active="request()->routeIs('teacher.interactive-courses.*')" />
-
-          <x-sidebar.nav-item
-            :href="route('teacher.recordings.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
-            :label="__('teacher.sidebar.recordings')"
-            icon="ri-video-line"
-            :active="request()->routeIs('teacher.recordings.*')" />
         @endif
 
         <x-sidebar.nav-item

@@ -17,6 +17,14 @@
  * WebRTC signals for AEC quality.
  */
 class MeetingTelemetry {
+    // Gate console spam — default off; opt-in via `?mtverbose=1` URL flag or
+    // `localStorage.mt_verbose=1`. Console.log in Chrome retains live object
+    // references even when DevTools is closed, so production must stay silent.
+    static _verbose = (() => {
+        if (window.__itqan?.flag?.('mtverbose')) return true;
+        try { return localStorage.getItem('mt_verbose') === '1'; } catch (_) { return false; }
+    })();
+
     constructor(config = {}) {
         this.sessionId = config.sessionId ?? null;
         this.sessionType = config.sessionType ?? null;
@@ -75,7 +83,11 @@ class MeetingTelemetry {
         // "page went black at 02:15" from "page felt laggy because main
         // thread was blocked 4.2 s out of every 10 s". Attribution
         // (containerSrc) tells us which iframe/script was running.
-        this._startLongTaskProbe();
+        // Skip all performance probes in lite mode — they themselves install
+        // PerformanceObservers + setInterval flushers which add work.
+        if (!window.__liteMode) {
+            this._startLongTaskProbe();
+        }
     }
 
     /**
@@ -128,11 +140,173 @@ class MeetingTelemetry {
             });
             this._longTaskBucket = { count: 0, total_ms: 0, max_ms: 0, entries: [] };
         }, 10_000);
+
+        // Extra probes are opt-in via `?mtperf=1`. They monkey-patch
+        // window.setInterval/setTimeout (timer-blame) and install Event
+        // + Long-Animation-Frame observers. Off by default because the
+        // monkey-patching affects every script on the page, and the
+        // stack-capture in every scheduling call is measurable overhead.
+        if (window.__itqan?.flag?.('mtperf')) {
+            this._startTimerBlameProbe();
+            this._startInteractionProbe();
+        }
+    }
+
+    /**
+     * Capture PerformanceEventTiming entries (user input latency) and Long
+     * Animation Frames. These catch blocks that longtask + timer-blame miss:
+     * click handlers, MutationObserver work, Livewire morph, animations.
+     */
+    _startInteractionProbe() {
+        if (typeof PerformanceObserver !== 'function') return;
+        const supported = PerformanceObserver.supportedEntryTypes || [];
+
+        // PerformanceEventTiming: per-interaction processing duration.
+        // `event` entries are per-event (mousedown, pointerdown, click, keydown…).
+        if (supported.includes('event')) {
+            this._eventBucket = [];
+            try {
+                this._eventObs = new PerformanceObserver((list) => {
+                    for (const e of list.getEntries()) {
+                        if (e.duration < 100) continue;
+                        this._eventBucket.push({
+                            name: e.name,
+                            dur: Math.round(e.duration),
+                            processing_ms: Math.round((e.processingEnd || 0) - (e.processingStart || 0)),
+                            target: e.target?.id || e.target?.tagName || null,
+                        });
+                        if (this._eventBucket.length > 40) this._eventBucket.length = 40;
+                    }
+                });
+                this._eventObs.observe({ type: 'event', durationThreshold: 100, buffered: true });
+            } catch (_) {}
+        }
+
+        // Long Animation Frames: tells us when a frame took >50ms to render and
+        // WHY — includes `scripts` array with stack trace of the worst offender.
+        // Chrome 123+ / Edge 123+. Best signal we can get from browser perf APIs.
+        if (supported.includes('long-animation-frame')) {
+            this._loafBucket = [];
+            try {
+                this._loafObs = new PerformanceObserver((list) => {
+                    for (const e of list.getEntries()) {
+                        if (e.duration < 100) continue;
+                        const worstScript = (e.scripts || []).slice().sort((a, b) => (b.duration || 0) - (a.duration || 0))[0];
+                        this._loafBucket.push({
+                            dur: Math.round(e.duration),
+                            blocking_ms: Math.round(e.blockingDuration || 0),
+                            render_start: Math.round(e.renderStart || 0),
+                            style_layout_start: Math.round(e.styleAndLayoutStart || 0),
+                            worst_script: worstScript ? {
+                                name: (worstScript.sourceURL || worstScript.name || '').split('/').slice(-1)[0]?.split('?')[0] || '',
+                                fn: worstScript.sourceFunctionName || worstScript.name || '',
+                                dur: Math.round(worstScript.duration || 0),
+                                invoker: worstScript.invoker?.slice(0, 60) || null,
+                                invoker_type: worstScript.invokerType || null,
+                            } : null,
+                        });
+                        if (this._loafBucket.length > 20) this._loafBucket.length = 20;
+                    }
+                });
+                this._loafObs.observe({ type: 'long-animation-frame', buffered: true });
+            } catch (_) {}
+        }
+
+        // Flush both buckets every 20 s alongside the timer blame.
+        const origSetInterval = window.__origSetInterval || window.setInterval;
+        const mt = this;
+        this._interactionTimer = origSetInterval.call(window, () => {
+            if (mt._eventBucket?.length) {
+                mt.event('perf', 'interaction_blame', { events: mt._eventBucket });
+                mt._eventBucket = [];
+            }
+            if (mt._loafBucket?.length) {
+                mt.event('perf', 'loaf_blame', { frames: mt._loafBucket });
+                mt._loafBucket = [];
+            }
+        }, 20_000);
+    }
+
+    /**
+     * Wrap window.setInterval / setTimeout to capture the call-site stack at
+     * schedule time and measure each callback's synchronous duration. Callbacks
+     * over 100 ms are reported to telemetry with their origin, so a long task
+     * can be attributed to its exact scheduler.
+     *
+     * This intentionally wraps globally, not per-class: we need to catch timer
+     * callbacks from LiveKit SDK internals too (ping intervals, reconcile
+     * intervals, data-channel polls) that we don't own.
+     */
+    _startTimerBlameProbe() {
+        if (window.__itqanTimerBlameInstalled) return;
+        window.__itqanTimerBlameInstalled = true;
+
+        const THRESHOLD_MS = 100;
+        // Rolling per-origin aggregation so we don't spam telemetry
+        this._timerBlameByOrigin = new Map();
+        const mt = this;
+
+        const pickOrigin = (stack) => {
+            if (!stack) return 'unknown';
+            const lines = stack.split('\n').slice(1);
+            for (const line of lines) {
+                const m = line.match(/(?:at\s+|@)?(?:.*\s+\()?(https?:\/\/[^\s)]+)/);
+                if (m && !m[1].includes('/telemetry.js')) {
+                    const url = m[1];
+                    const fileMatch = url.match(/\/([a-zA-Z0-9_\-.]+\.js)(?:\?[^:]*)?:(\d+):(\d+)/);
+                    if (fileMatch) return `${fileMatch[1]}:${fileMatch[2]}`;
+                    return url.split('/').slice(-1)[0].split('?')[0];
+                }
+            }
+            return 'unknown';
+        };
+
+        const wrap = (origFn, kind) => function (fn, ms, ...rest) {
+            if (typeof fn !== 'function') return origFn.call(this, fn, ms, ...rest);
+            const stack = new Error().stack;
+            const origin = pickOrigin(stack);
+            const wrapped = function () {
+                const t0 = performance.now();
+                try {
+                    return fn.apply(this, arguments);
+                } finally {
+                    const dt = performance.now() - t0;
+                    if (dt >= THRESHOLD_MS) {
+                        const rec = mt._timerBlameByOrigin.get(origin) || { count: 0, max_ms: 0, total_ms: 0, kind };
+                        rec.count++;
+                        rec.total_ms += Math.round(dt);
+                        if (dt > rec.max_ms) rec.max_ms = Math.round(dt);
+                        mt._timerBlameByOrigin.set(origin, rec);
+                    }
+                }
+            };
+            return origFn.call(this, wrapped, ms, ...rest);
+        };
+
+        try {
+            window.__origSetInterval = window.setInterval;
+            window.__origSetTimeout = window.setTimeout;
+            window.setInterval = wrap(window.__origSetInterval, 'interval');
+            window.setTimeout = wrap(window.__origSetTimeout, 'timeout');
+        } catch (_) { return; }
+
+        // Flush aggregated blame every 20s so we get attribution without flooding
+        this._timerBlameTimer = window.__origSetInterval.call(window, () => {
+            if (mt._timerBlameByOrigin.size === 0) return;
+            const byOrigin = {};
+            for (const [origin, rec] of mt._timerBlameByOrigin) byOrigin[origin] = rec;
+            mt._timerBlameByOrigin.clear();
+            mt.event('perf', 'timer_blame', { by_origin: byOrigin });
+        }, 20_000);
     }
 
     _stopLongTaskProbe() {
         try { this._longTaskObs?.disconnect(); } catch (_) {}
+        try { this._eventObs?.disconnect(); } catch (_) {}
+        try { this._loafObs?.disconnect(); } catch (_) {}
         if (this._longTaskTimer) { clearInterval(this._longTaskTimer); this._longTaskTimer = null; }
+        if (this._timerBlameTimer) { clearInterval(this._timerBlameTimer); this._timerBlameTimer = null; }
+        if (this._interactionTimer) { clearInterval(this._interactionTimer); this._interactionTimer = null; }
     }
 
     /**
@@ -192,10 +366,15 @@ class MeetingTelemetry {
 
     /**
      * Log a regular event. Buffered, flushed periodically.
+     *
+     * Chrome retains live object references for every console.log/warn/error
+     * even when DevTools is closed — with 10+ events per second in an active
+     * meeting this is a real memory/perf leak. Telemetry now ships events to
+     * the server only; console output is opt-in via `?mtverbose=1`.
      */
     event(category, name, data = {}) {
         this.buffer.push(this.buildEvent(category, name, 'info', data));
-        try { console.log('[MT]', category, name, data); } catch (e) {}
+        if (MeetingTelemetry._verbose) { try { console.log('[MT]', category, name, data); } catch (e) {} }
         if (this.buffer.length >= this.maxBufferSize) this.flush();
     }
 
@@ -210,7 +389,7 @@ class MeetingTelemetry {
             err_stack: err && err.stack ? String(err.stack).substring(0, 1500) : null,
         };
         this.buffer.push(this.buildEvent(category, name, 'error', errInfo));
-        try { console.error('[MT]', category, name, errInfo); } catch (e) {}
+        if (MeetingTelemetry._verbose) { try { console.error('[MT]', category, name, errInfo); } catch (e) {} }
         // Errors flush immediately so we never lose them on a crash
         this.flush();
     }
@@ -220,7 +399,7 @@ class MeetingTelemetry {
      */
     warn(category, name, data = {}) {
         this.buffer.push(this.buildEvent(category, name, 'warning', data));
-        try { console.warn('[MT]', category, name, data); } catch (e) {}
+        if (MeetingTelemetry._verbose) { try { console.warn('[MT]', category, name, data); } catch (e) {} }
         if (this.buffer.length >= this.maxBufferSize) this.flush();
     }
 
@@ -305,6 +484,7 @@ class MeetingTelemetry {
      * and audio level / packet loss / jitter / RTT.
      */
     startStatsPolling(room) {
+        if (window.__liteMode) return; // lite mode: skip stats polling entirely
         this.statsRoom = room;
         if (this.statsTimerId) clearInterval(this.statsTimerId);
         this.statsTimerId = setInterval(() => {

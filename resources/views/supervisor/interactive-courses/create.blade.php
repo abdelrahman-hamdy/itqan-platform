@@ -193,22 +193,6 @@
                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
                                 <span class="text-sm text-gray-700">{{ __('supervisor.interactive_courses.recording_enabled') }}</span>
                             </label>
-                            <br>
-                            <label class="inline-flex items-center gap-2 cursor-pointer">
-                                <input type="hidden" name="show_recording_to_teacher" value="0">
-                                <input type="checkbox" name="show_recording_to_teacher" value="1"
-                                       {{ old('show_recording_to_teacher') ? 'checked' : '' }}
-                                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
-                                <span class="text-sm text-gray-700">{{ __('supervisor.interactive_courses.show_to_teacher') }}</span>
-                            </label>
-                            <br>
-                            <label class="inline-flex items-center gap-2 cursor-pointer">
-                                <input type="hidden" name="show_recording_to_student" value="0">
-                                <input type="checkbox" name="show_recording_to_student" value="1"
-                                       {{ old('show_recording_to_student') ? 'checked' : '' }}
-                                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
-                                <span class="text-sm text-gray-700">{{ __('supervisor.interactive_courses.show_to_student') }}</span>
-                            </label>
                         </div>
                     </div>
 

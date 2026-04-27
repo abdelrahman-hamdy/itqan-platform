@@ -117,16 +117,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
                 Toggle::make('recording_enabled')
                     ->label(__('recordings.enable_audio_recording'))
                     ->helperText(__('recordings.enable_audio_recording_help'))
-                    ->default(false)
-                    ->live(),
-                Toggle::make('show_recording_to_teacher')
-                    ->label(__('recordings.show_to_teacher'))
-                    ->default(true)
-                    ->visible(fn ($get) => $get('recording_enabled')),
-                Toggle::make('show_recording_to_student')
-                    ->label(__('recordings.show_to_student'))
-                    ->default(false)
-                    ->visible(fn ($get) => $get('recording_enabled')),
+                    ->default(false),
             ])
             ->collapsed()
             ->hidden(fn ($record) => $record && static::isSubscriptionSuspended($record));

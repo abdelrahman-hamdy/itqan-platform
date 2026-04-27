@@ -704,7 +704,14 @@ class SessionTransitionService
     }
 
     /**
-     * Close meeting room when session ends
+     * Close meeting room when session ends.
+     *
+     * Uses force=false so the LiveKit room is only deleted when it is empty.
+     * If participants are still connected (e.g., the cron transitioned the
+     * session to COMPLETED slightly before everyone logically leaves), they
+     * are allowed to finish — the room is torn down by LiveKit's own
+     * empty_timeout once the last person leaves. This prevents the
+     * "session ended, everyone kicked at :05/:35" behaviour.
      */
     protected function closeMeetingRoom(BaseSession $session): void
     {
@@ -713,9 +720,9 @@ class SessionTransitionService
         }
 
         try {
-            $session->endMeeting();
+            $session->endMeeting(false);
 
-            Log::info('Meeting room closed on session completion', [
+            Log::info('Meeting room close requested on session completion (soft)', [
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),
                 'room_name' => $session->meeting_room_name,

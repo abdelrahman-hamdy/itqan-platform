@@ -178,6 +178,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SubscriptionServiceInterface::class, SubscriptionService::class);
         $this->app->bind(NotificationServiceInterface::class, NotificationService::class);
         $this->app->bind(AutoMeetingCreationServiceInterface::class, AutoMeetingCreationService::class);
+
+        // FcmService is singleton-scoped: its constructor performs a
+        // `file_exists()` check on the Firebase credentials path to warn on
+        // missing config. Binding once per request avoids redoing that stat
+        // for every call site that injects the service.
+        $this->app->singleton(\App\Services\FcmService::class);
+
         $this->app->bind(RecordingServiceInterface::class, RecordingService::class);
         $this->app->bind(ChatPermissionServiceInterface::class, ChatPermissionService::class);
         $this->app->bind(UnifiedHomeworkServiceInterface::class, UnifiedHomeworkService::class);

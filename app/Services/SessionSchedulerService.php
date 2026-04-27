@@ -23,7 +23,8 @@ class SessionSchedulerService
 {
     public function __construct(
         protected SessionTransitionService $transitionService,
-        protected SessionSettingsService $settingsService
+        protected SessionSettingsService $settingsService,
+        protected LiveKitService $liveKitService
     ) {}
 
     /**
@@ -73,7 +74,20 @@ class SessionSchedulerService
     }
 
     /**
-     * Check if session should auto-complete
+     * Hard cap on how long past the scheduled end we will wait before
+     * force-completing the session regardless of participant count. Without
+     * this, a client that fails to disconnect cleanly could leave a session
+     * stuck as ONGOING forever.
+     */
+    private const AUTO_COMPLETE_GRACE_MINUTES = 60;
+
+    /**
+     * Check if a session should auto-complete.
+     *
+     * Eligible when `now >= scheduled_at + duration + buffer`. To avoid
+     * kicking students mid-lesson we additionally skip auto-completion
+     * while the LiveKit room still has active participants — up to the
+     * grace cap above.
      */
     public function shouldAutoComplete(BaseSession $session): bool
     {
@@ -92,7 +106,19 @@ class SessionSchedulerService
             ->addMinutes($durationMinutes)
             ->addMinutes($endingBufferMinutes);
 
-        return now()->gte($autoCompleteTime);
+        if (now()->lt($autoCompleteTime)) {
+            return false;
+        }
+
+        if (now()->gte($autoCompleteTime->copy()->addMinutes(self::AUTO_COMPLETE_GRACE_MINUTES))) {
+            return true;
+        }
+
+        if ($session->meeting_room_name && $this->liveKitService->roomHasActiveParticipants($session->meeting_room_name)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

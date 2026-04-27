@@ -96,13 +96,11 @@ class SupervisorIndividualCirclesController extends BaseSupervisorWebController
             'memorization_level' => ['required', Rule::in(DifficultyLevel::values())],
             'description' => 'nullable|string|max:500',
             'recording_enabled' => 'nullable|in:0,1',
-            'show_recording_to_teacher' => 'nullable|in:0,1',
-            'show_recording_to_student' => 'nullable|in:0,1',
             'supervisor_notes' => 'nullable|string|max:2000',
             'admin_notes' => 'nullable|string|max:1000',
         ]);
 
-        foreach (['recording_enabled', 'show_recording_to_teacher', 'show_recording_to_student'] as $boolField) {
+        foreach (['recording_enabled'] as $boolField) {
             if (isset($validated[$boolField])) {
                 $validated[$boolField] = (bool) $validated[$boolField];
             }

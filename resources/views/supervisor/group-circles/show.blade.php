@@ -445,20 +445,6 @@
                                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
                                         <span class="text-sm text-gray-700">{{ __('recordings.enable_audio_recording') }}</span>
                                     </label>
-                                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                                        <input type="hidden" name="show_recording_to_teacher" value="0">
-                                        <input type="checkbox" name="show_recording_to_teacher" value="1"
-                                               {{ old('show_recording_to_teacher', $circle->show_recording_to_teacher ?? false) ? 'checked' : '' }}
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
-                                        <span class="text-sm text-gray-700">{{ __('recordings.show_to_teacher') }}</span>
-                                    </label>
-                                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                                        <input type="hidden" name="show_recording_to_student" value="0">
-                                        <input type="checkbox" name="show_recording_to_student" value="1"
-                                               {{ old('show_recording_to_student', $circle->show_recording_to_student ?? false) ? 'checked' : '' }}
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
-                                        <span class="text-sm text-gray-700">{{ __('recordings.show_to_student') }}</span>
-                                    </label>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">{{ __('recordings.enable_audio_recording_help') }}</p>
                             </div>

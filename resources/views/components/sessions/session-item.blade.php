@@ -122,7 +122,7 @@ use App\Enums\SessionStatus;
                     @endif
                     @if($session instanceof \App\Contracts\RecordingCapable
                         && $session->hasCompletedRecordings()
-                        && $session->shouldShowRecordingToUser(auth()->user()))
+                        && $session->canUserAccessRecordings(auth()->user()))
                         <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 text-[10px] md:text-xs">
                             <i class="ri-video-line text-[0.85em]"></i>
                             {{ __('recordings.recorded_badge') }}
