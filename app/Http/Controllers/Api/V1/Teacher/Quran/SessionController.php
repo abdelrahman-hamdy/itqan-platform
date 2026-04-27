@@ -77,6 +77,9 @@ class SessionController extends Controller
                 'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                 'status' => $session->status->value ?? $session->status,
                 'meeting_url' => $session->meeting_link,
+                // Drives the teacher-side "absent / completed" badge derivation.
+                'counts_for_teacher' => $session->counts_for_teacher,
+                'teacher_attendance_status' => $session->teacher_attendance_status,
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($sessions),
         ], __('Sessions retrieved successfully'));
@@ -104,6 +107,9 @@ class SessionController extends Controller
                 'reports',
                 'subscription',
                 'sessionHomework',
+                // Per-student attendance row drives the per-student counting flag
+                // surfaced in the report payload below.
+                'meetingAttendances' => fn ($q) => $q->where('user_type', 'student'),
             ])
             ->first();
 
@@ -149,10 +155,16 @@ class SessionController extends Controller
                     'name' => $s->name,
                     'avatar' => $s->avatar ? asset('storage/'.$s->avatar) : null,
                 ])->values()->toArray(),
-                'reports' => $students->map(fn ($s) => $this->formatReport($reportsByStudent->get($s->id), $s->id))
+                'reports' => $students->map(fn ($s) => $this->formatReport(
+                    $reportsByStudent->get($s->id),
+                    $s->id,
+                    $session->attendanceFor((int) $s->id),
+                ))
                     ->filter()
                     ->values()
                     ->toArray(),
+                'counts_for_teacher' => $session->counts_for_teacher,
+                'teacher_attendance_status' => $session->teacher_attendance_status,
                 'started_at' => $session->started_at?->toISOString(),
                 'ended_at' => $session->ended_at?->toISOString(),
                 'created_at' => $session->created_at?->toISOString(),
@@ -669,7 +681,7 @@ class SessionController extends Controller
     /**
      * Format report data, optionally seeded with a student id when no row exists yet.
      */
-    protected function formatReport(?StudentSessionReport $report, ?int $studentId = null): ?array
+    protected function formatReport(?StudentSessionReport $report, ?int $studentId = null, ?\App\Models\MeetingAttendance $attendance = null): ?array
     {
         if (! $report && $studentId === null) {
             return null;
@@ -686,6 +698,9 @@ class SessionController extends Controller
             'overall_performance' => $report?->overall_performance,
             'notes' => $report?->notes,
             'evaluated_at' => $report?->evaluated_at?->toISOString(),
+            // Per-student counting flag — feeds the supervisor toggle UI and the
+            // mobile teacher view's per-student "absent / canceled" labels.
+            'counts_for_subscription' => $attendance?->counts_for_subscription,
         ];
     }
 

@@ -77,20 +77,29 @@
 
     <!-- Progress Section -->
     @if($showProgress && $subscription->individualCircle)
+        @php
+            // Use the cycle-aware progress accessor — `progress_percentage`
+            // gets reset to 0 when a cycle advances, so the raw column reads
+            // 0% for active cycles. `current_cycle_progress` derives from the
+            // current cycle's `sessions_completed / total_sessions`.
+            $progressPct = method_exists($subscription, 'getCurrentCycleProgressAttribute')
+                ? (float) $subscription->current_cycle_progress
+                : (float) ($subscription->progress_percentage ?? 0);
+        @endphp
         <div class="{{ $compact ? 'space-y-2' : 'space-y-3' }}">
             <!-- Session Stats -->
             <div class="flex items-center justify-between {{ $compact ? 'text-xs' : 'text-sm' }} text-gray-600">
                 <span>{{ $subscription->sessions_completed ?? 0 }}/{{ $subscription->total_sessions ?? 0 }} {{ __('components.cards.subscription.sessions_count') }}</span>
-                @if($subscription->progress_percentage)
-                    <span class="font-medium">{{ number_format($subscription->progress_percentage, 1) }}%</span>
+                @if($progressPct > 0)
+                    <span class="font-medium">{{ number_format($progressPct, 1) }}%</span>
                 @endif
             </div>
-            
+
             <!-- Progress Bar -->
-            @if($subscription->progress_percentage > 0)
+            @if($progressPct > 0)
                 <div class="w-full bg-gray-200 rounded-full {{ $compact ? 'h-1.5' : 'h-2' }}">
-                    <div class="bg-primary-600 {{ $compact ? 'h-1.5' : 'h-2' }} rounded-full transition-all duration-300" 
-                         style="width: {{ min(100, max(0, $subscription->progress_percentage)) }}%"></div>
+                    <div class="bg-primary-600 {{ $compact ? 'h-1.5' : 'h-2' }} rounded-full transition-all duration-300"
+                         style="width: {{ min(100, max(0, $progressPct)) }}%"></div>
                 </div>
             @endif
             

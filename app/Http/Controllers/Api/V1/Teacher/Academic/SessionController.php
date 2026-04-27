@@ -72,6 +72,9 @@ class SessionController extends Controller
                 'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                 'status' => $session->status->value ?? $session->status,
                 'meeting_url' => $session->meeting_link,
+                // Drives the teacher-side display-status mapping in mobile.
+                'counts_for_teacher' => $session->counts_for_teacher,
+                'teacher_attendance_status' => $session->teacher_attendance_status,
             ];
         }
 
@@ -114,6 +117,8 @@ class SessionController extends Controller
                 'ending_buffer_minutes' => app(SessionSettingsService::class)->getBufferMinutes($session),
                 'status' => $session->status->value ?? $session->status,
                 'meeting_url' => $session->meeting_link,
+                'counts_for_teacher' => $session->counts_for_teacher,
+                'teacher_attendance_status' => $session->teacher_attendance_status,
             ];
         }
 
@@ -146,12 +151,18 @@ class SessionController extends Controller
         // Try to find academic session first
         $session = AcademicSession::where('id', $id)
             ->where('academic_teacher_id', $academicTeacherId)
-            ->with(['student', 'academicSubscription.subject', 'reports'])
+            ->with([
+                'student',
+                'academicSubscription.subject',
+                'reports',
+                'meetingAttendances' => fn ($q) => $q->where('user_type', 'student'),
+            ])
             ->first();
 
         if ($session) {
             $studentRow = $session->student;
             $reportRow = $session->reports?->first();
+            $studentAttendance = $studentRow ? $session->attendanceFor((int) $studentRow->id) : null;
 
             return $this->success([
                 'session' => [
@@ -192,7 +203,9 @@ class SessionController extends Controller
                         'name' => $studentRow->name,
                         'avatar' => $studentRow->avatar ? asset('storage/'.$studentRow->avatar) : null,
                     ]] : [],
-                    'reports' => $studentRow ? [$this->formatAcademicReport($reportRow, $studentRow->id)] : [],
+                    'reports' => $studentRow ? [$this->formatAcademicReport($reportRow, $studentRow->id, $studentAttendance)] : [],
+                    'counts_for_teacher' => $session->counts_for_teacher,
+                    'teacher_attendance_status' => $session->teacher_attendance_status,
                     'started_at' => $session->started_at?->toISOString(),
                     'ended_at' => $session->ended_at?->toISOString(),
                     'created_at' => $session->created_at?->toISOString(),
@@ -802,7 +815,7 @@ class SessionController extends Controller
     /**
      * Format an academic per-student report (homework_degree + notes + attendance).
      */
-    protected function formatAcademicReport(?AcademicSessionReport $report, ?int $studentId = null): ?array
+    protected function formatAcademicReport(?AcademicSessionReport $report, ?int $studentId = null, ?\App\Models\MeetingAttendance $attendance = null): ?array
     {
         if (! $report && $studentId === null) {
             return null;
@@ -818,6 +831,8 @@ class SessionController extends Controller
             'overall_performance' => $report?->overall_performance,
             'notes' => $report?->notes,
             'evaluated_at' => $report?->evaluated_at?->toISOString(),
+            // Per-student counting flag for the supervisor toggle UI / mobile.
+            'counts_for_subscription' => $attendance?->counts_for_subscription,
         ];
     }
 }

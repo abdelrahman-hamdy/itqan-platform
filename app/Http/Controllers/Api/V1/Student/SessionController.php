@@ -198,6 +198,12 @@ class SessionController extends Controller
                 ] : null,
                 'can_join' => $session['can_join'],
                 'has_meeting' => ! empty($session['meeting_link']),
+                // Counting + attendance fields — drive the UI-only
+                // "absent / canceled" label on the mobile session card.
+                'attendance_status' => $session['attendance_status'] ?? null,
+                'teacher_attendance_status' => $session['teacher_attendance_status'] ?? null,
+                'counts_for_subscription' => $session['counts_for_subscription'] ?? null,
+                'counts_for_teacher' => $session['counts_for_teacher'] ?? null,
             ];
         })->toArray();
     }
@@ -237,6 +243,7 @@ class SessionController extends Controller
                 ->whereHas('course.enrollments', fn ($q) => $q->where('user_id', $studentId))
                 ->with([
                     'course.assignedTeacher.user',
+                    'meetingAttendances' => fn ($q) => $q->where('user_id', $studentId)->where('user_type', 'student'),
                 ])
                 ->first(),
             default => null,
@@ -264,6 +271,11 @@ class SessionController extends Controller
             default => __('sessions.default_title_generic'),
         };
 
+        // Eager-load was filtered to the auth user, so any lookup keyed by
+        // their id resolves to the right row for both individual and group
+        // sessions.
+        $studentAttendance = $session->attendanceFor((int) auth()->id());
+
         $base = [
             'id' => $session->id,
             'type' => $type,
@@ -285,6 +297,11 @@ class SessionController extends Controller
             'notes' => $session->notes ?? $session->teacher_notes ?? null,
             'student_rating' => $session->student_rating,
             'student_feedback' => $session->student_feedback,
+            // Counting + attendance flags — same fields the list endpoint exposes.
+            'attendance_status' => $studentAttendance?->attendance_status,
+            'teacher_attendance_status' => $session->teacher_attendance_status,
+            'counts_for_subscription' => $studentAttendance?->counts_for_subscription,
+            'counts_for_teacher' => $session->counts_for_teacher,
         ];
 
         // Meeting info

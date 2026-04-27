@@ -300,7 +300,15 @@ class UnifiedSessionFetchingService
             ->when($status, fn ($q) => $q->where('status', $status))
             ->when($from, fn ($q) => $q->where('scheduled_at', '>=', $from))
             ->when($to, fn ($q) => $q->where('scheduled_at', '<=', $to))
-            ->with(['quranTeacher', 'student', 'circle', 'individualCircle'])
+            ->with([
+                'quranTeacher',
+                'student',
+                'circle',
+                'individualCircle',
+                // Per-student attendance row drives the UI-only "absent / canceled"
+                // label derivation; scoped to the requested student(s) to keep payloads small.
+                'meetingAttendances' => fn ($q) => $q->whereIn('user_id', $studentIds)->where('user_type', 'student'),
+            ])
             ->get();
     }
 
@@ -317,7 +325,12 @@ class UnifiedSessionFetchingService
             ->when($status, fn ($q) => $q->where('status', $status))
             ->when($from, fn ($q) => $q->where('scheduled_at', '>=', $from))
             ->when($to, fn ($q) => $q->where('scheduled_at', '<=', $to))
-            ->with(['academicTeacher.user', 'student', 'academicIndividualLesson'])
+            ->with([
+                'academicTeacher.user',
+                'student',
+                'academicIndividualLesson',
+                'meetingAttendances' => fn ($q) => $q->whereIn('user_id', $studentIds)->where('user_type', 'student'),
+            ])
             ->get();
     }
 
@@ -335,7 +348,11 @@ class UnifiedSessionFetchingService
             ->when($status, fn ($q) => $q->where('status', $status))
             ->when($from, fn ($q) => $q->where('scheduled_at', '>=', $from))
             ->when($to, fn ($q) => $q->where('scheduled_at', '<=', $to))
-            ->with(['course.assignedTeacher.user', 'course'])
+            ->with([
+                'course.assignedTeacher.user',
+                'course',
+                'meetingAttendances' => fn ($q) => $q->whereIn('user_id', $studentIds)->where('user_type', 'student'),
+            ])
             ->get();
     }
 
@@ -360,6 +377,13 @@ class UnifiedSessionFetchingService
         // Convert to academy timezone for display
         $timezone = AcademyContextService::getTimezone();
         $scheduledAtInTz = $session->scheduled_at?->copy()->setTimezone($timezone);
+
+        // Per-viewer attendance + counting flags. The fetcher eager-loads
+        // meetingAttendances filtered to the requesting student(s), so the
+        // first row is the right one to surface.
+        $studentAttendance = $session->relationLoaded('meetingAttendances')
+            ? $session->meetingAttendances->first()
+            : null;
 
         return [
             'id' => $session->id,
@@ -386,6 +410,12 @@ class UnifiedSessionFetchingService
             'color' => $this->getColor($type),
             'icon' => $this->getIcon($type),
             'context' => $this->getContext($session, $type),
+            // Counting flags + attendance — feeds the UI-only display-status
+            // mapping (completed / absent / canceled) on web and mobile.
+            'counts_for_teacher' => $session->counts_for_teacher,
+            'counts_for_subscription' => $studentAttendance?->counts_for_subscription,
+            'attendance_status' => $studentAttendance?->attendance_status,
+            'teacher_attendance_status' => $session->teacher_attendance_status,
             'model' => $session, // Full model for advanced use
         ];
     }

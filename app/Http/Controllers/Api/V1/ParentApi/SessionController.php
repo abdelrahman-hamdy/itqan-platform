@@ -52,7 +52,12 @@ class SessionController extends Controller
             // Get Quran sessions
             if (! $request->filled('type') || $request->type === 'quran') {
                 $quranQuery = QuranSession::where('student_id', $studentUserId)
-                    ->with(['quranTeacher', 'individualCircle', 'circle']);
+                    ->with([
+                        'quranTeacher',
+                        'individualCircle',
+                        'circle',
+                        'meetingAttendances' => fn ($q) => $q->where('user_id', $studentUserId)->where('user_type', 'student'),
+                    ]);
 
                 if ($request->filled('status')) {
                     $quranQuery->where('status', $request->status);
@@ -78,7 +83,11 @@ class SessionController extends Controller
             // Get Academic sessions
             if (! $request->filled('type') || $request->type === 'academic') {
                 $academicQuery = AcademicSession::where('student_id', $studentUserId)
-                    ->with(['academicTeacher.user', 'academicSubscription']);
+                    ->with([
+                        'academicTeacher.user',
+                        'academicSubscription',
+                        'meetingAttendances' => fn ($q) => $q->where('user_id', $studentUserId)->where('user_type', 'student'),
+                    ]);
 
                 if ($request->filled('status')) {
                     $academicQuery->where('status', $request->status);
@@ -107,7 +116,10 @@ class SessionController extends Controller
                     ->pluck('interactive_course_id');
 
                 $interactiveQuery = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
-                    ->with(['course.assignedTeacher.user']);
+                    ->with([
+                        'course.assignedTeacher.user',
+                        'meetingAttendances' => fn ($q) => $q->where('user_id', $studentUserId)->where('user_type', 'student'),
+                    ]);
 
                 if ($request->filled('status')) {
                     $interactiveQuery->where('status', $request->status);
@@ -169,11 +181,24 @@ class SessionController extends Controller
         $session = match ($type) {
             'quran' => QuranSession::where('id', $id)
                 ->whereIn('student_id', $childUserIds)
-                ->with(['quranTeacher', 'student', 'individualCircle', 'circle', 'reports'])
+                ->with([
+                    'quranTeacher',
+                    'student',
+                    'individualCircle',
+                    'circle',
+                    'reports',
+                    'meetingAttendances' => fn ($q) => $q->whereIn('user_id', $childUserIds)->where('user_type', 'student'),
+                ])
                 ->first(),
             'academic' => AcademicSession::where('id', $id)
                 ->whereIn('student_id', $childUserIds)
-                ->with(['academicTeacher.user', 'student', 'academicSubscription', 'reports'])
+                ->with([
+                    'academicTeacher.user',
+                    'student',
+                    'academicSubscription',
+                    'reports',
+                    'meetingAttendances' => fn ($q) => $q->whereIn('user_id', $childUserIds)->where('user_type', 'student'),
+                ])
                 ->first(),
             'interactive' => $this->getInteractiveSession($id, $childUserIds),
             default => null,
@@ -240,7 +265,10 @@ class SessionController extends Controller
             $quranSessions = QuranSession::where('student_id', $studentUserId)
                 ->whereDate('scheduled_at', $today)
                 ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                ->with(['quranTeacher'])
+                ->with([
+                    'quranTeacher',
+                    'meetingAttendances' => fn ($q) => $q->where('user_id', $studentUserId)->where('user_type', 'student'),
+                ])
                 ->get();
 
             foreach ($quranSessions as $session) {
@@ -251,7 +279,11 @@ class SessionController extends Controller
             $academicSessions = AcademicSession::where('student_id', $studentUserId)
                 ->whereDate('scheduled_at', $today)
                 ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                ->with(['academicTeacher.user', 'academicSubscription'])
+                ->with([
+                    'academicTeacher.user',
+                    'academicSubscription',
+                    'meetingAttendances' => fn ($q) => $q->where('user_id', $studentUserId)->where('user_type', 'student'),
+                ])
                 ->get();
 
             foreach ($academicSessions as $session) {
@@ -265,7 +297,10 @@ class SessionController extends Controller
             $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
                 ->whereDate('scheduled_at', $today)
                 ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                ->with(['course.assignedTeacher.user'])
+                ->with([
+                    'course.assignedTeacher.user',
+                    'meetingAttendances' => fn ($q) => $q->where('user_id', $studentUserId)->where('user_type', 'student'),
+                ])
                 ->get();
 
             foreach ($interactiveSessions as $session) {
@@ -371,12 +406,20 @@ class SessionController extends Controller
      */
     protected function formatSession(string $type, $session, $student): array
     {
+        $studentUserId = $student->user?->id ?? $student->id;
+        $studentAttendance = $session->attendanceFor((int) $studentUserId);
+
         $base = [
             'id' => $session->id,
             'type' => $type,
             'child_id' => $student->id,
             'child_name' => $student->full_name,
             'status' => is_object($session->status) ? $session->status->value : $session->status,
+            // Counting + attendance flags — same shape as the student endpoint.
+            'attendance_status' => $studentAttendance?->attendance_status,
+            'teacher_attendance_status' => $session->teacher_attendance_status,
+            'counts_for_subscription' => $studentAttendance?->counts_for_subscription,
+            'counts_for_teacher' => $session->counts_for_teacher,
         ];
 
         if ($type === 'quran') {

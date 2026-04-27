@@ -6,7 +6,19 @@
 @php
 use App\Enums\SessionStatus;
     $isTeacher = in_array($viewType, ['teacher', 'admin', 'supervisor']);
-    
+
+    // Derive UI-only display status (completed / absent / canceled).
+    $statusValue = is_object($session->status) ? $session->status->value : $session->status;
+    $displayStatus = null;
+    $displayRole = null;
+    if (! in_array($viewType, ['supervisor', 'admin'], true) && $statusValue === SessionStatus::COMPLETED->value) {
+        $displayRole = $viewType === 'teacher' ? 'teacher' : 'student';
+        $studentAttendance = $displayRole === 'student' && auth()->check()
+            ? $session->attendanceFor(auth()->id())
+            : null;
+        $displayStatus = $session->displayStatusFor($displayRole, $studentAttendance);
+    }
+
     // Detect session type - check if it's an AcademicSession or QuranSession
     $isAcademicSession = $session instanceof \App\Models\AcademicSession;
     
@@ -37,7 +49,12 @@ use App\Enums\SessionStatus;
                 <h1 class="text-3xl font-bold text-gray-900">
                     {{ $session->title ?? $sessionTypeText }}
                 </h1>
-                <x-sessions.status-badge :status="$session->status" :session="$session" size="md" />
+                <x-sessions.status-badge
+                    :status="$session->status"
+                    :session="$session"
+                    :displayStatus="$displayStatus"
+                    :role="$displayRole"
+                    size="md" />
             </div>
             
             <!-- Session Description -->

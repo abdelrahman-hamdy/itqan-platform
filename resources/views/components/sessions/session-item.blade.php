@@ -14,6 +14,18 @@ use App\Enums\SessionStatus;
 
     $statusValue = $getStatusValue($session);
 
+    // Supervisors see the raw status; everyone else sees the derived
+    // completed / absent / canceled label so a no-show doesn't render green.
+    $displayStatus = null;
+    $displayRole = null;
+    if ($viewType !== 'supervisor' && $statusValue === SessionStatus::COMPLETED->value) {
+        $displayRole = $viewType === 'teacher' ? 'teacher' : 'student';
+        $studentAttendance = $displayRole === 'student' && auth()->check()
+            ? $session->attendanceFor(auth()->id())
+            : null;
+        $displayStatus = $session->displayStatusFor($displayRole, $studentAttendance);
+    }
+
     // Check if session is in preparation phase
     $isInPreparation = false;
     if($statusValue === SessionStatus::SCHEDULED->value && $session->scheduled_at) {
@@ -60,7 +72,7 @@ use App\Enums\SessionStatus;
     }
 @endphp
 
-<a href="{{ $sessionUrl }}" class="attendance-indicator block rounded-lg md:rounded-xl p-4 md:p-6 border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer min-h-[44px]">
+<a href="{{ $sessionUrl }}" class="attendance-indicator block rounded-lg md:rounded-xl p-4 md:p-6 border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer min-h-[44px] {{ $displayStatus === 'canceled' ? 'opacity-60' : '' }}">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
         <!-- Session Info -->
         <div class="flex items-start sm:items-center gap-3 md:gap-4">
@@ -159,7 +171,12 @@ use App\Enums\SessionStatus;
         <div class="text-start flex-shrink-0">
             <div class="flex flex-col items-start sm:items-end gap-1.5 md:gap-2">
                 <!-- Status Badge -->
-                <x-sessions.status-badge :status="$session->status" :session="$session" size="sm" />
+                <x-sessions.status-badge
+                    :status="$session->status"
+                    :session="$session"
+                    :displayStatus="$displayStatus"
+                    :role="$displayRole"
+                    size="sm" />
             </div>
         </div>
     </div>

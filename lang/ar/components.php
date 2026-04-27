@@ -66,6 +66,10 @@ return [
             'ready' => 'جاهزة',
             'completed' => 'مكتملة',
             'cancelled' => 'ملغاة',
+            // UI-only label: session was completed but did NOT consume a quota
+            // slot for this student. Different word from "cancelled" (the
+            // status enum) — written in colloquial form to feel softer.
+            'canceled' => 'ملغاة',
             'unscheduled' => 'غير مجدولة',
             'absent' => 'غائب',
             'preparing_meeting' => 'تجهيز الاجتماع',

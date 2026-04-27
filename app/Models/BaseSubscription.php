@@ -1168,12 +1168,19 @@ abstract class BaseSubscription extends Model
             }
 
             $newRemaining = max(0, $subscription->sessions_remaining - 1);
+            $newSessionsUsed = $subscription->sessions_used + 1;
+            $totalSessions = $newSessionsUsed + $newRemaining;
 
             $updateData = [
-                'sessions_used' => $subscription->sessions_used + 1,
+                'sessions_used' => $newSessionsUsed,
                 'sessions_remaining' => $newRemaining,
                 'total_sessions_completed' => $subscription->total_sessions_completed + 1,
                 'last_session_at' => now(),
+                // Recompute on every call so reconcile and returnSession() agree.
+                // Pegs to 100 below when remaining hits 0.
+                'progress_percentage' => $totalSessions > 0
+                    ? round(($newSessionsUsed / $totalSessions) * 100, 2)
+                    : 0,
             ];
 
             if ($newRemaining <= 0) {
@@ -1216,11 +1223,19 @@ abstract class BaseSubscription extends Model
             }
 
             $newRemaining = $subscription->sessions_remaining + 1;
+            $newSessionsUsed = max(0, $subscription->sessions_used - 1);
+            $totalSessions = $newSessionsUsed + $newRemaining;
 
             $updateData = [
-                'sessions_used' => max(0, $subscription->sessions_used - 1),
+                'sessions_used' => $newSessionsUsed,
                 'sessions_remaining' => $newRemaining,
                 'total_sessions_completed' => max(0, $subscription->total_sessions_completed - 1),
+                // Recompute progress so the subscription row doesn't read 100%
+                // forever after refunding the last session. useSession() pegs
+                // this to 100 on exhaustion; mirror that here.
+                'progress_percentage' => $totalSessions > 0
+                    ? round(($newSessionsUsed / $totalSessions) * 100, 2)
+                    : 0,
             ];
 
             // Clear sessions_exhausted flag if sessions are available again

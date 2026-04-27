@@ -367,6 +367,77 @@ abstract class BaseSession extends Model implements MeetingCapable
     }
 
     // ========================================
+    // DISPLAY STATUS (UI-only)
+    // ========================================
+
+    /**
+     * Derive the UI-only display status for a session.
+     *
+     * Status alone doesn't tell the full story — every finished session is
+     * stored as COMPLETED. The badge a user actually sees ("absent", "canceled",
+     * "completed") is a function of that status PLUS the per-viewer counting
+     * flags and the per-attendance row.
+     *
+     * Mapping for status === COMPLETED:
+     *
+     * Student / Parent (per-attendance row):
+     * - counts_for_subscription === false  → "canceled" (gray, 60% opacity)
+     * - attendance_status === did_not_attend & counts_for_subscription === true
+     *                                       → "absent"   (red — student fault)
+     * - otherwise                           → "completed" (green)
+     *
+     * Teacher:
+     * - counts_for_teacher === false        → "absent"   (gray)
+     * - otherwise                           → "completed" (green)
+     *
+     * Non-completed statuses always return their raw value.
+     *
+     * @param  string  $role  'student' | 'parent' | 'teacher'
+     * @param  \App\Models\MeetingAttendance|null  $studentAttendance  Per-student attendance row (required for student/parent)
+     */
+    /**
+     * Per-student attendance row for a given user. Returns null when
+     * `meetingAttendances` isn't eager-loaded — callers MUST eager-load to
+     * avoid an N+1; falling back to a lazy query in list views silently
+     * fans out one query per row.
+     */
+    public function attendanceFor(int $userId): ?\App\Models\MeetingAttendance
+    {
+        if (! $this->relationLoaded('meetingAttendances')) {
+            return null;
+        }
+
+        return $this->meetingAttendances->firstWhere('user_id', $userId);
+    }
+
+    public function displayStatusFor(string $role, ?\App\Models\MeetingAttendance $studentAttendance = null): string
+    {
+        $statusValue = $this->status instanceof SessionStatus
+            ? $this->status->value
+            : (string) $this->status;
+
+        if ($statusValue !== SessionStatus::COMPLETED->value) {
+            return $statusValue;
+        }
+
+        if ($role === 'teacher') {
+            return $this->counts_for_teacher ? 'completed' : 'absent';
+        }
+
+        // student / parent
+        if ($studentAttendance?->counts_for_subscription === false) {
+            return 'canceled';
+        }
+
+        $attendanceStatus = $studentAttendance?->attendance_status;
+        if ($attendanceStatus === \App\Enums\AttendanceStatus::ABSENT->value) {
+            return 'absent';
+        }
+
+        return 'completed';
+    }
+
+    // ========================================
     // MEETINGCAPABLE INTERFACE IMPLEMENTATION
     // ========================================
 

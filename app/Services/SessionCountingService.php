@@ -43,9 +43,9 @@ class SessionCountingService
             } else {
                 // Use both morph alias and FQCN to cover legacy data
                 TeacherEarning::whereIn('session_type', [
-                        $session->getMorphClass(),
-                        get_class($session),
-                    ])
+                    $session->getMorphClass(),
+                    get_class($session),
+                ])
                     ->where('session_id', $session->id)
                     ->delete();
             }
@@ -125,7 +125,6 @@ class SessionCountingService
             $subscription->useSession();
             $attendance->update(['subscription_counted_at' => now()]);
 
-            // Also set session-level flag (individual sessions track here)
             if (! $session->subscription_counted) {
                 $session->update(['subscription_counted' => true]);
             }
@@ -156,20 +155,16 @@ class SessionCountingService
             $subscription->returnSession();
             $attendance->update(['subscription_counted_at' => null]);
 
-            // Also reset session-level flag (individual sessions track here)
             if ($session->subscription_counted) {
                 $session->update(['subscription_counted' => false]);
             }
 
-            // Academic individual sessions: create a replacement UNSCHEDULED session
-            // so the freed slot can be rescheduled via the calendar.
-            if ($session instanceof \App\Models\AcademicSession
-                && $session->session_type === 'individual'
-                && $session->academicIndividualLesson
-            ) {
-                $session->academicIndividualLesson->createReplacementUnscheduledSession($session);
-                $session->academicIndividualLesson->updateSessionCounts();
-            }
+            // The freed quota is represented purely by the incremented
+            // sessions_remaining on the subscription. We deliberately do NOT
+            // create a replacement UNSCHEDULED session — those caused data
+            // hygiene problems. Lesson-level counts (sessions_scheduled /
+            // _completed / _remaining on AcademicIndividualLesson) are
+            // unaffected by this toggle since no session row state changed.
 
             Log::info('SessionCountingService: Subscription reversed', [
                 'subscription_id' => $subscription->id,
@@ -192,7 +187,6 @@ class SessionCountingService
             return $session->getSubscriptionForStudent($studentId);
         }
 
-        // Fallback: individual sessions have a single subscription
         if (method_exists($session, 'getSubscriptionForCounting')) {
             return $session->getSubscriptionForCounting();
         }
