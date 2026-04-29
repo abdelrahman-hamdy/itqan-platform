@@ -402,8 +402,15 @@ abstract class BaseSession extends Model implements MeetingCapable
      */
     public function attendanceFor(int $userId): ?\App\Models\MeetingAttendance
     {
+        // Both branches must agree on the filter — a single user could
+        // theoretically have both a student and a teacher attendance row in
+        // the same session, and this accessor is documented as the per-student
+        // row. Eager-load callers may pass only `user_id`, so we re-apply the
+        // user_type filter here to make the lookup robust.
         if ($this->relationLoaded('meetingAttendances')) {
-            return $this->meetingAttendances->firstWhere('user_id', $userId);
+            return $this->meetingAttendances->first(
+                fn ($a) => $a->user_id === $userId && $a->user_type === 'student'
+            );
         }
 
         return $this->meetingAttendances()

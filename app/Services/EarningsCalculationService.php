@@ -54,7 +54,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
                     'session_id' => $session->id,
                 ]);
 
-                return TeacherEarning::forSession($session->getMorphClass(), $session->id)->first();
+                return $this->findExistingEarning($session);
             }
 
             // Bust teacher profile cache to ensure we use current rates, not stale cached rates
@@ -89,9 +89,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
                 // Re-check inside the transaction with a lock to prevent race conditions.
                 // Two concurrent calls may both pass the early isAlreadyCalculated() check;
                 // this lockForUpdate() ensures only one proceeds to create the record.
-                $existing = TeacherEarning::forSession($session->getMorphClass(), $session->id)
-                    ->lockForUpdate()
-                    ->first();
+                $existing = $this->findExistingEarning($session, forUpdate: true);
                 if ($existing) {
                     return $existing;
                 }
@@ -124,7 +122,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         } catch (UniqueConstraintViolationException $e) {
             // A concurrent retry won the race and inserted the earning row
             // first. Return the row that won instead of erroring.
-            $existing = TeacherEarning::forSession($session->getMorphClass(), $session->id)->first();
+            $existing = $this->findExistingEarning($session);
             if ($existing) {
                 Log::info('Earnings already recorded by concurrent run', [
                     'session_id' => $session->id,
@@ -604,7 +602,31 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
      */
     protected function isAlreadyCalculated(BaseSession $session): bool
     {
-        return TeacherEarning::forSession($session->getMorphClass(), $session->id)->exists();
+        return TeacherEarning::withoutGlobalScopes()
+            ->where('session_type', $session->getMorphClass())
+            ->where('session_id', $session->id)
+            ->where('academy_id', $session->academy_id ?? $this->getAcademyId($session))
+            ->exists();
+    }
+
+    /**
+     * Look up the earning row for a session in a way that's robust to queue
+     * workers without an academy context. Bypasses ScopedToAcademy and filters
+     * by academy_id explicitly so the unique-constraint catch path can always
+     * recover the row that won the race.
+     */
+    protected function findExistingEarning(BaseSession $session, bool $forUpdate = false): ?TeacherEarning
+    {
+        $query = TeacherEarning::withoutGlobalScopes()
+            ->where('session_type', $session->getMorphClass())
+            ->where('session_id', $session->id)
+            ->where('academy_id', $session->academy_id ?? $this->getAcademyId($session));
+
+        if ($forUpdate) {
+            $query->lockForUpdate();
+        }
+
+        return $query->first();
     }
 
     /**

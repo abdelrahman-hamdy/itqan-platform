@@ -285,13 +285,26 @@ class SessionManagementService
     public function getRemainingIndividualSessions(QuranIndividualCircle $circle): int
     {
         $subscription = $circle->subscription;
-        $subscriptionRemaining = $subscription?->sessions_remaining ?? 0;
+
+        // Mirror IndividualCircleValidator::getSubscriptionLimits' null-subscription
+        // fallback so the validator and this manager don't disagree. Without this,
+        // a soft-deleted subscription whose circle still has total_sessions makes
+        // the validator return remaining > 0 (user clicks confirm) but this method
+        // returns 0 → caller throws "no remaining" and the schedule fails silently.
+        if (! $subscription) {
+            $totalSessions = $circle->total_sessions ?? 0;
+            $usedSessions = $circle->sessions()->notCancelled()->count();
+
+            return max(0, $totalSessions - $usedSessions);
+        }
+
+        $subscriptionRemaining = $subscription->sessions_remaining ?? 0;
 
         // Only count pending sessions from the CURRENT cycle — sessions from
         // previous cycles (before subscription.starts_at) shouldn't reduce
         // the new cycle's available count.
         $query = $circle->sessions()->active();
-        if ($subscription?->starts_at) {
+        if ($subscription->starts_at) {
             $query->where('scheduled_at', '>=', $subscription->starts_at);
         }
         $pendingSessions = $query->count();
