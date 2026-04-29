@@ -597,16 +597,9 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
     //  Persistence Helpers
     // ──────────────────────────────────────────────────────────────
 
-    /**
-     * Check if earning already calculated for this session
-     */
     protected function isAlreadyCalculated(BaseSession $session): bool
     {
-        return TeacherEarning::withoutGlobalScope('academy')
-            ->where('session_type', $session->getMorphClass())
-            ->where('session_id', $session->id)
-            ->where('academy_id', $session->academy_id ?? $this->getAcademyId($session))
-            ->exists();
+        return $this->findExistingEarning($session) !== null;
     }
 
     /**
