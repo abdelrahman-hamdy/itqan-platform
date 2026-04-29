@@ -602,7 +602,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
      */
     protected function isAlreadyCalculated(BaseSession $session): bool
     {
-        return TeacherEarning::withoutGlobalScopes()
+        return TeacherEarning::withoutGlobalScope('academy')
             ->where('session_type', $session->getMorphClass())
             ->where('session_id', $session->id)
             ->where('academy_id', $session->academy_id ?? $this->getAcademyId($session))
@@ -617,7 +617,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
      */
     protected function findExistingEarning(BaseSession $session, bool $forUpdate = false): ?TeacherEarning
     {
-        $query = TeacherEarning::withoutGlobalScopes()
+        $query = TeacherEarning::withoutGlobalScope('academy')
             ->where('session_type', $session->getMorphClass())
             ->where('session_id', $session->id)
             ->where('academy_id', $session->academy_id ?? $this->getAcademyId($session));
