@@ -349,7 +349,12 @@ class SessionController extends Controller
             $quranSessions = QuranSession::where('student_id', $studentUserId)
                 ->where('scheduled_at', '>', $now)
                 ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                ->with(['quranTeacher'])
+                ->with([
+                    'quranTeacher',
+                    'meetingAttendances' => fn ($q) => $q
+                        ->where('user_id', $studentUserId)
+                        ->where('user_type', 'student'),
+                ])
                 ->orderBy('scheduled_at')
                 ->limit($limit)
                 ->get();
@@ -362,7 +367,13 @@ class SessionController extends Controller
             $academicSessions = AcademicSession::where('student_id', $studentUserId)
                 ->where('scheduled_at', '>', $now)
                 ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                ->with(['academicTeacher.user', 'academicSubscription'])
+                ->with([
+                    'academicTeacher.user',
+                    'academicSubscription',
+                    'meetingAttendances' => fn ($q) => $q
+                        ->where('user_id', $studentUserId)
+                        ->where('user_type', 'student'),
+                ])
                 ->orderBy('scheduled_at')
                 ->limit($limit)
                 ->get();
@@ -378,7 +389,12 @@ class SessionController extends Controller
             $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
                 ->where('scheduled_at', '>', $now)
                 ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                ->with(['course.assignedTeacher.user'])
+                ->with([
+                    'course.assignedTeacher.user',
+                    'meetingAttendances' => fn ($q) => $q
+                        ->where('user_id', $studentUserId)
+                        ->where('user_type', 'student'),
+                ])
                 ->orderBy('scheduled_at')
                 ->limit($limit)
                 ->get();

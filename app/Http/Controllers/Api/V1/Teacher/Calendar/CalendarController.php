@@ -166,9 +166,31 @@ class CalendarController extends Controller
             isset($validated['exclude_id']) ? (int) $validated['exclude_id'] : null,
         );
 
+        $formatted = $conflicts->map(function ($conflict) {
+            $start = Carbon::parse($conflict->scheduled_at);
+            $end = $start->copy()->addMinutes((int) ($conflict->duration_minutes ?? 0));
+            $source = match (true) {
+                $conflict instanceof InteractiveCourseSession => 'course_session',
+                $conflict instanceof AcademicSession => 'academic_session',
+                $conflict instanceof QuranSession => 'quran_session',
+                default => class_basename($conflict),
+            };
+
+            return [
+                'id' => $conflict->id,
+                'session_id' => $conflict->id,
+                'title' => $conflict->title ?? '',
+                'start_time' => $start->toIso8601String(),
+                'end_time' => $end->toIso8601String(),
+                'duration_minutes' => (int) ($conflict->duration_minutes ?? 0),
+                'status' => is_object($conflict->status) ? $conflict->status->value : $conflict->status,
+                'source' => $source,
+            ];
+        })->values();
+
         return $this->success([
-            'has_conflicts' => $conflicts->isNotEmpty(),
-            'conflicts' => $conflicts->values(),
+            'has_conflicts' => $formatted->isNotEmpty(),
+            'conflicts' => $formatted,
         ]);
     }
 
@@ -213,9 +235,27 @@ class CalendarController extends Controller
                 return $this->error($pacingResult->getMessage(), 422, 'INVALID_WEEKLY_PACING');
             }
 
-            $strategy->createSchedule($validated, $validator);
+            $createdCount = $strategy->createSchedule($validated, $validator);
+            $requestedCount = (int) $validated['session_count'];
 
-            return $this->created(null, __('calendar.schedule_created_successfully'));
+            if ($createdCount <= 0) {
+                return $this->error(
+                    __('calendar.schedule_no_sessions_created'),
+                    422,
+                    'NO_SESSIONS_CREATED',
+                    [],
+                    ['created' => 0, 'requested' => $requestedCount],
+                );
+            }
+
+            $message = $createdCount < $requestedCount
+                ? __('calendar.schedule_partial', ['created' => $createdCount, 'requested' => $requestedCount])
+                : __('calendar.schedule_created_successfully');
+
+            return $this->created(
+                ['created' => $createdCount, 'requested' => $requestedCount],
+                $message,
+            );
         } catch (InvalidArgumentException $e) {
             return $this->error($e->getMessage(), 422, 'INVALID_ARGUMENT');
         } catch (Exception $e) {
