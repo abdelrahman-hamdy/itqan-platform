@@ -12,6 +12,7 @@ use App\Models\QuranSession;
 use App\Models\TeacherEarning;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -53,7 +54,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
                     'session_id' => $session->id,
                 ]);
 
-                return TeacherEarning::forSession($session->getMorphClass(), $session->id)->first();
+                return $this->findExistingEarning($session);
             }
 
             // Bust teacher profile cache to ensure we use current rates, not stale cached rates
@@ -88,9 +89,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
                 // Re-check inside the transaction with a lock to prevent race conditions.
                 // Two concurrent calls may both pass the early isAlreadyCalculated() check;
                 // this lockForUpdate() ensures only one proceeds to create the record.
-                $existing = TeacherEarning::forSession($session->getMorphClass(), $session->id)
-                    ->lockForUpdate()
-                    ->first();
+                $existing = $this->findExistingEarning($session, forUpdate: true);
                 if ($existing) {
                     return $existing;
                 }
@@ -120,6 +119,26 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
 
                 return $earning;
             });
+        } catch (UniqueConstraintViolationException $e) {
+            // A concurrent retry won the race and inserted the earning row
+            // first. Return the row that won instead of erroring.
+            $existing = $this->findExistingEarning($session);
+            if ($existing) {
+                Log::info('Earnings already recorded by concurrent run', [
+                    'session_id' => $session->id,
+                    'earning_id' => $existing->id,
+                ]);
+
+                return $existing;
+            }
+
+            Log::error('Earnings unique-constraint violation but no row found', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+            report($e);
+
+            return null;
         } catch (QueryException $e) {
             Log::error('Database error calculating session earnings', [
                 'session_id' => $session->id,
@@ -578,12 +597,29 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
     //  Persistence Helpers
     // ──────────────────────────────────────────────────────────────
 
-    /**
-     * Check if earning already calculated for this session
-     */
     protected function isAlreadyCalculated(BaseSession $session): bool
     {
-        return TeacherEarning::forSession($session->getMorphClass(), $session->id)->exists();
+        return $this->findExistingEarning($session) !== null;
+    }
+
+    /**
+     * Look up the earning row for a session in a way that's robust to queue
+     * workers without an academy context. Bypasses ScopedToAcademy and filters
+     * by academy_id explicitly so the unique-constraint catch path can always
+     * recover the row that won the race.
+     */
+    protected function findExistingEarning(BaseSession $session, bool $forUpdate = false): ?TeacherEarning
+    {
+        $query = TeacherEarning::withoutGlobalScope('academy')
+            ->where('session_type', $session->getMorphClass())
+            ->where('session_id', $session->id)
+            ->where('academy_id', $session->academy_id ?? $this->getAcademyId($session));
+
+        if ($forUpdate) {
+            $query->lockForUpdate();
+        }
+
+        return $query->first();
     }
 
     /**

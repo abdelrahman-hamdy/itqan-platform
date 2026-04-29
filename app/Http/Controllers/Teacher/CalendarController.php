@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Teacher;
 use App\Constants\DefaultAcademy;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
+use App\Http\Controllers\Concerns\RespondsWithScheduleResult;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
@@ -26,6 +27,8 @@ use InvalidArgumentException;
 
 class CalendarController extends Controller
 {
+    use RespondsWithScheduleResult;
+
     public function __construct(
         private CalendarService $calendarService,
         private SessionStrategyFactory $strategyFactory,
@@ -196,12 +199,9 @@ class CalendarController extends Controller
                 ], 422);
             }
 
-            $strategy->createSchedule($validated, $validator);
+            $createdCount = $strategy->createSchedule($validated, $validator);
 
-            return response()->json([
-                'success' => true,
-                'message' => __('calendar.schedule_created_successfully'),
-            ]);
+            return $this->scheduleResultResponse($createdCount, $validated['session_count']);
         } catch (InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,

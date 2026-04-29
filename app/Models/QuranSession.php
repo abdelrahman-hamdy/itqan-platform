@@ -611,42 +611,42 @@ class QuranSession extends BaseSession implements RecordingCapable
     /**
      * Get the subscription instance for counting (required by CountsTowardsSubscription trait)
      *
-     * For Quran sessions:
-     * - Individual sessions: subscription comes from individual circle (via activeSubscription accessor)
-     * - Group sessions: subscription comes from student's enrollment in the circle
+     * Subscription isolation: a session always counts against the subscription
+     * it was created under (its own quran_subscription_id FK), never against
+     * "whichever subscription happens to be active right now" on the same
+     * circle/enrollment. This prevents a leak where session A (created under
+     * subscription S1, later suspended-then-restored) would otherwise decrement
+     * subscription S2 if S2 is the currently-schedulable linked subscription.
      *
-     * DECOUPLED ARCHITECTURE:
-     * - Uses the new polymorphic relationship first, falls back to legacy
-     * - For individual circles: checks both linkedSubscriptions() and subscription_id
-     * - For group circles: checks the student's enrollment subscription_id
+     * Resolution order:
+     *   1. Direct FK (this->subscription) — always preferred when set
+     *   2. Circle.activeSubscription / enrollment.activeSubscription — legacy
+     *      fallback for sessions predating the FK column
      *
      * @return QuranSubscription|null
      */
     public function getSubscriptionForCounting()
     {
-        // Individual sessions: get subscription from the individual circle
+        // Anchor to the session's own subscription FK whenever it's set.
+        if ($this->quran_subscription_id) {
+            return $this->subscription;
+        }
+
+        // Legacy individual session without FK: resolve via the circle.
         if ($this->session_type === 'individual' && $this->individualCircle) {
-            // Use the new activeSubscription accessor which handles both polymorphic and legacy
             return $this->individualCircle->activeSubscription;
         }
 
-        // Group sessions: get subscription from the student's enrollment in the circle
+        // Legacy group session without FK: resolve via the student's enrollment.
         if ($this->session_type === 'group' && $this->circle_id && $this->student_id) {
-            // Find the student's enrollment in this circle
             $enrollment = QuranCircleEnrollment::where('circle_id', $this->circle_id)
                 ->where('student_id', $this->student_id)
                 ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
                 ->first();
 
             if ($enrollment) {
-                // Return the active subscription linked to this enrollment
                 return $enrollment->activeSubscription;
             }
-        }
-
-        // Fallback: check if there's a direct subscription relationship
-        if ($this->quran_subscription_id) {
-            return $this->subscription;
         }
 
         return null;

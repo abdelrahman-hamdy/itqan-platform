@@ -387,13 +387,13 @@ class QuizService implements QuizServiceInterface
         $type = get_class($assignable);
 
         return match ($type) {
-            QuranCircle::class => $assignable->subscriptions()
+            QuranCircle::class => $assignable->linkedSubscriptions()
                 ->where('student_id', $studentId)
-                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+                ->schedulable()
                 ->exists(),
             QuranIndividualCircle::class => $assignable->student_id === $studentId,
             AcademicIndividualLesson::class => $assignable->subscription?->student_id === $studentId,
-            AcademicSubscription::class => $assignable->student_id === $studentId && $assignable->status === SessionSubscriptionStatus::ACTIVE,
+            AcademicSubscription::class => $assignable->student_id === $studentId && $assignable->isSchedulable(),
             InteractiveCourse::class => $assignable->enrollments()
                 ->where('student_id', $studentId)
                 ->where('enrollment_status', EnrollmentStatus::ENROLLED)
@@ -401,7 +401,7 @@ class QuizService implements QuizServiceInterface
             RecordedCourse::class => ($sp = \App\Models\StudentProfile::find($studentId)) !== null &&
                 $assignable->enrollments()
                     ->where('student_id', $sp->user_id)
-                    ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+                    ->schedulable()
                     ->exists(),
             default => false,
         };

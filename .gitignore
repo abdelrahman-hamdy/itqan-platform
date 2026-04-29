@@ -44,6 +44,7 @@ auth.json
 /storage/framework/cache/data/*
 /storage/framework/sessions/*
 /storage/framework/views/*
+/storage/backups/
 /bootstrap/cache/*.php
 
 # ----------------

@@ -170,7 +170,7 @@ class SessionReportController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'lesson_content' => ['required', 'string', 'max:5000'],
+            'lesson_content' => ['present', 'nullable', 'string', 'max:5000'],
         ]);
 
         if ($validator->fails()) {

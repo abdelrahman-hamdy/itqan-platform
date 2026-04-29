@@ -26,8 +26,8 @@ class TrialRequestController extends Controller
             return $this->unauthorized(__('Student profile not found.'));
         }
 
-        // quran_trial_requests.student_id references StudentProfile.id
-        $query = QuranTrialRequest::where('student_id', $student->id)
+        // quran_trial_requests.student_id references users.id
+        $query = QuranTrialRequest::where('student_id', $user->id)
             ->with(['quranTeacher.user', 'trialSession']);
 
         // Filter by status
@@ -57,7 +57,7 @@ class TrialRequestController extends Controller
         }
 
         $trialRequest = QuranTrialRequest::where('id', $id)
-            ->where('student_id', $student->id)
+            ->where('student_id', $user->id)
             ->with(['quranTeacher.user', 'trialSession'])
             ->first();
 
@@ -85,8 +85,8 @@ class TrialRequestController extends Controller
         $validated = $request->validate([
             'teacher_id' => ['required', 'exists:quran_teacher_profiles,id'],
             'student_notes' => ['nullable', 'string', 'max:1000'],
-            'current_level' => ['nullable', 'string', 'max:255'],
-            'preferred_time' => ['nullable', 'string', 'max:255'],
+            'current_level' => ['required', 'string', 'in:beginner,elementary,intermediate,advanced,expert,hafiz'],
+            'preferred_time' => ['nullable', 'string', 'in:morning,afternoon,evening'],
             'learning_goals' => ['nullable', 'array'],
             'learning_goals.*' => ['string', 'max:255'],
         ]);
@@ -104,7 +104,7 @@ class TrialRequestController extends Controller
         }
 
         // Check if student already has a pending/scheduled trial with this teacher
-        $existingRequest = QuranTrialRequest::where('student_id', $student->id)
+        $existingRequest = QuranTrialRequest::where('student_id', $user->id)
             ->where('teacher_id', $validated['teacher_id'])
             ->whereIn('status', ['pending', 'scheduled'])
             ->first();
@@ -113,13 +113,23 @@ class TrialRequestController extends Controller
             return $this->error(__('You already have an active trial request with this teacher.'), 422);
         }
 
+        $studentName = trim($student->first_name.' '.$student->last_name);
+        if ($studentName === '') {
+            $studentName = $user->name ?? $user->email ?? __('Student');
+        }
+        $studentPhone = $student->phone ?: ($user->phone ?? '');
+        $studentEmail = $student->email ?: $user->email;
+
         // Create the trial request
         $trialRequest = QuranTrialRequest::create([
             'academy_id' => $academy->id,
-            'student_id' => $student->id,
+            'student_id' => $user->id,
             'teacher_id' => $validated['teacher_id'],
+            'student_name' => $studentName,
+            'phone' => $studentPhone,
+            'email' => $studentEmail,
             'notes' => $validated['student_notes'] ?? null,
-            'current_level' => $validated['current_level'] ?? null,
+            'current_level' => $validated['current_level'],
             'preferred_time' => $validated['preferred_time'] ?? null,
             'learning_goals' => $validated['learning_goals'] ?? null,
             'status' => 'pending',
@@ -145,7 +155,7 @@ class TrialRequestController extends Controller
         }
 
         $trialRequest = QuranTrialRequest::where('id', $id)
-            ->where('student_id', $student->id)
+            ->where('student_id', $user->id)
             ->first();
 
         if (! $trialRequest) {

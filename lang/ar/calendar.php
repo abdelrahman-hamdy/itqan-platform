@@ -92,4 +92,6 @@ return [
     'invalid_tab' => 'علامة تبويب غير صالحة',
     'invalid_tab_method' => 'طريقة التحميل غير صالحة',
     'schedule_created_successfully' => 'تم جدولة الجلسات بنجاح',
+    'schedule_no_sessions_created' => 'لم يتم جدولة أي جلسة. تحقق من تعارضات أوقات المعلم أو الحد المتبقي للاشتراك ثم أعد المحاولة.',
+    'schedule_partial' => 'تم جدولة :created من أصل :requested جلسة. لم يتم جدولة الباقي بسبب تعارضات في الوقت.',
 ];

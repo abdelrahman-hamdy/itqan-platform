@@ -51,6 +51,8 @@ class MeetingAttendance extends Model
      */
     public const TEACHER_USER_TYPES = ['teacher', 'quran_teacher', 'academic_teacher'];
 
+    public const STUDENT_USER_TYPE = 'student';
+
     /**
      * Get post-session grace period from config
      */

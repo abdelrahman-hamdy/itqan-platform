@@ -45,21 +45,13 @@ class SessionManagementService
             // requests both see remaining > 0 and both create a session.
             $lockedCircle = QuranIndividualCircle::lockForUpdate()->findOrFail($circle->id);
 
-            // Re-check remaining sessions inside the lock
+            // Re-check remaining sessions inside the lock. Don't add an
+            // all-time-count guard here: it falsely rejects renewed/cycled
+            // subscriptions because historical rows from previous cycles
+            // exceed the per-cycle total_sessions cap.
             $remainingSessions = $this->getRemainingIndividualSessions($lockedCircle);
             if ($remainingSessions <= 0) {
                 throw new Exception('لا توجد جلسات متبقية في الاشتراك');
-            }
-
-            // Guard: total session count must not exceed subscription limit
-            $subscription = $lockedCircle->subscription;
-            if ($subscription) {
-                $totalNonCancelled = QuranSession::where('individual_circle_id', $lockedCircle->id)
-                    ->where('status', '!=', SessionStatus::CANCELLED->value)
-                    ->count();
-                if ($totalNonCancelled >= $subscription->total_sessions) {
-                    throw new Exception('إجمالي الجلسات سيتجاوز حد الاشتراك');
-                }
             }
 
             // Get duration from subscription -> package -> circle default
@@ -293,13 +285,26 @@ class SessionManagementService
     public function getRemainingIndividualSessions(QuranIndividualCircle $circle): int
     {
         $subscription = $circle->subscription;
-        $subscriptionRemaining = $subscription?->sessions_remaining ?? 0;
+
+        // Mirror IndividualCircleValidator::getSubscriptionLimits' null-subscription
+        // fallback so the validator and this manager don't disagree. Without this,
+        // a soft-deleted subscription whose circle still has total_sessions makes
+        // the validator return remaining > 0 (user clicks confirm) but this method
+        // returns 0 → caller throws "no remaining" and the schedule fails silently.
+        if (! $subscription) {
+            $totalSessions = $circle->total_sessions ?? 0;
+            $usedSessions = $circle->sessions()->notCancelled()->count();
+
+            return max(0, $totalSessions - $usedSessions);
+        }
+
+        $subscriptionRemaining = $subscription->sessions_remaining ?? 0;
 
         // Only count pending sessions from the CURRENT cycle — sessions from
         // previous cycles (before subscription.starts_at) shouldn't reduce
         // the new cycle's available count.
         $query = $circle->sessions()->active();
-        if ($subscription?->starts_at) {
+        if ($subscription->starts_at) {
             $query->where('scheduled_at', '>=', $subscription->starts_at);
         }
         $pendingSessions = $query->count();

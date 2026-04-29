@@ -65,12 +65,18 @@ interface SessionStrategyInterface
     public function getValidator(string $itemType, $item): ScheduleValidatorInterface;
 
     /**
-     * Create schedule sessions based on validated data
+     * Create schedule sessions based on validated data.
+     *
+     * Returns the number of sessions actually created. Per-row failures
+     * (conflicts, etc.) are not exceptions — the strategy logs them and
+     * continues, then surfaces the count so the controller can tell the
+     * user "scheduled X of Y" instead of always claiming success.
      *
      * @param  array  $data  Form data containing schedule details
      * @param  ScheduleValidatorInterface  $validator  Validator instance to use
+     * @return int Number of sessions created
      */
-    public function createSchedule(array $data, ScheduleValidatorInterface $validator): void;
+    public function createSchedule(array $data, ScheduleValidatorInterface $validator): int;
 
     /**
      * Get available session types for this strategy

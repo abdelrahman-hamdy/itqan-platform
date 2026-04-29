@@ -825,6 +825,7 @@ abstract class BaseSubscription extends Model
 
         // Restore SUSPENDED sessions back to SCHEDULED
         $this->restoreSuspendedSessions();
+        $this->syncLinkedEducationUnitActiveFlag(true);
 
         return $this;
     }
@@ -841,6 +842,23 @@ abstract class BaseSubscription extends Model
         $this->sessions()
             ->where('status', \App\Enums\SessionStatus::SUSPENDED->value)
             ->update(['status' => \App\Enums\SessionStatus::SCHEDULED->value]);
+    }
+
+    /**
+     * Sync the linked education unit's `is_active` flag with the subscription's
+     * lifecycle. Called by every path that activates/deactivates a subscription
+     * (expire cron, supervisor cancel, resume, extend, Filament reactivate,
+     * payment reconciliation) so the Filament toggle and any raw is_active
+     * query stay in sync with the subscription's state.
+     */
+    public function syncLinkedEducationUnitActiveFlag(bool $isActive): void
+    {
+        if ($this instanceof QuranSubscription && $this->education_unit_id) {
+            $this->educationUnit?->update(['is_active' => $isActive]);
+        }
+        if ($this instanceof AcademicSubscription) {
+            $this->lesson?->update(['is_active' => $isActive]);
+        }
     }
 
     /**
@@ -1256,11 +1274,14 @@ abstract class BaseSubscription extends Model
             $subscription->update($updateData);
 
             // Reverse the current cycle's counters to match the subscription row.
+            // Cast to SIGNED so MySQL doesn't blow up with "BIGINT UNSIGNED out of
+            // range" when sessions_used is already 0 — UNSIGNED arithmetic
+            // underflows BEFORE GREATEST() can clamp it.
             if ($subscription->current_cycle_id) {
                 SubscriptionCycle::where('id', $subscription->current_cycle_id)
                     ->update([
-                        'sessions_used' => DB::raw('GREATEST(sessions_used - 1, 0)'),
-                        'sessions_completed' => DB::raw('GREATEST(sessions_completed - 1, 0)'),
+                        'sessions_used' => DB::raw('GREATEST(CAST(sessions_used AS SIGNED) - 1, 0)'),
+                        'sessions_completed' => DB::raw('GREATEST(CAST(sessions_completed AS SIGNED) - 1, 0)'),
                     ]);
             }
 

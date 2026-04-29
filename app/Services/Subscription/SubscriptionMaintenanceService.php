@@ -320,10 +320,12 @@ class SubscriptionMaintenanceService
 
             // If PAUSED or EXPIRED, re-activate for the grace duration so the
             // student can keep scheduling. Does NOT touch ends_at.
-            if (in_array($subscription->status, [
+            $justReactivated = in_array($subscription->status, [
                 SessionSubscriptionStatus::PAUSED,
                 SessionSubscriptionStatus::EXPIRED,
-            ], true)) {
+            ], true);
+
+            if ($justReactivated) {
                 $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
             }
 
@@ -335,6 +337,14 @@ class SubscriptionMaintenanceService
                 SubscriptionCycle::where('id', $subscription->current_cycle_id)
                     ->lockForUpdate()
                     ->update(['grace_period_ends_at' => $gracePeriodEndsAt]);
+            }
+
+            // Only on the actual PAUSED/EXPIRED → ACTIVE transition: bring back
+            // suspended sessions and the linked entity's is_active flag.
+            // Already-ACTIVE extensions (grace stack) skip this to avoid empty UPDATEs.
+            if ($justReactivated) {
+                $subscription->restoreSuspendedSessions();
+                $subscription->syncLinkedEducationUnitActiveFlag(true);
             }
 
             Log::info('Subscription extended (grace period)', [

@@ -57,17 +57,25 @@ use Illuminate\Support\Facades\Log;
 trait CountsTowardsSubscription
 {
     /**
-     * Check if session counts towards subscription
-     *
-     * SIMPLIFIED LOGIC (students cannot cancel sessions):
-     * - COMPLETED sessions: Always count (student attended)
-     * - ABSENT sessions: Always count (student didn't show up)
-     * - CANCELLED sessions: NEVER count (only teachers/admins can cancel)
-     * - Other statuses: Don't count
+     * Counting contract:
+     * - Only SessionStatus::COMPLETED consumes a session slot via useSession().
+     * - ABSENT, LATE, LEFT, CANCELLED, SUSPENDED, SCHEDULED, READY, UNSCHEDULED never count.
+     * - Subscription isolation: counting always anchors to the session's own subscription
+     *   FK (see getSubscriptionForCounting() implementations) — never to whichever
+     *   subscription is "currently active" on the linked circle/lesson.
+     * - Idempotency: subscription_counted (session-level) and subscription_counted_at
+     *   (group attendance-level) flags prevent double-count even if status is later
+     *   edited or jobs retry.
+     * - Reversal: setting status to CANCELLED on a counted session triggers
+     *   reverseSubscriptionUsage() → returnSession(), which decrements sessions_used
+     *   and clears the flag. Editing status from COMPLETED → SUSPENDED does not
+     *   reverse on its own; the admin must cancel to release the slot.
+     * - Manual overrides: admins can directly edit sessions_used / sessions_remaining
+     *   via SQL or Filament. Such edits bypass the flag and may diverge from session
+     *   row reality; the system trusts the human edit.
      */
     public function countsTowardsSubscription(): bool
     {
-        // Only COMPLETED sessions count. CANCELLED/SUSPENDED never count.
         return $this->status === SessionStatus::COMPLETED;
     }
 

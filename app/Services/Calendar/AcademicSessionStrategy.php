@@ -204,7 +204,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
     /**
      * {@inheritdoc}
      */
-    public function createSchedule(array $data, ScheduleValidatorInterface $validator): void
+    public function createSchedule(array $data, ScheduleValidatorInterface $validator): int
     {
         $itemType = $data['item_type'] ?? null;
         $itemId = $data['item_id'] ?? null;
@@ -213,7 +213,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             throw new Exception(__('calendar.strategy.item_info_incomplete'));
         }
 
-        match ($itemType) {
+        return match ($itemType) {
             'private_lesson' => $this->createPrivateLessonSchedule($itemId, $data),
             'interactive_course' => $this->createInteractiveCourseSchedule($itemId, $data),
             default => throw new InvalidArgumentException("Unknown item type: {$itemType}"),
@@ -289,10 +289,10 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             }
         }
 
-        if (! empty($skippedDates) && $scheduledCount === 0) {
-            throw new Exception(__('calendar.strategy.all_times_conflict'));
-        }
-
+        // Return the count even when 0 — the controller's
+        // RespondsWithScheduleResult trait emits the unified 422
+        // "no_sessions_created" envelope. Throwing here would route through
+        // generic exception handling and produce a 500 instead.
         return $scheduledCount;
     }
 
@@ -362,10 +362,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             }
         }
 
-        if (! empty($skippedDates) && $createdCount === 0) {
-            throw new Exception(__('calendar.strategy.all_times_conflict'));
-        }
-
+        // Return the count even when 0 — see createPrivateLessonSchedule for why.
         return $createdCount;
     }
 

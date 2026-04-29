@@ -278,15 +278,7 @@ trait HasSubscriptionActions
                 DB::transaction(function () use ($record, $updateData) {
                     $record->update($updateData);
 
-                    // Reactivate linked circle/lesson
-                    if ($record instanceof QuranSubscription && $record->education_unit_id) {
-                        $record->educationUnit?->update(['is_active' => true]);
-                    }
-                    if ($record instanceof AcademicSubscription) {
-                        $record->lesson?->update(['is_active' => true]);
-                    }
-
-                    // Restore suspended sessions
+                    $record->syncLinkedEducationUnitActiveFlag(true);
                     $record->restoreSuspendedSessions();
                 });
 

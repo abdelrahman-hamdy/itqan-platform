@@ -231,11 +231,12 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->placeholder('-')
                 ->toggleable(),
 
-            TextColumn::make('student.id')
+            TextColumn::make('student.name')
                 ->label('الطالب')
                 ->formatStateUsing(fn ($record) => trim(($record->student?->first_name ?? '').' '.($record->student?->last_name ?? '')) ?: null
                 )
-                ->searchable()
+                ->searchable(['first_name', 'last_name'])
+                ->sortable(['first_name', 'last_name'])
                 ->placeholder('جماعية')
                 ->toggleable(),
 
