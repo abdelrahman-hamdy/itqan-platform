@@ -99,6 +99,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Group Circles
         Route::get('/group-circles', [SupervisorGroupCirclesController::class, 'index'])->name('group-circles.index');
+        Route::get('/group-circles/create', [SupervisorGroupCirclesController::class, 'create'])->name('group-circles.create');
+        Route::post('/group-circles', [SupervisorGroupCirclesController::class, 'store'])->name('group-circles.store');
+        Route::get('/group-circles/{circle}/edit', [SupervisorGroupCirclesController::class, 'edit'])->name('group-circles.edit');
         Route::get('/group-circles/{circle}', [SupervisorGroupCirclesController::class, 'show'])->name('group-circles.show');
         Route::put('/group-circles/{circle}', [SupervisorGroupCirclesController::class, 'update'])->name('group-circles.update');
         Route::post('/group-circles/{circle}/toggle-status', [SupervisorGroupCirclesController::class, 'toggleStatus'])->name('group-circles.toggle-status');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Supervisor;
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\DifficultyLevel;
 use App\Enums\WeekDays;
+use App\Filament\Shared\Resources\BaseQuranCircleResource;
 use App\Models\QuranCircle;
 use App\Models\SponsoredEnrollmentRequest;
 use App\Models\User;
@@ -12,6 +13,7 @@ use App\Services\Circle\CircleFreeEnrollmentService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -95,36 +97,64 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
         ));
     }
 
+    public function create($subdomain = null): View
+    {
+        $this->assertSuperAdmin();
+
+        return view('supervisor.group-circles.create', $this->getFormViewData());
+    }
+
+    public function store(Request $request, $subdomain = null): RedirectResponse
+    {
+        $this->assertSuperAdmin();
+
+        $validated = $this->validateFullCirclePayload($request);
+        $validated = $this->normalizeCirclePayload($validated);
+
+        $circle = new QuranCircle($validated);
+        $circle->academy_id = $this->getAcademyId();
+        $circle->save();
+
+        $subdomain = $subdomain ?? request()->route('subdomain');
+
+        return redirect()
+            ->route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $circle->id])
+            ->with('success', __('supervisor.group_circles.circle_created'));
+    }
+
+    public function edit($subdomain, $circleId): View
+    {
+        $this->assertSuperAdmin();
+
+        $circle = $this->scopedCircleQuery()->findOrFail($circleId);
+
+        return view('supervisor.group-circles.edit', array_merge(
+            ['circle' => $circle],
+            $this->getFormViewData(),
+        ));
+    }
+
     public function update(Request $request, $subdomain, $circleId): RedirectResponse
     {
         $circle = $this->scopedCircleQuery()->findOrFail($circleId);
 
-        $weekDayValues = WeekDays::values();
-        $difficultyValues = DifficultyLevel::values();
+        $isFullForm = $request->has('quran_teacher_id')
+            || $request->has('learning_objectives')
+            || $request->has('status')
+            || $request->has('enrollment_status');
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:150',
-            'age_group' => 'required|in:children,youth,adults,all_ages',
-            'gender_type' => 'required|in:male,female,mixed',
-            'specialization' => 'required|in:memorization,recitation,interpretation,arabic_language,complete',
-            'memorization_level' => ['required', Rule::in($difficultyValues)],
-            'description' => 'nullable|string|max:500',
-            'max_students' => 'required|integer|min:1|max:20',
-            'monthly_fee' => 'required|integer|min:0',
-            'monthly_sessions_count' => 'required|in:4,8,12,16,20',
-            'schedule_days' => 'nullable|array',
-            'schedule_days.*' => Rule::in($weekDayValues),
-            'schedule_time' => 'nullable|string',
-            'recording_enabled' => 'required|in:0,1',
-            'allow_sponsored_requests' => 'required|in:0,1',
-            'is_enrolled_only' => 'required|in:0,1',
-            'supervisor_notes' => 'nullable|string|max:2000',
-            'admin_notes' => 'nullable|string|max:1000',
-        ]);
+        if ($isFullForm) {
+            $this->assertSuperAdmin();
+        }
 
-        $validated['recording_enabled'] = (bool) $validated['recording_enabled'];
-        $validated['allow_sponsored_requests'] = (bool) $validated['allow_sponsored_requests'];
-        $validated['is_enrolled_only'] = (bool) $validated['is_enrolled_only'];
+        $rules = $this->getBaseCircleValidationRules();
+
+        if ($isFullForm) {
+            $rules = array_merge($rules, $this->getFullFormCircleValidationRules(requireTeacher: false));
+        }
+
+        $validated = $request->validate($rules);
+        $validated = $this->normalizeCirclePayload($validated, includeFullForm: $isFullForm);
 
         if ($this->isAdminUser()) {
             unset($validated['supervisor_notes']);
@@ -133,6 +163,12 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
         }
 
         $circle->update($validated);
+
+        if ($isFullForm) {
+            return redirect()
+                ->route('manage.group-circles.show', ['subdomain' => $subdomain, 'circle' => $circle->id])
+                ->with('success', __('supervisor.common.updated_successfully'));
+        }
 
         return redirect()->back()->with('success', __('supervisor.common.updated_successfully'));
     }
@@ -258,5 +294,111 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
             'name' => $u->name,
             'type_label' => $type === 'quran' ? __('supervisor.teachers.teacher_type_quran') : __('supervisor.teachers.teacher_type_academic'),
         ])->toArray();
+    }
+
+    private function assertSuperAdmin(): void
+    {
+        if (! Auth::user()->isSuperAdmin()) {
+            abort(403);
+        }
+    }
+
+    private function getFormViewData(): array
+    {
+        $teachers = User::where('user_type', \App\Enums\UserType::QURAN_TEACHER->value)
+            ->where('academy_id', $this->getAcademyId())
+            ->where('active_status', true)
+            ->with('quranTeacherProfile:id,user_id,teacher_code,gender')
+            ->orderBy('first_name')
+            ->limit(50)
+            ->get()
+            ->map(fn (User $u) => [
+                'id' => (string) $u->id,
+                'name' => trim($u->first_name.' '.$u->last_name) ?: ($u->name ?? __('supervisor.common.unknown')),
+                'gender' => $u->gender ?? '',
+                'type_label' => $u->quranTeacherProfile?->teacher_code ?? '',
+            ])
+            ->values()
+            ->toArray();
+
+        return [
+            'teachers' => $teachers,
+            'ageGroupOptions' => BaseQuranCircleResource::getAgeGroupOptionsStatic(),
+            'genderTypeOptions' => BaseQuranCircleResource::getGenderTypeOptionsStatic(),
+            'specializationOptions' => BaseQuranCircleResource::getSpecializationOptionsStatic(),
+            'memorizationLevelOptions' => DifficultyLevel::options(),
+            'monthlySessionsOptions' => BaseQuranCircleResource::getMonthlySessionsOptionsStatic(),
+            'scheduleTimeOptions' => BaseQuranCircleResource::getScheduleTimeOptionsStatic(),
+            'weekDayOptions' => collect(WeekDays::options())
+                ->map(fn ($label, $value) => ['id' => (string) $value, 'name' => $label])
+                ->values()
+                ->toArray(),
+        ];
+    }
+
+    private function validateFullCirclePayload(Request $request): array
+    {
+        return $request->validate(array_merge(
+            $this->getBaseCircleValidationRules(),
+            $this->getFullFormCircleValidationRules(requireTeacher: true),
+        ));
+    }
+
+    private function getBaseCircleValidationRules(): array
+    {
+        return [
+            'name' => 'required|string|max:150',
+            'age_group' => 'required|in:children,youth,adults,all_ages',
+            'gender_type' => 'required|in:male,female,mixed',
+            'specialization' => 'required|in:memorization,recitation,interpretation,arabic_language,complete',
+            'memorization_level' => ['required', Rule::in(DifficultyLevel::values())],
+            'description' => 'nullable|string|max:500',
+            'max_students' => 'required|integer|min:1|max:20',
+            'monthly_fee' => 'required|integer|min:0',
+            'monthly_sessions_count' => 'required|in:4,8,12,16,20',
+            'schedule_days' => 'nullable|array',
+            'schedule_days.*' => Rule::in(WeekDays::values()),
+            'schedule_time' => 'nullable|string',
+            'recording_enabled' => 'required|in:0,1',
+            'allow_sponsored_requests' => 'required|in:0,1',
+            'is_enrolled_only' => 'required|in:0,1',
+            'admin_notes' => 'nullable|string|max:1000',
+            'supervisor_notes' => 'nullable|string|max:2000',
+        ];
+    }
+
+    private function getFullFormCircleValidationRules(bool $requireTeacher): array
+    {
+        $teacherRule = $requireTeacher ? ['required'] : ['nullable'];
+        $teacherRule[] = 'integer';
+        $teacherRule[] = Rule::in($this->getAllAcademyQuranTeacherIds());
+
+        return [
+            'quran_teacher_id' => $teacherRule,
+            'learning_objectives' => 'nullable|array',
+            'learning_objectives.*' => 'string|max:150',
+            'status' => 'nullable|in:0,1',
+            'enrollment_status' => 'nullable|in:0,1',
+        ];
+    }
+
+    private function normalizeCirclePayload(array $validated, bool $includeFullForm = true): array
+    {
+        $validated['recording_enabled'] = (bool) ($validated['recording_enabled'] ?? false);
+        $validated['allow_sponsored_requests'] = (bool) ($validated['allow_sponsored_requests'] ?? false);
+        $validated['is_enrolled_only'] = (bool) ($validated['is_enrolled_only'] ?? false);
+
+        if ($includeFullForm) {
+            if (array_key_exists('status', $validated)) {
+                $validated['status'] = (bool) $validated['status'];
+            }
+            if (array_key_exists('enrollment_status', $validated)) {
+                $validated['enrollment_status'] = ((bool) $validated['enrollment_status'])
+                    ? CircleEnrollmentStatus::OPEN
+                    : CircleEnrollmentStatus::CLOSED;
+            }
+        }
+
+        return $validated;
     }
 }

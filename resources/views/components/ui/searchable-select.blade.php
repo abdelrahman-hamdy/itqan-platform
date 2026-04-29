@@ -1,4 +1,6 @@
-{{-- Single-select with search box and optional filter pills --}}
+{{-- Single-select with search box and optional filter pills.
+     formMode=false (default): selecting an option navigates to URL (filter mode).
+     formMode=true: selecting an option just updates state and a hidden input is rendered for form submission. --}}
 @props([
     'name',
     'options' => [],
@@ -11,6 +13,9 @@
     'emptyMessage' => null,
     'maleLabel' => null,
     'femaleLabel' => null,
+    'formMode' => false,
+    'iconClass' => 'ri-user-line',
+    'required' => false,
 ])
 
 <div>
@@ -38,14 +43,19 @@
                 return true;
             });
         },
+        formMode: {{ $formMode ? 'true' : 'false' }},
         select(id) {
             this.selected = id;
             this.open = false;
-            this.navigate();
+            if (!this.formMode) {
+                this.navigate();
+            }
         },
         clear() {
             this.selected = '';
-            this.navigate();
+            if (!this.formMode) {
+                this.navigate();
+            }
         },
         get label() {
             if (!this.selected) return {{ json_encode($placeholder) }};
@@ -73,7 +83,7 @@
         {{-- Trigger Button --}}
         <button type="button" @click="open = !open"
             class="cursor-pointer min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-start flex items-center gap-2">
-            <i class="ri-user-line text-gray-400 flex-shrink-0"></i>
+            <i class="{{ $iconClass }} text-gray-400 flex-shrink-0"></i>
             <span x-text="label" class="truncate flex-1" :class="selected ? 'text-gray-900 font-medium' : 'text-gray-500'"></span>
             <template x-if="selectedTypeLabel">
                 <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 flex-shrink-0" x-text="selectedTypeLabel"></span>
@@ -158,5 +168,9 @@
                 </div>
             </div>
         </div>
+
+        @if($formMode)
+            <input type="hidden" name="{{ $name }}" :value="selected" @if($required) required @endif>
+        @endif
     </div>
 </div>
