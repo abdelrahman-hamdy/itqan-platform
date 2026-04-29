@@ -205,12 +205,12 @@
                     {{ __('supervisor.group_circles.monthly_fee') }} <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
-                    <input type="number" name="monthly_fee" min="0" step="1" required
-                           value="{{ $val('monthly_fee', 0) }}"
-                           class="w-full rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500 ps-14">
-                    <span class="absolute inset-y-0 start-0 flex items-center px-3 text-xs font-medium text-gray-500 bg-gray-50 border-e border-gray-300 rounded-s-lg">
+                    <span class="absolute inset-y-0 start-0 flex items-center justify-center w-16 text-xs font-medium text-gray-500 bg-gray-50 border-e border-gray-300 rounded-s-lg pointer-events-none">
                         {{ getCurrencyCode() }}
                     </span>
+                    <input type="number" name="monthly_fee" min="0" step="1" required
+                           value="{{ $val('monthly_fee', 0) }}"
+                           class="w-full rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500 ps-20">
                 </div>
                 @error('monthly_fee') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
@@ -321,6 +321,7 @@
                            class="mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-500 w-4 h-4">
                     <span class="text-sm text-gray-700">
                         <span class="font-medium">{{ __('supervisor.group_circles.circle_status') }}</span>
+                        <span class="block text-xs text-gray-500">{{ __('supervisor.group_circles.circle_status_help') }}</span>
                     </span>
                 </label>
 

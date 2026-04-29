@@ -308,6 +308,10 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
         $teachers = User::where('user_type', \App\Enums\UserType::QURAN_TEACHER->value)
             ->where('academy_id', $this->getAcademyId())
             ->where('active_status', true)
+            ->whereHas('quranTeacherProfile', function ($q) {
+                $q->whereNotNull('group_session_prices')
+                    ->whereRaw('JSON_LENGTH(group_session_prices) > 0');
+            })
             ->with('quranTeacherProfile:id,user_id,teacher_code,gender')
             ->orderBy('first_name')
             ->limit(50)
