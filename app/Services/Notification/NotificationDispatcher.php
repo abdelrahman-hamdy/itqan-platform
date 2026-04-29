@@ -2,13 +2,13 @@
 
 namespace App\Services\Notification;
 
-use Exception;
 use App\Enums\NotificationType;
 use App\Events\NotificationSent;
 use App\Jobs\SendPushNotificationJob;
 use App\Models\Academy;
 use App\Models\User;
 use App\Notifications\GenericEmailNotification;
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -281,12 +281,22 @@ class NotificationDispatcher
 
             $category = $type->getCategory();
 
-            $fcmData = [
-                'notification_type' => $type->value,
-                'category' => $category->value,
-                'action_url' => $actionUrl ?? '',
-                'metadata' => json_encode($metadata),
-            ];
+            // `type` mirrors `notification_type` so the mobile FCM router can
+            // dispatch on a single key regardless of whether the payload came
+            // from this dispatcher or from SessionAlarmService (which has
+            // always used `type` for its alarm-shaped payloads).
+            $fcmData = array_merge(
+                [
+                    'type' => $type->value,
+                    'notification_type' => $type->value,
+                    'category' => $category->value,
+                    'action_url' => $actionUrl ?? '',
+                ],
+                $this->liftNavigationKeys($metadata),
+                [
+                    'metadata' => json_encode($metadata),
+                ],
+            );
 
             SendPushNotificationJob::dispatch(
                 $user->id,
@@ -302,6 +312,39 @@ class NotificationDispatcher
             ]);
             // Push failure should never break notification flow
         }
+    }
+
+    /**
+     * Lift navigation-relevant ids out of metadata to the top level of the
+     * FCM data map. Mobile uses these to route notification taps without
+     * having to JSON-decode the metadata blob from inside a background
+     * isolate.
+     *
+     * @return array<string, string>
+     */
+    private function liftNavigationKeys(array $metadata): array
+    {
+        $allowed = [
+            'session_id',
+            'session_type',
+            'homework_id',
+            'quiz_id',
+            'subscription_id',
+            'course_id',
+            'circle_id',
+            'child_id',
+            'trial_request_id',
+            'payment_id',
+        ];
+
+        $lifted = [];
+        foreach ($allowed as $key) {
+            if (array_key_exists($key, $metadata) && $metadata[$key] !== null && $metadata[$key] !== '') {
+                $lifted[$key] = (string) $metadata[$key];
+            }
+        }
+
+        return $lifted;
     }
 
     /**

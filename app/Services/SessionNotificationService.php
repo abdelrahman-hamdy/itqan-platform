@@ -8,6 +8,8 @@ use App\Models\AcademicSession;
 use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use App\Models\User;
+use App\Services\Notification\NotificationUrlBuilder;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -27,8 +29,23 @@ class SessionNotificationService
     public function __construct(
         protected SessionSettingsService $settingsService,
         protected NotificationService $notificationService,
-        protected ParentNotificationService $parentNotificationService
+        protected ParentNotificationService $parentNotificationService,
+        protected NotificationUrlBuilder $urlBuilder,
     ) {}
+
+    /**
+     * Build the metadata payload that lets mobile FCM and the in-app
+     * notifications list navigate to a session without parsing URLs.
+     *
+     * @return array<string, string>
+     */
+    private function sessionMetadata(BaseSession $session): array
+    {
+        return [
+            'session_id' => (string) $session->id,
+            'session_type' => $this->settingsService->getSessionType($session),
+        ];
+    }
 
     /**
      * Format datetime in academy timezone for notifications.
@@ -87,19 +104,22 @@ class SessionNotificationService
             if ($session->teacher) {
                 $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
                 $readyData = ['session_title' => $this->settingsService->getSessionTitle($session)];
+                $metadata = $this->sessionMetadata($session);
 
                 $this->notificationService->send(
                     $session->teacher,
                     NotificationType::MEETING_ROOM_READY,
                     $readyData,
-                    route('teacher.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id])
+                    route('teacher.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id]),
+                    $metadata,
                 );
 
                 $this->notificationService->notifySupervisorOfTeacher(
                     $session->teacher,
                     NotificationType::MEETING_ROOM_READY,
                     $readyData,
-                    route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => 'quran', 'sessionId' => $session->id])
+                    route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => 'quran', 'sessionId' => $session->id]),
+                    $metadata,
                 );
             }
         } catch (Exception $e) {
@@ -125,19 +145,22 @@ class SessionNotificationService
             if ($session->academicTeacher?->user) {
                 $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
                 $readyData = ['session_title' => $this->settingsService->getSessionTitle($session)];
+                $metadata = $this->sessionMetadata($session);
 
                 $this->notificationService->send(
                     $session->academicTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     $readyData,
-                    route('teacher.academic-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
+                    route('teacher.academic-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]),
+                    $metadata,
                 );
 
                 $this->notificationService->notifySupervisorOfTeacher(
                     $session->academicTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     $readyData,
-                    route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => 'academic', 'sessionId' => $session->id])
+                    route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => 'academic', 'sessionId' => $session->id]),
+                    $metadata,
                 );
             }
         } catch (Exception $e) {
@@ -156,6 +179,7 @@ class SessionNotificationService
         try {
             $sessionTitle = $this->settingsService->getSessionTitle($session);
             $subdomain = $session->course?->academy?->subdomain ?? DefaultAcademy::subdomain();
+            $metadata = $this->sessionMetadata($session);
 
             // Notify enrolled students
             if ($session->course && $session->course->enrollments) {
@@ -174,11 +198,12 @@ class SessionNotificationService
                             route('student.interactive-sessions.show', [
                                 'subdomain' => $subdomain,
                                 'session' => $session->id,
-                            ])
+                            ]),
+                            $metadata,
                         );
 
                         // Notify parent(s) for each enrolled student
-                        $this->notifyParentsOfSessionReady($session, $enrollment->user, $sessionTitle);
+                        $this->notifyParentsOfSession($session, $enrollment->user, $sessionTitle, NotificationType::SESSION_REMINDER_PARENT, ['minutes' => 15]);
                     }
                 }
             }
@@ -189,14 +214,16 @@ class SessionNotificationService
                     $session->course->assignedTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $sessionTitle],
-                    route('teacher.interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
+                    route('teacher.interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]),
+                    $metadata,
                 );
 
                 $this->notificationService->notifySupervisorOfTeacher(
                     $session->course->assignedTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $sessionTitle],
-                    route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => 'interactive', 'sessionId' => $session->id])
+                    route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => 'interactive', 'sessionId' => $session->id]),
+                    $metadata,
                 );
             }
         } catch (Exception $e) {
@@ -212,55 +239,65 @@ class SessionNotificationService
      */
     public function sendStartedNotifications(BaseSession $session): void
     {
+        $this->sendLifecycleNotifications(
+            $session,
+            NotificationType::SESSION_STARTED,
+            NotificationType::SESSION_STARTED_PARENT,
+            'Failed to send session started notifications',
+        );
+    }
+
+    /**
+     * Send notifications when session completes
+     */
+    public function sendCompletedNotifications(BaseSession $session): void
+    {
+        $this->sendLifecycleNotifications(
+            $session,
+            NotificationType::SESSION_COMPLETED,
+            NotificationType::SESSION_COMPLETED_PARENT,
+            'Failed to send session completed notifications',
+        );
+    }
+
+    /**
+     * Notify every student attending the session (1:1 student, group circle
+     * roster, or interactive course enrolment) plus their parent(s). Used by
+     * sendStartedNotifications / sendCompletedNotifications.
+     */
+    private function sendLifecycleNotifications(
+        BaseSession $session,
+        NotificationType $studentType,
+        NotificationType $parentType,
+        string $errorMessage,
+    ): void {
         try {
             $sessionTitle = $this->settingsService->getSessionTitle($session);
+            $metadata = $this->sessionMetadata($session);
+            $messageData = ['session_title' => $sessionTitle];
 
-            // Individual session - notify student
-            if ($this->settingsService->isIndividualSession($session) && $session->student) {
+            $students = $this->resolveSessionStudents($session);
+            if ($students === []) {
+                return;
+            }
+
+            // Same role + same session = identical URL for every recipient,
+            // so resolve it once instead of paying ~5 hasRole() checks per
+            // student inside `NotificationUrlBuilder::getSessionUrl()`.
+            $url = $this->urlBuilder->getSessionUrl($session, $students[0]);
+
+            foreach ($students as $student) {
                 $this->notificationService->send(
-                    $session->student,
-                    NotificationType::SESSION_STARTED,
-                    ['session_title' => $sessionTitle],
-                    '/student/session-detail/'.$session->id
+                    $student,
+                    $studentType,
+                    $messageData,
+                    $url,
+                    $metadata,
                 );
-
-                // Notify parent(s)
-                $this->notifyParentsOfSessionStarted($session, $session->student, $sessionTitle);
-            }
-            // Group Quran session - notify circle students
-            elseif ($session instanceof QuranSession && $session->session_type === 'group' && $session->circle) {
-                foreach ($session->circle->students as $student) {
-                    if ($student->user) {
-                        $this->notificationService->send(
-                            $student->user,
-                            NotificationType::SESSION_STARTED,
-                            ['session_title' => $sessionTitle],
-                            '/student/session-detail/'.$session->id
-                        );
-
-                        // Notify parent(s) for each student
-                        $this->notifyParentsOfSessionStarted($session, $student->user, $sessionTitle);
-                    }
-                }
-            }
-            // Interactive course session - notify enrolled students
-            elseif ($session instanceof InteractiveCourseSession && $session->course) {
-                foreach ($session->course->enrollments as $enrollment) {
-                    if ($enrollment->user) {
-                        $this->notificationService->send(
-                            $enrollment->user,
-                            NotificationType::SESSION_STARTED,
-                            ['session_title' => $sessionTitle],
-                            '/student/courses/'.$session->course_id.'/sessions/'.$session->id
-                        );
-
-                        // Notify parent(s) for each enrolled student
-                        $this->notifyParentsOfSessionStarted($session, $enrollment->user, $sessionTitle);
-                    }
-                }
+                $this->notifyParentsOfSession($session, $student, $sessionTitle, $parentType);
             }
         } catch (Exception $e) {
-            Log::error('Failed to send session started notifications', [
+            Log::error($errorMessage, [
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),
                 'error' => $e->getMessage(),
@@ -269,64 +306,34 @@ class SessionNotificationService
     }
 
     /**
-     * Send notifications when session completes
+     * Collect every student-User attending a session, regardless of session
+     * shape (individual, group circle, or interactive course enrolment).
+     *
+     * @return list<User>
      */
-    public function sendCompletedNotifications(BaseSession $session): void
+    private function resolveSessionStudents(BaseSession $session): array
     {
-        try {
-            $sessionTitle = $this->settingsService->getSessionTitle($session);
-
-            // Individual session - notify student
-            if ($this->settingsService->isIndividualSession($session) && $session->student) {
-                $this->notificationService->send(
-                    $session->student,
-                    NotificationType::SESSION_COMPLETED,
-                    ['session_title' => $sessionTitle],
-                    '/student/session-detail/'.$session->id
-                );
-
-                // Notify parent(s)
-                $this->notifyParentsOfSessionCompleted($session, $session->student, $sessionTitle);
-            }
-            // Group Quran session - notify circle students
-            elseif ($session instanceof QuranSession && $session->session_type === 'group' && $session->circle) {
-                foreach ($session->circle->students as $student) {
-                    if ($student->user) {
-                        $this->notificationService->send(
-                            $student->user,
-                            NotificationType::SESSION_COMPLETED,
-                            ['session_title' => $sessionTitle],
-                            '/student/session-detail/'.$session->id
-                        );
-
-                        // Notify parent(s) for each student
-                        $this->notifyParentsOfSessionCompleted($session, $student->user, $sessionTitle);
-                    }
-                }
-            }
-            // Interactive course session - notify enrolled students
-            elseif ($session instanceof InteractiveCourseSession && $session->course) {
-                foreach ($session->course->enrollments as $enrollment) {
-                    if ($enrollment->user) {
-                        $this->notificationService->send(
-                            $enrollment->user,
-                            NotificationType::SESSION_COMPLETED,
-                            ['session_title' => $sessionTitle],
-                            '/student/courses/'.$session->course_id.'/sessions/'.$session->id
-                        );
-
-                        // Notify parent(s) for each enrolled student
-                        $this->notifyParentsOfSessionCompleted($session, $enrollment->user, $sessionTitle);
-                    }
-                }
-            }
-        } catch (Exception $e) {
-            Log::error('Failed to send session completed notifications', [
-                'session_id' => $session->id,
-                'session_type' => $this->settingsService->getSessionType($session),
-                'error' => $e->getMessage(),
-            ]);
+        if ($this->settingsService->isIndividualSession($session) && $session->student) {
+            return [$session->student];
         }
+
+        if ($session instanceof QuranSession && $session->session_type === 'group' && $session->circle) {
+            return $session->circle->students
+                ->pluck('user')
+                ->filter()
+                ->values()
+                ->all();
+        }
+
+        if ($session instanceof InteractiveCourseSession && $session->course) {
+            return $session->course->enrollments
+                ->pluck('user')
+                ->filter()
+                ->values()
+                ->all();
+        }
+
+        return [];
     }
 
     /**
@@ -341,6 +348,7 @@ class SessionNotificationService
         try {
             $sessionType = $this->settingsService->getSessionType($session);
             $sessionTitle = $this->settingsService->getSessionTitle($session);
+            $metadata = $this->sessionMetadata($session);
 
             // Notify student
             $this->notificationService->send(
@@ -350,8 +358,8 @@ class SessionNotificationService
                     'session_title' => $sessionTitle,
                     'date' => $this->formatInAcademyTimezone($session->scheduled_at),
                 ],
-                $this->getStudentSessionUrl($session),
-                [],
+                $this->urlBuilder->getSessionUrl($session, $session->student),
+                $metadata,
                 true // important
             );
 
@@ -359,6 +367,9 @@ class SessionNotificationService
             $student = $session->student;
             $parents = $this->parentNotificationService->getParentsForStudent($student);
             foreach ($parents as $parent) {
+                if (! $parent->user) {
+                    continue;
+                }
                 $this->notificationService->send(
                     $parent->user,
                     NotificationType::ATTENDANCE_MARKED_ABSENT,
@@ -367,8 +378,8 @@ class SessionNotificationService
                         'session_title' => $sessionTitle,
                         'date' => $this->formatInAcademyTimezone($session->scheduled_at),
                     ],
-                    route('parent.sessions.show', ['sessionType' => $sessionType, 'session' => $session->id]),
-                    ['child_id' => $student->id, 'session_id' => $session->id],
+                    $this->getParentSessionUrl($session, $sessionType),
+                    array_merge($metadata, ['child_id' => (string) $student->id]),
                     true // important
                 );
             }
@@ -383,71 +394,28 @@ class SessionNotificationService
     }
 
     /**
-     * Notify parents when a session starts
+     * Notify a student's parent(s) about a session lifecycle event.
      */
-    private function notifyParentsOfSessionStarted(BaseSession $session, $student, string $sessionTitle): void
-    {
+    private function notifyParentsOfSession(
+        BaseSession $session,
+        User $student,
+        string $sessionTitle,
+        NotificationType $type,
+        array $extraData = [],
+    ): void {
         $parents = $this->parentNotificationService->getParentsForStudent($student);
-        $sessionType = $this->settingsService->getSessionType($session);
+        $url = $this->getParentSessionUrl($session, $this->settingsService->getSessionType($session));
+        $metadata = array_merge($this->sessionMetadata($session), [
+            'child_id' => (string) $student->id,
+        ]);
+        $data = array_merge([
+            'student_name' => $student->name,
+            'session_title' => $sessionTitle,
+        ], $extraData);
 
         foreach ($parents as $parent) {
             if ($parent->user) {
-                $this->notificationService->send(
-                    $parent->user,
-                    NotificationType::SESSION_STARTED_PARENT,
-                    [
-                        'student_name' => $student->name,
-                        'session_title' => $sessionTitle,
-                    ],
-                    $this->getParentSessionUrl($session, $sessionType)
-                );
-            }
-        }
-    }
-
-    /**
-     * Notify parents when a session completes
-     */
-    private function notifyParentsOfSessionCompleted(BaseSession $session, $student, string $sessionTitle): void
-    {
-        $parents = $this->parentNotificationService->getParentsForStudent($student);
-        $sessionType = $this->settingsService->getSessionType($session);
-
-        foreach ($parents as $parent) {
-            if ($parent->user) {
-                $this->notificationService->send(
-                    $parent->user,
-                    NotificationType::SESSION_COMPLETED_PARENT,
-                    [
-                        'student_name' => $student->name,
-                        'session_title' => $sessionTitle,
-                    ],
-                    $this->getParentSessionUrl($session, $sessionType)
-                );
-            }
-        }
-    }
-
-    /**
-     * Notify parents when a session is ready (for interactive courses)
-     */
-    private function notifyParentsOfSessionReady(BaseSession $session, $student, string $sessionTitle): void
-    {
-        $parents = $this->parentNotificationService->getParentsForStudent($student);
-        $sessionType = $this->settingsService->getSessionType($session);
-
-        foreach ($parents as $parent) {
-            if ($parent->user) {
-                $this->notificationService->send(
-                    $parent->user,
-                    NotificationType::SESSION_REMINDER_PARENT,
-                    [
-                        'student_name' => $student->name,
-                        'session_title' => $sessionTitle,
-                        'minutes' => 15, // Preparation time
-                    ],
-                    $this->getParentSessionUrl($session, $sessionType)
-                );
+                $this->notificationService->send($parent->user, $type, $data, $url, $metadata);
             }
         }
     }
@@ -461,26 +429,5 @@ class SessionNotificationService
             'sessionType' => $sessionType,
             'session' => $session->id,
         ]);
-    }
-
-    /**
-     * Get URL for student session view based on session type
-     */
-    private function getStudentSessionUrl(BaseSession $session): string
-    {
-        if ($session instanceof QuranSession) {
-            return '/sessions/'.$session->id;
-        }
-
-        if ($session instanceof AcademicSession) {
-            return '/academic-sessions/'.$session->id;
-        }
-
-        if ($session instanceof InteractiveCourseSession) {
-            return '/student/interactive-sessions/'.$session->id;
-        }
-
-        // Fallback
-        return '/sessions/'.$session->id;
     }
 }

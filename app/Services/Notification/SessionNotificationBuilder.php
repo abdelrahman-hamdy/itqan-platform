@@ -2,12 +2,14 @@
 
 namespace App\Services\Notification;
 
-use Carbon\Carbon;
-use DateTimeInterface;
 use App\Enums\AttendanceStatus;
 use App\Enums\NotificationType;
+use App\Models\BaseSession;
 use App\Models\User;
 use App\Services\AcademyContextService;
+use App\Services\SessionSettingsService;
+use Carbon\Carbon;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 
@@ -25,13 +27,14 @@ class SessionNotificationBuilder
 {
     public function __construct(
         private readonly NotificationDispatcher $dispatcher,
-        private readonly NotificationUrlBuilder $urlBuilder
+        private readonly NotificationUrlBuilder $urlBuilder,
+        private readonly SessionSettingsService $settingsService,
     ) {}
 
     /**
      * Format a datetime in academy timezone for notification display.
      *
-     * @param Carbon|DateTimeInterface|null $datetime
+     * @param  Carbon|DateTimeInterface|null  $datetime
      * @param  string  $format  Format string (default includes AM/PM)
      * @return string Formatted time in academy timezone
      */
@@ -65,6 +68,20 @@ class SessionNotificationBuilder
     }
 
     /**
+     * Wire-format session_type ('quran'|'academic'|'interactive') for mobile
+     * routing. Mobile parses this with a strict lowercase match, so the full
+     * class path would silently mis-route. Defaults to 'quran' for stray
+     * Models that aren't BaseSession (the dispatcher accepts the looser
+     * `Illuminate\Database\Eloquent\Model` type for legacy callers).
+     */
+    private function wireSessionType(Model $session): string
+    {
+        return $session instanceof BaseSession
+            ? $this->settingsService->getSessionType($session)
+            : 'quran';
+    }
+
+    /**
      * Send session scheduled notification.
      *
      * @param  Model  $session  The session that was scheduled
@@ -86,8 +103,8 @@ class SessionNotificationBuilder
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
             [
-                'session_id' => $session->id,
-                'session_type' => get_class($session),
+                'session_id' => (string) $session->id,
+                'session_type' => $this->wireSessionType($session),
             ],
             true
         );
@@ -114,8 +131,8 @@ class SessionNotificationBuilder
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
             [
-                'session_id' => $session->id,
-                'session_type' => get_class($session),
+                'session_id' => (string) $session->id,
+                'session_type' => $this->wireSessionType($session),
             ],
             true
         );
@@ -143,9 +160,9 @@ class SessionNotificationBuilder
             ],
             $actionUrl,
             [
-                'session_id' => $session->id,
-                'session_type' => get_class($session),
-                'homework_id' => $homeworkId,
+                'session_id' => (string) $session->id,
+                'session_type' => $this->wireSessionType($session),
+                'homework_id' => $homeworkId !== null ? (string) $homeworkId : null,
             ]
         );
     }
@@ -188,9 +205,9 @@ class SessionNotificationBuilder
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
             [
-                'attendance_id' => $attendance->id,
-                'session_id' => $session->id,
-                'session_type' => get_class($session),
+                'attendance_id' => (string) $attendance->id,
+                'session_id' => (string) $session->id,
+                'session_type' => $this->wireSessionType($session),
                 'status' => $statusValue,
             ]
         );
@@ -218,8 +235,8 @@ class SessionNotificationBuilder
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
             [
-                'session_id' => $session->id,
-                'session_type' => get_class($session),
+                'session_id' => (string) $session->id,
+                'session_type' => $this->wireSessionType($session),
                 'cancellation_reason' => $reason,
             ],
             true
@@ -231,7 +248,7 @@ class SessionNotificationBuilder
      *
      * @param  Model  $session  The rescheduled session
      * @param  User  $student  The student to notify
-     * @param DateTimeInterface $oldDateTime The original date/time
+     * @param  DateTimeInterface  $oldDateTime  The original date/time
      */
     public function sendSessionRescheduledNotification(
         Model $session,
@@ -252,8 +269,8 @@ class SessionNotificationBuilder
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
             [
-                'session_id' => $session->id,
-                'session_type' => get_class($session),
+                'session_id' => (string) $session->id,
+                'session_type' => $this->wireSessionType($session),
                 'old_datetime' => $this->formatInAcademyTimezone($oldDateTime, 'Y-m-d H:i:s'),
             ],
             true
