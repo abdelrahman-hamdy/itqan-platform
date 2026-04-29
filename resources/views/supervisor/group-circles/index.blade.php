@@ -20,9 +20,18 @@
 <div>
     <x-ui.breadcrumb :items="[['label' => __('supervisor.group_circles.page_title')]]" view-type="supervisor" />
 
-    <div class="mb-6 md:mb-8">
-        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.group_circles.page_title') }}</h1>
-        <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.group_circles.page_subtitle') }}</p>
+    <div class="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.group_circles.page_title') }}</h1>
+            <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.group_circles.page_subtitle') }}</p>
+        </div>
+        @if(auth()->user()->isSuperAdmin())
+            <a href="{{ route('manage.group-circles.create', ['subdomain' => $subdomain]) }}"
+               class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                <i class="ri-add-line"></i>
+                {{ __('supervisor.group_circles.create_circle') }}
+            </a>
+        @endif
     </div>
 
     {{-- Stats Cards --}}

@@ -216,15 +216,23 @@ abstract class BaseSupervisorWebController extends Controller
     protected function getAssignedQuranTeacherIds(): array
     {
         if ($this->isAdminUser()) {
-            return User::where('user_type', UserType::QURAN_TEACHER->value)
-                ->where('academy_id', $this->getAcademyId())
-                ->pluck('id')
-                ->toArray();
+            return $this->getAllAcademyQuranTeacherIds();
         }
 
         $profile = $this->getCurrentSupervisorProfile();
 
         return $profile?->getAssignedQuranTeacherIds() ?? [];
+    }
+
+    /**
+     * @return int[]
+     */
+    protected function getAllAcademyQuranTeacherIds(): array
+    {
+        return User::where('user_type', UserType::QURAN_TEACHER->value)
+            ->where('academy_id', $this->getAcademyId())
+            ->pluck('id')
+            ->toArray();
     }
 
     // ========================================================================
