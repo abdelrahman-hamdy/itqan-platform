@@ -167,8 +167,8 @@ class CalendarController extends Controller
         );
 
         $formatted = $conflicts->map(function ($conflict) {
-            $start = Carbon::parse($conflict->scheduled_at);
-            $end = $start->copy()->addMinutes((int) ($conflict->duration_minutes ?? 0));
+            $duration = (int) ($conflict->duration_minutes ?? 0);
+            $end = $conflict->scheduled_at->copy()->addMinutes($duration);
             $source = match (true) {
                 $conflict instanceof InteractiveCourseSession => 'course_session',
                 $conflict instanceof AcademicSession => 'academic_session',
@@ -180,10 +180,10 @@ class CalendarController extends Controller
                 'id' => $conflict->id,
                 'session_id' => $conflict->id,
                 'title' => $conflict->title ?? '',
-                'start_time' => $start->toIso8601String(),
+                'start_time' => $conflict->scheduled_at->toIso8601String(),
                 'end_time' => $end->toIso8601String(),
-                'duration_minutes' => (int) ($conflict->duration_minutes ?? 0),
-                'status' => is_object($conflict->status) ? $conflict->status->value : $conflict->status,
+                'duration_minutes' => $duration,
+                'status' => $conflict->status->value,
                 'source' => $source,
             ];
         })->values();
