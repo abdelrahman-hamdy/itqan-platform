@@ -204,7 +204,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
     /**
      * {@inheritdoc}
      */
-    public function createSchedule(array $data, ScheduleValidatorInterface $validator): void
+    public function createSchedule(array $data, ScheduleValidatorInterface $validator): int
     {
         $itemType = $data['item_type'] ?? null;
         $itemId = $data['item_id'] ?? null;
@@ -213,7 +213,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             throw new Exception(__('calendar.strategy.item_info_incomplete'));
         }
 
-        match ($itemType) {
+        return match ($itemType) {
             'private_lesson' => $this->createPrivateLessonSchedule($itemId, $data),
             'interactive_course' => $this->createInteractiveCourseSchedule($itemId, $data),
             default => throw new InvalidArgumentException("Unknown item type: {$itemType}"),

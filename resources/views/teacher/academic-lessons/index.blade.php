@@ -17,7 +17,6 @@
         SessionSubscriptionStatus::ACTIVE->value => __('teacher.academic_lessons.active'),
         SessionSubscriptionStatus::PENDING->value => __('teacher.academic_lessons.pending_payment'),
         SessionSubscriptionStatus::PAUSED->value => __('enums.session_subscription_status.paused'),
-        SessionSubscriptionStatus::SUSPENDED->value => __('enums.session_subscription_status.suspended'),
         SessionSubscriptionStatus::CANCELLED->value => __('teacher.academic_lessons.cancelled'),
     ];
 
@@ -77,7 +76,6 @@
                 SessionSubscriptionStatus::ACTIVE->value => ['class' => 'bg-green-100 text-green-800', 'text' => __('teacher.academic_lessons.active')],
                 SessionSubscriptionStatus::PENDING->value => ['class' => 'bg-yellow-100 text-yellow-800', 'text' => __('teacher.academic_lessons.pending_payment')],
                 SessionSubscriptionStatus::PAUSED->value => ['class' => 'bg-blue-100 text-blue-800', 'text' => __('enums.session_subscription_status.paused')],
-                SessionSubscriptionStatus::SUSPENDED->value => ['class' => 'bg-red-100 text-red-800', 'text' => __('enums.session_subscription_status.suspended')],
                 SessionSubscriptionStatus::CANCELLED->value => ['class' => 'bg-gray-100 text-gray-800', 'text' => __('teacher.academic_lessons.cancelled')],
                 default => ['class' => 'bg-gray-100 text-gray-800', 'text' => $statusValue ?? __('common.not_specified')]
             };

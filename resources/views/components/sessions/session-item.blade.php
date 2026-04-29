@@ -82,6 +82,17 @@ use App\Enums\SessionStatus;
                     <!-- Preparing Meeting State (READY/ONGOING but room not created) -->
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-amber-500 rounded-full mb-0.5 md:mb-1 animate-spin"></div>
                     <span class="text-[10px] md:text-xs text-amber-600 font-bold whitespace-nowrap">{{ __('components.sessions.status.preparing_meeting') }}</span>
+                @elseif($statusValue === SessionStatus::COMPLETED->value && $displayStatus === 'absent')
+                    @if($displayRole === 'teacher')
+                        <div class="w-3 h-3 md:w-4 md:h-4 bg-gray-400 rounded-full mb-0.5 md:mb-1"></div>
+                        <span class="text-[10px] md:text-xs text-gray-500 font-bold">{{ __('components.sessions.status.absent') }}</span>
+                    @else
+                        <div class="w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded-full mb-0.5 md:mb-1"></div>
+                        <span class="text-[10px] md:text-xs text-red-600 font-bold">{{ __('components.sessions.status.absent') }}</span>
+                    @endif
+                @elseif($statusValue === SessionStatus::COMPLETED->value && $displayStatus === 'canceled')
+                    <div class="w-3 h-3 md:w-4 md:h-4 bg-gray-300 rounded-full mb-0.5 md:mb-1"></div>
+                    <span class="text-[10px] md:text-xs text-gray-500 font-bold">{{ __('components.sessions.status.canceled') }}</span>
                 @elseif($statusValue === SessionStatus::COMPLETED->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full mb-0.5 md:mb-1 animate-pulse"></div>
                     <span class="text-[10px] md:text-xs text-green-600 font-bold">{{ __('components.sessions.status.completed') }}</span>

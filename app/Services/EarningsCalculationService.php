@@ -12,6 +12,7 @@ use App\Models\QuranSession;
 use App\Models\TeacherEarning;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -120,6 +121,26 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
 
                 return $earning;
             });
+        } catch (UniqueConstraintViolationException $e) {
+            // A concurrent retry won the race and inserted the earning row
+            // first. Return the row that won instead of erroring.
+            $existing = TeacherEarning::forSession($session->getMorphClass(), $session->id)->first();
+            if ($existing) {
+                Log::info('Earnings already recorded by concurrent run', [
+                    'session_id' => $session->id,
+                    'earning_id' => $existing->id,
+                ]);
+
+                return $existing;
+            }
+
+            Log::error('Earnings unique-constraint violation but no row found', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+            report($e);
+
+            return null;
         } catch (QueryException $e) {
             Log::error('Database error calculating session earnings', [
                 'session_id' => $session->id,

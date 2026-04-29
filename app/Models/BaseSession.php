@@ -396,18 +396,20 @@ abstract class BaseSession extends Model implements MeetingCapable
      * @param  \App\Models\MeetingAttendance|null  $studentAttendance  Per-student attendance row (required for student/parent)
      */
     /**
-     * Per-student attendance row for a given user. Returns null when
-     * `meetingAttendances` isn't eager-loaded — callers MUST eager-load to
-     * avoid an N+1; falling back to a lazy query in list views silently
-     * fans out one query per row.
+     * Per-student attendance row for a given user. Prefers the eager-loaded
+     * collection (list pages MUST eager-load `meetingAttendances` to avoid
+     * N+1) and falls back to a single-row lazy query for detail pages.
      */
     public function attendanceFor(int $userId): ?\App\Models\MeetingAttendance
     {
-        if (! $this->relationLoaded('meetingAttendances')) {
-            return null;
+        if ($this->relationLoaded('meetingAttendances')) {
+            return $this->meetingAttendances->firstWhere('user_id', $userId);
         }
 
-        return $this->meetingAttendances->firstWhere('user_id', $userId);
+        return $this->meetingAttendances()
+            ->where('user_id', $userId)
+            ->where('user_type', 'student')
+            ->first();
     }
 
     public function displayStatusFor(string $role, ?\App\Models\MeetingAttendance $studentAttendance = null): string
@@ -429,7 +431,11 @@ abstract class BaseSession extends Model implements MeetingCapable
             return 'canceled';
         }
 
+        // attendance_status is cast to AttendanceStatus enum on MeetingAttendance.
         $attendanceStatus = $studentAttendance?->attendance_status;
+        if ($attendanceStatus instanceof \App\Enums\AttendanceStatus) {
+            $attendanceStatus = $attendanceStatus->value;
+        }
         if ($attendanceStatus === \App\Enums\AttendanceStatus::ABSENT->value) {
             return 'absent';
         }

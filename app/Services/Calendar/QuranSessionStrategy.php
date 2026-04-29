@@ -290,7 +290,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
     /**
      * {@inheritdoc}
      */
-    public function createSchedule(array $data, ScheduleValidatorInterface $validator): void
+    public function createSchedule(array $data, ScheduleValidatorInterface $validator): int
     {
         $itemType = $data['item_type'] ?? null;
         $itemId = $data['item_id'] ?? null;
@@ -299,7 +299,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
             throw new Exception(__('calendar.strategy.item_info_incomplete'));
         }
 
-        match ($itemType) {
+        return match ($itemType) {
             'group' => $this->createGroupCircleSchedule($itemId, $data),
             'individual' => $this->createIndividualCircleSchedule($itemId, $data),
             'trial' => $this->createTrialSessionSchedule($itemId, $data),

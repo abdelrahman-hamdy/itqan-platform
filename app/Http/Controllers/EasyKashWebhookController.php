@@ -335,7 +335,7 @@ class EasyKashWebhookController extends Controller
             // Log the status change
             PaymentAuditLog::logStatusChange(
                 payment: $payment,
-                fromStatus: $oldStatus,
+                fromStatus: $oldStatusValue,
                 toStatus: $newStatus,
                 notes: "EasyKash Webhook: {$payload->eventType}"
             );

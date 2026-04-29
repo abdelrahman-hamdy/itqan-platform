@@ -45,21 +45,13 @@ class SessionManagementService
             // requests both see remaining > 0 and both create a session.
             $lockedCircle = QuranIndividualCircle::lockForUpdate()->findOrFail($circle->id);
 
-            // Re-check remaining sessions inside the lock
+            // Re-check remaining sessions inside the lock. Don't add an
+            // all-time-count guard here: it falsely rejects renewed/cycled
+            // subscriptions because historical rows from previous cycles
+            // exceed the per-cycle total_sessions cap.
             $remainingSessions = $this->getRemainingIndividualSessions($lockedCircle);
             if ($remainingSessions <= 0) {
                 throw new Exception('لا توجد جلسات متبقية في الاشتراك');
-            }
-
-            // Guard: total session count must not exceed subscription limit
-            $subscription = $lockedCircle->subscription;
-            if ($subscription) {
-                $totalNonCancelled = QuranSession::where('individual_circle_id', $lockedCircle->id)
-                    ->where('status', '!=', SessionStatus::CANCELLED->value)
-                    ->count();
-                if ($totalNonCancelled >= $subscription->total_sessions) {
-                    throw new Exception('إجمالي الجلسات سيتجاوز حد الاشتراك');
-                }
             }
 
             // Get duration from subscription -> package -> circle default

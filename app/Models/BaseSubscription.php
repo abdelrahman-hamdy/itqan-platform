@@ -1256,11 +1256,14 @@ abstract class BaseSubscription extends Model
             $subscription->update($updateData);
 
             // Reverse the current cycle's counters to match the subscription row.
+            // Cast to SIGNED so MySQL doesn't blow up with "BIGINT UNSIGNED out of
+            // range" when sessions_used is already 0 — UNSIGNED arithmetic
+            // underflows BEFORE GREATEST() can clamp it.
             if ($subscription->current_cycle_id) {
                 SubscriptionCycle::where('id', $subscription->current_cycle_id)
                     ->update([
-                        'sessions_used' => DB::raw('GREATEST(sessions_used - 1, 0)'),
-                        'sessions_completed' => DB::raw('GREATEST(sessions_completed - 1, 0)'),
+                        'sessions_used' => DB::raw('GREATEST(CAST(sessions_used AS SIGNED) - 1, 0)'),
+                        'sessions_completed' => DB::raw('GREATEST(CAST(sessions_completed AS SIGNED) - 1, 0)'),
                     ]);
             }
 
