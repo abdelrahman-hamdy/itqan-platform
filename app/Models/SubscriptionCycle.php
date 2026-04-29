@@ -195,14 +195,12 @@ class SubscriptionCycle extends Model
      * Snapshot a subscription's current column values as a SubscriptionCycle.
      *
      * Single source of truth for "materialize a cycle from a subscription row".
-     * Used by:
-     *   - `SubscriptionRenewalService::ensureCurrentCycle()` — lazy backfill
-     *     for legacy subscriptions that predate the cycle refactor.
-     *   - `ConsolidateRenewalChains::snapshotAsCycle()` — archive an ancestor
-     *     subscription in the one-shot migration command.
+     * Used by `SubscriptionRenewalService::ensureCurrentCycle()` — lazy backfill
+     * for legacy subscriptions that predate the cycle refactor.
      *
-     * The `$owner` argument exists so consolidation can archive an ancestor's
-     * state under the surviving thread's ownership (source != owner).
+     * The `$owner` argument is currently always equal to `$source` (subscription
+     * isolation rule: cycles never belong to a different subscription). Kept as a
+     * separate parameter to preserve the API surface.
      *
      * @param  BaseSubscription  $source  Row whose columns are snapshotted
      * @param  BaseSubscription  $owner  Thread the cycle belongs to (usually same as source)

@@ -91,7 +91,7 @@ class ExpireActiveSubscriptions extends Command
                                     'paused_at' => now(),
                                 ]);
 
-                                $this->deactivateLinkedEntities($subscription);
+                                $subscription->syncLinkedEducationUnitActiveFlag(false);
                                 $this->suspendFutureSessions($subscription);
 
                                 if ($subscription->student) {
@@ -156,21 +156,14 @@ class ExpireActiveSubscriptions extends Command
     }
 
     /**
-     * Deactivate linked circle (Quran) or lesson (Academic).
-     */
-    private function deactivateLinkedEntities($subscription): void
-    {
-        if ($subscription instanceof QuranSubscription && $subscription->education_unit_id) {
-            $subscription->educationUnit?->update(['is_active' => false]);
-        }
-
-        if ($subscription instanceof AcademicSubscription) {
-            $subscription->lesson?->update(['is_active' => false]);
-        }
-    }
-
-    /**
      * Suspend future scheduled/unscheduled sessions (recoverable on reactivation).
+     *
+     * Subscription isolation: sessions belong to THIS subscription. Do NOT
+     * auto-rebind to a different active subscription (e.g. another active sub
+     * for the same student/teacher) — that would violate the rule that each
+     * subscription is a self-contained unit. Restoration happens symmetrically
+     * via SubscriptionMaintenanceService::extend() / BaseSubscription::resume()
+     * / SubscriptionRenewalService — within the same subscription only.
      */
     private function suspendFutureSessions($subscription): void
     {

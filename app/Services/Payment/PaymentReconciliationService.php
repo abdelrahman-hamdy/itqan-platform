@@ -9,7 +9,6 @@ use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
-use App\Models\QuranSubscription;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -80,11 +79,9 @@ class PaymentReconciliationService
                     : $note;
             }
 
-            // Activate linked circle if applicable
-            if (($updateData['status'] ?? null) === SessionSubscriptionStatus::ACTIVE
-                && $subscription instanceof QuranSubscription
-                && $subscription->education_unit_id) {
-                $subscription->educationUnit?->update(['is_active' => true]);
+            // Activate the linked circle/lesson if this confirmation transitions to ACTIVE.
+            if (($updateData['status'] ?? null) === SessionSubscriptionStatus::ACTIVE) {
+                $subscription->syncLinkedEducationUnitActiveFlag(true);
             }
 
             $subscription->update($updateData);

@@ -825,6 +825,7 @@ abstract class BaseSubscription extends Model
 
         // Restore SUSPENDED sessions back to SCHEDULED
         $this->restoreSuspendedSessions();
+        $this->syncLinkedEducationUnitActiveFlag(true);
 
         return $this;
     }
@@ -841,6 +842,23 @@ abstract class BaseSubscription extends Model
         $this->sessions()
             ->where('status', \App\Enums\SessionStatus::SUSPENDED->value)
             ->update(['status' => \App\Enums\SessionStatus::SCHEDULED->value]);
+    }
+
+    /**
+     * Sync the linked education unit's `is_active` flag with the subscription's
+     * lifecycle. Called by every path that activates/deactivates a subscription
+     * (expire cron, supervisor cancel, resume, extend, Filament reactivate,
+     * payment reconciliation) so the Filament toggle and any raw is_active
+     * query stay in sync with the subscription's state.
+     */
+    public function syncLinkedEducationUnitActiveFlag(bool $isActive): void
+    {
+        if ($this instanceof QuranSubscription && $this->education_unit_id) {
+            $this->educationUnit?->update(['is_active' => $isActive]);
+        }
+        if ($this instanceof AcademicSubscription) {
+            $this->lesson?->update(['is_active' => $isActive]);
+        }
     }
 
     /**

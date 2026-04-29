@@ -359,7 +359,11 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
                     'cancelled_at' => now(),
                     'auto_renew' => false,
                 ]);
-                // Suspend future sessions (recoverable)
+                // Suspend future sessions (recoverable on reactivation).
+                // Subscription isolation: do NOT auto-rebind these sessions to
+                // another active subscription for the same student/teacher.
+                // Each subscription is a self-contained unit — restoration must
+                // happen via extend()/resume()/renew() on this same subscription.
                 if (method_exists($sub, 'sessions')) {
                     $sub->sessions()
                         ->whereIn('status', [\App\Enums\SessionStatus::SCHEDULED->value, \App\Enums\SessionStatus::UNSCHEDULED->value, \App\Enums\SessionStatus::READY->value])
