@@ -500,7 +500,7 @@ class Payment extends Model
             'user_agent' => request()?->userAgent(),
             'ip_address' => request()?->ip(),
         ]);
-        $data['metadata'] = json_encode($metadata);
+        $data['metadata'] = $metadata;
 
         // Generate payment code before insert to satisfy NOT NULL constraint
         if (! isset($data['payment_code'])) {

@@ -2,14 +2,13 @@
 
 namespace App\Http\Middleware;
 
-use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Models\QuranSession;
-use App\Models\AcademicSession;
 use App\Enums\CourseType;
-use App\Enums\EnrollmentStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionPaymentStatus;
+use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
+use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\SubscriptionAccessLog;
 use App\Services\AcademyContextService;
@@ -23,7 +22,7 @@ class EnsureSubscriptionAccess
      * Handle an incoming request.
      * Ensures the user has a valid subscription to access the requested resource.
      *
-     * @param Closure(Request):Response $next
+     * @param  Closure(Request):Response  $next
      * @param  string  $resourceType  The type of resource being accessed (quran_session, academic_session, etc.)
      */
     public function handle(Request $request, Closure $next, string $resourceType): Response
@@ -31,19 +30,19 @@ class EnsureSubscriptionAccess
         $user = $request->user();
         $resourceId = $this->extractResourceId($request);
 
-        if (!$user || !$resourceId) {
+        if (! $user || ! $resourceId) {
             return $this->denyAccess($request, $user, $resourceType, $resourceId, 'missing_auth_or_resource');
         }
 
         // Find the subscription related to this resource
         $subscription = $this->findSubscriptionForResource($user, $resourceType, $resourceId);
 
-        if (!$subscription) {
+        if (! $subscription) {
             return $this->denyAccess($request, $user, $resourceType, $resourceId, 'no_subscription', null);
         }
 
         // Check if subscription allows access
-        if (!$subscription->canAccess()) {
+        if (! $subscription->canAccess()) {
             $reason = match (true) {
                 $subscription->payment_status !== SubscriptionPaymentStatus::PAID => 'payment_required',
                 $subscription->status === SessionSubscriptionStatus::PAUSED => 'subscription_paused',
@@ -106,7 +105,7 @@ class EnsureSubscriptionAccess
             ->where('academy_id', $user->academy_id)
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return null;
         }
 
@@ -128,7 +127,7 @@ class EnsureSubscriptionAccess
             ->where('academy_id', $user->academy_id)
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return null;
         }
 
@@ -217,11 +216,11 @@ class EnsureSubscriptionAccess
                 'action' => $action,
                 'resource_type' => $resourceType,
                 'resource_id' => $resourceId,
-                'metadata' => json_encode([
+                'metadata' => [
                     'user_agent' => $request->userAgent(),
                     'ip' => $request->ip(),
                     'reason' => $reason,
-                ]),
+                ],
             ]);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed to log subscription access', [

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Exception;
 use App\Models\Traits\ScopedToAcademy;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -141,7 +141,7 @@ class VideoSettings extends Model
             'notify_on_meeting_start' => true,
             'notify_on_participant_join' => false,
             'notify_on_recording_ready' => true,
-            'notification_channels' => json_encode(['email']),
+            'notification_channels' => ['email'],
             'require_approval_to_join' => false,
             'enable_waiting_room' => false,
             'mute_participants_on_entry' => false,
@@ -150,7 +150,7 @@ class VideoSettings extends Model
             'api_rate_limit' => '1000/hour',
             'earliest_meeting_time' => '06:00:00',
             'latest_meeting_time' => '23:00:00',
-            'blocked_days' => json_encode([]),
+            'blocked_days' => [],
             'max_daily_meetings' => 20,
             'max_concurrent_meetings' => 5,
             'enable_analytics' => true,

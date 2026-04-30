@@ -68,10 +68,10 @@ class MobilePurchaseController extends Controller
             'action' => 'purchase_attempted',
             'resource_type' => $type,
             'resource_id' => $id,
-            'metadata' => json_encode([
+            'metadata' => [
                 'user_agent' => $request->userAgent(),
                 'ip' => $request->ip(),
-            ]),
+            ],
         ]);
 
         // Generate web URL

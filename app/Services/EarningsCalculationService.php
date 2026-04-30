@@ -607,10 +607,18 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
      * workers without an academy context. Bypasses ScopedToAcademy and filters
      * by academy_id explicitly so the unique-constraint catch path can always
      * recover the row that won the race.
+     *
+     * Includes soft-deleted rows via withTrashed(): the unique constraint
+     * unique_session_earning(session_type, session_id) covers trashed rows,
+     * so a re-completion after deleteTeacherEarning() (forgiveness / absent
+     * reschedule) would otherwise hit the constraint while this lookup
+     * returns null. Callers only read the returned row; trashed rows stay
+     * trashed.
      */
     protected function findExistingEarning(BaseSession $session, bool $forUpdate = false): ?TeacherEarning
     {
         $query = TeacherEarning::withoutGlobalScope('academy')
+            ->withTrashed()
             ->where('session_type', $session->getMorphClass())
             ->where('session_id', $session->id)
             ->where('academy_id', $session->academy_id ?? $this->getAcademyId($session));
