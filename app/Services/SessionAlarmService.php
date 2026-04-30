@@ -121,6 +121,44 @@ class SessionAlarmService
         );
     }
 
+    /**
+     * Caller cancels the ring before the target picks up. Pushes
+     * [PushPayloadType::SessionAlarmCancelled] to the *target* so the
+     * incoming-call UI can dismiss itself; this is the symmetric counterpart
+     * of [markAnswered]/[markDeclined], which notify the caller.
+     */
+    public function markCancelled(string $callId, User $user): ?SessionAlarm
+    {
+        $alarm = SessionAlarm::query()
+            ->with('target')
+            ->where('call_id', $callId)
+            ->first();
+        if ($alarm === null || $alarm->caller_id !== $user->id) {
+            return null;
+        }
+        $alarm->cancelled_at ??= now();
+        $alarm->save();
+
+        $target = $alarm->target;
+        if ($target !== null) {
+            try {
+                $this->fcm->sendAlarmToUser($target, [
+                    'type' => PushPayloadType::SessionAlarmCancelled->value,
+                    'call_id' => $callId,
+                    'session_type' => $alarm->session_type,
+                    'session_id' => (string) $alarm->session_id,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('SessionAlarmService: cancel notify failed', [
+                    'call_id' => $callId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $alarm;
+    }
+
     private function markAndNotifyCaller(
         string $callId,
         User $user,

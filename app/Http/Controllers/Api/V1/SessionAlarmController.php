@@ -58,6 +58,15 @@ class SessionAlarmController extends Controller
         return $this->success();
     }
 
+    public function cancel(Request $request, string $callId): JsonResponse
+    {
+        $alarm = $this->alarms->markCancelled($callId, $request->user());
+        if ($alarm === null) {
+            return $this->notFound(__('meetings.alarm.not_found'));
+        }
+        return $this->success();
+    }
+
     public function decline(Request $request, string $callId): JsonResponse
     {
         $alarm = $this->alarms->markDeclined($callId, $request->user());

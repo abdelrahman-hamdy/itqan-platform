@@ -76,9 +76,9 @@ Route::prefix('meetings')->middleware('throttle:30,1')->group(function () {
 });
 
 // Session alarms — "ring the other participant" back into the meeting.
-// Per-pair abuse is held back by SessionAlarmService's 30s cooldown
-// (server-authoritative). The route throttle is a coarse safety net only —
-// 2/min was too tight (failed legitimate retries during a flaky alarm).
+// The 30/min route throttle is a coarse safety net against accidental
+// floods; per-pair abuse is left to product UX (the caller-side ringing
+// screen blocks tap-spam while a call is in flight).
 Route::prefix('sessions')->middleware('throttle:30,1')->group(function () {
     Route::post('/{sessionType}/{sessionId}/alarm', [SessionAlarmController::class, 'alarm'])
         ->where('sessionType', 'quran|academic|interactive')
@@ -89,6 +89,9 @@ Route::prefix('sessions')->middleware('throttle:30,1')->group(function () {
 
     Route::post('/alarms/{callId}/decline', [SessionAlarmController::class, 'decline'])
         ->name('api.v1.sessions.alarm.decline');
+
+    Route::post('/alarms/{callId}/cancel', [SessionAlarmController::class, 'cancel'])
+        ->name('api.v1.sessions.alarm.cancel');
 });
 
 // Chat (WireChat)
