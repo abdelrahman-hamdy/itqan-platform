@@ -72,10 +72,6 @@ class SessionAlarmService
         ]);
 
         $callerRole = $this->getUserRole($caller);
-        $title = $callerRole === 'quran_teacher' || $callerRole === 'academic_teacher'
-            ? __('meetings.alarm.title_from_teacher', ['name' => $caller->name])
-            : __('meetings.alarm.title_from_student', ['name' => $caller->name]);
-        $body = __('meetings.alarm.body');
 
         $payload = [
             'type' => PushPayloadType::SessionAlarm->value,
@@ -89,7 +85,7 @@ class SessionAlarmService
         ];
 
         try {
-            $this->fcm->sendToUser($target, $title, $body, $payload);
+            $this->fcm->sendAlarmToUser($target, $payload);
         } catch (\Throwable $e) {
             Log::error('SessionAlarmService: FCM dispatch failed', [
                 'call_id' => $callId,
