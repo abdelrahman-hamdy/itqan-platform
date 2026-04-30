@@ -85,20 +85,30 @@ class SubscriptionRenewalService
             // to start when the current cycle ends.
             $replaceNow = $this->shouldReplaceImmediately($subscription, $currentCycle);
 
-            // Abandoned unpaid queued cycles (left over from a student starting a
-            // renewal and never completing payment) are silently replaced — they
-            // would otherwise block all future renewal attempts forever.
-            if (! $replaceNow) {
-                $existingQueued = $subscription->queuedCycle()->first();
-                if ($existingQueued !== null) {
-                    if (! $existingQueued->deleteIfAbandoned()) {
-                        throw new Exception(__('subscriptions.errors.queued_cycle_exists'));
-                    }
-
+            // Reconcile any pre-existing queued cycle:
+            //   - If abandoned (unpaid), delete it on either path so a new cycle
+            //     can be created in its place.
+            //   - On the queue path: a paid queued cycle blocks queueing a second
+            //     one — surface the error to the user.
+            //   - On the replace-now path: a paid queued cycle is real money;
+            //     leave it for the advance-cycles cron to promote later.
+            $existingQueued = $subscription->queuedCycle()->first();
+            if ($existingQueued !== null) {
+                if ($existingQueued->deleteIfAbandoned()) {
                     Log::info('Replaced abandoned unpaid queued cycle on retry', [
                         'subscription_id' => $subscription->id,
                         'old_cycle_id' => $existingQueued->id,
                         'old_payment_id' => $existingQueued->payment_id,
+                        'actor_id' => auth()->id(),
+                        'replace_now' => $replaceNow,
+                    ]);
+                } elseif (! $replaceNow) {
+                    throw new Exception(__('subscriptions.errors.queued_cycle_exists'));
+                } else {
+                    Log::warning('Paid queued cycle preserved alongside immediate replacement', [
+                        'subscription_id' => $subscription->id,
+                        'queued_cycle_id' => $existingQueued->id,
+                        'queued_payment_id' => $existingQueued->payment_id,
                         'actor_id' => auth()->id(),
                     ]);
                 }
@@ -125,7 +135,11 @@ class SubscriptionRenewalService
             }
             $newEndsAt = $billingCycle->calculateEndDate($newStartsAt);
 
-            $carryover = $replaceNow
+            // Carry over only when the cycle has unused sessions AND the
+            // subscription view doesn't already say the student is exhausted.
+            // The exhausted flag covers admin-preset pre-platform usage that
+            // the cycle counter alone cannot see.
+            $carryover = $replaceNow && ! $subscription->is_sessions_exhausted
                 ? max(0, $this->remainingSessionsOnCycle($currentCycle))
                 : 0;
 
@@ -359,8 +373,12 @@ class SubscriptionRenewalService
             return true;
         }
 
+        // Trust the subscription-level exhaustion flag too: cycle.sessions_used
+        // only tracks in-platform consumption since materialization, while
+        // subscription.sessions_used can include admin-preset pre-platform usage.
+        // When the two disagree, the subscription view wins for renewal eligibility.
         $remaining = $this->remainingSessionsOnCycle($currentCycle);
-        if ($remaining <= 0) {
+        if ($remaining <= 0 || $subscription->is_sessions_exhausted) {
             return true;
         }
 
