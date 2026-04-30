@@ -6,7 +6,6 @@ use App\Enums\PushPayloadType;
 use App\Models\SessionAlarm;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 
 /**
@@ -16,17 +15,13 @@ use Illuminate\Support\Str;
  * Responsibilities:
  *  - Resolve the session from a (type, id) pair and verify both caller and
  *    target are legitimate participants.
- *  - Enforce a 30-second per-pair cooldown via Redis.
- *  - Record every attempt (including cooldown-blocked ones) in the
- *    `session_alarms` table for audit.
+ *  - Record every attempt in the `session_alarms` table for audit.
  *  - Dispatch a high-priority FCM payload via [FcmService]. The payload
  *    carries a shared call_id so the mobile CallKit UI can dismiss other
  *    devices when one answers.
  */
 class SessionAlarmService
 {
-    public const COOLDOWN_SECONDS = 30;
-
     public function __construct(
         private readonly FcmService $fcm,
         private readonly SessionSettingsService $sessionSettings,
@@ -35,7 +30,7 @@ class SessionAlarmService
     /**
      * Send an alarm from [$caller] to [$targetUserId] for a session.
      *
-     * @return array{status: 'sent'|'cooldown'|'forbidden'|'target_in_meeting', call_id?: string, retry_after?: int, message?: string}
+     * @return array{status: 'sent'|'forbidden', call_id?: string, message?: string}
      */
     public function alarm(
         User $caller,
@@ -65,23 +60,7 @@ class SessionAlarmService
             return ['status' => 'forbidden', 'message' => 'not_a_participant'];
         }
 
-        // Cooldown: one alarm per (caller, target) per window. Use SET NX EX
-        // so the check and acquire are atomic — two concurrent requests can't
-        // both pass.
-        $redisKey = sprintf(
-            'session_alarm:%d:%d',
-            min($caller->id, $targetUserId),
-            max($caller->id, $targetUserId),
-        );
         $callId = (string) Str::uuid();
-        $acquired = Redis::set($redisKey, $callId, 'NX', 'EX', self::COOLDOWN_SECONDS);
-        if (! $acquired) {
-            return [
-                'status' => 'cooldown',
-                'retry_after' => max(1, (int) Redis::ttl($redisKey)),
-                'message' => 'cooldown',
-            ];
-        }
 
         $alarm = SessionAlarm::create([
             'academy_id' => $caller->academy_id,

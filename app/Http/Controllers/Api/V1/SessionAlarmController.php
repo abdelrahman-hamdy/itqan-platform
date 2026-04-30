@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\Api\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Services\SessionAlarmService;
@@ -45,15 +44,6 @@ class SessionAlarmController extends Controller
             'sent' => $this->success(
                 ['call_id' => $result['call_id']],
                 __('meetings.alarm.sent'),
-            ),
-            'cooldown' => $this->error(
-                message: __('meetings.alarm.cooldown'),
-                status: 429,
-                errorCode: ErrorCode::RATE_LIMIT_EXCEEDED,
-                meta: [
-                    'retry_after' => $result['retry_after']
-                        ?? SessionAlarmService::COOLDOWN_SECONDS,
-                ],
             ),
             default => $this->error(__('meetings.alarm.forbidden'), 403),
         };
