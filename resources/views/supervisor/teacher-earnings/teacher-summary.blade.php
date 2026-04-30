@@ -141,7 +141,7 @@
                     'academic' => $summaryCollection->sum(fn($s) => $s['academic']['amount']),
                     'interactive' => $summaryCollection->sum(fn($s) => $s['interactive']['amount']),
                     'sessions' => $summaryCollection->sum('sessions_count'),
-                    'hours' => round($summaryCollection->sum('total_duration_minutes') / 60, 1),
+                    'hours' => round($summaryCollection->sum('total_duration_minutes') / 60, 2),
                     'total' => $summaryCollection->sum('total'),
                 ];
 
@@ -192,7 +192,7 @@
                             </span>
                             <span class="flex items-center gap-1">
                                 <i class="ri-time-line text-gray-400"></i>
-                                {{ round($summary['total_duration_minutes'] / 60, 1) }} {{ __('supervisor.teacher_earnings.hours_unit') }}
+                                {{ round($summary['total_duration_minutes'] / 60, 2) }} {{ __('supervisor.teacher_earnings.hours_unit') }}
                             </span>
                         </div>
 
@@ -296,7 +296,7 @@
                                     <span class="text-sm text-gray-600">{{ $summary['sessions_count'] }}</span>
                                 </td>
                                 <td class="px-3 py-4 text-center whitespace-nowrap">
-                                    <span class="text-sm text-gray-600">{{ round($summary['total_duration_minutes'] / 60, 1) }} {{ __('supervisor.teacher_earnings.hours_unit') }}</span>
+                                    <span class="text-sm text-gray-600">{{ round($summary['total_duration_minutes'] / 60, 2) }} {{ __('supervisor.teacher_earnings.hours_unit') }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-center whitespace-nowrap">
                                     <span class="text-sm font-bold text-gray-900">{{ number_format($summary['total'], 2) }} {{ $earningsCurrencySymbol }}</span>

@@ -80,7 +80,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         $stats = [
             'totalEarnings' => (float) $statsRow->total_earnings,
             'finalizedAmount' => (float) $statsRow->finalized_amount,
-            'totalHours' => round(((int) $statsRow->total_duration_minutes) / 60, 1),
+            'totalHours' => round(((int) $statsRow->total_duration_minutes) / 60, 2),
             'sessionsCount' => (int) $statsRow->sessions_count,
         ];
 
@@ -457,6 +457,13 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
         $allEarnings = (clone $query)->get();
 
+        // Resolve morph aliases once. teacher_earnings.session_type stores the
+        // alias from Relation::morphMap() (e.g. 'quran_session'), not the FQN,
+        // so comparisons must use getMorphClass() — not QuranSession::class.
+        $quranAlias = (new QuranSession)->getMorphClass();
+        $academicAlias = (new AcademicSession)->getMorphClass();
+        $interactiveAlias = (new InteractiveCourseSession)->getMorphClass();
+
         $teacherSummaries = [];
         foreach ($allEarnings as $earning) {
             $key = $earning->teacher_type.'_'.$earning->teacher_id;
@@ -483,12 +490,12 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             $teacherSummaries[$key]['sessions_count']++;
             $teacherSummaries[$key]['total_duration_minutes'] += $durationMinutes;
 
-            if ($earning->session_type === QuranSession::class) {
-                $isGroup = in_array($earning->calculation_method, ['group_rate', 'per_student']);
+            if ($earning->session_type === $quranAlias) {
+                $isGroup = $earning->calculation_method === 'group_rate';
                 $source = $isGroup ? 'quran_group' : 'quran_individual';
-            } elseif ($earning->session_type === AcademicSession::class) {
+            } elseif ($earning->session_type === $academicAlias) {
                 $source = 'academic';
-            } elseif ($earning->session_type === InteractiveCourseSession::class) {
+            } elseif ($earning->session_type === $interactiveAlias) {
                 $source = 'interactive';
             } else {
                 continue;

@@ -58,7 +58,7 @@ class TeacherEarningsSummaryExport implements FromArray, WithColumnWidths, WithE
             $profileKey = $summary['teacher_type'].'_'.$summary['teacher_id'];
             $teacherUser = $this->profileUserMap[$profileKey] ?? null;
             $teacherName = $teacherUser?->name ?? __('common.unknown');
-            $hours = round($summary['total_duration_minutes'] / 60, 1);
+            $hours = round($summary['total_duration_minutes'] / 60, 2);
 
             $rows[] = [
                 $teacherName,
@@ -80,7 +80,7 @@ class TeacherEarningsSummaryExport implements FromArray, WithColumnWidths, WithE
             $totals['total'] += $summary['total'];
         }
 
-        $totalHours = round($totals['total_duration_minutes'] / 60, 1);
+        $totalHours = round($totals['total_duration_minutes'] / 60, 2);
 
         // Totals row
         $rows[] = [

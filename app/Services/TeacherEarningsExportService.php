@@ -128,7 +128,7 @@ class TeacherEarningsExportService
                 $pdf->SetFillColor(250, 250, 250);
             }
 
-            $hours = round($summary['total_duration_minutes'] / 60, 1);
+            $hours = round($summary['total_duration_minutes'] / 60, 2);
 
             $pdf->Cell($colWidths['teacher'], 7, $teacherName, 1, 0, 'C', $fillColor);
             $pdf->Cell($colWidths['quran_individual'], 7, $this->formatAmount($summary['quran_individual']['amount'], $currency), 1, 0, 'C', $fillColor);
@@ -154,7 +154,7 @@ class TeacherEarningsExportService
         $pdf->SetFont('dejavusans', 'B', 8);
         $pdf->SetFillColor(230, 230, 230);
 
-        $totalHours = round($totals['total_duration_minutes'] / 60, 1);
+        $totalHours = round($totals['total_duration_minutes'] / 60, 2);
 
         $pdf->Cell($colWidths['teacher'], 8, __('supervisor.teacher_earnings.summary_total'), 1, 0, 'C', true);
         $pdf->Cell($colWidths['quran_individual'], 8, $this->formatAmount($totals['quran_individual'], $currency), 1, 0, 'C', true);
