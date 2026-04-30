@@ -316,6 +316,28 @@ abstract class BaseSubscription extends Model
     }
 
     /**
+     * Resolve the cycle the gateway should charge for.
+     *
+     * Queued takes priority — when a student early-renews, the queued cycle holds
+     * their latest billing-cycle choice while the subscription row's columns still
+     * mirror the unpaid active cycle (renewal queue branch never syncs them).
+     */
+    public function pendingPaymentCycle(): ?SubscriptionCycle
+    {
+        $queued = $this->queuedCycle;
+        if ($queued && $queued->payment_status === SubscriptionCycle::PAYMENT_PENDING) {
+            return $queued;
+        }
+
+        $current = $this->currentCycle;
+        if ($current && $current->payment_status === SubscriptionCycle::PAYMENT_PENDING) {
+            return $current;
+        }
+
+        return null;
+    }
+
+    /**
      * Get the certificate for this subscription (polymorphic)
      */
     public function certificate(): MorphOne

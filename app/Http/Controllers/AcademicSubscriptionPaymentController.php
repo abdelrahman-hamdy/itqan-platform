@@ -109,12 +109,20 @@ class AcademicSubscriptionPaymentController extends Controller
         $user = Auth::user();
 
         try {
-            $finalPrice = $subscription->final_price ?? $subscription->monthly_price;
+            // `subscription.final_price` is stale when an early-renewal queued a new
+            // cycle without syncing the subscription row (renewal queue branch);
+            // resolve the cycle being paid for instead. Falls back for legacy subs
+            // without cycles.
+            $pendingCycle = $subscription->pendingPaymentCycle();
+            $finalPrice = $pendingCycle?->final_price
+                ?? $subscription->final_price
+                ?? $subscription->monthly_price;
 
             // Check for an existing pending payment with a valid gateway URL (idempotency)
             $existingPayment = Payment::forPayable(AcademicSubscription::class, $subscription->id)
                 ->where('status', PaymentStatus::PENDING)
                 ->where('payment_gateway', $gateway)
+                ->where('amount', $finalPrice)
                 ->where('created_at', '>', now()->subHour())
                 ->latest()
                 ->first();
@@ -140,6 +148,7 @@ class AcademicSubscriptionPaymentController extends Controller
                 'academy_id' => $academy->id,
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
+                'subscription_cycle_id' => $pendingCycle?->id,
                 'payable_type' => AcademicSubscription::class,
                 'payable_id' => $subscription->id,
                 'payment_code' => Payment::generatePaymentCode($academy->id, 'ASP'),
