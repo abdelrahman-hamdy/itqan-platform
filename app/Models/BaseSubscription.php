@@ -750,11 +750,13 @@ abstract class BaseSubscription extends Model
      */
     public function settleCurrentCycle(?Payment $payment = null): self
     {
-        $cycle = null;
-
-        if ($this->current_cycle_id) {
-            $cycle = SubscriptionCycle::find($this->current_cycle_id);
-        }
+        // Settle the cycle the payment was actually for. Quran/AcademicSubscriptionPaymentController
+        // sets `subscription_cycle_id` on the gateway payment to the cycle being
+        // charged (which can be the queued cycle on early renewal — see
+        // BaseSubscription::pendingPaymentCycle). Falling back to current_cycle_id
+        // covers first-time activations and legacy payments that pre-date cycles.
+        $cycleId = $payment?->subscription_cycle_id ?? $this->current_cycle_id;
+        $cycle = $cycleId ? SubscriptionCycle::find($cycleId) : null;
 
         if ($cycle) {
             $cycle->update([
@@ -772,11 +774,18 @@ abstract class BaseSubscription extends Model
             $metadata['grace_period_started_at'],
         );
 
-        $this->update([
-            'payment_status' => SubscriptionPaymentStatus::PAID,
+        $updateData = [
             'last_payment_date' => now(),
             'metadata' => $metadata ?: null,
-        ]);
+        ];
+
+        // Subscription-level payment_status reflects the ACTIVE cycle. Paying
+        // for a queued (future) cycle must not flip the active cycle to PAID.
+        if ($cycle && (int) $cycle->id === (int) $this->current_cycle_id) {
+            $updateData['payment_status'] = SubscriptionPaymentStatus::PAID;
+        }
+
+        $this->update($updateData);
 
         return $this;
     }

@@ -134,8 +134,12 @@ class QuranSubscriptionPaymentController extends Controller
 
             DB::beginTransaction();
 
-            // Cancel any previous pending payments for this subscription
-            Payment::where('subscription_id', $subscription->id)
+            // Cancel any previous pending payments for this subscription.
+            // Match polymorphically — `subscription_id` is null on cash
+            // placeholders created by SubscriptionRenewalService, so a
+            // subscription_id-only filter would leave them stranded as
+            // pending forever.
+            Payment::forPayable(QuranSubscription::class, $subscription->id)
                 ->where('payment_type', 'subscription')
                 ->where('status', 'pending')
                 ->update(['status' => 'cancelled', 'payment_status' => 'cancelled']);

@@ -949,6 +949,20 @@ class QuranSubscription extends BaseSubscription
             static::lockForUpdate()->find($this->id);
             $this->refresh();
 
+            // Early-renewal payment targeting a QUEUED (non-current) cycle:
+            // settle just that cycle. The active cycle, lifecycle dates, and
+            // first-time-activation side effects (circle creation, group
+            // enrollment) belong to the active cycle and must not run here.
+            if (
+                $payment->subscription_cycle_id
+                && $this->current_cycle_id
+                && (int) $payment->subscription_cycle_id !== (int) $this->current_cycle_id
+            ) {
+                $this->settleCurrentCycle($payment);
+
+                return;
+            }
+
             // Bootstrap the first cycle row if this is a brand-new subscription
             // hitting activateFromPayment for the first time (current_cycle_id is null).
             // Must run before settleCurrentCycle which marks the cycle as PAID.

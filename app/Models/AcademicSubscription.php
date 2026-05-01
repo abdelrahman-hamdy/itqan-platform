@@ -1034,6 +1034,20 @@ class AcademicSubscription extends BaseSubscription
             static::lockForUpdate()->find($this->id);
             $this->refresh();
 
+            // Early-renewal payment targeting a QUEUED (non-current) cycle:
+            // settle just that cycle. The active cycle, lifecycle dates, lesson
+            // creation, and teacher-stat side effects belong to the active
+            // cycle and must not run here.
+            if (
+                $payment->subscription_cycle_id
+                && $this->current_cycle_id
+                && (int) $payment->subscription_cycle_id !== (int) $this->current_cycle_id
+            ) {
+                $this->settleCurrentCycle($payment);
+
+                return;
+            }
+
             // Bootstrap the first cycle row if this is a brand-new subscription.
             $this->ensureCurrentCycle();
 
