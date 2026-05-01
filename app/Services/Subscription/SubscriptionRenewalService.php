@@ -153,9 +153,21 @@ class SubscriptionRenewalService
                 ]);
             }
 
-            // Create the new cycle row
-            $newCycleNumber = ((int) $subscription->cycle_count) + ($subscription->current_cycle_id ? 1 : 0);
-            $newCycleNumber = max(1, $newCycleNumber);
+            // Create the new cycle row.
+            // Use MAX(cycle_number) + 1 across ALL existing cycles (including
+            // archived) so we never collide with the
+            // sub_cycles_thread_number_unique (subscribable_type,
+            // subscribable_id, cycle_number) index. subscription.cycle_count
+            // alone can lag behind when archived cycles from prior history
+            // already occupy the next number — see
+            // SubscriptionCycle::materializeFromSubscription for the same idiom.
+            $newCycleNumber = max(
+                1,
+                ((int) SubscriptionCycle::query()
+                    ->where('subscribable_type', $subscription->getMorphClass())
+                    ->where('subscribable_id', $subscription->id)
+                    ->max('cycle_number')) + 1
+            );
 
             $newCycle = SubscriptionCycle::create([
                 'subscribable_type' => $subscription->getMorphClass(),

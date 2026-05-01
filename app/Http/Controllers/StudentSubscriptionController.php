@@ -236,6 +236,8 @@ class StudentSubscriptionController extends Controller
                 'subscription' => $new->id,
             ]);
         } catch (\Exception $e) {
+            report($e);
+
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
