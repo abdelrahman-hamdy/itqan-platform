@@ -550,13 +550,17 @@ abstract class BaseQuranIndividualCircleResource extends Resource
     // ========================================
 
     /**
-     * Get the actual scheduled count from the eager-loaded withCount.
-     * Falls back to cached field if withCount not available.
+     * Get the count of "in-flight" sessions (used + currently scheduled) for the
+     * current cycle. Delegates to BaseSubscription::getInFlightSessionCount() so
+     * the cycle-scoped invariant is computed once and shared across consumers.
      */
     protected static function getScheduledCount($record): int
     {
-        // Use withCount result (sessions_not_cancelled_count) if available
-        return $record->sessions_not_cancelled_count ?? $record->sessions_scheduled ?? 0;
+        $sub = $record->activeSubscription ?? $record->subscription;
+
+        return $sub
+            ? $sub->getInFlightSessionCount()
+            : (int) ($record->sessions_scheduled ?? 0);
     }
 
     /**
@@ -625,6 +629,11 @@ abstract class BaseQuranIndividualCircleResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
+        // Note: deliberately no `withCount` for sessions here. The "scheduled"
+        // count is now derived from the cycle-scoped subscription counters
+        // (`total_sessions - sessions_remaining`) via getScheduledCount(). A
+        // lifetime withCount would re-introduce the cross-cycle interpolation
+        // we are explicitly removing in this fix.
         $query = parent::getEloquentQuery()
             ->with([
                 'quranTeacher',
@@ -632,10 +641,7 @@ abstract class BaseQuranIndividualCircleResource extends Resource
                 'academy',
                 'subscription.package',
                 'linkedSubscriptions.package',
-            ])
-            ->withCount(['sessions as sessions_not_cancelled_count' => function ($q) {
-                $q->whereNotIn('status', ['cancelled']);
-            }]);
+            ]);
 
         return static::scopeEloquentQuery($query);
     }

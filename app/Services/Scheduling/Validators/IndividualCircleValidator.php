@@ -192,13 +192,11 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             ];
         }
 
-        $totalSessions = $subscription->total_sessions;
-        // Use lockForUpdate to prevent race conditions during session counting
-        $scheduledSessions = $this->circle->sessions()
-            ->lockForUpdate()
-            ->notCancelled()
-            ->count();
-        $remaining = $totalSessions - $scheduledSessions;
+        // Cycle-scoped: ask SessionManagementService for the current-cycle remaining
+        // count so we don't bleed previous-cycle sessions into the current cycle's
+        // "scheduled" tally. The lifetime count via $this->circle->sessions() would
+        // otherwise show "fully scheduled" on every renewed subscription.
+        $remaining = $this->sessionService->getRemainingIndividualSessions($this->circle);
 
         if ($remaining <= 0) {
             return [

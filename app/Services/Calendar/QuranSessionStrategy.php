@@ -185,15 +185,23 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                 // Reuse service method (source of truth for remaining calculation)
                 $remainingSessions = $this->sessionService->getRemainingIndividualSessions($circle);
 
-                // Count from eager-loaded collection — filter to CURRENT CYCLE only
-                // so completed sessions from previous cycles don't inflate progress.
+                // sessions_scheduled = upcoming/in-flight session ROWS (SCHEDULED /
+                // READY / ONGOING) in the current cycle window only. We deliberately
+                // exclude COMPLETED rows here because the blade renders progress as
+                // (scheduled + consumed) / total — and `consumed` already covers
+                // every COMPLETED session through the (total - remaining) math. If
+                // we counted COMPLETED rows in `scheduled` too, the numerator would
+                // double-count them and read e.g. 13/8 for an 8-session cycle.
                 $allSessions = $circle->sessions;
                 $cycleStart = $subscription?->starts_at;
                 $countedSessions = $allSessions->filter(function ($s) use ($cycleStart) {
-                    if ($s->status === SessionStatus::CANCELLED) {
+                    if (! in_array($s->status, [
+                        SessionStatus::SCHEDULED,
+                        SessionStatus::READY,
+                        SessionStatus::ONGOING,
+                    ], true)) {
                         return false;
                     }
-                    // Exclude sessions from previous cycles
                     if ($cycleStart && $s->scheduled_at && $s->scheduled_at->lt($cycleStart)) {
                         return false;
                     }
@@ -202,9 +210,10 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                 })->count();
 
                 $totalFromSub = $subscription?->total_sessions ?? $circle->total_sessions;
-                // Consumed = all sessions used up (total - remaining), regardless
-                // of whether session records still exist in the DB.
-                $consumedSessions = max(0, $totalFromSub - ($subscription?->sessions_remaining ?? $totalFromSub));
+                // Consumed = all sessions used up in the current cycle.
+                $consumedSessions = $subscription
+                    ? $subscription->getInFlightSessionCount()
+                    : 0;
 
                 $status = 'not_scheduled';
                 if ($countedSessions > 0 || $consumedSessions > 0) {

@@ -40,6 +40,20 @@ class AcademicSessionObserver
     }
 
     /**
+     * Handle the AcademicSession "deleted" event.
+     *
+     * Fires for both soft and force deletes. If the session was already counted
+     * against a subscription, reverse the count — otherwise force-deleting a
+     * COMPLETED session permanently inflates the cycle's sessions_used.
+     */
+    public function deleted(AcademicSession $session): void
+    {
+        if ($session->isSubscriptionCounted()) {
+            $this->reverseSessionSideEffects($session, 'deleted');
+        }
+    }
+
+    /**
      * Handle session cancellation side-effects
      */
     private function handleCancellation(AcademicSession $session): void

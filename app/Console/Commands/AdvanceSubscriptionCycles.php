@@ -143,6 +143,7 @@ class AdvanceSubscriptionCycles extends Command
                 'total_sessions' => $queuedCycle->total_sessions,
                 'sessions_remaining' => $queuedCycle->total_sessions,
                 'sessions_used' => 0,
+                'total_sessions_scheduled' => 0,
                 'total_sessions_completed' => 0,
                 'total_sessions_missed' => 0,
                 'progress_percentage' => 0,

@@ -178,17 +178,22 @@ class QuranSessionObserver
 
     /**
      * Handle the QuranSession "deleted" event.
+     *
+     * Without the reverseSessionSideEffects call, force-deleting a COMPLETED session
+     * would leave subscription.sessions_used permanently elevated.
      */
     public function deleted(QuranSession $quranSession): void
     {
-        // If trial session is deleted, update trial request status to cancelled
         if ($quranSession->session_type === 'trial' && $quranSession->trialRequest) {
             $quranSession->trialRequest->update([
                 'status' => TrialRequestStatus::CANCELLED,
             ]);
         }
 
-        // Sync subscription total_sessions_scheduled count
+        if ($quranSession->isSubscriptionCounted()) {
+            $this->reverseSessionSideEffects($quranSession, 'deleted');
+        }
+
         $this->syncSubscriptionScheduledCount($quranSession);
     }
 
@@ -204,7 +209,11 @@ class QuranSessionObserver
     }
 
     /**
-     * Sync subscription's total_sessions_scheduled count from actual session records.
+     * Sync subscription's total_sessions_scheduled count from actual session records,
+     * scoped to the CURRENT cycle window. Sessions from archived cycles still link
+     * to this subscription via quran_subscription_id, but they must not inflate the
+     * current cycle's "scheduled" gauge — that's the cross-cycle interpolation the
+     * business rule explicitly forbids.
      */
     private function syncSubscriptionScheduledCount(QuranSession $session): void
     {
@@ -217,9 +226,18 @@ class QuranSessionObserver
             return;
         }
 
-        $count = QuranSession::where('quran_subscription_id', $subscription->id)
-            ->whereNotIn('status', [SessionStatus::CANCELLED])
-            ->count();
+        $query = QuranSession::where('quran_subscription_id', $subscription->id)
+            ->whereNotIn('status', [SessionStatus::CANCELLED]);
+
+        if ($subscription->starts_at) {
+            $query->where('scheduled_at', '>=', $subscription->starts_at);
+        }
+
+        $count = $query->count();
+
+        if ((int) $subscription->total_sessions_scheduled === $count) {
+            return;
+        }
 
         $subscription->updateQuietly(['total_sessions_scheduled' => $count]);
     }

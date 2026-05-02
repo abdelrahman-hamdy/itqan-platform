@@ -645,6 +645,16 @@ abstract class BaseSubscription extends Model
     }
 
     /**
+     * Sessions already consumed or currently scheduled in the active cycle.
+     * Equivalent to total_sessions − sessions_remaining (both cycle-scoped),
+     * which is the right gauge for "in-flight" / "booked" sessions in displays.
+     */
+    public function getInFlightSessionCount(): int
+    {
+        return max(0, (int) ($this->total_sessions ?? 0) - (int) ($this->sessions_remaining ?? 0));
+    }
+
+    /**
      * Check if subscription is expiring soon (within 7 days)
      */
     public function isExpiringSoon(int $days = 7): bool
@@ -863,6 +873,11 @@ abstract class BaseSubscription extends Model
 
     /**
      * Restore sessions that were suspended due to subscription pause/expiry.
+     *
+     * Scoped to the CURRENT cycle window: a SUSPENDED session whose date falls
+     * outside `[starts_at, ends_at]` belongs to a previous cycle and must NOT
+     * be flipped back to SCHEDULED — that would be cross-cycle interpolation.
+     * Out-of-window suspended sessions stay suspended (effectively forfeited).
      */
     public function restoreSuspendedSessions(): void
     {
@@ -870,9 +885,17 @@ abstract class BaseSubscription extends Model
             return;
         }
 
-        $this->sessions()
-            ->where('status', \App\Enums\SessionStatus::SUSPENDED->value)
-            ->update(['status' => \App\Enums\SessionStatus::SCHEDULED->value]);
+        $query = $this->sessions()
+            ->where('status', \App\Enums\SessionStatus::SUSPENDED->value);
+
+        if ($this->starts_at) {
+            $query->where('scheduled_at', '>=', $this->starts_at);
+        }
+        if ($this->ends_at) {
+            $query->where('scheduled_at', '<=', $this->ends_at);
+        }
+
+        $query->update(['status' => \App\Enums\SessionStatus::SCHEDULED->value]);
     }
 
     /**

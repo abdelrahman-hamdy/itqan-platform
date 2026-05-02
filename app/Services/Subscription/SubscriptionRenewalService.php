@@ -36,6 +36,12 @@ use Illuminate\Support\Facades\Log;
  * Renewal always activates. There is no "renew with pending payment" path — the
  * user-initiated "pay later but keep scheduling" scenario is handled via the
  * Extend action (grace period on the current cycle).
+ *
+ * No carryover policy: each cycle is an independent contract. Unused sessions
+ * in cycle N are forfeited at cycle N+1. The new cycle's `total_sessions`
+ * equals the package quota (sessions_per_month × billing_cycle.months) with
+ * no inheritance from the previous cycle. The `carryover_sessions` column is
+ * preserved for backward compatibility but new cycles always store 0.
  */
 class SubscriptionRenewalService
 {
@@ -135,15 +141,12 @@ class SubscriptionRenewalService
             }
             $newEndsAt = $billingCycle->calculateEndDate($newStartsAt);
 
-            // Carry over only when the cycle has unused sessions AND the
-            // subscription view doesn't already say the student is exhausted.
-            // The exhausted flag covers admin-preset pre-platform usage that
-            // the cycle counter alone cannot see.
-            $carryover = $replaceNow && ! $subscription->is_sessions_exhausted
-                ? max(0, $this->remainingSessionsOnCycle($currentCycle))
-                : 0;
-
-            $totalWithCarryover = $totalSessions + $carryover;
+            // Per business rule: each cycle is an independent contract; unused
+            // sessions in cycle N are forfeited at cycle N+1. No interpolation
+            // between cycles. The new cycle gets exactly the package's billed
+            // quota and nothing more.
+            $carryover = 0;
+            $totalWithCarryover = $totalSessions;
 
             // Archive the current cycle if replacing
             if ($replaceNow) {
@@ -431,6 +434,7 @@ class SubscriptionRenewalService
             'total_sessions' => $cycle->total_sessions,
             'sessions_remaining' => $cycle->total_sessions,
             'sessions_used' => 0,
+            'total_sessions_scheduled' => 0,
             'total_sessions_completed' => 0,
             'total_sessions_missed' => 0,
             'progress_percentage' => 0,
