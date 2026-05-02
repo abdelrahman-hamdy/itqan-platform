@@ -258,19 +258,35 @@ class TrialRequestController extends Controller
      */
     private function formatTrialRequest(QuranTrialRequest $req): array
     {
+        $trialSession = $req->trialSession;
+        $trialSessionStatus = $trialSession
+            ? (is_object($trialSession->status) ? $trialSession->status->value : $trialSession->status)
+            : null;
+
         return [
             'id' => (string) $req->id,
+            'request_code' => $req->request_code,
             'student_id' => (string) $req->student_id,
             'student_name' => $req->student?->name ?? $req->student_name,
             'student_avatar_url' => $req->student?->avatar ? asset('storage/'.$req->student->avatar) : null,
+            'student_gender' => $req->student?->gender,
+            'student_age' => $req->student_age,
+            'phone' => $req->phone,
+            'email' => $req->email,
             'status' => is_object($req->status) ? $req->status->value : $req->status,
             'student_notes' => $req->notes,
+            'admin_notes' => $req->admin_report,
+            'rejection_reason' => $req->feedback,
             'current_level' => $req->current_level,
             'preferred_time' => $req->preferred_time,
             'learning_goals' => $req->learning_goals ?? [],
             'rating' => $req->rating,
             'feedback' => $req->feedback,
-            'scheduled_at' => $req->trialSession?->scheduled_at?->toIso8601String(),
+            'scheduled_at' => $trialSession?->scheduled_at?->toIso8601String(),
+            'session_duration' => $trialSession?->duration_minutes,
+            'trial_session_id' => $trialSession ? (string) $trialSession->id : null,
+            'trial_session_status' => $trialSessionStatus,
+            'meeting_url' => $trialSession?->meeting_link,
             'requested_at' => $req->created_at->toIso8601String(),
             'completed_at' => $req->completed_at?->toIso8601String(),
             'created_at' => $req->created_at->toIso8601String(),
