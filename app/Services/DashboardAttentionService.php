@@ -52,11 +52,12 @@ class DashboardAttentionService
         int $unconfirmedLimit = 10,
         bool $loadReviews = true,
         bool $loadUnconfirmed = true,
+        bool $canAccessSubscriptions = false,
     ): array {
-        $cacheKey = $this->buildCacheKey($academyId, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails);
+        $cacheKey = $this->buildCacheKey($academyId, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails, $canAccessSubscriptions);
 
-        $counts = Cache::remember($cacheKey, 300, function () use ($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails) {
-            return $this->queryCounts($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails);
+        $counts = Cache::remember($cacheKey, 300, function () use ($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails, $canAccessSubscriptions) {
+            return $this->queryCounts($academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails, $canAccessSubscriptions);
         });
 
         $groups = $this->buildGroups($counts, $isAdmin);
@@ -81,7 +82,7 @@ class DashboardAttentionService
         ];
     }
 
-    private function queryCounts(int $academyId, bool $isAdmin, array $quranTeacherIds, array $academicTeacherProfileIds, bool $canConfirmStudentEmails = false): array
+    private function queryCounts(int $academyId, bool $isAdmin, array $quranTeacherIds, array $academicTeacherProfileIds, bool $canConfirmStudentEmails = false, bool $canAccessSubscriptions = false): array
     {
         $now = now();
         $today = $now->copy()->startOfDay();
@@ -108,51 +109,60 @@ class DashboardAttentionService
 
         // === CRITICAL ===
 
-        // 1. Subscriptions expiring within 3 days
-        $expiring3d = QuranSubscription::where('academy_id', $academyId)
-            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
-            ->where('ends_at', '<=', $threeDays)
-            ->where('ends_at', '>', $now)
-            ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
-            ->count()
-            + AcademicSubscription::where('academy_id', $academyId)
+        // Subscription alerts route to manage.subscriptions.index, which 403s
+        // when the supervisor lacks can_view_subscriptions/can_manage_subscriptions.
+        // Hide the alerts entirely for those users instead of leading them to a 403.
+        $expiring3d = 0;
+        $extendedSubs = 0;
+        $expiredPending = 0;
+
+        if ($canAccessSubscriptions) {
+            // 1. Subscriptions expiring within 3 days
+            $expiring3d = QuranSubscription::where('academy_id', $academyId)
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->where('ends_at', '<=', $threeDays)
                 ->where('ends_at', '>', $now)
-                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
-                ->count();
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
+                ->count()
+                + AcademicSubscription::where('academy_id', $academyId)
+                    ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+                    ->where('ends_at', '<=', $threeDays)
+                    ->where('ends_at', '>', $now)
+                    ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
+                    ->count();
 
-        // 2. Extended subscriptions (active grace period)
-        $extendedSubs = QuranSubscription::where('academy_id', $academyId)
-            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
-            ->whereNotNull('metadata->grace_period_ends_at')
-            ->whereRaw("JSON_EXTRACT(metadata, '$.grace_period_ends_at') > ?", [$now->toDateTimeString()])
-            ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
-            ->count()
-            + AcademicSubscription::where('academy_id', $academyId)
+            // 2. Extended subscriptions (active grace period)
+            $extendedSubs = QuranSubscription::where('academy_id', $academyId)
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->whereNotNull('metadata->grace_period_ends_at')
                 ->whereRaw("JSON_EXTRACT(metadata, '$.grace_period_ends_at') > ?", [$now->toDateTimeString()])
-                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
-                ->count();
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
+                ->count()
+                + AcademicSubscription::where('academy_id', $academyId)
+                    ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+                    ->whereNotNull('metadata->grace_period_ends_at')
+                    ->whereRaw("JSON_EXTRACT(metadata, '$.grace_period_ends_at') > ?", [$now->toDateTimeString()])
+                    ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
+                    ->count();
 
-        // 3. Expired-pending subscriptions (pending > 48h)
-        $expiredPending = QuranSubscription::where('academy_id', $academyId)
-            ->where('status', SessionSubscriptionStatus::PENDING->value)
-            ->where('payment_status', SubscriptionPaymentStatus::PENDING->value)
-            ->where('created_at', '<', $now->copy()->subHours(
-                config('subscriptions.pending.expires_after_hours', 48)
-            ))
-            ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
-            ->count()
-            + AcademicSubscription::where('academy_id', $academyId)
+            // 3. Expired-pending subscriptions (pending > 48h)
+            $expiredPending = QuranSubscription::where('academy_id', $academyId)
                 ->where('status', SessionSubscriptionStatus::PENDING->value)
                 ->where('payment_status', SubscriptionPaymentStatus::PENDING->value)
                 ->where('created_at', '<', $now->copy()->subHours(
                     config('subscriptions.pending.expires_after_hours', 48)
                 ))
-                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
-                ->count();
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
+                ->count()
+                + AcademicSubscription::where('academy_id', $academyId)
+                    ->where('status', SessionSubscriptionStatus::PENDING->value)
+                    ->where('payment_status', SubscriptionPaymentStatus::PENDING->value)
+                    ->where('created_at', '<', $now->copy()->subHours(
+                        config('subscriptions.pending.expires_after_hours', 48)
+                    ))
+                    ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
+                    ->count();
+        }
 
         // 4. Failed payments today (admin-only — payments are polymorphic, impractical to scope by teacher)
         $failedPayments = $isAdmin
@@ -176,29 +186,34 @@ class DashboardAttentionService
 
         // === WARNING ===
 
-        // 6. Subscriptions expiring in 4-7 days
-        $expiring7d = QuranSubscription::where('academy_id', $academyId)
-            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
-            ->where('ends_at', '>', $threeDays)
-            ->where('ends_at', '<=', $sevenDays)
-            ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
-            ->count()
-            + AcademicSubscription::where('academy_id', $academyId)
+        $expiring7d = 0;
+        $pendingSubs = 0;
+
+        if ($canAccessSubscriptions) {
+            // 6. Subscriptions expiring in 4-7 days
+            $expiring7d = QuranSubscription::where('academy_id', $academyId)
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->where('ends_at', '>', $threeDays)
                 ->where('ends_at', '<=', $sevenDays)
-                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
-                ->count();
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
+                ->count()
+                + AcademicSubscription::where('academy_id', $academyId)
+                    ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+                    ->where('ends_at', '>', $threeDays)
+                    ->where('ends_at', '<=', $sevenDays)
+                    ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
+                    ->count();
 
-        // 7. Pending subscriptions
-        $pendingSubs = QuranSubscription::where('academy_id', $academyId)
-            ->where('status', SessionSubscriptionStatus::PENDING->value)
-            ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
-            ->count()
-            + AcademicSubscription::where('academy_id', $academyId)
+            // 7. Pending subscriptions
+            $pendingSubs = QuranSubscription::where('academy_id', $academyId)
                 ->where('status', SessionSubscriptionStatus::PENDING->value)
-                ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
-                ->count();
+                ->when(! $isAdmin, fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds ?: [0]))
+                ->count()
+                + AcademicSubscription::where('academy_id', $academyId)
+                    ->where('status', SessionSubscriptionStatus::PENDING->value)
+                    ->when(! $isAdmin, fn ($q) => $q->whereIn('teacher_id', $academicTeacherProfileIds ?: [0]))
+                    ->count();
+        }
 
         // 8. Pending payments (admin-only)
         $pendingPayments = $isAdmin
@@ -610,14 +625,14 @@ class DashboardAttentionService
     /**
      * Forget the attention cache for specific parameters.
      */
-    public function forgetCacheFor(int $academyId, array $quranTeacherIds, array $academicTeacherProfileIds, bool $canConfirmStudentEmails = false): void
+    public function forgetCacheFor(int $academyId, array $quranTeacherIds, array $academicTeacherProfileIds, bool $canConfirmStudentEmails = false, bool $canAccessSubscriptions = false): void
     {
-        $cacheKey = $this->buildCacheKey($academyId, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails);
+        $cacheKey = $this->buildCacheKey($academyId, $quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails, $canAccessSubscriptions);
         Cache::forget($cacheKey);
     }
 
-    private function buildCacheKey(int $academyId, array $quranTeacherIds, array $academicTeacherProfileIds, bool $canConfirmStudentEmails): string
+    private function buildCacheKey(int $academyId, array $quranTeacherIds, array $academicTeacherProfileIds, bool $canConfirmStudentEmails, bool $canAccessSubscriptions = false): string
     {
-        return 'dashboard_attention_'.$academyId.'_'.md5(serialize([$quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails]));
+        return 'dashboard_attention_'.$academyId.'_'.md5(serialize([$quranTeacherIds, $academicTeacherProfileIds, $canConfirmStudentEmails, $canAccessSubscriptions]));
     }
 }

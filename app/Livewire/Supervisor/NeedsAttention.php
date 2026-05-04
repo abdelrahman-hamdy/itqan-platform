@@ -77,6 +77,7 @@ class NeedsAttention extends Component
             $academyId, $isAdmin, $quranTeacherIds, $academicTeacherProfileIds,
             $this->canConfirmStudentEmails(), $this->reviewsPerPage, $this->unconfirmedPerPage,
             $this->showReviewsPanel, $this->showUnconfirmedPanel,
+            $this->canAccessSubscriptions(),
         );
 
         $this->groups = $data['groups'];
@@ -198,6 +199,7 @@ class NeedsAttention extends Component
             $this->getAssignedQuranTeacherIds(),
             $this->getAssignedAcademicTeacherProfileIds(),
             $this->canConfirmStudentEmails(),
+            $this->canAccessSubscriptions(),
         );
 
         $this->loadData();
@@ -218,6 +220,18 @@ class NeedsAttention extends Component
     {
         return $this->isAdminUser()
             || (Auth::user()?->supervisorProfile?->canConfirmStudentEmails() ?? false);
+    }
+
+    private function canAccessSubscriptions(): bool
+    {
+        if ($this->isAdminUser()) {
+            return true;
+        }
+
+        $profile = Auth::user()?->supervisorProfile;
+
+        return ($profile?->canManageSubscriptions() ?? false)
+            || ($profile?->canViewSubscriptions() ?? false);
     }
 
     private function getAssignedQuranTeacherIds(): array
