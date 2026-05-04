@@ -25,8 +25,10 @@ class QuranSessionController extends BaseStudentSessionController
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
 
-        $query = QuranSession::where('student_id', $user->id)
-            ->with(['quranTeacher']);
+        $query = QuranSession::where(function ($q) use ($user) {
+            $q->where('student_id', $user->id)
+                ->orWhereHas('trialRequest', fn ($tr) => $tr->where('student_id', $user->id));
+        })->with(['quranTeacher']);
 
         if ($status) {
             $query->where('status', $status);
@@ -60,7 +62,10 @@ class QuranSessionController extends BaseStudentSessionController
         $user = $request->user();
         $today = Carbon::today();
 
-        $sessions = QuranSession::where('student_id', $user->id)
+        $sessions = QuranSession::where(function ($q) use ($user) {
+            $q->where('student_id', $user->id)
+                ->orWhereHas('trialRequest', fn ($tr) => $tr->where('student_id', $user->id));
+        })
             ->whereDate('scheduled_at', $today)
             ->with(['quranTeacher', 'individualCircle', 'circle'])
             ->orderBy('scheduled_at')
@@ -84,7 +89,10 @@ class QuranSessionController extends BaseStudentSessionController
         $now = now();
         $endDate = $now->copy()->addDays(14);
 
-        $sessions = QuranSession::where('student_id', $user->id)
+        $sessions = QuranSession::where(function ($q) use ($user) {
+            $q->where('student_id', $user->id)
+                ->orWhereHas('trialRequest', fn ($tr) => $tr->where('student_id', $user->id));
+        })
             ->where('scheduled_at', '>', $now)
             ->where('scheduled_at', '<=', $endDate)
             ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])

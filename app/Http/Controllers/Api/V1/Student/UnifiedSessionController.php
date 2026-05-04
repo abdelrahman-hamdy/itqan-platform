@@ -70,7 +70,10 @@ class UnifiedSessionController extends BaseStudentSessionController
         $studentProfileId = $user->studentProfile?->id;
 
         // Quran sessions
-        $quranSessions = QuranSession::where('student_id', $user->id)
+        $quranSessions = QuranSession::where(function ($q) use ($user) {
+            $q->where('student_id', $user->id)
+                ->orWhereHas('trialRequest', fn ($tr) => $tr->where('student_id', $user->id));
+        })
             ->whereDate('scheduled_at', $today)
             ->with(['quranTeacher', 'individualCircle', 'circle'])
             ->orderBy('scheduled_at')
@@ -128,7 +131,10 @@ class UnifiedSessionController extends BaseStudentSessionController
         $studentProfileId = $user->studentProfile?->id;
 
         // Quran sessions
-        $quranSessions = QuranSession::where('student_id', $user->id)
+        $quranSessions = QuranSession::where(function ($q) use ($user) {
+            $q->where('student_id', $user->id)
+                ->orWhereHas('trialRequest', fn ($tr) => $tr->where('student_id', $user->id));
+        })
             ->where('scheduled_at', '>', $now)
             ->where('scheduled_at', '<=', $endDate)
             ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
@@ -188,8 +194,10 @@ class UnifiedSessionController extends BaseStudentSessionController
      */
     protected function getQuranSessions(int $userId, ?string $status, ?string $dateFrom, ?string $dateTo): array
     {
-        $query = QuranSession::where('student_id', $userId)
-            ->with(['quranTeacher']);
+        $query = QuranSession::where(function ($q) use ($userId) {
+            $q->where('student_id', $userId)
+                ->orWhereHas('trialRequest', fn ($tr) => $tr->where('student_id', $userId));
+        })->with(['quranTeacher']);
 
         if ($status) {
             $query->where('status', $status);

@@ -178,6 +178,11 @@ class TrialRequestController extends Controller
      */
     private function formatTrialRequest(QuranTrialRequest $request): array
     {
+        $trialSession = $request->trialSession;
+        $trialSessionStatus = $trialSession
+            ? (is_object($trialSession->status) ? $trialSession->status->value : $trialSession->status)
+            : null;
+
         return [
             'id' => (string) $request->id,
             'teacher_id' => (string) $request->teacher_id,
@@ -191,7 +196,10 @@ class TrialRequestController extends Controller
             'current_level' => $request->current_level,
             'preferred_time' => $request->preferred_time,
             'learning_goals' => $request->learning_goals ?? [],
-            'scheduled_at' => $request->trialSession?->scheduled_at?->toIso8601String(),
+            'scheduled_at' => $trialSession?->scheduled_at?->toIso8601String(),
+            'trial_session_id' => $trialSession ? (string) $trialSession->id : null,
+            'trial_session_status' => $trialSessionStatus,
+            'meeting_url' => $trialSession?->meeting_link,
             'requested_at' => $request->created_at->toIso8601String(),
             'completed_at' => $request->completed_at?->toIso8601String(),
             'created_at' => $request->created_at->toIso8601String(),
