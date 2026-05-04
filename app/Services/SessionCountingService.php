@@ -122,7 +122,11 @@ class SessionCountingService
         }
 
         try {
-            $subscription->useSession();
+            // Charge the cycle the attendance was minted under so supervisor
+            // edits on archived-cycle rows can't bleed into the active cycle.
+            $cycleAnchor = $attendance->subscription_cycle_id
+                ?? ($session->subscription_cycle_id ?? null);
+            $subscription->useSession($cycleAnchor);
             $attendance->update(['subscription_counted_at' => now()]);
 
             if (! $session->subscription_counted) {
@@ -132,6 +136,7 @@ class SessionCountingService
             Log::info('SessionCountingService: Subscription decremented', [
                 'subscription_id' => $subscription->id,
                 'student_id' => $studentId,
+                'cycle_id' => $cycleAnchor,
             ]);
         } catch (Exception $e) {
             Log::error('SessionCountingService: Failed to apply subscription', [
@@ -152,7 +157,10 @@ class SessionCountingService
         }
 
         try {
-            $subscription->returnSession();
+            // Reverse on the same cycle the attendance was charged against.
+            $cycleAnchor = $attendance->subscription_cycle_id
+                ?? ($session->subscription_cycle_id ?? null);
+            $subscription->returnSession($cycleAnchor);
             $attendance->update(['subscription_counted_at' => null]);
 
             if ($session->subscription_counted) {

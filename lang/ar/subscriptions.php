@@ -261,4 +261,8 @@ return [
     'filter_expired_pending' => 'طلبات منتهية الصلاحية',
     'filter_valid_pending' => 'طلبات صالحة',
     'filter_expired_hours' => 'طلبات منتهية (> :hours ساعة)',
+
+    // Expiry-with-leftover banner (subscription expired but paid sessions remain)
+    'expired_with_leftover_title' => 'انتهى الاشتراك',
+    'expired_with_leftover_body' => '{1} انتهت مدة الاشتراك ويتبقى حصة واحدة غير مستهلكة. سيتم تحويلها إلى الدورة الجديدة فور التجديد.|[2,*] انتهت مدة الاشتراك ويتبقى :count حصص غير مستهلكة. سيتم تحويل الحصص المتبقية إلى الدورة الجديدة فور التجديد.',
 ];

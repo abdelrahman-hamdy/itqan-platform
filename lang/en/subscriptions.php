@@ -255,4 +255,8 @@ return [
     'filter_expired_pending' => 'Expired Requests',
     'filter_valid_pending' => 'Valid Requests',
     'filter_expired_hours' => 'Expired requests (> :hours hours)',
+
+    // Expiry-with-leftover banner (subscription expired but paid sessions remain)
+    'expired_with_leftover_title' => 'Subscription expired',
+    'expired_with_leftover_body' => '{1} This subscription has expired with 1 paid session still unused. It will roll into the next cycle as soon as the student renews.|[2,*] This subscription has expired with :count paid sessions still unused. Remaining sessions will roll into the next cycle as soon as the student renews.',
 ];

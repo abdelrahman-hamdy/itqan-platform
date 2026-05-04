@@ -156,8 +156,11 @@ trait CountsTowardsSubscription
                 }
 
                 try {
-                    // Deduct one session from subscription (useSession() acquires its own lock)
-                    $subscription->useSession();
+                    // Deduct one session from subscription (useSession() acquires its own lock).
+                    // Pass the session's own cycle anchor so the count lands on
+                    // the cycle the session was minted under, never on whichever
+                    // cycle is currently active.
+                    $subscription->useSession($session->subscription_cycle_id ?? null);
 
                     // Mark this session as counted to prevent double-counting
                     $session->update(['subscription_counted' => true]);
@@ -240,8 +243,9 @@ trait CountsTowardsSubscription
             }
 
             try {
-                // Reverse the subscription count
-                $subscription->returnSession();
+                // Reverse the subscription count on the cycle the session was
+                // minted under (not whichever cycle is currently active).
+                $subscription->returnSession($session->subscription_cycle_id ?? null);
 
                 // Mark session as not counted
                 $session->update(['subscription_counted' => false]);
@@ -319,7 +323,13 @@ trait CountsTowardsSubscription
                     continue;
                 }
 
-                $subscription->useSession();
+                // Prefer the per-attendance cycle anchor; fall back to the
+                // session's anchor for any attendance row that predates the
+                // backfill. Either way, the count lands on the cycle the
+                // session was minted under, not the currently-active cycle.
+                $cycleAnchor = $attendance?->subscription_cycle_id
+                    ?? ($this->subscription_cycle_id ?? null);
+                $subscription->useSession($cycleAnchor);
 
                 if ($attendance) {
                     // Set both the timestamp (idempotency key) and the display flag

@@ -362,6 +362,22 @@
                     }
                 @endphp
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
+                    @php
+                        $expiredLeftoverModel = $subscription['model'] ?? null;
+                        $hasExpiredLeftover = $expiredLeftoverModel
+                            && method_exists($expiredLeftoverModel, 'hasExpiredWithLeftoverSessions')
+                            && $expiredLeftoverModel->hasExpiredWithLeftoverSessions();
+                        $expiredLeftoverCount = $hasExpiredLeftover ? (int) ($subscription['sessions_remaining'] ?? 0) : 0;
+                    @endphp
+                    @if($hasExpiredLeftover)
+                        <div class="border-b border-amber-200 bg-amber-50 px-4 md:px-5 lg:px-6 py-3 flex items-start gap-3" dir="auto">
+                            <i class="ri-error-warning-line text-amber-600 text-xl shrink-0 mt-0.5"></i>
+                            <div class="text-sm text-amber-800">
+                                <div class="font-semibold mb-0.5">{{ __('subscriptions.expired_with_leftover_title') }}</div>
+                                <div>{{ trans_choice('subscriptions.expired_with_leftover_body', $expiredLeftoverCount, ['count' => $expiredLeftoverCount]) }}</div>
+                            </div>
+                        </div>
+                    @endif
                     <div class="p-4 md:p-5 lg:p-6">
                         <!-- Row 1: Icon + Title on Right, Actions on Left -->
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">

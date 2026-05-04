@@ -54,6 +54,35 @@ class MeetingAttendance extends Model
     public const STUDENT_USER_TYPE = 'student';
 
     /**
+     * Inherit `subscription_cycle_id` from the parent session at row-creation
+     * time. The session's cycle stamp is the one that was active when the
+     * session was minted; counting must charge that cycle even if the
+     * subscription has since rolled over.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $attendance) {
+            if (! empty($attendance->subscription_cycle_id) || empty($attendance->session_id)) {
+                return;
+            }
+
+            $sessionClass = match ($attendance->session_type) {
+                'academic' => AcademicSession::class,
+                'interactive' => InteractiveCourseSession::class,
+                default => QuranSession::class,
+            };
+
+            $cycleId = $sessionClass::query()
+                ->whereKey($attendance->session_id)
+                ->value('subscription_cycle_id');
+
+            if ($cycleId) {
+                $attendance->subscription_cycle_id = $cycleId;
+            }
+        });
+    }
+
+    /**
      * Get post-session grace period from config
      */
     public static function getPostSessionGraceMinutes(): int
@@ -74,6 +103,7 @@ class MeetingAttendance extends Model
     protected $fillable = [
         'session_id',
         'user_id',
+        'subscription_cycle_id',
         'user_type',
         'session_type',
         'first_join_time',

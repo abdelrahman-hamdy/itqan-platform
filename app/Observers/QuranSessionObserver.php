@@ -7,12 +7,10 @@ use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
-use App\Models\TeacherEarning;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
 use App\Services\TrialRequestSyncService;
 use Exception;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class QuranSessionObserver
@@ -39,6 +37,10 @@ class QuranSessionObserver
 
     /**
      * Handle the QuranSession "updated" event.
+     *
+     * Subscription + teacher-earning reversal on COMPLETED→non-counting
+     * flips lives in BaseSessionObserver; this handler only runs the
+     * Quran-specific tails (trial sync, individualCircle/circle counts).
      */
     public function updated(QuranSession $quranSession): void
     {
@@ -47,20 +49,29 @@ class QuranSessionObserver
             $this->trialSyncService->syncStatus($quranSession);
         }
 
-        // Handle session cancellation
-        if ($quranSession->wasChanged('status') && $quranSession->status === SessionStatus::CANCELLED) {
-            $this->handleCancellation($quranSession);
-        }
+        if ($quranSession->wasChanged('status')) {
+            $previousStatus = BaseSessionObserver::resolvePreviousStatus($quranSession);
+            $newStatus = $quranSession->status;
 
-        // Update circle session counts and progress when session is completed
-        if ($quranSession->wasChanged('status') && $quranSession->status === SessionStatus::COMPLETED) {
-            if ($quranSession->session_type === 'individual' && $quranSession->individualCircle) {
-                $quranSession->individualCircle->loadMissing('subscription');
-                $quranSession->individualCircle->updateSessionCounts();
-                $quranSession->individualCircle->updateProgress();
+            // Quran-specific tail when a counted session flips out of COMPLETED:
+            // recompute circle/individualCircle session counts so they don't
+            // include the now-uncounted session.
+            if ($previousStatus === SessionStatus::COMPLETED
+                && $newStatus !== SessionStatus::COMPLETED
+                && $quranSession->isSubscriptionCounted()) {
+                $this->cleanupCircleCountsOnUncomplete($quranSession);
             }
-            if ($quranSession->session_type === 'circle' && $quranSession->circle) {
-                $quranSession->circle->updateSessionCounts();
+
+            // Update circle session counts and progress when session is completed
+            if ($newStatus === SessionStatus::COMPLETED) {
+                if ($quranSession->session_type === 'individual' && $quranSession->individualCircle) {
+                    $quranSession->individualCircle->loadMissing('subscription');
+                    $quranSession->individualCircle->updateSessionCounts();
+                    $quranSession->individualCircle->updateProgress();
+                }
+                if ($quranSession->session_type === 'circle' && $quranSession->circle) {
+                    $quranSession->circle->updateSessionCounts();
+                }
             }
         }
 
@@ -68,49 +79,21 @@ class QuranSessionObserver
         $this->checkHomeworkAssigned($quranSession);
     }
 
-    /**
-     * Handle session cancellation side-effects
-     */
-    private function handleCancellation(QuranSession $session): void
-    {
-        $this->reverseSessionSideEffects($session, 'cancellation');
-    }
-
-    /**
-     * Shared logic for reversing session side-effects (cancellation).
-     */
-    private function reverseSessionSideEffects(QuranSession $session, string $action): void
+    private function cleanupCircleCountsOnUncomplete(QuranSession $session): void
     {
         try {
-            DB::transaction(function () use ($session) {
-                if ($session->isSubscriptionCounted()) {
-                    $session->reverseSubscriptionUsage();
-                }
+            if ($session->session_type === 'individual' && $session->individualCircle) {
+                $session->individualCircle->loadMissing('subscription');
+                $session->individualCircle->handleSessionCancelled();
+            }
 
-                // Delete teacher earnings for cancelled session
-                TeacherEarning::where('session_type', QuranSession::class)
-                    ->where('session_id', $session->id)
-                    ->delete();
-
-                if ($session->session_type === 'individual' && $session->individualCircle) {
-                    $session->individualCircle->loadMissing('subscription');
-                    $session->individualCircle->handleSessionCancelled();
-                }
-
-                if ($session->session_type === 'circle' && $session->circle) {
-                    $session->circle->updateSessionCounts();
-                }
-            });
-
-            Log::info("Quran session {$action} handled", [
-                'session_id' => $session->id,
-                'session_type' => $session->session_type,
-            ]);
+            if ($session->session_type === 'circle' && $session->circle) {
+                $session->circle->updateSessionCounts();
+            }
         } catch (Exception $e) {
-            Log::error("Failed to handle Quran session {$action}", [
+            Log::error('Failed to clean up Quran circle counts after uncomplete', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
             report($e);
         }
@@ -163,12 +146,12 @@ class QuranSessionObserver
                 );
             }
 
-            \Log::info('Quran homework assigned notifications sent', [
+            Log::info('Quran homework assigned notifications sent', [
                 'session_id' => $quranSession->id,
             ]);
 
         } catch (Exception $e) {
-            \Log::error('Failed to send Quran homework assigned notifications', [
+            Log::error('Failed to send Quran homework assigned notifications', [
                 'session_id' => $quranSession->id,
                 'error' => $e->getMessage(),
             ]);
@@ -179,8 +162,9 @@ class QuranSessionObserver
     /**
      * Handle the QuranSession "deleted" event.
      *
-     * Without the reverseSessionSideEffects call, force-deleting a COMPLETED session
-     * would leave subscription.sessions_used permanently elevated.
+     * Subscription + earnings reversal is handled by BaseSessionObserver.
+     * This handler runs only the Quran-specific tails: trial request cancel,
+     * circle counts, and scheduled-count resync.
      */
     public function deleted(QuranSession $quranSession): void
     {
@@ -191,7 +175,7 @@ class QuranSessionObserver
         }
 
         if ($quranSession->isSubscriptionCounted()) {
-            $this->reverseSessionSideEffects($quranSession, 'deleted');
+            $this->cleanupCircleCountsOnUncomplete($quranSession);
         }
 
         $this->syncSubscriptionScheduledCount($quranSession);

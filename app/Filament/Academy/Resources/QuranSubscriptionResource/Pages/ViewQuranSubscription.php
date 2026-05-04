@@ -3,12 +3,15 @@
 namespace App\Filament\Academy\Resources\QuranSubscriptionResource\Pages;
 
 use App\Filament\Academy\Resources\QuranSubscriptionResource;
+use App\Filament\Concerns\RendersExpiredLeftoverBanner;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 
 class ViewQuranSubscription extends ViewRecord
 {
+    use RendersExpiredLeftoverBanner;
+
     protected static string $resource = QuranSubscriptionResource::class;
 
     protected function getHeaderActions(): array

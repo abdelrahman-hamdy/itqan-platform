@@ -234,11 +234,15 @@ class SessionTransitionService
         }
 
         $now = now();
+        // Bulk INSERT bypasses the `creating` hook on MeetingAttendance, so
+        // stamp the cycle anchor explicitly here.
+        $cycleId = $session->subscription_cycle_id ?? null;
         $rows = [];
         foreach ($participants as $p) {
             $rows[] = [
                 'session_id' => $session->id,
                 'user_id' => $p['user_id'],
+                'subscription_cycle_id' => $cycleId,
                 'user_type' => $p['user_type'],
                 'session_type' => $sessionTypeTag,
                 'join_leave_cycles' => json_encode([]),

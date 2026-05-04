@@ -5,17 +5,17 @@ namespace App\Observers;
 use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
-use App\Models\TeacherEarning;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
 use Exception;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
  * AcademicSessionObserver
  *
- * Handles notifications when homework is assigned to academic sessions
+ * Subscription + teacher-earning reversal lives in BaseSessionObserver.
+ * This observer runs the Academic-specific tails (lesson cancellation
+ * hook, homework assignment notifications).
  */
 class AcademicSessionObserver
 {
@@ -24,9 +24,15 @@ class AcademicSessionObserver
      */
     public function updated(AcademicSession $session): void
     {
-        // Handle session cancellation
-        if ($session->wasChanged('status') && $session->status === SessionStatus::CANCELLED) {
-            $this->handleCancellation($session);
+        if ($session->wasChanged('status')) {
+            $previousStatus = BaseSessionObserver::resolvePreviousStatus($session);
+            $newStatus = $session->status;
+
+            if ($previousStatus === SessionStatus::COMPLETED
+                && $newStatus !== SessionStatus::COMPLETED
+                && $session->isSubscriptionCounted()) {
+                $this->cleanupLessonOnUncomplete($session);
+            }
         }
 
         // Use wasChanged() (not isDirty) in the 'updated' observer: after save, isDirty() is always false.
@@ -42,57 +48,28 @@ class AcademicSessionObserver
     /**
      * Handle the AcademicSession "deleted" event.
      *
-     * Fires for both soft and force deletes. If the session was already counted
-     * against a subscription, reverse the count — otherwise force-deleting a
-     * COMPLETED session permanently inflates the cycle's sessions_used.
+     * Subscription + earnings reversal is handled by BaseSessionObserver.
+     * This handler only runs the Academic-specific lesson cleanup.
      */
     public function deleted(AcademicSession $session): void
     {
         if ($session->isSubscriptionCounted()) {
-            $this->reverseSessionSideEffects($session, 'deleted');
+            $this->cleanupLessonOnUncomplete($session);
         }
     }
 
-    /**
-     * Handle session cancellation side-effects
-     */
-    private function handleCancellation(AcademicSession $session): void
-    {
-        $this->reverseSessionSideEffects($session, 'cancellation');
-    }
-
-    /**
-     * Shared logic for reversing session side-effects (cancellation).
-     */
-    private function reverseSessionSideEffects(AcademicSession $session, string $action): void
+    private function cleanupLessonOnUncomplete(AcademicSession $session): void
     {
         try {
-            DB::transaction(function () use ($session) {
-                if ($session->isSubscriptionCounted()) {
-                    $session->reverseSubscriptionUsage();
-                }
-
-                // Delete teacher earnings for cancelled session
-                TeacherEarning::where('session_type', AcademicSession::class)
-                    ->where('session_id', $session->id)
-                    ->delete();
-
-                if ($session->session_type === 'individual' && $session->academicIndividualLesson) {
-                    $session->academicIndividualLesson->handleSessionCancelled($session);
-                }
-            });
-
-            Log::info("Academic session {$action} handled", [
-                'session_id' => $session->id,
-                'session_type' => $session->session_type ?? 'individual',
-            ]);
+            if ($session->session_type === 'individual' && $session->academicIndividualLesson) {
+                $session->academicIndividualLesson->handleSessionCancelled($session);
+            }
         } catch (Exception $e) {
-            report($e);
-            Log::error("Failed to handle Academic session {$action}", [
+            Log::error('Failed to clean up academic lesson after uncomplete', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
+            report($e);
         }
     }
 

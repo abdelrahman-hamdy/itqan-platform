@@ -250,6 +250,16 @@ Schedule::command('subscriptions:reconcile-missed')
     ->runInBackground()
     ->description('Safety net: count subscriptions for completed sessions that were missed');
 
+// Daily drift audit between subscription_cycles.sessions_used and the actual
+// counted sessions per cycle. Dry-run only — repair is operator-triggered
+// via `php artisan subscriptions:audit-cycle-counts --apply`.
+Schedule::command('subscriptions:audit-cycle-counts')
+    ->name('audit-cycle-counts')
+    ->dailyAt('04:30')
+    ->withoutOverlapping(15)
+    ->runInBackground()
+    ->description('Daily dry-run audit of cycle session-count drift; repair is operator-triggered');
+
 // Recalculate denormalized teacher profile counters (total_students, total_sessions)
 // Required because total_students/total_sessions are excluded from $fillable for security
 // and no observer/listener currently maintains them. Runs as safety net every 15 minutes.

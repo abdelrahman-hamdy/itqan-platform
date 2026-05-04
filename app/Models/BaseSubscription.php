@@ -417,6 +417,31 @@ abstract class BaseSubscription extends Model
     }
 
     /**
+     * True when the subscription's paid window has elapsed but paid sessions
+     * remain unconsumed. Used for the supervisor / student "Subscription
+     * expired — N sessions held for renewal" banner. Drives the same predicate
+     * the renewal flow uses to decide whether to roll leftovers into the
+     * next cycle (Rule 3).
+     */
+    public function hasExpiredWithLeftoverSessions(): bool
+    {
+        if ((int) ($this->sessions_remaining ?? 0) <= 0) {
+            return false;
+        }
+        if ($this->is_sessions_exhausted) {
+            return false;
+        }
+        if (! $this->ends_at || ! $this->ends_at->isPast()) {
+            return false;
+        }
+
+        return in_array($this->status, [
+            SessionSubscriptionStatus::PAUSED,
+            SessionSubscriptionStatus::EXPIRED,
+        ], true);
+    }
+
+    /**
      * Scope: Get subscriptions that need renewal reminders
      */
     public function scopeNeedsRenewalReminder($query, int $daysBeforeRenewal = 7)
@@ -1220,16 +1245,53 @@ abstract class BaseSubscription extends Model
     // ========================================
 
     /**
-     * Consume one session from the subscription.
-     * Consolidates counters + exhaustion metadata into a single UPDATE.
+     * Consume one session.
+     *
+     * Pass `$cycleId` (the session's `subscription_cycle_id`) so the
+     * decrement lands on the cycle the session was minted under, not
+     * whichever cycle is currently active. Without it, a delayed count
+     * for an archived cycle's session would charge the new active cycle.
      */
-    public function useSession(): self
+    public function useSession(?int $cycleId = null): self
     {
-        return DB::transaction(function () {
+        return DB::transaction(function () use ($cycleId) {
+            /** @var BaseSubscription $subscription */
             $subscription = static::lockForUpdate()->find($this->id);
 
             if (! $subscription) {
                 throw new Exception(__('subscriptions.subscription_not_found'));
+            }
+
+            $targetCycleId = $cycleId ?? $subscription->current_cycle_id;
+            $cycle = $targetCycleId
+                ? SubscriptionCycle::lockForUpdate()->find($targetCycleId)
+                : null;
+
+            // Atomic SQL increment so concurrent counts across the same cycle
+            // don't lose increments via PHP-side read-modify-write.
+            if ($cycle) {
+                SubscriptionCycle::where('id', $cycle->id)
+                    ->update([
+                        'sessions_used' => DB::raw('sessions_used + 1'),
+                        'sessions_completed' => DB::raw('sessions_completed + 1'),
+                    ]);
+            }
+
+            // Mirror onto the subscription row only when the increment landed
+            // on the currently-active cycle. Off-cycle catch-ups leave the
+            // subscription row alone — its counters snapshot the active cycle.
+            $shouldMirror = $cycle === null
+                || (int) $cycle->id === (int) $subscription->current_cycle_id;
+
+            if (! $shouldMirror) {
+                Log::info('Off-cycle subscription consume — cycle row updated only', [
+                    'subscription_id' => $subscription->id,
+                    'target_cycle_id' => $cycle->id,
+                    'active_cycle_id' => $subscription->current_cycle_id,
+                ]);
+                $this->refresh();
+
+                return $this;
             }
 
             if ($subscription->sessions_remaining <= 0) {
@@ -1248,8 +1310,6 @@ abstract class BaseSubscription extends Model
                 'sessions_remaining' => $newRemaining,
                 'total_sessions_completed' => $subscription->total_sessions_completed + 1,
                 'last_session_at' => now(),
-                // Recompute on every call so reconcile and returnSession() agree.
-                // Pegs to 100 below when remaining hits 0.
                 'progress_percentage' => $totalSessions > 0
                     ? round(($newSessionsUsed / $totalSessions) * 100, 2)
                     : 0,
@@ -1264,17 +1324,6 @@ abstract class BaseSubscription extends Model
             }
 
             $subscription->update($updateData);
-
-            // Keep the current cycle's counters in sync so the cycles
-            // relation manager and API payloads reflect real session usage.
-            if ($subscription->current_cycle_id) {
-                SubscriptionCycle::where('id', $subscription->current_cycle_id)
-                    ->update([
-                        'sessions_used' => DB::raw('sessions_used + 1'),
-                        'sessions_completed' => DB::raw('sessions_completed + 1'),
-                    ]);
-            }
-
             $this->refresh();
 
             return $this;
@@ -1282,16 +1331,48 @@ abstract class BaseSubscription extends Model
     }
 
     /**
-     * Return a session to the subscription (reverse of useSession).
-     * Called when a session is cancelled after being counted.
+     * Return a session (reverse of useSession). Mirrors the cycle-anchored
+     * targeting: the decrement lands on the cycle the session was charged
+     * against, and the subscription row is only touched when that cycle is
+     * the currently-active one.
      */
-    public function returnSession(): self
+    public function returnSession(?int $cycleId = null): self
     {
-        return DB::transaction(function () {
+        return DB::transaction(function () use ($cycleId) {
+            /** @var BaseSubscription $subscription */
             $subscription = static::lockForUpdate()->find($this->id);
 
             if (! $subscription) {
                 throw new Exception(__('subscriptions.subscription_not_found'));
+            }
+
+            $targetCycleId = $cycleId ?? $subscription->current_cycle_id;
+            $cycle = $targetCycleId
+                ? SubscriptionCycle::lockForUpdate()->find($targetCycleId)
+                : null;
+
+            // Cast to SIGNED so UNSIGNED arithmetic doesn't underflow before
+            // GREATEST() clamps to 0.
+            if ($cycle) {
+                SubscriptionCycle::where('id', $cycle->id)
+                    ->update([
+                        'sessions_used' => DB::raw('GREATEST(CAST(sessions_used AS SIGNED) - 1, 0)'),
+                        'sessions_completed' => DB::raw('GREATEST(CAST(sessions_completed AS SIGNED) - 1, 0)'),
+                    ]);
+            }
+
+            $shouldMirror = $cycle === null
+                || (int) $cycle->id === (int) $subscription->current_cycle_id;
+
+            if (! $shouldMirror) {
+                Log::info('Off-cycle subscription return — cycle row updated only', [
+                    'subscription_id' => $subscription->id,
+                    'target_cycle_id' => $cycle->id,
+                    'active_cycle_id' => $subscription->current_cycle_id,
+                ]);
+                $this->refresh();
+
+                return $this;
             }
 
             $newRemaining = $subscription->sessions_remaining + 1;
@@ -1302,22 +1383,17 @@ abstract class BaseSubscription extends Model
                 'sessions_used' => $newSessionsUsed,
                 'sessions_remaining' => $newRemaining,
                 'total_sessions_completed' => max(0, $subscription->total_sessions_completed - 1),
-                // Recompute progress so the subscription row doesn't read 100%
-                // forever after refunding the last session. useSession() pegs
-                // this to 100 on exhaustion; mirror that here.
                 'progress_percentage' => $totalSessions > 0
                     ? round(($newSessionsUsed / $totalSessions) * 100, 2)
                     : 0,
             ];
 
-            // Clear sessions_exhausted flag if sessions are available again
             $metadata = $subscription->metadata ?? [];
             if (! empty($metadata['sessions_exhausted']) && $newRemaining > 0) {
                 unset($metadata['sessions_exhausted'], $metadata['sessions_exhausted_at']);
                 $updateData['metadata'] = $metadata ?: null;
             }
 
-            // Legacy: If subscription was paused due to old exhaustion logic, reactivate in same UPDATE
             if ($subscription->status === SessionSubscriptionStatus::PAUSED
                 && $subscription->pause_reason === config('subscriptions.legacy_sessions_exhausted_pause_reason')) {
                 $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
@@ -1326,21 +1402,7 @@ abstract class BaseSubscription extends Model
             }
 
             $subscription->update($updateData);
-
-            // Reverse the current cycle's counters to match the subscription row.
-            // Cast to SIGNED so MySQL doesn't blow up with "BIGINT UNSIGNED out of
-            // range" when sessions_used is already 0 — UNSIGNED arithmetic
-            // underflows BEFORE GREATEST() can clamp it.
-            if ($subscription->current_cycle_id) {
-                SubscriptionCycle::where('id', $subscription->current_cycle_id)
-                    ->update([
-                        'sessions_used' => DB::raw('GREATEST(CAST(sessions_used AS SIGNED) - 1, 0)'),
-                        'sessions_completed' => DB::raw('GREATEST(CAST(sessions_completed AS SIGNED) - 1, 0)'),
-                    ]);
-            }
-
             Log::info('Session returned to '.class_basename(static::class)." {$subscription->id}");
-
             $this->refresh();
 
             return $this;

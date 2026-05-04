@@ -86,6 +86,7 @@ class QuranSession extends BaseSession implements RecordingCapable
         // Teacher and subscription (Quran-specific)
         'quran_teacher_id',
         'quran_subscription_id',
+        'subscription_cycle_id',
         'circle_id',
         'individual_circle_id',
         'student_id',
@@ -579,6 +580,7 @@ class QuranSession extends BaseSession implements RecordingCapable
                         'user_type' => 'student',
                     ],
                     [
+                        'subscription_cycle_id' => $this->subscription_cycle_id ?? null,
                         'session_type' => $sessionTypeForMA,
                         'attendance_status' => $status,
                         'is_calculated' => true,

@@ -37,11 +37,18 @@ use Illuminate\Support\Facades\Log;
  * user-initiated "pay later but keep scheduling" scenario is handled via the
  * Extend action (grace period on the current cycle).
  *
- * No carryover policy: each cycle is an independent contract. Unused sessions
- * in cycle N are forfeited at cycle N+1. The new cycle's `total_sessions`
- * equals the package quota (sessions_per_month × billing_cycle.months) with
- * no inheritance from the previous cycle. The `carryover_sessions` column is
- * preserved for backward compatibility but new cycles always store 0.
+ * Carryover policy (Rule 3): leftover sessions from a cycle that EXPIRED
+ * (ends_at < now()) without exhaustion roll into the next cycle's quota
+ * — the student paid for them and the cycle window simply elapsed before
+ * they could be used. Early renewal of a still-active cycle does NOT
+ * carry over (would let students extend coverage past package terms by
+ * renewing aggressively). Renewing an exhausted subscription has nothing
+ * to carry. See `shouldCarryOverLeftovers()` for the predicate.
+ *
+ * The new cycle's `total_sessions` = packageQuota + carryover. Only the
+ * one cycle that received carryover is bumped; subsequent renewals fall
+ * back to packageQuota. The `carryover_sessions` column on the new cycle
+ * row records the inherited count for audit.
  */
 class SubscriptionRenewalService
 {
@@ -141,12 +148,14 @@ class SubscriptionRenewalService
             }
             $newEndsAt = $billingCycle->calculateEndDate($newStartsAt);
 
-            // Per business rule: each cycle is an independent contract; unused
-            // sessions in cycle N are forfeited at cycle N+1. No interpolation
-            // between cycles. The new cycle gets exactly the package's billed
-            // quota and nothing more.
-            $carryover = 0;
-            $totalWithCarryover = $totalSessions;
+            // Rule 3: carry leftover sessions from a cycle that EXPIRED
+            // (ends_at < now()) into the new cycle's quota. Early renewal of
+            // a still-active cycle does not carry over. See class docblock
+            // and shouldCarryOverLeftovers() for rationale.
+            $carryover = $this->shouldCarryOverLeftovers($subscription, $currentCycle)
+                ? max(0, (int) $currentCycle->total_sessions - (int) $currentCycle->sessions_used)
+                : 0;
+            $totalWithCarryover = $totalSessions + $carryover;
 
             // Archive the current cycle if replacing
             if ($replaceNow) {
@@ -407,6 +416,30 @@ class SubscriptionRenewalService
     private function remainingSessionsOnCycle(SubscriptionCycle $cycle): int
     {
         return max(0, ((int) $cycle->total_sessions) - ((int) $cycle->sessions_used));
+    }
+
+    /**
+     * Decide whether leftover sessions on the previous cycle roll into the
+     * new cycle's quota. Triggered only when the previous cycle ELAPSED
+     * (ends_at past) with sessions still uncon­sumed — those are sessions
+     * the student paid for but the time window expired before they used
+     * them. Early renewal of an active cycle does NOT carry over: the
+     * student keeps the active cycle and a fresh next-cycle quota is
+     * sized strictly to the package, no inheritance.
+     */
+    private function shouldCarryOverLeftovers(
+        BaseSubscription $subscription,
+        ?SubscriptionCycle $cycle,
+    ): bool {
+        if (! $cycle || $subscription->is_sessions_exhausted) {
+            return false;
+        }
+
+        if ($this->remainingSessionsOnCycle($cycle) <= 0) {
+            return false;
+        }
+
+        return $cycle->ends_at !== null && $cycle->ends_at->isPast();
     }
 
     /**

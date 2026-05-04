@@ -10,12 +10,14 @@ use App\Jobs\CalculateSessionForAttendance;
 use App\Jobs\CreateSessionMeetingJob;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendance;
+use App\Models\TeacherEarning;
 use App\Models\User;
 use App\Services\Notification\NotificationUrlBuilder;
 use App\Services\NotificationService;
 use App\Services\SessionTransitionService;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -33,30 +35,27 @@ use Illuminate\Support\Facades\Log;
 class BaseSessionObserver
 {
     /**
-     * Handle the BaseSession "creating" event — subscription schedulability guard.
-     *
-     * Sessions should never be created against a subscription that is not
-     * schedulable right now (status !== ACTIVE, or payment pending without grace).
-     * This observer is the catch-all net for the ~6 direct-`create()` call sites
-     * so that no new code path can accidentally bypass the validator layer.
-     *
-     * Bypassed automatically when the session is created inside a
-     * `Model::withoutEvents()` block (used by the Academic lesson bootstrap
-     * that pre-allocates UNSCHEDULED sessions for a new cycle).
+     * Catch-all guard so no `create()` path can schedule a session against a
+     * non-schedulable subscription. Bypassed inside `Model::withoutEvents()`
+     * (used by the Academic lesson bootstrap pre-allocating UNSCHEDULED rows).
      */
     public function creating(BaseSession $session): void
     {
         $subscription = $this->resolveSubscriptionFor($session);
 
         if ($subscription === null) {
-            // Group sessions, trial sessions, and interactive course sessions
-            // don't have a per-student subscription — those paths have their
-            // own validators.
+            // Group / trial / interactive sessions have no per-student sub.
             return;
         }
 
         if (! $subscription->isSchedulable()) {
             throw \App\Exceptions\SubscriptionException::notSchedulable($subscription->id);
+        }
+
+        // Stamp the active cycle now; the FK is immutable for the row's life
+        // so cross-cycle counting cannot leak after a later promotion.
+        if (empty($session->subscription_cycle_id) && $subscription->current_cycle_id) {
+            $session->subscription_cycle_id = $subscription->current_cycle_id;
         }
     }
 
@@ -212,6 +211,18 @@ class BaseSessionObserver
 
             $newStatusEnum = is_string($newStatus) ? SessionStatus::from($newStatus) : $newStatus;
             $oldStatusEnum = is_string($oldStatus) ? SessionStatus::tryFrom($oldStatus) : $oldStatus;
+
+            // countsTowardsSubscription() returns true only for COMPLETED, so any
+            // flip OUT of COMPLETED on a counted session must give the cycle's
+            // session back. Covers CANCELLED, SUSPENDED, ABSENT-via-status, and
+            // a flip back to a pre-completion state.
+            if ($oldStatusEnum === SessionStatus::COMPLETED
+                && $newStatusEnum !== SessionStatus::COMPLETED
+                && method_exists($session, 'isSubscriptionCounted')
+                && $session->isSubscriptionCounted()) {
+                $action = $newStatusEnum === SessionStatus::CANCELLED ? 'cancellation' : 'status_uncomplete';
+                $this->reverseSubscriptionAndEarnings($session, $action);
+            }
 
             // Fires on the first entry into the active window, including no-show
             // jumps SCHEDULED→COMPLETED that skip ONGOING. Skipped on the happy-path
@@ -379,6 +390,72 @@ class BaseSessionObserver
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Resolve the previous SessionStatus enum from the model's original
+     * status field. Centralised so child observers share one implementation.
+     */
+    public static function resolvePreviousStatus(BaseSession $session): ?SessionStatus
+    {
+        $original = $session->getOriginal('status');
+        if ($original === null) {
+            return null;
+        }
+        if ($original instanceof SessionStatus) {
+            return $original;
+        }
+
+        return SessionStatus::tryFrom((string) $original);
+    }
+
+    /**
+     * Reverse the subscription-side and teacher-earning side effects of a
+     * counted session. Used when a session flips out of COMPLETED or is
+     * (force-)deleted while still counted. Type-specific cleanup
+     * (individual circle counts, academicIndividualLesson hooks) lives in
+     * the child observers so they only run for their own subclass.
+     */
+    protected function reverseSubscriptionAndEarnings(BaseSession $session, string $action): void
+    {
+        try {
+            DB::transaction(function () use ($session) {
+                if (method_exists($session, 'isSubscriptionCounted') && $session->isSubscriptionCounted()) {
+                    $session->reverseSubscriptionUsage();
+                }
+
+                TeacherEarning::where('session_type', get_class($session))
+                    ->where('session_id', $session->id)
+                    ->delete();
+            });
+
+            Log::info('Session reversed', [
+                'session_id' => $session->id,
+                'session_class' => get_class($session),
+                'action' => $action,
+            ]);
+        } catch (Exception $e) {
+            Log::error('Failed to reverse session side-effects', [
+                'session_id' => $session->id,
+                'session_class' => get_class($session),
+                'action' => $action,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            report($e);
+        }
+    }
+
+    /**
+     * Handle the BaseSession "deleted" event — fires for both soft and force
+     * deletes. Subscription/earning reversal is handled here so child
+     * observers can stay focused on type-specific tails.
+     */
+    public function deleted(BaseSession $session): void
+    {
+        if (method_exists($session, 'isSubscriptionCounted') && $session->isSubscriptionCounted()) {
+            $this->reverseSubscriptionAndEarnings($session, 'deleted');
         }
     }
 

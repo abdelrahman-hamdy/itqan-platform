@@ -102,12 +102,16 @@ class SubscriptionResource extends JsonResource
             ]),
 
             // Grace period
-            'in_grace_period' => method_exists($this->resource, 'isInGracePeriod') ? $this->isInGracePeriod() : false,
-            'needs_renewal' => method_exists($this->resource, 'needsRenewal') ? $this->needsRenewal() : false,
-            'grace_period_ends_at' => method_exists($this->resource, 'getGracePeriodEndsAt')
-                ? $this->getGracePeriodEndsAt()?->toISOString()
-                : null,
+            'in_grace_period' => $this->isInGracePeriod(),
+            'needs_renewal' => $this->needsRenewal(),
+            'grace_period_ends_at' => $this->getGracePeriodEndsAt()?->toISOString(),
             'paid_until' => $this->ends_at?->toISOString(),
+
+            // Expired-with-leftover banner — true when the subscription has
+            // elapsed (ends_at past, status paused/expired) with paid sessions
+            // still unconsumed. Leftover sessions roll into the next cycle on
+            // renewal (Rule 3) so the count is preserved.
+            'expired_with_leftover_sessions' => $this->hasExpiredWithLeftoverSessions(),
 
             // Cycle tracking
             'current_cycle_id' => $this->current_cycle_id,

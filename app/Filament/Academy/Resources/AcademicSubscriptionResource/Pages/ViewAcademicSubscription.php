@@ -3,12 +3,15 @@
 namespace App\Filament\Academy\Resources\AcademicSubscriptionResource\Pages;
 
 use App\Filament\Academy\Resources\AcademicSubscriptionResource;
+use App\Filament\Concerns\RendersExpiredLeftoverBanner;
 use App\Filament\Pages\BaseViewRecord as ViewRecord;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 
 class ViewAcademicSubscription extends ViewRecord
 {
+    use RendersExpiredLeftoverBanner;
+
     protected static string $resource = AcademicSubscriptionResource::class;
 
     protected function getHeaderActions(): array

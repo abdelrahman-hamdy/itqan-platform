@@ -176,10 +176,10 @@ class ValidateDataIntegrityCommand extends Command
                         }
 
                         if ($shouldFix) {
-                            $subscription->sessions_used = $actualUsed;
-                            $subscription->sessions_remaining = max(0, $subscription->total_sessions - $actualUsed);
-                            $subscription->save();
-                            $this->info("    Fixed subscription {$subscription->id}");
+                            // Direct writes here would diverge subscription.sessions_used
+                            // from cycle.sessions_used and break the cycle-anchored model.
+                            // Repair is deferred to subscriptions:audit-cycle-counts.
+                            $this->warn("    Skipping fix — run: php artisan subscriptions:audit-cycle-counts --apply --subscription={$subscription->id}");
                         }
                     }
                 }
@@ -208,10 +208,8 @@ class ValidateDataIntegrityCommand extends Command
                         }
 
                         if ($shouldFix) {
-                            $subscription->sessions_used = $actualUsed;
-                            $subscription->sessions_remaining = max(0, $subscription->total_sessions - $actualUsed);
-                            $subscription->save();
-                            $this->info("    Fixed subscription {$subscription->id}");
+                            // Same reason as Quran branch above — repair via audit command.
+                            $this->warn("    Skipping fix — run: php artisan subscriptions:audit-cycle-counts --apply --subscription={$subscription->id}");
                         }
                     }
                 }

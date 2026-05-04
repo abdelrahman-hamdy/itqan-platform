@@ -85,6 +85,7 @@ class AcademicSession extends BaseSession implements RecordingCapable
         // Academic-specific fields
         'academic_teacher_id',
         'academic_subscription_id',
+        'subscription_cycle_id',
         'academic_individual_lesson_id',
         'student_id',
         'session_type',
@@ -814,20 +815,24 @@ class AcademicSession extends BaseSession implements RecordingCapable
     /**
      * Get the subscription instance for counting (required by CountsTowardsSubscription trait)
      *
-     * For Academic sessions:
-     * - Individual sessions: subscription comes from academic individual lesson
-     * - Group sessions: not yet implemented
+     * Subscription isolation: anchor to the session's own `academic_subscription_id`
+     * FK whenever it's set so a counted session always charges the subscription
+     * it was created under, even if the linked lesson is later rebound to a
+     * different subscription. Falls back to the lesson's currently linked
+     * subscription only for legacy rows that predate the FK column.
      *
      * @return AcademicSubscription|null
      */
     public function getSubscriptionForCounting()
     {
-        // Only individual sessions with academic individual lesson have subscriptions
+        if ($this->academic_subscription_id) {
+            return $this->academicSubscription;
+        }
+
         if ($this->session_type === 'individual' && $this->academicIndividualLesson) {
             return $this->academicIndividualLesson->subscription;
         }
 
-        // Group sessions subscription logic not yet implemented
         return null;
     }
 
