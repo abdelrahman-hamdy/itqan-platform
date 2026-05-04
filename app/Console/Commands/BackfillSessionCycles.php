@@ -256,17 +256,32 @@ class BackfillSessionCycles extends Command
     }
 
     /**
-     * Half-open interval [starts_at, ends_at) so the boundary moment between
-     * two cycles is unambiguously assigned to the next cycle.
+     * Was the cycle actually active at this moment in time?
+     *
+     * Cycles are archived early on promotion, so `archived_at` is the
+     * authoritative upper bound when present — `ends_at` is only the
+     * cycle's natural expiry and is later than `archived_at` for any
+     * cycle that was promoted before its term. Falls back to `ends_at`
+     * for cycles that were never archived (still-active or legacy rows).
+     *
+     * Half-open interval so the boundary instant between two cycles is
+     * unambiguously assigned to the next cycle.
      */
     private function cycleContains(SubscriptionCycle $cycle, CarbonInterface $when): bool
     {
-        if ($cycle->starts_at === null || $cycle->ends_at === null) {
+        if ($cycle->starts_at === null) {
+            return false;
+        }
+        if ($when->lessThan($cycle->starts_at)) {
             return false;
         }
 
-        return $when->greaterThanOrEqualTo($cycle->starts_at)
-            && $when->lessThan($cycle->ends_at);
+        $upperBound = $cycle->archived_at ?? $cycle->ends_at;
+        if ($upperBound === null) {
+            return true;
+        }
+
+        return $when->lessThan($upperBound);
     }
 
     /**
