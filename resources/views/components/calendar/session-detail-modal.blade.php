@@ -130,7 +130,7 @@
                         </a>
                         <div class="grid grid-cols-2 gap-2">
                             <template x-if="session.can_edit">
-                                <button @click="editData = { scheduled_at: utcToAcademyLocal(session.scheduled_at), duration_minutes: session.duration_minutes || 60, teacher_notes: session.teacher_notes || '' }; editMode = true" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
+                                <button @click="editData = { scheduled_at: utcToAcademyLocal(session.scheduled_at), teacher_notes: session.teacher_notes || '' }; editMode = true" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                                     <i class="ri-edit-line me-1"></i> {{ __('teacher.calendar.edit_session') }}
                                 </button>
                             </template>
@@ -191,18 +191,6 @@
                                })">
                     </div>
                     </template>
-
-                    <!-- Duration -->
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">{{ __('teacher.calendar.modal_duration') }}</label>
-                        <select x-model="editData.duration_minutes" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                            <option value="30">30 {{ __('teacher.calendar.minutes_short') }}</option>
-                            <option value="45">45 {{ __('teacher.calendar.minutes_short') }}</option>
-                            <option value="60">60 {{ __('teacher.calendar.minutes_short') }}</option>
-                            <option value="90">90 {{ __('teacher.calendar.minutes_short') }}</option>
-                            <option value="120">120 {{ __('teacher.calendar.minutes_short') }}</option>
-                        </select>
-                    </div>
 
                     <!-- Notes -->
                     <div>
@@ -513,7 +501,6 @@ function sessionDetailModal() {
                 };
                 if (this.teacherId) body.teacher_id = this.teacherId;
                 if (this.editData.scheduled_at) body.scheduled_at = this.editData.scheduled_at;
-                if (this.editData.duration_minutes) body.duration_minutes = parseInt(this.editData.duration_minutes);
                 if (this.editData.teacher_notes !== undefined) body.teacher_notes = this.editData.teacher_notes;
 
                 const response = await fetch(@js($updateSessionRoute), {

@@ -168,7 +168,9 @@ abstract class BaseAcademicSessionResource extends BaseResource
                             ->label('مدة الجلسة')
                             ->options(SessionDuration::options())
                             ->default(60)
-                            ->required(),
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->helperText('تتبع مدة الجلسة باقة الاشتراك ولا يمكن تعديلها يدويًا.'),
 
                         Select::make('status')
                             ->label('حالة الجلسة')

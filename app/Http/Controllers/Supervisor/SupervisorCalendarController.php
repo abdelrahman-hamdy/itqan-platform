@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Constants\DefaultAcademy;
-use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Concerns\RespondsWithScheduleResult;
 use App\Http\Controllers\SessionsMonitoringController;
@@ -19,7 +18,6 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use InvalidArgumentException;
 
@@ -464,7 +462,6 @@ class SupervisorCalendarController extends BaseSupervisorWebController
             'source' => ['required', 'string', 'in:quran_session,circle_session,course_session,academic_session'],
             'session_id' => ['required', 'integer'],
             'scheduled_at' => ['nullable', 'date'],
-            'duration_minutes' => ['nullable', 'integer', Rule::in(SessionDuration::values())],
             'teacher_notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -492,9 +489,6 @@ class SupervisorCalendarController extends BaseSupervisorWebController
             $updateData['scheduled_at'] = AcademyContextService::toUtcForStorage(
                 AcademyContextService::parseInAcademyTimezone($validated['scheduled_at'])
             );
-        }
-        if (isset($validated['duration_minutes'])) {
-            $updateData['duration_minutes'] = $validated['duration_minutes'];
         }
         if (array_key_exists('teacher_notes', $validated)) {
             $updateData['teacher_notes'] = $validated['teacher_notes'];

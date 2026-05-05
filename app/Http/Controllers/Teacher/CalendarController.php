@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Constants\DefaultAcademy;
-use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Concerns\RespondsWithScheduleResult;
 use App\Http\Controllers\Controller;
@@ -21,7 +20,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use InvalidArgumentException;
 
@@ -482,7 +480,6 @@ class CalendarController extends Controller
             'source' => ['required', 'string', 'in:quran_session,circle_session,course_session,academic_session'],
             'session_id' => ['required', 'integer'],
             'scheduled_at' => ['nullable', 'date'],
-            'duration_minutes' => ['nullable', 'integer', Rule::in(SessionDuration::values())],
             'teacher_notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -519,9 +516,6 @@ class CalendarController extends Controller
             $updateData['scheduled_at'] = AcademyContextService::toUtcForStorage(
                 AcademyContextService::parseInAcademyTimezone($validated['scheduled_at'])
             );
-        }
-        if (isset($validated['duration_minutes'])) {
-            $updateData['duration_minutes'] = $validated['duration_minutes'];
         }
         if (array_key_exists('teacher_notes', $validated)) {
             $updateData['teacher_notes'] = $validated['teacher_notes'];

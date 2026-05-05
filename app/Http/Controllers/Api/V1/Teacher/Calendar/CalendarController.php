@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher\Calendar;
 
-use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Teacher\Calendar\BatchScheduleSessionRequest;
@@ -23,7 +22,6 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 
 /**
@@ -311,7 +309,6 @@ class CalendarController extends Controller
         $validated = $request->validate([
             'teacher_id' => ['nullable', 'integer'],
             'scheduled_at' => ['nullable', 'date', 'after:now'],
-            'duration_minutes' => ['nullable', 'integer', Rule::in(SessionDuration::values())],
             'teacher_notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -333,9 +330,6 @@ class CalendarController extends Controller
             $updateData['scheduled_at'] = AcademyContextService::toUtcForStorage(
                 AcademyContextService::parseInAcademyTimezone($validated['scheduled_at'])
             );
-        }
-        if (isset($validated['duration_minutes'])) {
-            $updateData['duration_minutes'] = $validated['duration_minutes'];
         }
         if (array_key_exists('teacher_notes', $validated)) {
             $updateData['teacher_notes'] = $validated['teacher_notes'];

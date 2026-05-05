@@ -160,8 +160,8 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         $validated = $request->validated();
         $updated = [];
 
-        // Status, schedule, and duration changes require manage permission
-        $hasManageFields = isset($validated['status']) || isset($validated['scheduled_at']) || isset($validated['duration_minutes']);
+        // Status and schedule changes require manage permission
+        $hasManageFields = isset($validated['status']) || isset($validated['scheduled_at']);
         if ($hasManageFields && ! $this->canManageSessions()) {
             return response()->json(['message' => __('common.unauthorized')], 403);
         }
@@ -174,11 +174,6 @@ class SupervisorSessionsController extends BaseSupervisorWebController
         if (isset($validated['scheduled_at'])) {
             $session->scheduled_at = $validated['scheduled_at'];
             $updated[] = 'scheduled_at';
-        }
-
-        if (isset($validated['duration_minutes'])) {
-            $session->duration_minutes = $validated['duration_minutes'];
-            $updated[] = 'duration_minutes';
         }
 
         if (array_key_exists('supervisor_notes', $validated)) {
