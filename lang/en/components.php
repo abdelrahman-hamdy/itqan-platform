@@ -69,6 +69,7 @@ return [
             // UI-only label for completed-but-uncounted sessions (soft "canceled").
             'canceled' => 'Canceled',
             'unscheduled' => 'Unscheduled',
+            'suspended' => 'Suspended',
             'absent' => 'Absent',
             'preparing_meeting' => 'Preparing Meeting',
             'not_scheduled' => 'Not Scheduled',

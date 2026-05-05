@@ -298,10 +298,13 @@
 
             // Set status-based gradient colors for modal header (matches calendar legend)
             const statusGradients = {
+                'unscheduled': 'bg-gradient-to-br from-gray-400 to-gray-500',
                 'scheduled': 'bg-gradient-to-br from-blue-500 to-blue-600',
-                'ongoing': 'bg-gradient-to-br from-yellow-500 to-yellow-600',
+                'ready': 'bg-gradient-to-br from-violet-500 to-violet-600',
+                'ongoing': 'bg-gradient-to-br from-cyan-500 to-cyan-600',
                 'completed': 'bg-gradient-to-br from-green-500 to-green-600',
-                'cancelled': 'bg-gradient-to-br from-red-500 to-red-600'
+                'cancelled': 'bg-gradient-to-br from-red-500 to-red-600',
+                'suspended': 'bg-gradient-to-br from-orange-500 to-orange-600'
             };
 
             // Remove all gradient classes and add the status-based one
@@ -515,20 +518,16 @@
         }
 
         function getStatusInfo(status) {
-            const SessionStatus = {
-                SCHEDULED: 'scheduled',
-                ONGOING: 'ongoing',
-                COMPLETED: 'completed',
-                CANCELLED: 'cancelled'
-            };
-
             const statusMap = {
-                [SessionStatus.SCHEDULED]: { label: '{{ __('student.calendar.status_scheduled') }}', icon: 'ri-calendar-check-line', class: 'bg-blue-100 text-blue-700' },
-                [SessionStatus.ONGOING]: { label: '{{ __('student.calendar.status_ongoing') }}', icon: 'ri-live-line', class: 'bg-yellow-100 text-yellow-700' },
-                [SessionStatus.COMPLETED]: { label: '{{ __('student.calendar.status_completed') }}', icon: 'ri-checkbox-circle-line', class: 'bg-green-100 text-green-700' },
-                [SessionStatus.CANCELLED]: { label: '{{ __('student.calendar.status_cancelled') }}', icon: 'ri-close-circle-line', class: 'bg-red-100 text-red-700' }
+                'unscheduled': { label: '{{ __('enums.session_status.unscheduled') }}', icon: 'ri-time-line', class: 'bg-gray-100 text-gray-700' },
+                'scheduled': { label: '{{ __('enums.session_status.scheduled') }}', icon: 'ri-calendar-check-line', class: 'bg-blue-100 text-blue-700' },
+                'ready': { label: '{{ __('enums.session_status.ready') }}', icon: 'ri-video-line', class: 'bg-violet-100 text-violet-700' },
+                'ongoing': { label: '{{ __('enums.session_status.ongoing') }}', icon: 'ri-live-line', class: 'bg-cyan-100 text-cyan-700' },
+                'completed': { label: '{{ __('enums.session_status.completed') }}', icon: 'ri-checkbox-circle-line', class: 'bg-green-100 text-green-700' },
+                'cancelled': { label: '{{ __('enums.session_status.cancelled') }}', icon: 'ri-close-circle-line', class: 'bg-red-100 text-red-700' },
+                'suspended': { label: '{{ __('enums.session_status.suspended') }}', icon: 'ri-pause-circle-line', class: 'bg-orange-100 text-orange-700' }
             };
-            return statusMap[status] || statusMap[SessionStatus.SCHEDULED];
+            return statusMap[status] || statusMap['scheduled'];
         }
 
         // Initialize on page load

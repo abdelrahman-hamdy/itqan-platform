@@ -71,6 +71,7 @@ return [
             // status enum) — written in colloquial form to feel softer.
             'canceled' => 'ملغاة',
             'unscheduled' => 'غير مجدولة',
+            'suspended' => 'موقوفة',
             'absent' => 'غائب',
             'preparing_meeting' => 'تجهيز الاجتماع',
             'not_scheduled' => 'غير مجدولة',

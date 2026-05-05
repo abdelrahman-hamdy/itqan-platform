@@ -75,6 +75,8 @@ return [
         'no_remaining_circle_sessions' => 'No remaining sessions to schedule for this circle',
     ],
 
+    'suspended_reason' => 'This session is suspended because the subscription is paused. It will resume once the subscription is renewed.',
+
     'invalid_tab' => 'Invalid tab',
     'invalid_tab_method' => 'Invalid loading method',
     'schedule_created_successfully' => 'Sessions scheduled successfully',

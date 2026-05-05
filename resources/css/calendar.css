@@ -76,21 +76,33 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.calendar-event.status-unscheduled {
+    background-color: #f3f4f6;
+    border-right: 3px solid #6b7280;
+    color: #374151;
+}
+
 .calendar-event.status-scheduled {
     background-color: #dbeafe;
     border-right: 3px solid #3b82f6;
     color: #1e40af;
 }
 
+.calendar-event.status-ready {
+    background-color: #ede9fe;
+    border-right: 3px solid #8b5cf6;
+    color: #5b21b6;
+}
+
 .calendar-event.status-ongoing {
-    background-color: #fef3c7;
-    border-right: 3px solid #f59e0b;
-    color: #92400e;
+    background-color: #cffafe;
+    border-right: 3px solid #06b6d4;
+    color: #155e75;
 }
 
 .calendar-event.status-completed {
     background-color: #d1fae5;
-    border-right: 3px solid #10b981;
+    border-right: 3px solid #22c55e;
     color: #065f46;
 }
 
@@ -98,6 +110,13 @@
     background-color: #fee2e2;
     border-right: 3px solid #ef4444;
     color: #991b1b;
+}
+
+.calendar-event.status-suspended {
+    background-color: #ffedd5;
+    border-right: 3px solid #f97316;
+    color: #9a3412;
+    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.4) 0 6px, transparent 6px 12px);
 }
 
 /* Modal Styles */

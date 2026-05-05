@@ -110,7 +110,7 @@ class EventFormattingService
                 'end_time' => $session->scheduled_at->copy()->addMinutes($session->duration_minutes),
                 'duration_minutes' => $session->duration_minutes,
                 'status' => $status,
-                'color' => '#3B82F6', // Blue for courses
+                'color' => $this->getSessionColor($session),
                 'url' => $sessionUrl,
                 'teacher_name' => $session->course?->assignedTeacher ? ($session->course->assignedTeacher->first_name.' '.$session->course->assignedTeacher->last_name) : null,
                 'teacher_data' => $session->course?->assignedTeacher ? [
@@ -175,7 +175,7 @@ class EventFormattingService
                 'end_time' => $session->scheduled_at->copy()->addMinutes($session->duration_minutes),
                 'duration_minutes' => $session->duration_minutes,
                 'status' => $status,
-                'color' => '#10B981', // Green for circles
+                'color' => $this->getSessionColor($session),
                 'url' => $sessionUrl,
                 'teacher_name' => $session->quranTeacher ? ($session->quranTeacher->first_name.' '.$session->quranTeacher->last_name) : null,
                 'teacher_data' => $session->quranTeacher ? [

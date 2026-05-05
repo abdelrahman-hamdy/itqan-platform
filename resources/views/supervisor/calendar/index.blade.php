@@ -120,16 +120,7 @@
             if (el('stat-cancelled')) el('stat-cancelled').textContent = stats.cancelled || 0;
         }
 
-        // Status color map
-        const statusColors = {
-            'scheduled': '#3b82f6',
-            'ready': '#6366f1',
-            'ongoing': '#f59e0b',
-            'live': '#f59e0b',
-            'completed': '#10b981',
-            'cancelled': '#ef4444',
-            'absent': '#f97316'
-        };
+        const statusColors = @js(\App\Enums\SessionStatus::hexColorMap());
 
         // HTML escape helper
         function htmlEscape(str) {
@@ -213,7 +204,7 @@
                         end: utcToAcademyLocal(event.end_time),
                         backgroundColor: statusColors[event.status] || event.color || '#3b82f6',
                         borderColor: 'transparent',
-                        classNames: ['fc-event-' + (event.status || 'scheduled')],
+                        classNames: ['fc-event-' + (event.status || 'scheduled'), event.status === 'suspended' ? 'fc-event-suspended' : ''].filter(Boolean),
                         extendedProps: {
                             status: event.status,
                             source: event.source,

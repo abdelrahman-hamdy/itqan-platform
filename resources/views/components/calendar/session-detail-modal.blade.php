@@ -28,11 +28,13 @@
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" @click.stop>
             <!-- Header -->
             <div class="relative p-5 rounded-t-xl" :class="{
+                'bg-gradient-to-br from-gray-400 to-gray-500': session?.status === 'unscheduled',
                 'bg-gradient-to-br from-blue-500 to-blue-600': session?.status === 'scheduled',
-                'bg-gradient-to-br from-indigo-500 to-indigo-600': session?.status === 'ready',
-                'bg-gradient-to-br from-amber-500 to-amber-600': session?.status === 'ongoing' || session?.status === 'live',
+                'bg-gradient-to-br from-violet-500 to-violet-600': session?.status === 'ready',
+                'bg-gradient-to-br from-cyan-500 to-cyan-600': session?.status === 'ongoing' || session?.status === 'live',
                 'bg-gradient-to-br from-green-500 to-green-600': session?.status === 'completed',
                 'bg-gradient-to-br from-red-500 to-red-600': session?.status === 'cancelled',
+                'bg-gradient-to-br from-orange-500 to-orange-600': session?.status === 'suspended',
                 'bg-gradient-to-br from-gray-500 to-gray-600': !session?.status
             }">
                 <button @click="close()" class="absolute top-3 rtl:left-3 ltr:right-3 text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer">
@@ -55,6 +57,14 @@
             <!-- Content (view mode) -->
             <template x-if="!loading && session && !editMode">
                 <div class="p-5 space-y-4">
+                    <!-- Suspension reason chip -->
+                    <template x-if="session?.status === 'suspended'">
+                        <div class="flex items-start gap-2 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                            <i class="ri-pause-circle-line text-orange-600 text-lg flex-shrink-0 mt-0.5"></i>
+                            <p class="text-xs text-orange-800 leading-relaxed">{{ __('calendar.suspended_reason') }}</p>
+                        </div>
+                    </template>
+
                     <!-- Date/Time -->
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">

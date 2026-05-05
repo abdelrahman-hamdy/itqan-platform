@@ -89,6 +89,8 @@ return [
         'no_remaining_circle_sessions' => 'لا توجد جلسات متبقية للجدولة في هذه الحلقة',
     ],
 
+    'suspended_reason' => 'الجلسة موقوفة لأن الاشتراك متوقف. ستعود للعمل عند تجديد الاشتراك.',
+
     'invalid_tab' => 'علامة تبويب غير صالحة',
     'invalid_tab_method' => 'طريقة التحميل غير صالحة',
     'schedule_created_successfully' => 'تم جدولة الجلسات بنجاح',

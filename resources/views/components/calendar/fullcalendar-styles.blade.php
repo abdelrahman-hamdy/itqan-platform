@@ -77,14 +77,14 @@
     .fc .fc-event-title {
         font-weight: 500;
     }
-    /* Status colors */
-    .fc-event-scheduled { background-color: #3b82f6 !important; color: #fff !important; }
-    .fc-event-ready { background-color: #6366f1 !important; color: #fff !important; }
-    .fc-event-ongoing { background-color: #f59e0b !important; color: #fff !important; }
-    .fc-event-live { background-color: #f59e0b !important; color: #fff !important; }
-    .fc-event-completed { background-color: #10b981 !important; color: #fff !important; }
-    .fc-event-cancelled { background-color: #ef4444 !important; color: #fff !important; }
-    .fc-event-absent { background-color: #f97316 !important; color: #fff !important; }
+    /* Status colors — generated from App\Enums\SessionStatus */
+@foreach (\App\Enums\SessionStatus::hexColorMap() as $value => $hex)
+    .fc-event-{{ $value }} { background-color: {{ $hex }} !important; color: #fff !important; }
+@endforeach
+    .fc-event-suspended {
+        background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.22) 0 6px, transparent 6px 12px) !important;
+        opacity: 0.92;
+    }
     /* Drag & drop visual feedback */
     .fc-event-dragging {
         opacity: 0.8;

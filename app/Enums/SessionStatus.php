@@ -85,6 +85,17 @@ enum SessionStatus: string
     }
 
     /**
+     * Map of status value => hex color for calendar/CSS rendering.
+     */
+    public static function hexColorMap(): array
+    {
+        return array_combine(
+            self::values(),
+            array_map(fn ($s) => $s->hexColor(), self::cases())
+        );
+    }
+
+    /**
      * Check if session can be started
      */
     public function canStart(): bool

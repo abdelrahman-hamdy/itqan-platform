@@ -105,6 +105,11 @@
                 'icon' => 'ri-time-line',
                 'label' => __('components.sessions.status.unscheduled')
             ],
+            SessionStatus::SUSPENDED->value, SessionStatus::SUSPENDED => [
+                'classes' => 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border border-orange-300',
+                'icon' => 'ri-pause-circle-line',
+                'label' => __('components.sessions.status.suspended')
+            ],
             default => [
                 'classes' => 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-300',
                 'icon' => 'ri-question-line',
