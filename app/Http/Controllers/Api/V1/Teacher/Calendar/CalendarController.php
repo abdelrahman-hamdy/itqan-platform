@@ -235,25 +235,28 @@ class CalendarController extends Controller
                 return $this->error($pacingResult->getMessage(), 422, 'INVALID_WEEKLY_PACING');
             }
 
-            $createdCount = $strategy->createSchedule($validated, $validator);
-            $requestedCount = (int) $validated['session_count'];
+            $result = $strategy->createSchedule($validated, $validator);
+            $message = __($result->messageKey(), $result->messageParams());
+            $failuresPayload = array_slice($result->failures, 0, 10);
+            $failuresTotal = count($result->failures);
 
-            if ($createdCount <= 0) {
+            if ($result->isEmpty()) {
                 return $this->error(
-                    __('calendar.schedule_no_sessions_created'),
+                    $message,
                     422,
                     'NO_SESSIONS_CREATED',
-                    [],
-                    ['created' => 0, 'requested' => $requestedCount],
+                    ['failures' => $failuresPayload, 'failures_total' => $failuresTotal],
+                    ['created' => 0, 'requested' => $result->requested],
                 );
             }
 
-            $message = $createdCount < $requestedCount
-                ? __('calendar.schedule_partial', ['created' => $createdCount, 'requested' => $requestedCount])
-                : __('calendar.schedule_created_successfully');
-
             return $this->created(
-                ['created' => $createdCount, 'requested' => $requestedCount],
+                [
+                    'created' => $result->created,
+                    'requested' => $result->requested,
+                    'failures' => $failuresPayload,
+                    'failures_total' => $failuresTotal,
+                ],
                 $message,
             );
         } catch (InvalidArgumentException $e) {

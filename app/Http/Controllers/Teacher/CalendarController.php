@@ -199,9 +199,9 @@ class CalendarController extends Controller
                 ], 422);
             }
 
-            $createdCount = $strategy->createSchedule($validated, $validator);
+            $result = $strategy->createSchedule($validated, $validator);
 
-            return $this->scheduleResultResponse($createdCount, $validated['session_count']);
+            return $this->scheduleResultResponse($result);
         } catch (InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,

@@ -190,16 +190,6 @@ class SupervisorCalendarController extends BaseSupervisorWebController
 
     public function createSchedule(Request $request, $subdomain = null): JsonResponse
     {
-        // Direct file write to bypass any caching
-        file_put_contents(storage_path('logs/schedule_debug.log'),
-            date('Y-m-d H:i:s') . ' createSchedule ENTRY: ' . json_encode($request->all()) . "\n",
-            FILE_APPEND
-        );
-        \Log::info('createSchedule: ENTRY', [
-            'all_input' => $request->all(),
-            'user_id' => auth()->id(),
-        ]);
-
         // Use academy timezone for "today" so dates are not rejected due to UTC server clock
         $todayInAcademy = Carbon::now(AcademyContextService::getTimezone())->toDateString();
 
@@ -263,15 +253,9 @@ class SupervisorCalendarController extends BaseSupervisorWebController
                 ], 422);
             }
 
-            \Log::info('SupervisorCalendarController::createSchedule - calling strategy', [
-                'validated' => $validated,
-                'teacher_id' => $teacher->id,
-                'teacher_type' => $teacherType,
-            ]);
+            $result = $strategy->createSchedule($validated, $validator);
 
-            $createdCount = $strategy->createSchedule($validated, $validator);
-
-            return $this->scheduleResultResponse($createdCount, $validated['session_count']);
+            return $this->scheduleResultResponse($result);
         } catch (InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,

@@ -204,7 +204,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
     /**
      * {@inheritdoc}
      */
-    public function createSchedule(array $data, ScheduleValidatorInterface $validator): int
+    public function createSchedule(array $data, ScheduleValidatorInterface $validator): BatchScheduleResult
     {
         $itemType = $data['item_type'] ?? null;
         $itemId = $data['item_id'] ?? null;
@@ -223,7 +223,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
     /**
      * Create schedule for private lesson (academic subscription)
      */
-    private function createPrivateLessonSchedule(int $subscriptionId, array $data): int
+    private function createPrivateLessonSchedule(int $subscriptionId, array $data): BatchScheduleResult
     {
         $subscription = AcademicSubscription::findOrFail($subscriptionId);
 
@@ -257,7 +257,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
 
         // Schedule the sessions with conflict checking
         $scheduledCount = 0;
-        $skippedDates = [];
+        $failures = [];
 
         foreach ($sessionsToSchedule as $index => $session) {
             if (isset($sessionDates[$index])) {
@@ -281,25 +281,22 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                     ]);
                     $scheduledCount++;
                 } catch (Exception $e) {
-                    // Skip this time slot due to conflict, try next available
-                    $skippedDates[] = $scheduledAt->format('Y/m/d H:i');
-
-                    continue;
+                    $failures[] = BatchScheduleResult::failureEntry($scheduledAt, $e);
                 }
             }
         }
 
-        // Return the count even when 0 — the controller's
-        // RespondsWithScheduleResult trait emits the unified 422
-        // "no_sessions_created" envelope. Throwing here would route through
-        // generic exception handling and produce a 500 instead.
-        return $scheduledCount;
+        return new BatchScheduleResult(
+            $scheduledCount,
+            (int) $requestedSessionCount,
+            $failures,
+        );
     }
 
     /**
      * Create schedule for interactive course
      */
-    private function createInteractiveCourseSchedule(int $courseId, array $data): int
+    private function createInteractiveCourseSchedule(int $courseId, array $data): BatchScheduleResult
     {
         $course = InteractiveCourse::findOrFail($courseId);
 
@@ -326,7 +323,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
 
         // Create the sessions with conflict checking
         $createdCount = 0;
-        $skippedDates = [];
+        $failures = [];
         $teacherUserId = $course->assignedTeacher?->user_id ?? $this->getTargetUserId();
 
         foreach ($sessionDates as $index => $sessionDate) {
@@ -355,15 +352,15 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                 ]);
                 $createdCount++;
             } catch (Exception $e) {
-                // Skip this time slot due to conflict
-                $skippedDates[] = $sessionDate->format('Y/m/d H:i');
-
-                continue;
+                $failures[] = BatchScheduleResult::failureEntry($sessionDate, $e);
             }
         }
 
-        // Return the count even when 0 — see createPrivateLessonSchedule for why.
-        return $createdCount;
+        return new BatchScheduleResult(
+            $createdCount,
+            (int) $requestedSessionCount,
+            $failures,
+        );
     }
 
     /**

@@ -62,11 +62,13 @@
             <template x-if="error">
                 <div class="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">
                     <i class="ri-error-warning-line me-1"></i> <span x-text="error"></span>
+                    <x-calendar.failures-list textClass="text-red-700" />
                 </div>
             </template>
             <template x-if="success">
                 <div class="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
                     <i class="ri-checkbox-circle-line me-1"></i> <span x-text="success"></span>
+                    <x-calendar.failures-list textClass="text-amber-700" />
                 </div>
             </template>
 
@@ -486,6 +488,7 @@ function schedulingPanel() {
         sessionCount: 4,
         error: null,
         success: null,
+        failures: [],
         recommendations: null,
 
         appendTeacherId(url, sep = '&') {
@@ -587,6 +590,7 @@ function schedulingPanel() {
             this.submitting = true;
             this.error = null;
             this.success = null;
+            this.failures = [];
 
             try {
                 const bodyData = {
@@ -614,9 +618,8 @@ function schedulingPanel() {
                     body: JSON.stringify(bodyData)
                 });
 
-                console.log('[Schedule] Response status:', response.status);
                 const data = await response.json();
-                console.log('[Schedule] Response data:', JSON.stringify(data));
+                this.failures = Array.isArray(data.failures) ? data.failures : [];
                 if (response.ok) {
                     this.success = data.message || @js(__('teacher.calendar.schedule_success'));
                     this.selectedItem = null;

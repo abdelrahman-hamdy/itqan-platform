@@ -79,5 +79,7 @@ return [
     'invalid_tab_method' => 'Invalid loading method',
     'schedule_created_successfully' => 'Sessions scheduled successfully',
     'schedule_no_sessions_created' => 'No sessions were scheduled. Check teacher time conflicts or the remaining subscription quota and try again.',
+    'schedule_no_sessions_created_with_reason' => 'No sessions were scheduled: :reason',
     'schedule_partial' => 'Scheduled :created of :requested sessions. The rest were skipped due to time conflicts.',
+    'schedule_partial_with_reason' => 'Scheduled :created of :requested sessions. First skipped slot: :reason',
 ];

@@ -10,14 +10,15 @@ use App\Models\QuranCircleSchedule;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
+use App\Services\Calendar\BatchScheduleResult;
 use App\Services\Calendar\Traits\GeneratesSessionDates;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Log;
 
 class SessionManagementService
 {
@@ -482,9 +483,8 @@ class SessionManagementService
      *
      * @param  QuranCircleSchedule  $schedule  The circle schedule with weekly_schedule
      * @param  int  $sessionCount  Number of sessions to generate
-     * @return int Number of sessions created
      */
-    public function generateExactGroupSessions(QuranCircleSchedule $schedule, int $sessionCount): int
+    public function generateExactGroupSessions(QuranCircleSchedule $schedule, int $sessionCount): BatchScheduleResult
     {
         $circle = $schedule->circle;
 
@@ -525,6 +525,7 @@ class SessionManagementService
 
         $currentDate = $startDate->copy();
         $createdCount = 0;
+        $failures = [];
         $maxIterations = 365; // Safety limit to prevent infinite loops
         $iterations = 0;
 
@@ -566,12 +567,7 @@ class SessionManagementService
                         );
                         $createdCount++;
                     } catch (Exception $e) {
-                        // Log but continue - might be a conflict
-                        Log::warning('Could not create group session', [
-                            'circle_id' => $circle->id,
-                            'scheduled_at' => $scheduledAt->toDateTimeString(),
-                            'error' => $e->getMessage(),
-                        ]);
+                        $failures[] = BatchScheduleResult::failureEntry($scheduledAt, $e);
                     }
                 }
             }
@@ -579,7 +575,7 @@ class SessionManagementService
             $currentDate->addDay();
         }
 
-        return $createdCount;
+        return new BatchScheduleResult($createdCount, $sessionCount, $failures);
     }
 
     /**
@@ -587,9 +583,8 @@ class SessionManagementService
      *
      * @param  QuranIndividualCircle  $circle  The individual circle
      * @param  array  $data  Schedule configuration containing schedule_days, schedule_time, schedule_start_date, session_count
-     * @return int Number of sessions created
      */
-    public function createIndividualCircleSchedule(QuranIndividualCircle $circle, array $data): int
+    public function createIndividualCircleSchedule(QuranIndividualCircle $circle, array $data): BatchScheduleResult
     {
         // Wrap the entire batch in a single transaction with a lock to prevent
         // concurrent scheduling requests from over-booking the subscription.
@@ -597,16 +592,7 @@ class SessionManagementService
             $lockedCircle = QuranIndividualCircle::lockForUpdate()->findOrFail($circle->id);
 
             $remainingSessions = $this->getRemainingIndividualSessions($lockedCircle);
-            $requestedCount = $data['session_count'];
-
-            Log::info('createIndividualCircleSchedule: starting', [
-                'circle_id' => $lockedCircle->id,
-                'remaining' => $remainingSessions,
-                'requested' => $requestedCount,
-                'days' => $data['schedule_days'] ?? [],
-                'time' => $data['schedule_time'] ?? null,
-                'start_date' => $data['schedule_start_date'] ?? null,
-            ]);
+            $requestedCount = (int) $data['session_count'];
 
             if ($remainingSessions <= 0) {
                 throw new Exception(__('scheduling.count.no_remaining_circle'));
@@ -626,13 +612,8 @@ class SessionManagementService
                 $requestedCount
             );
 
-            Log::info('createIndividualCircleSchedule: dates generated', [
-                'circle_id' => $lockedCircle->id,
-                'dates_count' => count($sessionDates),
-                'dates' => array_map(fn ($d) => $d->toDateTimeString(), $sessionDates),
-            ]);
-
             $createdCount = 0;
+            $failures = [];
             $durationMinutes = $lockedCircle->default_duration_minutes
                 ?? $lockedCircle->subscription?->session_duration_minutes
                 ?? $lockedCircle->subscription?->package?->session_duration_minutes
@@ -647,23 +628,11 @@ class SessionManagementService
                     );
                     $createdCount++;
                 } catch (Exception $e) {
-                    file_put_contents(storage_path('logs/schedule_debug.log'),
-                        date('Y-m-d H:i:s')." FAILED: circle={$lockedCircle->id} date={$scheduledAt->toDateTimeString()} error={$e->getMessage()}\n", FILE_APPEND);
-                    Log::warning('Failed to create individual session', [
-                        'circle_id' => $lockedCircle->id,
-                        'scheduled_at' => $scheduledAt->toDateTimeString(),
-                        'error' => $e->getMessage(),
-                    ]);
+                    $failures[] = BatchScheduleResult::failureEntry($scheduledAt, $e);
                 }
             }
 
-            Log::info('createIndividualCircleSchedule: completed', [
-                'circle_id' => $lockedCircle->id,
-                'created' => $createdCount,
-                'requested' => $requestedCount,
-            ]);
-
-            return $createdCount;
+            return new BatchScheduleResult($createdCount, $requestedCount, $failures);
         });
     }
 
@@ -672,9 +641,8 @@ class SessionManagementService
      *
      * @param  QuranTrialRequest  $trialRequest  The trial request
      * @param  array  $data  Schedule configuration containing schedule_time, schedule_start_date
-     * @return int Number of sessions created (1 on success)
      */
-    public function createTrialSession(QuranTrialRequest $trialRequest, array $data): int
+    public function createTrialSession(QuranTrialRequest $trialRequest, array $data): BatchScheduleResult
     {
         $timezone = AcademyContextService::getTimezone();
 
@@ -735,6 +703,6 @@ class SessionManagementService
             'scheduled_at' => $scheduledAtUtc,
         ]);
 
-        return 1;
+        return new BatchScheduleResult(1, 1, []);
     }
 }

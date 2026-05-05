@@ -299,7 +299,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
     /**
      * {@inheritdoc}
      */
-    public function createSchedule(array $data, ScheduleValidatorInterface $validator): int
+    public function createSchedule(array $data, ScheduleValidatorInterface $validator): BatchScheduleResult
     {
         $itemType = $data['item_type'] ?? null;
         $itemId = $data['item_id'] ?? null;
@@ -319,7 +319,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
     /**
      * Create schedule for group circle
      */
-    private function createGroupCircleSchedule(int $circleId, array $data): int
+    private function createGroupCircleSchedule(int $circleId, array $data): BatchScheduleResult
     {
         $circle = QuranCircle::findOrFail($circleId);
 
@@ -380,28 +380,19 @@ class QuranSessionStrategy extends AbstractSessionStrategy
         ]);
 
         // Generate sessions using the session service
-        return $this->sessionService->generateExactGroupSessions($schedule, $data['session_count']);
+        return $this->sessionService->generateExactGroupSessions($schedule, (int) $data['session_count']);
     }
 
     /**
      * Create schedule for individual circle
      */
-    private function createIndividualCircleSchedule(int $circleId, array $data): int
+    private function createIndividualCircleSchedule(int $circleId, array $data): BatchScheduleResult
     {
-        file_put_contents(storage_path('logs/schedule_debug.log'),
-            date('Y-m-d H:i:s')." strategy: circleId=$circleId\n", FILE_APPEND);
-
         $circle = QuranIndividualCircle::findOrFail($circleId);
-
-        file_put_contents(storage_path('logs/schedule_debug.log'),
-            date('Y-m-d H:i:s')." strategy: circle found #{$circle->id} sub_id={$circle->subscription_id}\n", FILE_APPEND);
 
         if (! $circle->subscription) {
             throw new Exception(__('calendar.strategy.no_valid_subscription'));
         }
-
-        file_put_contents(storage_path('logs/schedule_debug.log'),
-            date('Y-m-d H:i:s')." strategy: sub status={$circle->subscription->status->value}\n", FILE_APPEND);
 
         // Use the model-level contract so grace-period subscriptions pass.
         if (! $circle->subscription->isSchedulable()) {
@@ -410,30 +401,20 @@ class QuranSessionStrategy extends AbstractSessionStrategy
 
         $remainingSessions = $this->sessionService->getRemainingIndividualSessions($circle);
 
-        file_put_contents(storage_path('logs/schedule_debug.log'),
-            date('Y-m-d H:i:s')." strategy: remaining=$remainingSessions\n", FILE_APPEND);
-
         if ($remainingSessions <= 0) {
             throw new Exception(__('calendar.strategy.no_remaining_circle_sessions'));
         }
 
-        // Generate sessions using the session service
-        $result = $this->sessionService->createIndividualCircleSchedule($circle, $data);
-
-        file_put_contents(storage_path('logs/schedule_debug.log'),
-            date('Y-m-d H:i:s')." strategy: created=$result\n", FILE_APPEND);
-
-        return $result;
+        return $this->sessionService->createIndividualCircleSchedule($circle, $data);
     }
 
     /**
      * Create schedule for trial session
      */
-    private function createTrialSessionSchedule(int $trialRequestId, array $data): int
+    private function createTrialSessionSchedule(int $trialRequestId, array $data): BatchScheduleResult
     {
         $trialRequest = QuranTrialRequest::findOrFail($trialRequestId);
 
-        // Generate trial session using the session service
         return $this->sessionService->createTrialSession($trialRequest, $data);
     }
 
