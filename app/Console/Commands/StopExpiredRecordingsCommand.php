@@ -4,7 +4,9 @@ namespace App\Console\Commands;
 
 use App\Contracts\RecordingCapable;
 use App\Enums\RecordingStatus;
+use App\Models\BaseSession;
 use App\Models\SessionRecording;
+use App\Services\SessionSettingsService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -22,15 +24,19 @@ class StopExpiredRecordingsCommand extends Command
 
     protected $description = 'Stop recordings for sessions that have reached their scheduled end time';
 
+    public function __construct(private SessionSettingsService $settingsService)
+    {
+        parent::__construct();
+    }
+
     public function handle(): int
     {
         Log::info('[RECORDINGS] Starting expired recordings check');
 
         $stoppedCount = 0;
-        $errorCount = 0;
 
-        $activeRecordings = SessionRecording::where('status', RecordingStatus::RECORDING)
-            ->with('recordable')
+        $activeRecordings = SessionRecording::where('status', RecordingStatus::RECORDING->value)
+            ->with('recordable.academy.settings')
             ->get();
 
         Log::info('[RECORDINGS] Found active recordings', [
@@ -40,31 +46,25 @@ class StopExpiredRecordingsCommand extends Command
         foreach ($activeRecordings as $recordingRecord) {
             $session = $recordingRecord->recordable;
 
-            if (! $session) {
+            if (! $session instanceof BaseSession || ! $session->scheduled_at) {
                 continue;
             }
-            // Use recording's actual start time + session duration + 15 min buffer.
-            // Teachers often join 5-10 min after scheduled time, so using scheduled_at
-            // would stop the recording before the session actually finishes.
-            $bufferMinutes = 15;
+
             $durationMinutes = $session->duration_minutes ?? 60;
-            $recordingStartTime = $recordingRecord->started_at ?? $session->scheduled_at;
+            $bufferMinutes = $this->settingsService->getBufferMinutes($session);
+            $expectedEndTime = $session->scheduled_at->copy()->addMinutes($durationMinutes + $bufferMinutes);
 
-            if (! $recordingStartTime) {
+            if (now()->lt($expectedEndTime)) {
                 continue;
             }
 
-            $expectedEndTime = $recordingStartTime->copy()->addMinutes($durationMinutes + $bufferMinutes);
-            $minutesOverdue = (int) now()->diffInMinutes($expectedEndTime);
-
-            if ($minutesOverdue <= 0) {
-                continue;
-            }
+            $minutesOverdue = (int) $expectedEndTime->diffInMinutes(now());
 
             Log::info('[RECORDINGS] Stopping recording for expired session', [
                 'session_id' => $session->id,
-                'recording_started' => $recordingStartTime->toISOString(),
+                'scheduled_start' => $session->scheduled_at->toISOString(),
                 'expected_end' => $expectedEndTime->toISOString(),
+                'buffer_minutes' => $bufferMinutes,
                 'minutes_overdue' => $minutesOverdue,
             ]);
 
@@ -97,10 +97,9 @@ class StopExpiredRecordingsCommand extends Command
 
         Log::info('[RECORDINGS] Expired recordings check completed', [
             'stopped' => $stoppedCount,
-            'errors' => $errorCount,
         ]);
 
-        $this->info("Stopped {$stoppedCount} recordings, {$errorCount} errors.");
+        $this->info("Stopped {$stoppedCount} recordings.");
 
         return Command::SUCCESS;
     }

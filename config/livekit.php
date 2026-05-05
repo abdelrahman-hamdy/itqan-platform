@@ -73,7 +73,11 @@ return [
     */
 
     'audio' => [
-        'recording_bitrate' => (int) env('LIVEKIT_AUDIO_RECORDING_BITRATE', 128000),
+        // LiveKit egress proto's audio_bitrate is KBPS, not BPS. Sending bps
+        // makes gstreamer reject the value and fall back to its default
+        // (~96 kbps, with audio quality drift). 128 kbps matches the proto
+        // default and is correct for AAC audio-only recordings.
+        'recording_bitrate_kbps' => (int) env('LIVEKIT_AUDIO_RECORDING_BITRATE_KBPS', 128),
         'recording_frequency' => (int) env('LIVEKIT_AUDIO_RECORDING_FREQUENCY', 48000),
     ],
 
@@ -103,7 +107,7 @@ return [
         'system_enabled' => (bool) env('LIVEKIT_RECORDING_ENABLED', true),
 
         // Maximum number of concurrent recordings the server can handle
-        'max_concurrent_recordings' => (int) env('LIVEKIT_MAX_CONCURRENT_RECORDINGS', 10),
+        'max_concurrent_recordings' => (int) env('LIVEKIT_MAX_CONCURRENT_RECORDINGS', 15),
 
         // Session types that are auto-managed by the orchestrator (no manual toggle)
         'auto_managed_types' => ['quran_individual', 'quran_group', 'academic_lesson', 'trial'],

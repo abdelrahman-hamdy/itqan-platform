@@ -118,10 +118,12 @@ if ($isLocal) {
 
 // RECORDING: Stop recordings when session scheduled end time is reached
 // Runs every minute to check for sessions with active recordings that have passed their scheduled end time
+// withoutOverlapping(5) — short mutex TTL so a crashed run self-heals; bare withoutOverlapping() defaults
+// to 24 h and would freeze recording stops for a full day if a run dies.
 Schedule::command('recordings:stop-expired')
     ->name('stop-expired-recordings')
     ->everyMinute()
-    ->withoutOverlapping()
+    ->withoutOverlapping(5)
     ->runInBackground()
     ->description('Stop recordings for sessions that have reached their scheduled end time');
 
@@ -140,6 +142,16 @@ Schedule::command('recordings:process-queue')
     ->withoutOverlapping()
     ->runInBackground()
     ->description('Process stale recording queue entries and promote waiting sessions');
+
+// RECORDING: Reconcile orphaned PROCESSING/RECORDING rows by polling LiveKit
+// Catches recordings stuck in PROCESSING when egress_ended webhook is lost,
+// and RECORDING rows whose parent session has already completed.
+Schedule::command('recordings:reconcile-orphaned')
+    ->name('reconcile-orphaned-recordings')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(15)
+    ->runInBackground()
+    ->description('Repair recordings stuck in PROCESSING/RECORDING by polling LiveKit ListEgress');
 
 // ════════════════════════════════════════════════════════════════
 // SUBSCRIPTION MANAGEMENT

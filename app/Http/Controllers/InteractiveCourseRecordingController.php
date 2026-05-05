@@ -333,7 +333,11 @@ class InteractiveCourseRecordingController extends Controller
                     abort(404, __('errors.recording_download_failed_server'));
                 }
 
-                $contentType = $recording->file_format === 'ogg' ? 'audio/ogg' : 'video/mp4';
+                $contentType = match ($recording->file_format) {
+                    'ogg' => 'audio/ogg',
+                    'm4a' => 'audio/mp4',
+                    default => 'video/mp4',
+                };
 
                 return response()->stream(function () use ($response) {
                     echo $response->body();

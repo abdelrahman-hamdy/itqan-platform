@@ -634,10 +634,6 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
         return 10; // Fallback default
     }
 
-    /**
-     * Get ending buffer minutes after session from academy settings
-     * Overrides BaseSession hardcoded value
-     */
     protected function getEndingBufferMinutes(): int
     {
         if ($this->academy && $this->academy->settings) {

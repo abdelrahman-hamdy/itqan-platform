@@ -334,7 +334,7 @@ class RecordingOrchestratorService
      */
     private function getMaxConcurrentRecordings(): int
     {
-        return (int) config('livekit.recordings.max_concurrent_recordings', 5);
+        return (int) config('livekit.recordings.max_concurrent_recordings', 15);
     }
 
     /**

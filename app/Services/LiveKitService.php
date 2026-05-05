@@ -207,6 +207,25 @@ class LiveKitService implements LiveKitServiceInterface
     }
 
     /**
+     * Poll LiveKit for the current state of a single egress. Returns the
+     * unwrapped item directly. Used by the reconciliation cron when an
+     * egress_ended webhook is lost.
+     */
+    public function getRecordingInfo(string $egressId): ?array
+    {
+        return $this->recordingManager->getRecording($egressId);
+    }
+
+    /**
+     * Fetch every active egress on the LiveKit server in one ListEgress call,
+     * keyed by egress_id. Returns empty array on API failure.
+     */
+    public function listAllActiveEgresses(): array
+    {
+        return $this->recordingManager->listAllActiveEgresses();
+    }
+
+    /**
      * Get room information and current participants
      *
      * Delegates to LiveKitRoomManager

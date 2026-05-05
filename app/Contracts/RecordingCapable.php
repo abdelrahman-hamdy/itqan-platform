@@ -2,9 +2,9 @@
 
 namespace App\Contracts;
 
-use Illuminate\Database\Eloquent\Collection;
 use App\Models\SessionRecording;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Interface for models that support session recording
@@ -96,4 +96,18 @@ interface RecordingCapable
      * @return array Metadata for recording file
      */
     public function getRecordingMetadata(): array;
+
+    /**
+     * Start recording this session.
+     *
+     * @return SessionRecording The created recording record
+     */
+    public function startRecording(): SessionRecording;
+
+    /**
+     * Stop the active recording for this session.
+     *
+     * @return bool Whether the recording was stopped successfully
+     */
+    public function stopRecording(): bool;
 }

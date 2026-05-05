@@ -617,10 +617,6 @@ class AcademicSession extends BaseSession implements RecordingCapable
         return 10; // Fallback default
     }
 
-    /**
-     * Get ending buffer minutes after session from academy settings
-     * Overrides BaseSession hardcoded value
-     */
     protected function getEndingBufferMinutes(): int
     {
         if ($this->academy && $this->academy->settings) {
@@ -856,7 +852,7 @@ class AcademicSession extends BaseSession implements RecordingCapable
             'audio_only' => true,
             'video_only' => false,
             'preset' => 'AUDIO_ONLY',
-            'audio_bitrate' => config('livekit.audio.recording_bitrate', 128000),
+            'audio_bitrate' => config('livekit.audio.recording_bitrate_kbps', 128),
             'audio_frequency' => config('livekit.audio.recording_frequency', 48000),
         ];
     }

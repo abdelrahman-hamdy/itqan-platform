@@ -2,6 +2,7 @@
 
 namespace App\Services\LiveKit;
 
+use App\Enums\LiveKitEgressStatus;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -37,9 +38,13 @@ class LiveKitRecordingManager
                 throw new Exception('LiveKit recording manager not configured properly');
             }
 
-            // Build file path for local storage on LiveKit server
+            // Build file path for local storage on LiveKit server.
+            // Audio-only AAC content is always written into an MP4 container by
+            // LiveKit egress (which uses gstreamer's mp4mux), so use .mp4 to
+            // avoid the .m4a.mp4 double extension produced when LiveKit appends
+            // its own container suffix to non-recognized extensions.
             $audioOnly = $options['audio_only'] ?? false;
-            $extension = $audioOnly ? '.m4a' : '.mp4';
+            $extension = '.mp4';
             $filename = $options['filename'] ?? sprintf('recording-%s-%s', $roomName, now()->timestamp);
             $filepath = sprintf(
                 '%s/%s%s',
@@ -58,10 +63,9 @@ class LiveKitRecordingManager
             ];
 
             if ($audioOnly) {
-                // AAC in M4A container — seekable in all browsers (OGG Opus lacks seek tables)
                 $payload['advanced'] = [
                     'audio_codec' => 'AAC',
-                    'audio_bitrate' => $options['audio_bitrate'] ?? config('livekit.audio.recording_bitrate', 128000),
+                    'audio_bitrate' => $options['audio_bitrate'] ?? config('livekit.audio.recording_bitrate_kbps', 128),
                     'audio_frequency' => $options['audio_frequency'] ?? config('livekit.audio.recording_frequency', 48000),
                 ];
             } else {
@@ -168,7 +172,8 @@ class LiveKitRecordingManager
     }
 
     /**
-     * Get recording information
+     * Look up a single egress by ID. Returns the raw item, with its 'items'
+     * envelope unwrapped so callers don't have to repeat the dance.
      */
     public function getRecording(string $egressId): ?array
     {
@@ -177,10 +182,8 @@ class LiveKitRecordingManager
                 throw new Exception('LiveKit recording manager not configured properly');
             }
 
-            // Generate token for Egress API
             $token = $this->tokenGenerator->generateEgressToken();
 
-            // Call LiveKit Egress API to get egress info
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer '.$token,
                 'Content-Type' => 'application/json',
@@ -192,10 +195,9 @@ class LiveKitRecordingManager
                 throw new Exception('Egress API error: '.$response->body());
             }
 
-            $responseData = $response->json();
+            $items = $response->json('items') ?? [];
 
-            return $responseData;
-
+            return $items[0] ?? null;
         } catch (Exception $e) {
             Log::error('Failed to get recording info', [
                 'error' => $e->getMessage(),
@@ -203,6 +205,46 @@ class LiveKitRecordingManager
             ]);
 
             return null;
+        }
+    }
+
+    /**
+     * Fetch every active egress on the LiveKit server in one ListEgress call.
+     * Used by the reconciliation cron to avoid one HTTP roundtrip per stuck row.
+     *
+     * Returns items keyed by egress_id, or empty array on API failure.
+     */
+    public function listAllActiveEgresses(): array
+    {
+        try {
+            if (! $this->isConfigured()) {
+                throw new Exception('LiveKit recording manager not configured properly');
+            }
+
+            $token = $this->tokenGenerator->generateEgressToken();
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer '.$token,
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl.'/twirp/livekit.Egress/ListEgress', (object) []);
+
+            if (! $response->successful()) {
+                throw new Exception('Egress API error: '.$response->body());
+            }
+
+            $keyed = [];
+            foreach ($response->json('items') ?? [] as $item) {
+                $id = $item['egressId'] ?? $item['egress_id'] ?? null;
+                if ($id) {
+                    $keyed[$id] = $item;
+                }
+            }
+
+            return $keyed;
+        } catch (Exception $e) {
+            Log::error('Failed to list active egresses', ['error' => $e->getMessage()]);
+
+            return [];
         }
     }
 
@@ -256,7 +298,7 @@ class LiveKitRecordingManager
             }
 
             $filename = $trackOptions['filename'] ?? sprintf('track-recording-%s-%s', $roomName, now()->timestamp);
-            $extension = ($trackOptions['audio_only'] ?? false) ? '.m4a' : '.mp4';
+            $extension = '.mp4';
             $filepath = sprintf(
                 '%s/%s%s',
                 rtrim($trackOptions['storage_path'] ?? '/recordings', '/'),
@@ -375,8 +417,8 @@ class LiveKitRecordingManager
      */
     public function isRecordingActive(string $egressId): bool
     {
-        $status = $this->getRecordingStatus($egressId);
+        $status = LiveKitEgressStatus::tryFrom($this->getRecordingStatus($egressId) ?? '');
 
-        return in_array($status, ['EGRESS_STARTING', 'EGRESS_ACTIVE']);
+        return $status === LiveKitEgressStatus::STARTING || $status === LiveKitEgressStatus::ACTIVE;
     }
 }

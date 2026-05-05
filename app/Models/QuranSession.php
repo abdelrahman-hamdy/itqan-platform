@@ -687,10 +687,6 @@ class QuranSession extends BaseSession implements RecordingCapable
         return 10; // Fallback default
     }
 
-    /**
-     * Get ending buffer minutes after session from academy settings
-     * Overrides BaseSession hardcoded value
-     */
     protected function getEndingBufferMinutes(): int
     {
         if ($this->academy && $this->academy->settings) {
@@ -1064,63 +1060,6 @@ class QuranSession extends BaseSession implements RecordingCapable
     protected function getDefaultMaxParticipants(): int
     {
         return $this->session_type === 'group' ? 50 : 2;
-    }
-
-    /**
-     * Start recording for this session
-     */
-    public function startRecording(array $options = []): array
-    {
-        if (! $this->meeting_room_name) {
-            throw new Exception('Meeting room not created yet');
-        }
-
-        $livekitService = app(LiveKitService::class);
-
-        $recordingOptions = [
-            'layout' => $options['layout'] ?? 'grid',
-            'video_quality' => $options['video_quality'] ?? 'high',
-            'audio_only' => $options['audio_only'] ?? false,
-        ];
-
-        $recordingInfo = $livekitService->startRecording($this->meeting_room_name, $recordingOptions);
-
-        // Update session with recording info
-        $meetingData = $this->meeting_data ?? [];
-        $meetingData['recording'] = $recordingInfo;
-
-        $this->update([
-            'recording_url' => $recordingInfo['recording_id'], // Temporary until file is ready
-            'meeting_data' => $meetingData,
-        ]);
-
-        return $recordingInfo;
-    }
-
-    /**
-     * Stop recording for this session
-     */
-    public function stopRecording(): array
-    {
-        if (! $this->meeting_data || ! isset($this->meeting_data['recording'])) {
-            throw new Exception('No active recording found');
-        }
-
-        $livekitService = app(LiveKitService::class);
-        $recordingId = $this->meeting_data['recording']['recording_id'];
-
-        $result = $livekitService->stopRecording($recordingId);
-
-        // Update session with final recording info
-        $meetingData = $this->meeting_data;
-        $meetingData['recording'] = array_merge($meetingData['recording'], $result);
-
-        $this->update([
-            'recording_url' => $result['file_info']['download_url'] ?? null,
-            'meeting_data' => $meetingData,
-        ]);
-
-        return $result;
     }
 
     /**
@@ -1542,8 +1481,8 @@ class QuranSession extends BaseSession implements RecordingCapable
             'audio_only' => true,
             'video_only' => false,
             'preset' => 'AUDIO_ONLY',
-            'audio_bitrate' => 128000,
-            'audio_frequency' => 48000,
+            'audio_bitrate' => config('livekit.audio.recording_bitrate_kbps', 128),
+            'audio_frequency' => config('livekit.audio.recording_frequency', 48000),
         ];
     }
 

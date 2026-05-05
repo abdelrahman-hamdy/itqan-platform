@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\RecordingCapable;
 use App\Contracts\RecordingServiceInterface;
+use App\Enums\LiveKitEgressStatus;
 use App\Enums\RecordingStatus;
 use App\Models\SessionRecording;
 use Exception;
@@ -178,12 +179,10 @@ class RecordingService implements RecordingServiceInterface
                 return false;
             }
 
-            // Check egress status
-            $status = $egressInfo['status'] ?? null;
+            $status = LiveKitEgressStatus::tryFrom($egressInfo['status'] ?? '');
             $error = $egressInfo['error'] ?? null;
 
-            if ($status === 'EGRESS_COMPLETE') {
-                // Extract file information
+            if ($status === LiveKitEgressStatus::COMPLETE) {
                 $fileInfo = $this->extractFileInfoFromWebhook($egressInfo);
 
                 $recording->markAsCompleted($fileInfo);
@@ -195,9 +194,10 @@ class RecordingService implements RecordingServiceInterface
                 ]);
 
                 return true;
+            }
 
-            } elseif ($status === 'EGRESS_FAILED' || $error) {
-                $errorMessage = $error ?? 'Unknown error';
+            if (($status?->isFailure() ?? false) || $error) {
+                $errorMessage = $error ?? ('LiveKit reported '.$status?->value);
 
                 $recording->markAsFailed($errorMessage);
 
