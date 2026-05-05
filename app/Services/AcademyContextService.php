@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\QueryException;
-use App\Enums\Timezone;
-use Carbon\Carbon;
 use App\Constants\DefaultAcademy;
+use App\Enums\Timezone;
 use App\Models\Academy;
 use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Session;
 
@@ -79,11 +79,21 @@ class AcademyContextService
             return self::getDefaultAcademy();
         }
 
-        // For super admin, use selected academy from session
+        // For super admin: prefer the URL/subdomain-resolved academy (set by
+        // ResolveTenantFromSubdomain) so visiting `{subdomain}/manage/...`
+        // scopes queries to that academy. Without this, queries scoped to
+        // whatever academy was last stored in the session — the calendar's
+        // /manage/calendar/events route bypasses the AcademyContext middleware
+        // (which only fires on /admin/*), so the session value would never
+        // match the URL.
         if (self::isSuperAdmin($user)) {
-            // If in global view mode, return null to indicate no specific academy
             if (self::isGlobalViewMode()) {
                 return null;
+            }
+
+            $resolved = app()->has('current_academy') ? app('current_academy') : null;
+            if ($resolved instanceof Academy && $resolved->is_active && ! $resolved->maintenance_mode) {
+                return $resolved;
             }
 
             $academyId = Session::get(self::SELECTED_ACADEMY_SESSION_KEY);
@@ -99,7 +109,6 @@ class AcademyContextService
                 }
             }
 
-            // Auto-load default academy if none selected or invalid and not in global mode
             $defaultAcademy = self::getDefaultAcademy();
             if ($defaultAcademy) {
                 self::setAcademyContext($defaultAcademy->id);
@@ -107,7 +116,6 @@ class AcademyContextService
                 return $defaultAcademy;
             }
 
-            // If no default academy exists, return null to force academy selection
             return null;
         }
 
@@ -381,7 +389,7 @@ class AcademyContextService
      * It just stores the time value as-is, stripping the timezone information.
      * Always use this method before saving datetime fields to ensure consistent UTC storage.
      *
-     * @param Carbon $datetime A Carbon instance (should be in academy timezone)
+     * @param  Carbon  $datetime  A Carbon instance (should be in academy timezone)
      * @return Carbon The same moment in time, but represented in UTC
      */
     public static function toUtcForStorage(Carbon $datetime): Carbon
