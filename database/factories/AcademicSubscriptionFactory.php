@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\BillingCycle;
 use App\Enums\SessionDuration;
 use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
@@ -38,10 +39,10 @@ class AcademicSubscriptionFactory extends Factory
             'currency' => 'SAR',
             'billing_cycle' => 'monthly',
             'start_date' => now(),
-            'end_date' => now()->addMonths(3),
+            'end_date' => fn (array $attrs) => BillingCycle::from($attrs['billing_cycle'])->calculateEndDate(now()),
             'starts_at' => now(),
-            'ends_at' => now()->addMonths(3),
-            'next_billing_date' => now()->addMonth(),
+            'ends_at' => fn (array $attrs) => BillingCycle::from($attrs['billing_cycle'])->calculateEndDate(now()),
+            'next_billing_date' => fn (array $attrs) => BillingCycle::from($attrs['billing_cycle'])->calculateEndDate(now()),
             'auto_create_google_meet' => true,
             'status' => 'active', // Valid enum: active, paused, suspended, cancelled, expired, completed
             'payment_status' => 'current', // Valid enum: current, pending, overdue, failed, refunded

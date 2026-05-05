@@ -215,7 +215,10 @@ class StudentQuranController extends Controller
                     'memorization_level' => $circle->memorization_level ?? 'beginner',
                     'session_duration_minutes' => $circle->schedule?->default_duration_minutes ?? 60,
                     'starts_at' => now(),
-                    'next_payment_at' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? now()->addMonth() : null,
+                    // next_billing_date is set by BaseSubscriptionObserver::creating
+                    // from starts_at + billing_cycle (monthly here). Older code
+                    // wrote 'next_payment_at' which is not a column on this
+                    // model; that key was silently dropped — removed for clarity.
                     'auto_renew' => true,
                 ]);
 

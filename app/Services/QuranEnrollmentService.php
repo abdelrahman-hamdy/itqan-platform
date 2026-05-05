@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\BillingCycle;
 use App\Models\Academy;
 use App\Models\Payment;
 use App\Models\QuranPackage;
@@ -57,22 +58,14 @@ class QuranEnrollmentService
             $duplicateKeyValues
         );
 
-        // Calculate dates
+        // Calculate dates and session count from the actual billing cycle.
+        // BillingCycle::from() throws on unknown input — desired, since the
+        // public booking flow already validates billing_cycle against the
+        // package's allowed cycles before this service is called.
         $startDate = now();
-        $endDate = match ($billingCycle) {
-            'monthly' => $startDate->copy()->addMonth(),
-            'quarterly' => $startDate->copy()->addMonths(3),
-            'yearly' => $startDate->copy()->addYear(),
-            default => $startDate->copy()->addMonth(),
-        };
-
-        $sessionsMultiplier = match ($billingCycle) {
-            'monthly' => 1,
-            'quarterly' => 3,
-            'yearly' => 12,
-            default => 1,
-        };
-        $totalSessions = $package->sessions_per_month * $sessionsMultiplier;
+        $cycle = BillingCycle::from($billingCycle);
+        $endDate = $cycle->calculateEndDate($startDate);
+        $totalSessions = $package->sessions_per_month * $cycle->months();
 
         // Get student profile data
         $studentProfile = $user->studentProfile;

@@ -2,13 +2,14 @@
 
 namespace App\Filament\Resources\QuranSubscriptionResource\Pages;
 
-use App\Models\QuranSubscription;
+use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use App\Filament\Resources\QuranSubscriptionResource;
+use App\Models\QuranSubscription;
 use App\Services\AcademyContextService;
 use Carbon\Carbon;
-use App\Filament\Pages\BaseCreateRecord as CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
 class CreateQuranSubscription extends CreateRecord
@@ -42,15 +43,15 @@ class CreateQuranSubscription extends CreateRecord
             $data['currency'] = getCurrencyCode();
         }
 
-        // Calculate expiry date based on billing cycle
+        // Calculate expiry date from the actual billing cycle. tryFrom() lets
+        // the legacy 'weekly' option (not part of the BillingCycle enum) fall
+        // through to its addWeeks(1) behaviour without losing the cycle-aware
+        // path for monthly/quarterly/yearly.
         $startsAt = Carbon::parse($data['starts_at']);
-        $data['ends_at'] = match ($data['billing_cycle']) {
-            'weekly' => $startsAt->copy()->addWeeks(1),
-            'monthly' => $startsAt->copy()->addMonth(),
-            'quarterly' => $startsAt->copy()->addMonths(3),
-            'yearly' => $startsAt->copy()->addYear(),
-            default => $startsAt->copy()->addMonth()
-        };
+        $cycle = BillingCycle::tryFrom($data['billing_cycle']);
+        $data['ends_at'] = $cycle
+            ? $cycle->calculateEndDate($startsAt)
+            : $startsAt->copy()->addWeeks(1);
 
         // Set initial status
         $data['payment_status'] = SubscriptionPaymentStatus::PENDING;
