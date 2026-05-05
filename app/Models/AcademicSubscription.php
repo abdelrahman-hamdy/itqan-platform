@@ -1038,8 +1038,17 @@ class AcademicSubscription extends BaseSubscription
             // settle just that cycle. The active cycle, lifecycle dates, lesson
             // creation, and teacher-stat side effects belong to the active
             // cycle and must not run here.
+            //
+            // Only short-circuit when the subscription itself is already
+            // ACTIVE+PAID — a never-activated PENDING subscription must run
+            // the full activation path even when payment.subscription_cycle_id
+            // picked up a stray queued-cycle id from pendingPaymentCycle().
+            $subscriptionAlreadyActivated = $this->status === SessionSubscriptionStatus::ACTIVE
+                && $this->payment_status === SubscriptionPaymentStatus::PAID;
+
             if (
-                $payment->subscription_cycle_id
+                $subscriptionAlreadyActivated
+                && $payment->subscription_cycle_id
                 && $this->current_cycle_id
                 && (int) $payment->subscription_cycle_id !== (int) $this->current_cycle_id
             ) {

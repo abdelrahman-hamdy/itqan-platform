@@ -953,8 +953,19 @@ class QuranSubscription extends BaseSubscription
             // settle just that cycle. The active cycle, lifecycle dates, and
             // first-time-activation side effects (circle creation, group
             // enrollment) belong to the active cycle and must not run here.
+            //
+            // Only short-circuit when the subscription itself is already
+            // ACTIVE+PAID — i.e. the active cycle is healthy and the user is
+            // topping up a future cycle. A subscription whose row is still
+            // PENDING (never activated) must run the full activation path
+            // even when payment.subscription_cycle_id picked up a stray
+            // queued-cycle id from pendingPaymentCycle().
+            $subscriptionAlreadyActivated = $this->status === SessionSubscriptionStatus::ACTIVE
+                && $this->payment_status === SubscriptionPaymentStatus::PAID;
+
             if (
-                $payment->subscription_cycle_id
+                $subscriptionAlreadyActivated
+                && $payment->subscription_cycle_id
                 && $this->current_cycle_id
                 && (int) $payment->subscription_cycle_id !== (int) $this->current_cycle_id
             ) {

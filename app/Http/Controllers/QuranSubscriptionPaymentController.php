@@ -113,7 +113,23 @@ class QuranSubscriptionPaymentController extends Controller
             // cycle without syncing the subscription row (renewal queue branch);
             // resolve the cycle being paid for instead. Falls back for legacy subs
             // without cycles.
-            $pendingCycle = $subscription->pendingPaymentCycle();
+            //
+            // When the subscription itself is still PENDING the user is paying off
+            // their initial activation, NOT topping up a queued future cycle —
+            // pendingPaymentCycle() prefers a queued cycle which would misroute
+            // activation in the webhook (queued cycle paid, subscription stays
+            // pending). Prefer currentCycle in that case, and tear down any
+            // abandoned queued cycle that's blocking the path.
+            if ($subscription->payment_status === SubscriptionPaymentStatus::PENDING) {
+                $strayQueued = $subscription->queuedCycle()->first();
+                if ($strayQueued !== null) {
+                    $strayQueued->deleteIfAbandoned();
+                    $subscription->refresh();
+                }
+                $pendingCycle = $subscription->currentCycle;
+            } else {
+                $pendingCycle = $subscription->pendingPaymentCycle();
+            }
             $finalPrice = $pendingCycle?->final_price ?? $subscription->final_price;
 
             // Check for an existing pending payment with a valid gateway URL (idempotency)
