@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Enums\RecordingStatus;
+use App\Services\RecordingOrchestratorService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * SessionRecording Model
@@ -383,11 +385,12 @@ class SessionRecording extends Model
             'processed_at' => now(),
         ]);
 
-        // Allow the next `participant_joined` event to retry without waiting for
-        // the 5-minute cache TTL. The orchestrator caches "recording_active" when
-        // it sees a RECORDING/QUEUED row; once the row is FAILED, that fast-path
-        // would otherwise keep blocking retries.
-        \Illuminate\Support\Facades\Cache::forget("recording_active:{$this->recordable_type}:{$this->recordable_id}");
+        // FAILED must clear the active-recording short-circuit so the next
+        // participant_joined retries immediately instead of waiting out the TTL.
+        Cache::forget(RecordingOrchestratorService::activeRecordingCacheKey(
+            $this->recordable_type,
+            $this->recordable_id
+        ));
     }
 
     /**

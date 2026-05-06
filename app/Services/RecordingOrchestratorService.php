@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\RecordingCapable;
 use App\Enums\RecordingStatus;
+use App\Enums\SessionStatus;
 use App\Jobs\ProcessRecordingQueueJob;
 use App\Models\AcademicSession;
 use App\Models\BaseSession;
@@ -35,6 +36,18 @@ class RecordingOrchestratorService
 
     private const LOCK_TTL = 10; // seconds
 
+    private const EARLY_JOIN_GRACE_MINUTES = 30;
+
+    /**
+     * Cache key for the "active recording" short-circuit. Held by this service —
+     * use this helper from any caller that needs to read/clear the key (e.g. when
+     * marking a recording FAILED) so the format stays in one place.
+     */
+    public static function activeRecordingCacheKey(string $morphClass, int|string $id): string
+    {
+        return "recording_active:{$morphClass}:{$id}";
+    }
+
     public function __construct(
         private RecordingService $recordingService,
         private LiveKitService $liveKitService,
@@ -56,17 +69,15 @@ class RecordingOrchestratorService
         }
 
         // Fast cache check — avoid DB/lock overhead on repeated participant_joined events
-        $cacheKey = "recording_active:{$session->getMorphClass()}:{$session->id}";
+        $cacheKey = self::activeRecordingCacheKey($session->getMorphClass(), $session->id);
         if (Cache::has($cacheKey)) {
             return;
         }
 
-        // Only record during actual session time, with a 30-minute grace window for
-        // early arrivals. Joining strictly before scheduled_at used to silently drop
-        // the only `participant_joined` event, losing the entire recording for sessions
-        // where one early-arriving participant stayed the whole time.
+        // Grace window — `participant_joined` is the only signal we get, so a single
+        // early arrival that stays the whole session must still trigger recording.
         $session->refresh();
-        if ($session->scheduled_at && now()->lt($session->scheduled_at->copy()->subMinutes(30))) {
+        if ($session->scheduled_at && now()->lt($session->scheduled_at->copy()->subMinutes(self::EARLY_JOIN_GRACE_MINUTES))) {
             return;
         }
 
@@ -223,15 +234,15 @@ class RecordingOrchestratorService
 
         foreach ($models as $cls) {
             $cls::query()
-                ->where('status', \App\Enums\SessionStatus::ONGOING)
+                ->where('status', SessionStatus::ONGOING)
                 ->whereNotNull('meeting_room_name')
                 ->whereDoesntHave('recordings', function ($q) {
-                    // Already has an active/finalized recording — skip
+                    // Already has an active or already-produced recording — skip
                     $q->whereIn('status', [
-                        RecordingStatus::RECORDING->value,
-                        RecordingStatus::QUEUED->value,
-                        RecordingStatus::PROCESSING->value,
-                        RecordingStatus::COMPLETED->value,
+                        RecordingStatus::RECORDING,
+                        RecordingStatus::QUEUED,
+                        RecordingStatus::PROCESSING,
+                        RecordingStatus::COMPLETED,
                     ]);
                 })
                 ->chunkById(50, function ($sessions) use (&$retried) {
@@ -278,8 +289,7 @@ class RecordingOrchestratorService
             ]);
         }
 
-        // Clear cache for this session
-        Cache::forget("recording_active:{$session->getMorphClass()}:{$session->id}");
+        Cache::forget(self::activeRecordingCacheKey($session->getMorphClass(), $session->id));
 
         ProcessRecordingQueueJob::dispatch();
     }
@@ -338,8 +348,7 @@ class RecordingOrchestratorService
             $recording = $this->recordingService->startRecording($session);
             $recording->update(['auto_managed' => true]);
 
-            // Cache to short-circuit repeated participant_joined events
-            Cache::put("recording_active:{$session->getMorphClass()}:{$session->id}", true, 300);
+            Cache::put(self::activeRecordingCacheKey($session->getMorphClass(), $session->id), true, 300);
 
             Log::info('Orchestrator: Auto-recording started', [
                 'session_id' => $session->id,

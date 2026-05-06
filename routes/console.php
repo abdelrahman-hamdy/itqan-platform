@@ -136,10 +136,12 @@ Schedule::command('recordings:cleanup --days=7')
     ->description('Delete session recordings older than 7 days');
 
 // RECORDING: Process stale recording queue entries (safety net for missed webhooks)
+// withoutOverlapping(5) — bare withoutOverlapping() defaults to 24h lock; if a run
+// dies inside a LiveKit HTTP call it would freeze the safety net for a full day.
 Schedule::command('recordings:process-queue')
     ->name('process-recording-queue')
     ->everyMinute()
-    ->withoutOverlapping()
+    ->withoutOverlapping(5)
     ->runInBackground()
     ->description('Process stale recording queue entries and promote waiting sessions');
 
