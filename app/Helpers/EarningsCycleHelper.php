@@ -82,6 +82,21 @@ class EarningsCycleHelper
     }
 
     /**
+     * Same as cycleLabel() but suffixed with the actual cycle date range,
+     * e.g. "أبريل 2026 (29 مارس - 28 أبريل)". Used in the filter dropdown so
+     * supervisors can see the exact 29→28 boundary at a glance.
+     */
+    public static function cycleLabelWithRange(int $year, int $month): string
+    {
+        $range = self::cycleRange($year, $month);
+        $base = self::cycleLabel($year, $month);
+        $start = $range['start']->locale('ar')->translatedFormat('j F');
+        $end = $range['end']->locale('ar')->translatedFormat('j F');
+
+        return "{$base} ({$start} - {$end})";
+    }
+
+    /**
      * Storage form for the `teacher_earnings.earning_month` date column —
      * the first day of the cycle's named month (Y-m-01).
      */

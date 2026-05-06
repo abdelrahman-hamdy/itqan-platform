@@ -133,7 +133,7 @@ class TeacherEarningsDisplayService
                 $month = (int) $monthData->month;
                 $availableMonths[] = [
                     'value' => sprintf('%04d-%02d', $year, $month),
-                    'label' => EarningsCycleHelper::cycleLabel($year, $month),
+                    'label' => EarningsCycleHelper::cycleLabelWithRange($year, $month),
                 ];
             }
         }

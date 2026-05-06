@@ -426,7 +426,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             ->filter(fn ($m) => $m->year && $m->month)
             ->map(fn ($m) => [
                 'value' => sprintf('%04d-%02d', (int) $m->year, (int) $m->month),
-                'label' => EarningsCycleHelper::cycleLabel((int) $m->year, (int) $m->month),
+                'label' => EarningsCycleHelper::cycleLabelWithRange((int) $m->year, (int) $m->month),
             ])
             ->values();
 
@@ -434,7 +434,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         if (! $rows->contains('value', $current['value'])) {
             $rows->prepend([
                 'value' => $current['value'],
-                'label' => $current['label'],
+                'label' => EarningsCycleHelper::cycleLabelWithRange($current['year'], $current['month']),
             ]);
         }
 
