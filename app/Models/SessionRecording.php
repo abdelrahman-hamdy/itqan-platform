@@ -382,6 +382,12 @@ class SessionRecording extends Model
             'processing_error' => $error,
             'processed_at' => now(),
         ]);
+
+        // Allow the next `participant_joined` event to retry without waiting for
+        // the 5-minute cache TTL. The orchestrator caches "recording_active" when
+        // it sees a RECORDING/QUEUED row; once the row is FAILED, that fast-path
+        // would otherwise keep blocking retries.
+        \Illuminate\Support\Facades\Cache::forget("recording_active:{$this->recordable_type}:{$this->recordable_id}");
     }
 
     /**

@@ -61,9 +61,12 @@ class RecordingOrchestratorService
             return;
         }
 
-        // Only record during actual session time
+        // Only record during actual session time, with a 30-minute grace window for
+        // early arrivals. Joining strictly before scheduled_at used to silently drop
+        // the only `participant_joined` event, losing the entire recording for sessions
+        // where one early-arriving participant stayed the whole time.
         $session->refresh();
-        if ($session->scheduled_at && now()->lt($session->scheduled_at)) {
+        if ($session->scheduled_at && now()->lt($session->scheduled_at->copy()->subMinutes(30))) {
             return;
         }
 
@@ -200,6 +203,58 @@ class RecordingOrchestratorService
                 ]);
             }
         }
+    }
+
+    /**
+     * Safety net for sessions that went live but never got a SessionRecording row.
+     *
+     * Common cause: a single early-arriving participant joins before scheduled_at,
+     * gets dropped by handleSessionLive's grace-window check (or any other early
+     * return), and then no further `participant_joined` webhook fires to retry.
+     * Also catches missed webhooks, observer-only joins, and post-RoomStartedHandler
+     * "ghost ongoing" sessions.
+     *
+     * Scheduled by ProcessRecordingQueueCommand alongside processStaleQueue().
+     */
+    public function retryMissedRecordings(): int
+    {
+        $retried = 0;
+        $models = [QuranSession::class, AcademicSession::class];
+
+        foreach ($models as $cls) {
+            $cls::query()
+                ->where('status', \App\Enums\SessionStatus::ONGOING)
+                ->whereNotNull('meeting_room_name')
+                ->whereDoesntHave('recordings', function ($q) {
+                    // Already has an active/finalized recording — skip
+                    $q->whereIn('status', [
+                        RecordingStatus::RECORDING->value,
+                        RecordingStatus::QUEUED->value,
+                        RecordingStatus::PROCESSING->value,
+                        RecordingStatus::COMPLETED->value,
+                    ]);
+                })
+                ->chunkById(50, function ($sessions) use (&$retried) {
+                    foreach ($sessions as $session) {
+                        try {
+                            $this->handleSessionLive($session, $session->meeting_room_name);
+                            $retried++;
+                        } catch (Exception $e) {
+                            Log::warning('Orchestrator: retryMissedRecordings failed for session', [
+                                'session_id' => $session->id,
+                                'session_type' => $session->getMorphClass(),
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                    }
+                });
+        }
+
+        if ($retried > 0) {
+            Log::info('Orchestrator: retryMissedRecordings retried sessions', ['count' => $retried]);
+        }
+
+        return $retried;
     }
 
     /**

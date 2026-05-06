@@ -19,13 +19,19 @@ class ProcessRecordingQueueCommand extends Command
     {
         $orchestrator->processStaleQueue();
 
+        // Safety net for sessions that went ONGOING without ever creating a
+        // recording row (early-arriving participants whose `participant_joined`
+        // event was dropped, missed webhooks, observer-only joins, etc.).
+        $retried = $orchestrator->retryMissedRecordings();
+
         $status = $orchestrator->getCapacityStatus();
 
         $this->info(sprintf(
-            'Recording capacity: %d/%d active, %d queued',
+            'Recording capacity: %d/%d active, %d queued, %d retried',
             $status['active_count'],
             $status['max_count'],
-            $status['queued_count']
+            $status['queued_count'],
+            $retried
         ));
 
         return self::SUCCESS;
