@@ -23,7 +23,6 @@
         sessionDate: '',
         playlist: [],
         currentIndex: -1,
-        bars: [],
         waveform: null,
         waveformReady: false,
         _WaveSurfer: null,
@@ -72,12 +71,6 @@
                 this._WaveSurfer = null;
             }
             return this._WaveSurfer;
-        },
-
-        generateBars(id) {
-            let seed = id || 1;
-            const rand = () => { seed = (seed * 16807 + 0) % 2147483647; return (seed & 0x7fffffff) / 2147483647; };
-            this.bars = Array.from({length: 60}, () => 0.2 + rand() * 0.8);
         },
 
         destroyWaveform() {
@@ -231,7 +224,6 @@
             this.sessionType = track.sessionType || '';
             this.sessionDate = track.sessionDate || '';
             this.knownDuration = track.durationSeconds || 0;
-            this.generateBars(track.id);
         },
 
         resetState() {
@@ -354,18 +346,15 @@
                             <div x-ref="waveformContainer"
                                  class="absolute inset-0 rounded-lg overflow-hidden cursor-pointer"
                                  dir="ltr"></div>
-                            {{-- Placeholder bars on top; hidden once the real waveform is ready. --}}
+                            {{-- Placeholder: dotted line, replaced by the real waveform once peaks are decoded. --}}
                             <div x-show="!waveformReady"
-                                 class="absolute inset-0 rounded-lg cursor-pointer overflow-hidden flex items-end gap-[2px]"
+                                 class="absolute inset-0 cursor-pointer flex items-center"
                                  @click="seek($event)" @touchend.prevent="seek($event)" dir="ltr">
-                                <template x-for="(height, i) in bars" :key="i">
-                                    <div class="flex-1 rounded-sm transition-colors duration-150"
-                                         :style="'height: ' + (height * 100) + '%'"
-                                         :class="(i / bars.length * 100) <= progress
-                                            ? 'bg-blue-500 dark:bg-blue-400'
-                                            : 'bg-gray-200 dark:bg-gray-600'">
-                                    </div>
-                                </template>
+                                <div class="relative w-full h-px">
+                                    <div class="absolute inset-0 border-t border-dotted border-gray-300 dark:border-gray-600"></div>
+                                    <div class="absolute top-0 left-0 border-t border-dotted border-blue-500 dark:border-blue-400 transition-all"
+                                         :style="'width: ' + progress + '%'"></div>
+                                </div>
                             </div>
                         </div>
                         <div class="flex justify-between text-[10px] text-gray-400 mt-1.5 font-mono" dir="ltr">
