@@ -682,27 +682,33 @@ class SessionManagementService
         $title = $this->namingService->generateTrialSessionTitle($trialRequest->student_name);
         $description = $this->namingService->generateTrialSessionDescription();
 
-        // Create the trial session (use UTC for storage)
-        $session = QuranSession::create([
-            'academy_id' => $trialRequest->academy_id,
-            'quran_teacher_id' => $teacherId,
-            'trial_request_id' => $trialRequest->id,
-            'session_code' => $this->generateSessionCode('TRL', $trialRequest->id, $scheduledAt),
-            'session_type' => 'trial',
-            'status' => SessionStatus::SCHEDULED,
-            'title' => $title,
-            'description' => $description,
-            'scheduled_at' => $scheduledAtUtc,
-            'duration_minutes' => 30,
-            'created_by' => Auth::id(),
-        ]);
+        // Wrapped in a transaction so a thrown generateMeetingLink() doesn't
+        // leave a session row without its meeting room and a trial request
+        // stuck in the previous status.
+        return DB::transaction(function () use ($trialRequest, $teacherId, $scheduledAt, $scheduledAtUtc, $title, $description) {
+            $session = QuranSession::create([
+                'academy_id' => $trialRequest->academy_id,
+                'quran_teacher_id' => $teacherId,
+                'student_id' => $trialRequest->student_id,
+                'trial_request_id' => $trialRequest->id,
+                'session_code' => $this->generateSessionCode('TRL', $trialRequest->id, $scheduledAt),
+                'session_type' => 'trial',
+                'status' => SessionStatus::SCHEDULED,
+                'title' => $title,
+                'description' => $description,
+                'scheduled_at' => $scheduledAtUtc,
+                'duration_minutes' => 30,
+                'created_by' => Auth::id(),
+            ]);
 
-        // Update trial request status (use UTC for storage)
-        $trialRequest->update([
-            'status' => TrialRequestStatus::SCHEDULED,
-            'scheduled_at' => $scheduledAtUtc,
-        ]);
+            $session->generateMeetingLink();
 
-        return new BatchScheduleResult(1, 1, []);
+            $trialRequest->update([
+                'status' => TrialRequestStatus::SCHEDULED,
+                'scheduled_at' => $scheduledAtUtc,
+            ]);
+
+            return new BatchScheduleResult(1, 1, []);
+        });
     }
 }

@@ -6,10 +6,10 @@ use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
+use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\StudentProfile;
-use App\Models\BaseSession;
 use App\Services\LiveKitService;
 use App\Services\MeetingAttendanceService;
 use App\Services\SessionSettingsService;
@@ -463,11 +463,13 @@ class MeetingTokenController extends Controller
     protected function getSession(string $type, string $id, int $userId)
     {
         return match ($type) {
-            // quran_sessions.quran_teacher_id and student_id both reference users.id
+            // Trial sessions can have a NULL student_id on legacy rows; the
+            // student then resolves via the trial_request_id relationship.
             'quran' => QuranSession::where('id', $id)
                 ->where(function ($q) use ($userId) {
                     $q->where('student_id', $userId)
-                        ->orWhere('quran_teacher_id', $userId);
+                        ->orWhere('quran_teacher_id', $userId)
+                        ->orWhereHas('trialRequest', fn ($tr) => $tr->where('student_id', $userId));
                 })
                 ->with(['meeting', 'quranTeacher'])
                 ->first(),
@@ -634,6 +636,7 @@ class MeetingTokenController extends Controller
                 'session_type' => $session->getMeetingSessionType(),
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
