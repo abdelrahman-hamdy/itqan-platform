@@ -303,7 +303,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'password' => PasswordRules::min(6)->letters()->numbers(),
             'password_confirmation' => 'required|same:password',
             'education_level' => 'required|in:diploma,bachelor,master,phd,other',
-            'university' => 'required|string|max:255',
+            'university' => 'nullable|string|max:255',
             'years_experience' => 'required|integer|min:0|max:50',
         ];
 
@@ -443,7 +443,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'phone' => 'required|string|max:20',
             'gender' => 'required|in:male,female',
             'education_level' => 'required|in:diploma,bachelor,master,phd,other',
-            'university' => 'required|string|max:255',
+            'university' => 'nullable|string|max:255',
             'years_experience' => 'required|integer|min:0|max:50',
         ];
 
