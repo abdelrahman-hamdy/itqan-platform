@@ -18,6 +18,30 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 {
+    private const SUMMARY_COLUMNS = [
+        'teacher',
+        'quran_individual',
+        'quran_group',
+        'academic',
+        'interactive',
+        'sessions',
+        'hours',
+        'total',
+    ];
+
+    private const DETAILS_COLUMNS = [
+        'teacher',
+        'source_type',
+        'source_name',
+        'session_date',
+        'earning_month',
+        'duration',
+        'calculation_method',
+        'amount',
+        'status',
+        'dispute_notes',
+    ];
+
     public function index(Request $request, $subdomain = null): View
     {
         if (! $this->canManageTeacherEarnings()) {
@@ -99,6 +123,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             'startDate' => $startDate,
             'endDate' => $endDate,
             'activeTab' => 'details',
+            'exportColumns' => self::DETAILS_COLUMNS,
         ]);
     }
 
@@ -122,6 +147,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             'startDate' => $data['startDate'],
             'endDate' => $data['endDate'],
             'activeTab' => 'summary',
+            'exportColumns' => self::SUMMARY_COLUMNS,
         ]);
     }
 
@@ -132,34 +158,77 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         }
 
         $request->validate([
+            'export_type' => 'nullable|in:summary,details',
             'format' => 'nullable|in:pdf,excel',
+            'columns' => 'nullable|array|min:1',
+            'columns.*' => 'string',
         ]);
 
+        $exportType = $request->input('export_type', 'summary');
         $format = $request->input('format', 'pdf');
+        $allowedColumns = $exportType === 'details' ? self::DETAILS_COLUMNS : self::SUMMARY_COLUMNS;
+        $requestedColumns = (array) $request->input('columns', []);
+        $columns = array_values(array_intersect($allowedColumns, $requestedColumns));
+        if (empty($columns)) {
+            $columns = $allowedColumns;
+        }
+
+        $service = app(TeacherEarningsExportService::class);
+        $academy = auth()->user()->academy;
+
+        if ($exportType === 'details') {
+            $data = $this->buildTeacherDetailsData($request);
+
+            if ($data['earnings']->isEmpty()) {
+                return back()->with('error', __('supervisor.teacher_earnings.export_no_data'));
+            }
+
+            $meta = [
+                'academy_name' => $academy->name ?? '',
+                'currency_symbol' => getTeacherEarningsCurrencySymbol(),
+                'period_label' => $this->buildPeriodLabel($data['currentMonth'], $data['startDate'], $data['endDate']),
+                'generated_at' => nowInAcademyTimezone()->format('Y-m-d H:i'),
+            ];
+
+            try {
+                if ($format === 'excel') {
+                    return $service->generateDetailsExcel($data['earnings'], $data['profileUserMap'], $meta, $columns);
+                }
+
+                $pdfContent = $service->generateDetailsPdf($data['earnings'], $data['profileUserMap'], $meta, $columns);
+            } catch (\Throwable $e) {
+                report($e);
+
+                return back()->with('error', __('supervisor.teacher_earnings.export_no_data'));
+            }
+
+            $filename = 'teacher-earnings-details-'.nowInAcademyTimezone()->format('Y-m-d').'.pdf';
+
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="'.$filename.'"')
+                ->header('Content-Length', strlen($pdfContent));
+        }
+
         $data = $this->buildTeacherSummaryData($request);
 
         if (empty($data['teacherSummaries'])) {
             return back()->with('error', __('supervisor.teacher_earnings.export_no_data'));
         }
 
-        $academy = auth()->user()->academy;
-        $periodLabel = $this->buildPeriodLabel($data['currentMonth'], $data['startDate'], $data['endDate']);
-
         $meta = [
             'academy_name' => $academy->name ?? '',
             'currency_symbol' => getTeacherEarningsCurrencySymbol(),
-            'period_label' => $periodLabel,
+            'period_label' => $this->buildPeriodLabel($data['currentMonth'], $data['startDate'], $data['endDate']),
             'generated_at' => nowInAcademyTimezone()->format('Y-m-d H:i'),
         ];
 
         try {
-            $service = app(TeacherEarningsExportService::class);
-
             if ($format === 'excel') {
-                return $service->generateSummaryExcel($data['teacherSummaries'], $data['profileUserMap'], $meta);
+                return $service->generateSummaryExcel($data['teacherSummaries'], $data['profileUserMap'], $meta, $columns);
             }
 
-            $pdfContent = $service->generateSummaryPdf($data['teacherSummaries'], $data['profileUserMap'], $meta);
+            $pdfContent = $service->generateSummaryPdf($data['teacherSummaries'], $data['profileUserMap'], $meta, $columns);
         } catch (\Throwable $e) {
             report($e);
 
@@ -562,6 +631,70 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             'currentMonth' => $currentMonth,
             'currentTeacherType' => $currentTeacherType,
             'currentGender' => $currentGender,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+    }
+
+    /**
+     * Build the unpaginated, filtered earnings collection used by the details
+     * export. Mirrors index()'s scope/filter logic (status + date filters).
+     */
+    private function buildTeacherDetailsData(Request $request): array
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'status' => 'nullable|in:all,finalized,pending,disputed',
+        ]);
+
+        $academyId = $this->getAcademyId();
+        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
+        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
+        $allTeacherIds = array_merge($quranTeacherIds, $academicTeacherIds);
+
+        [$quranProfileIds, $academicProfileIds, $profileUserMap] = $this->resolveProfilesAndMap($quranTeacherIds, $academicTeacherIds);
+        $teachersList = $this->buildTeachersList($profileUserMap);
+
+        $currentTeacherIds = $this->parseTeacherIdsFromRequest($request, $allTeacherIds);
+        $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherIds);
+
+        $currentStatus = $request->input('status', 'all');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $currentMonth = $this->resolveCurrentMonth($request);
+
+        $query = TeacherEarning::where('academy_id', $academyId)
+            ->where($scopeQuery)
+            ->with([
+                'teacher',
+                'session' => function ($morphTo) {
+                    $morphTo->morphWith([
+                        QuranSession::class => ['individualCircle', 'circle'],
+                        AcademicSession::class => ['academicIndividualLesson'],
+                        InteractiveCourseSession::class => ['course'],
+                    ]);
+                },
+            ]);
+
+        $this->applyDateFilters($query, $currentMonth, $startDate, $endDate);
+
+        if ($currentStatus === 'finalized') {
+            $query->finalized();
+        } elseif ($currentStatus === 'pending') {
+            $query->unpaid();
+        } elseif ($currentStatus === 'disputed') {
+            $query->disputed();
+        }
+
+        $earnings = $query->orderByDesc('session_completed_at')->get();
+
+        return [
+            'earnings' => $earnings,
+            'profileUserMap' => $profileUserMap,
+            'currentTeacherIds' => $currentTeacherIds,
+            'currentMonth' => $currentMonth,
+            'currentStatus' => $currentStatus,
             'startDate' => $startDate,
             'endDate' => $endDate,
         ];

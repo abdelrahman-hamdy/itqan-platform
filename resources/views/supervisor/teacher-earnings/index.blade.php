@@ -21,9 +21,16 @@
     />
 
     <!-- Page Header -->
-    <div class="mb-6 md:mb-8">
-        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.teacher_earnings.page_title') }}</h1>
-        <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.teacher_earnings.page_subtitle') }}</p>
+    <div class="mb-6 md:mb-8 flex flex-wrap items-start justify-between gap-3">
+        <div>
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ __('supervisor.teacher_earnings.page_title') }}</h1>
+            <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ __('supervisor.teacher_earnings.page_subtitle') }}</p>
+        </div>
+        <button type="button" onclick="document.getElementById('export-modal').classList.remove('hidden')"
+            class="cursor-pointer min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium">
+            <i class="ri-download-line"></i>
+            {{ __('supervisor.teacher_earnings.export_button_generic') }}
+        </button>
     </div>
 
     @include('supervisor.teacher-earnings.partials.tab-navigation', ['activeTab' => $activeTab ?? 'details', 'subdomain' => $subdomain])
@@ -461,5 +468,11 @@
         @endif
     </div>
 </div>
+
+@include('supervisor.teacher-earnings.partials._export-modal', [
+    'exportType' => 'details',
+    'exportColumns' => $exportColumns,
+    'subdomain' => $subdomain,
+])
 
 </x-layouts.supervisor>

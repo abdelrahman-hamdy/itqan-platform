@@ -338,98 +338,10 @@
     </div>
 </div>
 
-{{-- Export Modal --}}
-<div id="export-modal" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
-    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="document.getElementById('export-modal').classList.add('hidden')"></div>
-    <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
-        <div class="relative bg-white w-full md:max-w-lg rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
-            <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300 z-10"></div>
-            <div class="p-6 pb-4 pt-8 md:pt-6">
-                <div class="mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
-                    <i class="ri-file-download-line text-2xl text-green-600"></i>
-                </div>
-                <h3 class="text-lg font-bold text-center text-gray-900 mb-4">{{ __('supervisor.teacher_earnings.export_title') }}</h3>
-
-                <form method="POST" action="{{ route('manage.teacher-earnings.export', ['subdomain' => $subdomain]) }}">
-                    @csrf
-
-                    <input type="hidden" name="export_type" value="summary">
-
-                    {{-- Pass current filter state --}}
-                    <input type="hidden" name="month" value="{{ $currentMonth ?? '' }}">
-                    @foreach($currentTeacherIds ?? [] as $tid)
-                        <input type="hidden" name="teacher_ids[]" value="{{ $tid }}">
-                    @endforeach
-                    <input type="hidden" name="teacher_type" value="{{ $currentTeacherType ?? '' }}">
-                    <input type="hidden" name="gender" value="{{ $currentGender ?? '' }}">
-                    <input type="hidden" name="start_date" value="{{ $startDate ?? '' }}">
-                    <input type="hidden" name="end_date" value="{{ $endDate ?? '' }}">
-
-                    {{-- Export format selection --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.teacher_earnings.export_format_label') }}</label>
-                        <div class="flex items-center gap-4">
-                            <label class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                                <input type="radio" name="format" value="pdf" checked class="text-green-600 focus:ring-green-500">
-                                <span class="text-sm text-gray-700 flex items-center gap-1.5">
-                                    <i class="ri-file-pdf-2-line text-red-500"></i>
-                                    {{ __('supervisor.teacher_earnings.export_format_pdf') }}
-                                </span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                                <input type="radio" name="format" value="excel" class="text-green-600 focus:ring-green-500">
-                                <span class="text-sm text-gray-700 flex items-center gap-1.5">
-                                    <i class="ri-file-excel-2-line text-green-600"></i>
-                                    {{ __('supervisor.teacher_earnings.export_format_excel') }}
-                                </span>
-                            </label>
-                        </div>
-                    </div>
-
-                    {{-- Active filters summary --}}
-                    <div class="mb-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
-                        <p class="font-medium text-gray-700 mb-1">{{ __('supervisor.teacher_earnings.export_current_filters') }}:</p>
-                        <ul class="space-y-1 text-xs">
-                            <li>
-                                <span class="text-gray-500">{{ __('supervisor.teacher_earnings.filter_teacher') }}:</span>
-                                @if(!empty($currentTeacherIds))
-                                    @php $selectedNames = collect($teachers)->whereIn('id', $currentTeacherIds)->pluck('name')->implode('، '); @endphp
-                                    <span class="font-medium">{{ $selectedNames }}</span>
-                                @else
-                                    <span>{{ __('supervisor.teacher_earnings.export_all_teachers') }}</span>
-                                @endif
-                            </li>
-                            <li>
-                                <span class="text-gray-500">{{ __('supervisor.teacher_earnings.export_period_label') }}:</span>
-                                @if(($startDate ?? null) || ($endDate ?? null))
-                                    <span class="font-medium">{{ $startDate ?? '...' }} - {{ $endDate ?? '...' }}</span>
-                                @elseif($currentMonth ?? null)
-                                    @php
-                                        $selectedMonth = collect($availableMonths)->firstWhere('value', $currentMonth);
-                                    @endphp
-                                    <span class="font-medium">{{ $selectedMonth['label'] ?? $currentMonth }}</span>
-                                @else
-                                    <span>{{ __('supervisor.teacher_earnings.export_all_periods') }}</span>
-                                @endif
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="flex flex-col-reverse md:flex-row gap-3 md:justify-end">
-                        <button type="button" onclick="document.getElementById('export-modal').classList.add('hidden')"
-                            class="cursor-pointer min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-colors">
-                            {{ __('common.actions.cancel') }}
-                        </button>
-                        <button type="submit"
-                            class="cursor-pointer min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-colors inline-flex items-center justify-center gap-2">
-                            <i class="ri-download-line"></i>
-                            {{ __('supervisor.teacher_earnings.export_download') }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+@include('supervisor.teacher-earnings.partials._export-modal', [
+    'exportType' => 'summary',
+    'exportColumns' => $exportColumns,
+    'subdomain' => $subdomain,
+])
 
 </x-layouts.supervisor>
