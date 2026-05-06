@@ -78,7 +78,11 @@ class SupervisorStudentsController extends BaseSupervisorWebController
                 }
             }
         } else {
-            // Supervisor path: discover students through teacher chain
+            // Per-program sets stay active-filtered (drive the row badges).
+            // Master $allStudentIds is unfiltered so paused / completed /
+            // dropped students under an assigned teacher remain visible —
+            // matching what super-admin sees on the same page.
+
             // 1. Quran Individual
             $fromIndividual = collect();
             if (! empty($quranTeacherIds)) {
@@ -114,10 +118,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
                 }
             }
 
-            $allStudentIds = $quranStudentIds
-                ->merge($academicStudentIds)
-                ->merge($interactiveStudentUserIds)
-                ->unique()->values();
+            $allStudentIds = $this->collectAllScopedStudentIds($quranTeacherIds, $academicProfileIds);
         }
 
         // Convert to arrays for in_array checks
@@ -631,39 +632,56 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             return;
         }
 
-        // Supervisor: check student is in discovered set
-        $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        $academicProfileIds = $this->getAssignedAcademicTeacherProfileIds();
+        // Kept in lockstep with the index() master list so visible rows stay clickable.
+        $studentIds = $this->collectAllScopedStudentIds(
+            $this->getAssignedQuranTeacherIds(),
+            $this->getAssignedAcademicTeacherProfileIds(),
+        );
 
-        $studentIds = collect();
+        if (! $studentIds->contains($student->id)) {
+            abort(403);
+        }
+    }
+
+    /**
+     * Every student user ID linked to any of the supervisor's assigned
+     * teachers — across Quran individual/group circles, academic lessons,
+     * and interactive courses — regardless of enrollment activity.
+     *
+     * @param  int[]  $quranTeacherIds
+     * @param  int[]  $academicProfileIds
+     */
+    private function collectAllScopedStudentIds(array $quranTeacherIds, array $academicProfileIds): \Illuminate\Support\Collection
+    {
+        $ids = collect();
 
         if (! empty($quranTeacherIds)) {
-            $fromIndividual = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)
-                ->where('is_active', true)->pluck('student_id');
-            $activeCircleIds = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)
-                ->where('status', true)->pluck('id');
-            $fromCircles = QuranCircleEnrollment::whereIn('circle_id', $activeCircleIds)
-                ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)->pluck('student_id');
-            $studentIds = $studentIds->merge($fromIndividual)->merge($fromCircles);
-        }
-
-        if (! empty($academicProfileIds)) {
-            $fromAcademic = AcademicIndividualLesson::whereIn('academic_teacher_id', $academicProfileIds)
-                ->active()->pluck('student_id');
-            $studentIds = $studentIds->merge($fromAcademic);
-
-            $courseIds = InteractiveCourse::whereIn('assigned_teacher_id', $academicProfileIds)->pluck('id');
-            if ($courseIds->isNotEmpty()) {
-                $enrolledProfileIds = InteractiveCourseEnrollment::whereIn('course_id', $courseIds)
-                    ->active()->pluck('student_id');
-                $fromCourses = StudentProfile::whereIn('id', $enrolledProfileIds)
-                    ->whereNotNull('user_id')->pluck('user_id');
-                $studentIds = $studentIds->merge($fromCourses);
+            $ids = $ids->merge(
+                QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)->pluck('student_id')
+            );
+            $circleIds = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)->pluck('id');
+            if ($circleIds->isNotEmpty()) {
+                $ids = $ids->merge(
+                    QuranCircleEnrollment::whereIn('circle_id', $circleIds)->pluck('student_id')
+                );
             }
         }
 
-        if (! $studentIds->unique()->contains($student->id)) {
-            abort(403);
+        if (! empty($academicProfileIds)) {
+            $ids = $ids->merge(
+                AcademicIndividualLesson::whereIn('academic_teacher_id', $academicProfileIds)->pluck('student_id')
+            );
+            $courseIds = InteractiveCourse::whereIn('assigned_teacher_id', $academicProfileIds)->pluck('id');
+            if ($courseIds->isNotEmpty()) {
+                $enrolledProfileIds = InteractiveCourseEnrollment::whereIn('course_id', $courseIds)
+                    ->pluck('student_id');
+                $ids = $ids->merge(
+                    StudentProfile::whereIn('id', $enrolledProfileIds)
+                        ->whereNotNull('user_id')->pluck('user_id')
+                );
+            }
         }
+
+        return $ids->unique()->values();
     }
 }
