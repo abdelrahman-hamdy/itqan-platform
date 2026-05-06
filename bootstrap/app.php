@@ -68,6 +68,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // Sanctum token ability enforcement
             'ability' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
             'abilities' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
+
+            // Bearer-token gate for /internal/* endpoints (LiveKit VPS reaper)
+            'internal.token' => \App\Http\Middleware\InternalApiAuth::class,
         ]);
 
         // CRITICAL: Exclude webhook endpoints from CSRF protection

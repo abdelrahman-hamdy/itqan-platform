@@ -3,10 +3,10 @@
 namespace App\Observers;
 
 use App\Enums\RecordingStatus;
-use Throwable;
 use App\Models\SessionRecording;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 /**
  * SessionRecording Observer
@@ -75,7 +75,9 @@ class SessionRecordingObserver
      * Supports three storage scenarios:
      * 1. S3 disk configured (livekit.recordings.disk) - deletes from S3
      * 2. Local storage file - deletes from default disk
-     * 3. Remote LiveKit server file - logs warning (cannot delete remotely)
+     * 3. Remote LiveKit server file - reaped asynchronously by the LiveKit
+     *    VPS cron at /opt/livekit/scripts/cleanup-orphan-recordings.sh,
+     *    which polls /api/internal/recordings/to-delete for paths to remove.
      *
      * All errors are caught and logged without interrupting the model operation.
      */
@@ -88,29 +90,22 @@ class SessionRecordingObserver
         try {
             $diskName = config('livekit.recordings.disk');
 
-            // Scenario 1: S3 or configured disk
             if (! empty($diskName)) {
                 $this->deleteFromDisk($recording, $diskName);
 
                 return;
             }
 
-            // Scenario 2: Local file (not a remote LiveKit server path)
             if (! $recording->isRemoteFile()) {
                 $this->deleteFromDefaultDisk($recording);
 
                 return;
             }
 
-            // Scenario 3: Remote file on LiveKit server
-            // We cannot delete files from the LiveKit server directly.
-            // These must be cleaned up via a separate process (SSH, cron, etc.)
-            Log::info('Recording file on remote LiveKit server cannot be auto-deleted', [
+            Log::debug('Recording file marked for LiveKit-side reaper', [
                 'recording_id' => $recording->id,
                 'file_path' => $recording->file_path,
-                'remote_url' => $recording->getRemoteUrl(),
             ]);
-
         } catch (Throwable $e) {
             // Log but do not prevent the model operation from completing
             Log::error('Failed to delete recording storage file', [

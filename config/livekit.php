@@ -17,6 +17,10 @@ return [
     'api_key' => env('LIVEKIT_API_KEY'),
     'api_secret' => env('LIVEKIT_API_SECRET'),
 
+    // Bearer token used by the LiveKit VPS orphan-file reaper to call
+    // /internal/recordings/* endpoints. Generate with `openssl rand -hex 32`.
+    'internal_token' => env('LIVEKIT_INTERNAL_TOKEN'),
+
     /*
     |--------------------------------------------------------------------------
     | Default Settings

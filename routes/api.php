@@ -2,7 +2,15 @@
 
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\ServerTimeController;
+use App\Http\Controllers\Internal\RecordingCleanupController;
 use Illuminate\Support\Facades\Route;
+
+// Internal endpoints — bearer-token auth, no user/session context.
+// Currently consumed only by the LiveKit VPS orphan-file reaper.
+Route::middleware('internal.token')->prefix('internal')->group(function () {
+    Route::get('/recordings/to-delete', [RecordingCleanupController::class, 'toDelete']);
+    Route::get('/recordings/active-paths', [RecordingCleanupController::class, 'activePaths']);
+});
 
 /*
 |--------------------------------------------------------------------------
