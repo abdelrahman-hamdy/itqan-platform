@@ -134,7 +134,8 @@ Route::middleware(['auth'])->prefix('api/recordings')->group(function () {
     Route::get('session/{sessionId}', [InteractiveCourseRecordingController::class, 'getSessionRecordings'])->name('api.recordings.session');
     Route::delete('{recordingId}', [InteractiveCourseRecordingController::class, 'deleteRecording'])->name('api.recordings.delete');
 
-    // Recording access (download/stream)
+    // Recording access (download/stream/peaks)
     Route::get('{recordingId}/download', [InteractiveCourseRecordingController::class, 'downloadRecording'])->name('recordings.download');
     Route::get('{recordingId}/stream', [InteractiveCourseRecordingController::class, 'streamRecording'])->name('recordings.stream');
+    Route::get('{recordingId}/peaks', [InteractiveCourseRecordingController::class, 'peaksRecording'])->name('recordings.peaks');
 });

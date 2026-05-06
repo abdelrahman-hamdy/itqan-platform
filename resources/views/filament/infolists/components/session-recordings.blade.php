@@ -43,6 +43,7 @@
                         id: {{ $recording->id }},
                         streamUrl: '{{ $recording->getDirectUrl() ?? route('recordings.stream', ['recordingId' => $recording->id]) }}',
                         waveformUrl: '{{ route('recordings.stream', ['recordingId' => $recording->id, 'inline' => 1]) }}',
+                        peaksUrl: '{{ route('recordings.peaks', ['recordingId' => $recording->id]) }}',
                         downloadUrl: '{{ route('recordings.download', ['recordingId' => $recording->id]) }}',
                         date: '{{ $recording->started_at ? toAcademyTimezone($recording->started_at)->format('Y/m/d H:i') : '' }}',
                         duration: '{{ $recording->formatted_duration }}',

@@ -362,6 +362,7 @@
                             'id' => $r->id,
                             'streamUrl' => $r->getDirectUrl() ?? $r->getStreamUrl(),
                             'waveformUrl' => route('recordings.stream', ['recordingId' => $r->id, 'inline' => 1]),
+                            'peaksUrl' => route('recordings.peaks', ['recordingId' => $r->id]),
                             'downloadUrl' => $r->getDownloadUrl(),
                             'date' => $r->started_at ? toAcademyTimezone($r->started_at)->translatedFormat('d M h:i A') : '',
                             'duration' => $r->formatted_duration,

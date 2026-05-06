@@ -91,6 +91,7 @@
                                 id: {{ $recording->id }},
                                 streamUrl: '{{ $recording->getDirectUrl() ?? route('recordings.stream', ['recordingId' => $recording->id]) }}',
                                 waveformUrl: '{{ route('recordings.stream', ['recordingId' => $recording->id, 'inline' => 1]) }}',
+                                peaksUrl: '{{ route('recordings.peaks', ['recordingId' => $recording->id]) }}',
                                 downloadUrl: '{{ route('recordings.download', ['recordingId' => $recording->id]) }}',
                                 date: '{{ $startedAt?->format('Y/m/d') }}',
                                 duration: '{{ $recording->formatted_duration }}',
