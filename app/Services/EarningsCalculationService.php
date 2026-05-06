@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\EarningsCalculationServiceInterface;
 use App\Enums\SessionStatus;
+use App\Helpers\EarningsCycleHelper;
 use App\Models\AcademicSession;
 use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
@@ -758,12 +759,15 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
     }
 
     /**
-     * Get earning month (first day of the month)
+     * Get earning month — first day of the **billing cycle's** named month.
+     *
+     * Cycles run from day 29 of the previous month through day 28 of the named month
+     * (Feb 29 in leap years counts toward March). See EarningsCycleHelper.
      */
     protected function getEarningMonth(BaseSession $session): string
     {
         $completionDate = $session->ended_at ?? $session->completed_at ?? $session->scheduled_at ?? now();
 
-        return Carbon::parse($completionDate)->firstOfMonth()->format('Y-m-d');
+        return EarningsCycleHelper::cycleStorageDate(Carbon::parse($completionDate));
     }
 }

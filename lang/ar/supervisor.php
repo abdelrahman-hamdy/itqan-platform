@@ -1170,6 +1170,7 @@ return [
         'filter_start_date' => 'من تاريخ',
         'filter_end_date' => 'إلى تاريخ',
         'date_range_hint' => 'عند تحديد نطاق تاريخ، يتم تجاهل فلتر الشهر.',
+        'cycle_definition_hint' => 'يبدأ كل شهر من اليوم 29 من الشهر السابق وينتهي في اليوم 28 (في فبراير ينتهي يوم 28، ويُحسب 29 فبراير في السنوات الكبيسة ضمن شهر مارس).',
         'summary_rate_per_session' => 'لكل جلسة',
         'summary_rate_per_student' => 'لكل طالب',
         'summary_rate_fixed' => 'مبلغ ثابت',

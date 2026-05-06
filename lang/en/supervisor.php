@@ -1170,6 +1170,7 @@ return [
         'filter_start_date' => 'From Date',
         'filter_end_date' => 'To Date',
         'date_range_hint' => 'When a date range is set, the month filter is ignored.',
+        'cycle_definition_hint' => 'Each month runs from day 29 of the previous month through day 28 (February ends on the 28th; Feb 29 in leap years counts toward March).',
         'summary_rate_per_session' => 'per session',
         'summary_rate_per_student' => 'per student',
         'summary_rate_fixed' => 'fixed',

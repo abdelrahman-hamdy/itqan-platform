@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Helpers\EarningsCycleHelper;
 use App\Models\AcademicSession;
 use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourseSession;
@@ -40,10 +41,10 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        $currentMonth = $request->input('month');
         $currentStatus = $request->input('status', 'all');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+        $currentMonth = $this->resolveCurrentMonth($request);
 
         $earningsQuery = TeacherEarning::where('academy_id', $academyId)
             ->where($scopeQuery)
@@ -396,21 +397,48 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
             ->toArray();
     }
 
+    /**
+     * Default to the current billing cycle on first load. Respect an explicit
+     * `month=` submission (including empty for "All months") and yield to a
+     * date-range filter when either bound is set.
+     */
+    private function resolveCurrentMonth(Request $request): ?string
+    {
+        if ($request->has('month')) {
+            return $request->input('month');
+        }
+        if ($request->filled('start_date') || $request->filled('end_date')) {
+            return null;
+        }
+
+        return EarningsCycleHelper::currentCycle()['value'];
+    }
+
     private function getAvailableMonths(int $academyId, \Closure $scopeQuery): array
     {
-        return TeacherEarning::where('academy_id', $academyId)
+        $rows = TeacherEarning::where('academy_id', $academyId)
             ->where($scopeQuery)
-            ->selectRaw('YEAR(session_completed_at) as year, MONTH(session_completed_at) as month')
+            ->selectRaw('YEAR(earning_month) as year, MONTH(earning_month) as month')
             ->groupBy('year', 'month')
             ->orderByDesc('year')
             ->orderByDesc('month')
             ->get()
             ->filter(fn ($m) => $m->year && $m->month)
             ->map(fn ($m) => [
-                'value' => sprintf('%04d-%02d', $m->year, $m->month),
-                'label' => Carbon::create($m->year, $m->month, 1)->locale('ar')->translatedFormat('F Y'),
+                'value' => sprintf('%04d-%02d', (int) $m->year, (int) $m->month),
+                'label' => EarningsCycleHelper::cycleLabel((int) $m->year, (int) $m->month),
             ])
-            ->toArray();
+            ->values();
+
+        $current = EarningsCycleHelper::currentCycle();
+        if (! $rows->contains('value', $current['value'])) {
+            $rows->prepend([
+                'value' => $current['value'],
+                'label' => $current['label'],
+            ]);
+        }
+
+        return $rows->toArray();
     }
 
     /**
@@ -448,9 +476,9 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
 
         $scopeQuery = $this->buildTeacherScopeQuery($quranProfileIds, $academicProfileIds, $teachersList, $currentTeacherIds);
 
-        $currentMonth = $request->input('month');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+        $currentMonth = $this->resolveCurrentMonth($request);
 
         $query = TeacherEarning::where('academy_id', $academyId)->where($scopeQuery);
         $this->applyDateFilters($query, $currentMonth, $startDate, $endDate);
@@ -556,7 +584,7 @@ class SupervisorTeacherEarningsController extends BaseSupervisorWebController
         if ($month) {
             $parts = explode('-', $month);
             if (count($parts) === 2) {
-                return Carbon::create((int) $parts[0], (int) $parts[1], 1)->locale('ar')->translatedFormat('F Y');
+                return EarningsCycleHelper::cycleLabel((int) $parts[0], (int) $parts[1]);
             }
         }
 

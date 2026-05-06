@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\EarningsCycleHelper;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -111,13 +112,14 @@ class TeacherEarningsDisplayService
     }
 
     /**
-     * Get available months for filtering.
+     * Get available months for filtering. Buckets are the billing cycle's named
+     * month (Y-m of `earning_month`), so values match what `forMonth()` filters on.
      */
     public function getAvailableMonths(string $teacherType, int $teacherId, int $academyId): array
     {
         $months = TeacherEarning::forTeacher($teacherType, $teacherId)
             ->where('academy_id', $academyId)
-            ->selectRaw('YEAR(session_completed_at) as year, MONTH(session_completed_at) as month')
+            ->selectRaw('YEAR(earning_month) as year, MONTH(earning_month) as month')
             ->groupBy('year', 'month')
             ->orderByDesc('year')
             ->orderByDesc('month')
@@ -127,10 +129,11 @@ class TeacherEarningsDisplayService
 
         foreach ($months as $monthData) {
             if ($monthData->year && $monthData->month) {
-                $date = Carbon::create($monthData->year, $monthData->month, 1);
+                $year = (int) $monthData->year;
+                $month = (int) $monthData->month;
                 $availableMonths[] = [
-                    'value' => $date->format('Y-m'),
-                    'label' => $date->locale('ar')->translatedFormat('F Y'),
+                    'value' => sprintf('%04d-%02d', $year, $month),
+                    'label' => EarningsCycleHelper::cycleLabel($year, $month),
                 ];
             }
         }
