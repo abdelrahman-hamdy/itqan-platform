@@ -88,10 +88,13 @@
                     @if($isAvailable)
                         <button type="button" x-data
                             @click="$dispatch('open-audio-player', {
-                                streamUrl: '{{ route('recordings.stream', ['recordingId' => $recording->id]) }}',
+                                id: {{ $recording->id }},
+                                streamUrl: '{{ $recording->getDirectUrl() ?? route('recordings.stream', ['recordingId' => $recording->id]) }}',
+                                waveformUrl: '{{ route('recordings.stream', ['recordingId' => $recording->id, 'inline' => 1]) }}',
                                 downloadUrl: '{{ route('recordings.download', ['recordingId' => $recording->id]) }}',
                                 date: '{{ $startedAt?->format('Y/m/d') }}',
                                 duration: '{{ $recording->formatted_duration }}',
+                                durationSeconds: {{ $recording->duration ?? 0 }},
                                 size: '{{ $recording->formatted_file_size }}'
                             })"
                             class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs">

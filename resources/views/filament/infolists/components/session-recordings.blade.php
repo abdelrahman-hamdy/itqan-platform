@@ -40,10 +40,13 @@
                 <button type="button"
                     x-data
                     @click="$dispatch('open-audio-player', {
-                        streamUrl: '{{ route('recordings.stream', ['recordingId' => $recording->id]) }}',
+                        id: {{ $recording->id }},
+                        streamUrl: '{{ $recording->getDirectUrl() ?? route('recordings.stream', ['recordingId' => $recording->id]) }}',
+                        waveformUrl: '{{ route('recordings.stream', ['recordingId' => $recording->id, 'inline' => 1]) }}',
                         downloadUrl: '{{ route('recordings.download', ['recordingId' => $recording->id]) }}',
                         date: '{{ $recording->started_at ? toAcademyTimezone($recording->started_at)->format('Y/m/d H:i') : '' }}',
                         duration: '{{ $recording->formatted_duration }}',
+                        durationSeconds: {{ $recording->duration ?? 0 }},
                         size: '{{ $recording->formatted_file_size }}'
                     })"
                     class="w-full flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer text-start"

@@ -22,4 +22,6 @@ return [
     'format_not_supported' => 'Format not supported, please download instead',
     'previous' => 'Previous',
     'next' => 'Next',
+    'waveform_loading' => 'Analyzing waveform...',
+    'buffering' => 'Buffering...',
 ];

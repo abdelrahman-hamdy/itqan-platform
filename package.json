@@ -31,6 +31,7 @@
         "laravel-echo": "^2.2.0",
         "livekit-client": "^2.18.1",
         "pusher-js": "^8.4.0",
-        "remixicon": "^4.8.0"
+        "remixicon": "^4.8.0",
+        "wavesurfer.js": "^7.12.6"
     }
 }

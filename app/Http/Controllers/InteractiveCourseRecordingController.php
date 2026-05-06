@@ -234,7 +234,7 @@ class InteractiveCourseRecordingController extends Controller
     /**
      * Download a recording
      */
-    public function downloadRecording(Request $request, $recordingId): BinaryFileResponse|RedirectResponse
+    public function downloadRecording(Request $request, $recordingId): StreamedResponse|BinaryFileResponse|RedirectResponse
     {
         $user = Auth::user();
 
@@ -260,7 +260,14 @@ class InteractiveCourseRecordingController extends Controller
             abort(404, __('errors.recording_file_not_available'));
         }
 
+        $extension = $recording->file_format ?? 'm4a';
+        $filename = $recording->file_name ?? "recording-{$recording->id}.{$extension}";
+
         // Handle remote recordings (stored on LiveKit server)
+        // Stream through Laravel with Content-Disposition: attachment so the browser saves
+        // the file instead of opening it inline. The cross-origin redirect approach with
+        // ?download=1 doesn't work because nginx on the LiveKit VPS doesn't translate the
+        // query string into an attachment header.
         if ($recording->isRemoteFile()) {
             $remoteUrl = $recording->getRemoteUrl();
 
@@ -268,8 +275,39 @@ class InteractiveCourseRecordingController extends Controller
                 abort(404, __('errors.recording_url_not_available'));
             }
 
-            // Redirect to remote URL with download disposition
-            return redirect()->away($remoteUrl.'?download=1');
+            return response()->streamDownload(function () use ($remoteUrl, $recording) {
+                if (ini_get('allow_url_fopen')) {
+                    $stream = @fopen($remoteUrl, 'rb');
+                    if ($stream !== false) {
+                        while (! feof($stream)) {
+                            echo fread($stream, 8192);
+                            flush();
+                        }
+                        fclose($stream);
+
+                        return;
+                    }
+                }
+
+                try {
+                    $body = Http::withOptions(['stream' => true, 'timeout' => 0])
+                        ->get($remoteUrl)
+                        ->toPsrResponse()
+                        ->getBody();
+                    while (! $body->eof()) {
+                        echo $body->read(8192);
+                        flush();
+                    }
+                } catch (Exception $e) {
+                    Log::error('Failed to stream remote recording download', [
+                        'recording_id' => $recording->id,
+                        'remote_url' => $remoteUrl,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }, $filename, [
+                'Content-Type' => 'application/octet-stream',
+            ]);
         }
 
         // Handle local recordings (legacy/fallback)
@@ -277,7 +315,7 @@ class InteractiveCourseRecordingController extends Controller
             abort(404, __('errors.recording_file_not_found'));
         }
 
-        return Storage::download($recording->file_path, $recording->file_name ?? 'recording.mp4');
+        return Storage::download($recording->file_path, $filename);
     }
 
     /**
@@ -318,42 +356,68 @@ class InteractiveCourseRecordingController extends Controller
             }
 
             $accessMode = config('livekit.recordings.access_mode', 'redirect');
+            // ?inline=1 forces same-origin proxy. Used by the audio player's waveform decoder
+            // (Web Audio decodeAudioData), which fails when fetch() follows a cross-origin
+            // redirect to a server that doesn't send CORS headers.
+            $forceInline = $request->boolean('inline');
 
-            if ($accessMode === 'redirect') {
-                // Redirect directly to the remote file (faster, uses LiveKit server bandwidth)
+            if ($accessMode === 'redirect' && ! $forceInline) {
                 return redirect()->away($remoteUrl);
             }
 
-            // Proxy mode: fetch from remote and stream through Laravel
-            // This provides more control but uses Laravel server bandwidth
-            try {
-                $response = Http::withOptions(['stream' => true])->get($remoteUrl);
+            $contentType = match ($recording->file_format) {
+                'ogg' => 'audio/ogg',
+                'm4a' => 'audio/mp4',
+                default => 'video/mp4',
+            };
 
-                if (! $response->successful()) {
-                    abort(404, __('errors.recording_download_failed_server'));
+            return response()->stream(function () use ($remoteUrl, $request, $recording) {
+                $clientHeaders = [];
+                if ($range = $request->header('Range')) {
+                    $clientHeaders['Range'] = $range;
                 }
+                try {
+                    if (ini_get('allow_url_fopen')) {
+                        $context = stream_context_create([
+                            'http' => [
+                                'method' => 'GET',
+                                'header' => collect($clientHeaders)
+                                    ->map(fn ($v, $k) => "{$k}: {$v}")
+                                    ->implode("\r\n"),
+                            ],
+                        ]);
+                        $stream = @fopen($remoteUrl, 'rb', false, $context);
+                        if ($stream !== false) {
+                            while (! feof($stream) && ! connection_aborted()) {
+                                echo fread($stream, 8192);
+                                flush();
+                            }
+                            fclose($stream);
 
-                $contentType = match ($recording->file_format) {
-                    'ogg' => 'audio/ogg',
-                    'm4a' => 'audio/mp4',
-                    default => 'video/mp4',
-                };
-
-                return response()->stream(function () use ($response) {
-                    echo $response->body();
-                }, 200, [
-                    'Content-Type' => $contentType,
-                    'Content-Disposition' => 'inline; filename="'.($recording->file_name ?? 'recording.mp4').'"',
-                    'Accept-Ranges' => 'bytes',
-                ]);
-            } catch (Exception $e) {
-                Log::error('Failed to proxy remote recording', [
-                    'recording_id' => $recording->id,
-                    'remote_url' => $remoteUrl,
-                    'error' => $e->getMessage(),
-                ]);
-                abort(500, __('errors.recording_stream_failed'));
-            }
+                            return;
+                        }
+                    }
+                    $body = Http::withHeaders($clientHeaders)
+                        ->withOptions(['stream' => true, 'timeout' => 0])
+                        ->get($remoteUrl)
+                        ->toPsrResponse()
+                        ->getBody();
+                    while (! $body->eof() && ! connection_aborted()) {
+                        echo $body->read(8192);
+                        flush();
+                    }
+                } catch (Exception $e) {
+                    Log::error('Failed to proxy remote recording', [
+                        'recording_id' => $recording->id,
+                        'remote_url' => $remoteUrl,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }, 200, [
+                'Content-Type' => $contentType,
+                'Content-Disposition' => 'inline; filename="'.($recording->file_name ?? 'recording.mp4').'"',
+                'Accept-Ranges' => 'bytes',
+            ]);
         }
 
         // Handle local recordings (legacy/fallback)

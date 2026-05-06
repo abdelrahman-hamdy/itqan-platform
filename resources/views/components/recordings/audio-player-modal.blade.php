@@ -1,4 +1,4 @@
-{{-- Audio Player Modal — native <audio> with waveform bars, swipe gestures --}}
+{{-- Audio Player Modal — native <audio> for progressive playback + WaveSurfer.js for real waveform --}}
 @once
 <div
     x-data="{
@@ -10,6 +10,7 @@
         duration: 0,
         knownDuration: 0,
         audioUrl: '',
+        waveformUrl: '',
         downloadUrl: '',
         recordingDate: '',
         recordingDuration: '',
@@ -19,6 +20,9 @@
         playlist: [],
         currentIndex: -1,
         bars: [],
+        waveform: null,
+        waveformReady: false,
+        _WaveSurfer: null,
         touchStartX: 0,
         touchStartY: 0,
 
@@ -34,7 +38,6 @@
             a.addEventListener('timeupdate', () => { this.currentTime = a.currentTime; });
             a.addEventListener('loadedmetadata', () => {
                 if (a.duration && isFinite(a.duration)) this.duration = a.duration;
-                this.loading = false;
             });
             a.addEventListener('durationchange', () => {
                 if (a.duration && isFinite(a.duration)) this.duration = a.duration;
@@ -44,12 +47,127 @@
             a.addEventListener('ended', () => { this.playing = false; if (this.hasNext) this.next(); });
             a.addEventListener('waiting', () => { this.loading = true; });
             a.addEventListener('canplay', () => { this.loading = false; });
+            a.addEventListener('playing', () => { this.loading = false; });
+            a.addEventListener('error', () => {
+                this.loading = false;
+                if (a.error && a.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+                    this.error = true;
+                }
+            });
+        },
+
+        async ensureWavesurfer() {
+            if (this._WaveSurfer) return this._WaveSurfer;
+            // window.loadWaveSurfer is defined in resources/js/app.js — the bare module
+            // specifier resolves at build time, and Vite code-splits wavesurfer into its
+            // own chunk that's fetched only on first modal open.
+            if (typeof window.loadWaveSurfer !== 'function') return null;
+            try {
+                this._WaveSurfer = await window.loadWaveSurfer();
+            } catch (e) {
+                this._WaveSurfer = null;
+            }
+            return this._WaveSurfer;
         },
 
         generateBars(id) {
             let seed = id || 1;
             const rand = () => { seed = (seed * 16807 + 0) % 2147483647; return (seed & 0x7fffffff) / 2147483647; };
             this.bars = Array.from({length: 60}, () => 0.2 + rand() * 0.8);
+        },
+
+        destroyWaveform() {
+            if (this.waveform) {
+                try { this.waveform.destroy(); } catch (e) {}
+                this.waveform = null;
+            }
+            this.waveformReady = false;
+        },
+
+        async createWaveform() {
+            this.destroyWaveform();
+            const url = this.waveformUrl || this.audioUrl;
+            const container = this.$refs.waveformContainer;
+            if (!url || !container) return;
+            const WaveSurfer = await this.ensureWavesurfer();
+            if (!WaveSurfer) return;
+            // If a newer track was loaded while we were awaiting the import, bail.
+            if (url !== (this.waveformUrl || this.audioUrl)) return;
+
+            // Decouple playback URL from waveform URL: <audio> already plays from the direct
+            // (cross-origin) LiveKit URL with progressive Range support. We fetch the proxy
+            // URL here only to decode peaks for the waveform — passing them via the `peaks`
+            // option means WaveSurfer renders without touching media.src.
+            let peaks = null;
+            let decodedDuration = 0;
+            try {
+                const response = await fetch(url, { credentials: 'same-origin' });
+                if (!response.ok) throw new Error('waveform fetch failed: ' + response.status);
+                if (url !== (this.waveformUrl || this.audioUrl)) return;
+                const buf = await response.arrayBuffer();
+                if (url !== (this.waveformUrl || this.audioUrl)) return;
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) throw new Error('Web Audio API unavailable');
+                const ctx = new AudioCtx();
+                const decoded = await new Promise((resolve, reject) => {
+                    ctx.decodeAudioData(buf.slice(0), resolve, reject);
+                });
+                if (url !== (this.waveformUrl || this.audioUrl)) {
+                    try { ctx.close(); } catch (e) {}
+                    return;
+                }
+                decodedDuration = decoded.duration || 0;
+                peaks = [this.computePeaks(decoded, 1000)];
+                try { ctx.close(); } catch (e) {}
+            } catch (e) {
+                // Decode failed (CORS, network, unsupported codec). Leave placeholder bars visible.
+                return;
+            }
+
+            try {
+                // Pass `url` AND `peaks` AND `duration`: WaveSurfer skips fetching/decoding
+                // (peaks already provided), and `url` matches our pre-set media.src so the
+                // existing audio element keeps streaming from the direct LiveKit URL.
+                const ws = WaveSurfer.create({
+                    container: container,
+                    media: this.$refs.audio,
+                    url: this.audioUrl,
+                    peaks: peaks,
+                    duration: decodedDuration || undefined,
+                    waveColor: '#d1d5db',
+                    progressColor: '#3b82f6',
+                    cursorColor: 'transparent',
+                    barWidth: 2,
+                    barGap: 1,
+                    barRadius: 1,
+                    height: 64,
+                    normalize: true,
+                    interact: true,
+                });
+                this.waveform = ws;
+                this.waveformReady = true;
+            } catch (e) {
+                this.waveform = null;
+                this.waveformReady = false;
+            }
+        },
+
+        computePeaks(audioBuffer, samples) {
+            const channelData = audioBuffer.getChannelData(0);
+            const blockSize = Math.max(1, Math.floor(channelData.length / samples));
+            const peaks = new Array(samples);
+            for (let i = 0; i < samples; i++) {
+                let blockMax = 0;
+                const start = i * blockSize;
+                const end = Math.min(start + blockSize, channelData.length);
+                for (let j = start; j < end; j++) {
+                    const v = channelData[j];
+                    const abs = v < 0 ? -v : v;
+                    if (abs > blockMax) blockMax = abs;
+                }
+                peaks[i] = blockMax;
+            }
+            return peaks;
         },
 
         toggle() {
@@ -59,8 +177,7 @@
             this.loading = true;
             a.play().catch((e) => {
                 this.loading = false;
-                // Only show format error for NotSupportedError/unsupported media
-                if (e.name === 'NotSupportedError') {
+                if (e && e.name === 'NotSupportedError') {
                     this.error = true;
                 }
                 this.playing = false;
@@ -71,7 +188,7 @@
             const a = this.$refs.audio;
             if (!this.totalDuration) return;
             const rect = event.currentTarget.getBoundingClientRect();
-            const x = event.clientX ?? event.touches?.[0]?.clientX ?? 0;
+            const x = event.clientX ?? event.touches?.[0]?.clientX ?? event.changedTouches?.[0]?.clientX ?? 0;
             const pct = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
             a.currentTime = pct * this.totalDuration;
         },
@@ -93,10 +210,12 @@
             const a = this.$refs.audio;
             a.src = this.audioUrl;
             a.play().catch(() => {});
+            this.createWaveform();
         },
 
         setTrackData(track) {
             this.audioUrl = track.streamUrl;
+            this.waveformUrl = track.waveformUrl || track.streamUrl;
             this.downloadUrl = track.downloadUrl;
             this.recordingDate = track.date || '';
             this.recordingDuration = track.duration || '';
@@ -124,6 +243,8 @@
             this.resetState();
             this.$refs.audio.src = this.audioUrl;
             this.open = true;
+            this.$refs.audio.play().catch(() => {});
+            this.createWaveform();
         },
 
         openPlaylist(detail) {
@@ -135,12 +256,15 @@
             this.resetState();
             this.$refs.audio.src = this.audioUrl;
             this.open = true;
+            this.$refs.audio.play().catch(() => {});
+            this.createWaveform();
         },
 
         closePlayer() {
             this.$refs.audio.pause();
             this.playing = false;
             this.open = false;
+            this.destroyWaveform();
         },
 
         onTouchStart(e) {
@@ -200,18 +324,24 @@
 
                 <template x-if="!error">
                     <div>
-                        <div class="relative h-16 rounded-lg cursor-pointer overflow-hidden flex items-end gap-[2px]"
-                             @click="seek($event)" @touchend.prevent="seek($event)" dir="ltr">
-                            <template x-for="(height, i) in bars" :key="i">
-                                <div class="flex-1 rounded-sm transition-colors duration-150"
-                                     :style="'height: ' + (height * 100) + '%'"
-                                     :class="(i / bars.length * 100) <= progress
-                                        ? 'bg-blue-500 dark:bg-blue-400'
-                                        : 'bg-gray-200 dark:bg-gray-600'">
-                                </div>
-                            </template>
-                            <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-gray-800/60 rounded-lg">
-                                <i class="ri-loader-4-line animate-spin text-xl text-gray-400"></i>
+                        <div class="relative h-16">
+                            {{-- WaveSurfer.js renders into this container. Always laid out so it
+                                 has a measurable width on init, even before peaks are ready. --}}
+                            <div x-ref="waveformContainer"
+                                 class="absolute inset-0 rounded-lg overflow-hidden cursor-pointer"
+                                 dir="ltr"></div>
+                            {{-- Placeholder bars on top; hidden once the real waveform is ready. --}}
+                            <div x-show="!waveformReady"
+                                 class="absolute inset-0 rounded-lg cursor-pointer overflow-hidden flex items-end gap-[2px]"
+                                 @click="seek($event)" @touchend.prevent="seek($event)" dir="ltr">
+                                <template x-for="(height, i) in bars" :key="i">
+                                    <div class="flex-1 rounded-sm transition-colors duration-150"
+                                         :style="'height: ' + (height * 100) + '%'"
+                                         :class="(i / bars.length * 100) <= progress
+                                            ? 'bg-blue-500 dark:bg-blue-400'
+                                            : 'bg-gray-200 dark:bg-gray-600'">
+                                    </div>
+                                </template>
                             </div>
                         </div>
                         <div class="flex justify-between text-[10px] text-gray-400 mt-1.5 font-mono" dir="ltr">
@@ -229,9 +359,10 @@
                 <button @click="skip(10)" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors">
                     <i class="ri-forward-10-line text-xl"></i>
                 </button>
-                <button @click="toggle()" class="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors" :class="error ? 'opacity-50 cursor-not-allowed' : ''">
-                    <i x-show="!playing" class="ri-play-fill text-2xl ms-0.5"></i>
-                    <i x-show="playing" x-cloak class="ri-pause-fill text-2xl"></i>
+                <button @click="toggle()" class="relative w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors" :class="error ? 'opacity-50 cursor-not-allowed' : ''">
+                    <i x-show="!playing && !loading" class="ri-play-fill text-2xl ms-0.5"></i>
+                    <i x-show="playing && !loading" x-cloak class="ri-pause-fill text-2xl"></i>
+                    <i x-show="loading" x-cloak class="ri-loader-4-line text-2xl animate-spin"></i>
                 </button>
                 <button @click="skip(-10)" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors">
                     <i class="ri-replay-10-line text-xl"></i>

@@ -62,6 +62,11 @@ if (document.querySelector('[data-aos]')) {
     });
 }
 
+// WaveSurfer.js — lazy-loaded by the audio player modal (recordings playback)
+// Exposed as a window function so the inline x-data in the Blade modal can trigger
+// the dynamic import; Vite then code-splits wavesurfer into its own chunk.
+window.loadWaveSurfer = () => import('wavesurfer.js').then(m => m.default || m.WaveSurfer || m);
+
 // GSAP — lazy-load only when needed (currently no blade templates use it)
 if (document.querySelector('[data-gsap], .gsap-trigger')) {
     Promise.all([

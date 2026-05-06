@@ -332,6 +332,7 @@
                     $playlist = $playableRecordings->values()->map(fn ($r) => [
                         'id' => $r->id,
                         'streamUrl' => $r->getDirectUrl() ?? $r->getStreamUrl(),
+                        'waveformUrl' => route('recordings.stream', ['recordingId' => $r->id, 'inline' => 1]),
                         'downloadUrl' => $r->getDownloadUrl(),
                         'date' => $r->started_at ? toAcademyTimezone($r->started_at)->translatedFormat('d M h:i A') : '',
                         'duration' => $r->formatted_duration,
