@@ -17,6 +17,10 @@
         recordingSize: '',
         recordingTitle: '',
         recordingId: 0,
+        studentName: '',
+        teacherName: '',
+        sessionType: '',
+        sessionDate: '',
         playlist: [],
         currentIndex: -1,
         bars: [],
@@ -222,6 +226,10 @@
             this.recordingSize = track.size || '';
             this.recordingTitle = track.title || '';
             this.recordingId = track.id || 0;
+            this.studentName = track.studentName || '';
+            this.teacherName = track.teacherName || '';
+            this.sessionType = track.sessionType || '';
+            this.sessionDate = track.sessionDate || '';
             this.knownDuration = track.durationSeconds || 0;
             this.generateBars(track.id);
         },
@@ -304,12 +312,28 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
              @click.stop @touchstart="onTouchStart($event)" @touchend="onTouchEnd($event)">
 
-            <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
+            <div class="flex items-start justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700 gap-2">
                 <div class="flex-1 min-w-0">
-                    <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate" x-text="recordingTitle || '{{ __('recordings.player_title') }}'"></h3>
-                    <p x-show="playlist.length > 1" class="text-[10px] text-gray-400 mt-0.5" x-text="(currentIndex + 1) + ' / ' + playlist.length"></p>
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate"
+                        x-text="studentName || recordingTitle || '{{ __('recordings.player_title') }}'"></h3>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                        <span x-show="teacherName" class="flex items-center gap-1 min-w-0">
+                            <i class="ri-user-2-line shrink-0"></i>
+                            <span class="truncate" x-text="teacherName"></span>
+                        </span>
+                        <span x-show="sessionType" class="flex items-center gap-1 min-w-0">
+                            <i class="ri-bookmark-line shrink-0"></i>
+                            <span class="truncate" x-text="sessionType"></span>
+                        </span>
+                        <span x-show="sessionDate" class="flex items-center gap-1 min-w-0">
+                            <i class="ri-calendar-line shrink-0"></i>
+                            <span class="truncate" x-text="sessionDate"></span>
+                        </span>
+                    </div>
+                    <p x-show="playlist.length > 1" class="text-[10px] text-gray-400 mt-0.5"
+                       x-text="(currentIndex + 1) + ' / ' + playlist.length"></p>
                 </div>
-                <button @click="closePlayer()" class="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ms-2">
+                <button @click="closePlayer()" class="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ms-2 shrink-0">
                     <i class="ri-close-line text-gray-400"></i>
                 </button>
             </div>

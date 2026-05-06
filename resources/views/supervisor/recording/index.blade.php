@@ -329,17 +329,51 @@
                 @php
                     // Build playlist for audio player navigation
                     $playableRecordings = $historyData['recordings']->filter(fn ($r) => $r->isCompleted() && $r->isAvailable());
-                    $playlist = $playableRecordings->values()->map(fn ($r) => [
-                        'id' => $r->id,
-                        'streamUrl' => $r->getDirectUrl() ?? $r->getStreamUrl(),
-                        'waveformUrl' => route('recordings.stream', ['recordingId' => $r->id, 'inline' => 1]),
-                        'downloadUrl' => $r->getDownloadUrl(),
-                        'date' => $r->started_at ? toAcademyTimezone($r->started_at)->translatedFormat('d M h:i A') : '',
-                        'duration' => $r->formatted_duration,
-                        'durationSeconds' => $r->duration,
-                        'size' => $r->formatted_file_size,
-                        'title' => $r->recordable?->session_code ?? $r->display_name,
-                    ])->toArray();
+                    $playlist = $playableRecordings->values()->map(function ($r) {
+                        $sess = $r->recordable;
+                        $recType = match (true) {
+                            $sess instanceof \App\Models\AcademicSession => 'academic',
+                            $sess instanceof \App\Models\InteractiveCourseSession => 'interactive',
+                            default => 'quran',
+                        };
+                        $isTrial = $recType === 'quran' && $sess && method_exists($sess, 'isTrial') && $sess->isTrial();
+                        $typeLabel = match (true) {
+                            $recType === 'academic' => __('supervisor.sessions.type_private_lesson'),
+                            $recType === 'interactive' => __('supervisor.sessions.type_interactive'),
+                            $isTrial => __('supervisor.sessions.type_quran_trial'),
+                            $sess && $sess->circle => __('supervisor.sessions.type_quran_group'),
+                            default => __('supervisor.sessions.type_quran_individual'),
+                        };
+                        $teacherName = match ($recType) {
+                            'academic' => $sess?->academicTeacher?->user?->name,
+                            'interactive' => $sess?->course?->assignedTeacher?->user?->name,
+                            default => $sess?->quranTeacher?->name,
+                        } ?? '-';
+                        $studentName = match ($recType) {
+                            'academic' => $sess?->student?->name,
+                            'interactive' => $sess?->course?->title,
+                            default => $sess?->circle?->name ?? $sess?->student?->name ?? $sess?->trialRequest?->student?->name,
+                        } ?? '-';
+                        $sessionDate = $sess?->scheduled_at
+                            ? toAcademyTimezone($sess->scheduled_at)->translatedFormat('d M Y h:i A')
+                            : ($r->started_at ? toAcademyTimezone($r->started_at)->translatedFormat('d M Y h:i A') : '');
+
+                        return [
+                            'id' => $r->id,
+                            'streamUrl' => $r->getDirectUrl() ?? $r->getStreamUrl(),
+                            'waveformUrl' => route('recordings.stream', ['recordingId' => $r->id, 'inline' => 1]),
+                            'downloadUrl' => $r->getDownloadUrl(),
+                            'date' => $r->started_at ? toAcademyTimezone($r->started_at)->translatedFormat('d M h:i A') : '',
+                            'duration' => $r->formatted_duration,
+                            'durationSeconds' => $r->duration,
+                            'size' => $r->formatted_file_size,
+                            'title' => $r->recordable?->session_code ?? $r->display_name,
+                            'studentName' => $studentName,
+                            'teacherName' => $teacherName,
+                            'sessionType' => $typeLabel,
+                            'sessionDate' => $sessionDate,
+                        ];
+                    })->toArray();
                     $playlistJs = \Illuminate\Support\Js::from($playlist);
                 @endphp
 
