@@ -849,9 +849,8 @@ class AcademicSession extends BaseSession implements RecordingCapable
             'filename' => $this->getRecordingFilename(),
             'storage_path' => $this->getRecordingStoragePath(),
             'metadata' => $this->getRecordingMetadata(),
-            'audio_only' => true,
+            'audio_only' => false,
             'video_only' => false,
-            'preset' => 'AUDIO_ONLY',
             'audio_bitrate' => config('livekit.audio.recording_bitrate_kbps', 128),
             'audio_frequency' => config('livekit.audio.recording_frequency', 48000),
         ];
