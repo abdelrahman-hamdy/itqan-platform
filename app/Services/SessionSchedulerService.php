@@ -28,15 +28,23 @@ class SessionSchedulerService
     ) {}
 
     /**
-     * Check if session should transition to READY
+     * Check if session should transition to READY.
+     *
+     * When `$diagnostic` is non-null it is populated with the failing-gate
+     * name. Callers wanting to log why a session was skipped pass an array
+     * by reference; production cron leaves it null for performance.
      */
-    public function shouldTransitionToReady(BaseSession $session): bool
+    public function shouldTransitionToReady(BaseSession $session, ?array &$diagnostic = null): bool
     {
         if ($session->status !== SessionStatus::SCHEDULED) {
+            $diagnostic = ['gate' => 'wrong_status', 'status' => $session->status?->value];
+
             return false;
         }
 
         if (! $session->scheduled_at) {
+            $diagnostic = ['gate' => 'null_scheduled_at'];
+
             return false;
         }
 
@@ -46,16 +54,30 @@ class SessionSchedulerService
         // Safety check - don't process sessions too far in future
         $maxFutureTime = now()->addHours($this->settingsService->getMaxFutureHours());
         if ($session->scheduled_at->gt($maxFutureTime)) {
+            $diagnostic = ['gate' => 'too_far_future', 'scheduled_at' => $session->scheduled_at->toIso8601String()];
+
             return false;
         }
 
         // Also don't process sessions older than 24 hours
         $minPastTime = now()->subHours(24);
         if ($session->scheduled_at->lt($minPastTime)) {
+            $diagnostic = ['gate' => 'too_far_past', 'scheduled_at' => $session->scheduled_at->toIso8601String()];
+
             return false;
         }
 
-        return now()->gte($preparationTime);
+        if (! now()->gte($preparationTime)) {
+            $diagnostic = [
+                'gate' => 'before_preparation_time',
+                'preparation_time' => $preparationTime->toIso8601String(),
+                'preparation_minutes' => $preparationMinutes,
+            ];
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -132,18 +154,33 @@ class SessionSchedulerService
         $results = [
             'transitions_to_ready' => 0,
             'transitions_to_completed' => 0,
+            'skipped_ready' => [],
             'errors' => [],
         ];
 
         foreach ($sessions as $session) {
             try {
                 // Check for READY transition
-                if ($this->shouldTransitionToReady($session)) {
+                $readyDiag = null;
+                if ($this->shouldTransitionToReady($session, $readyDiag)) {
                     if ($this->transitionService->transitionToReady($session)) {
                         $results['transitions_to_ready']++;
 
                         continue;
                     }
+
+                    // Predicate said yes but transition returned false — surface why.
+                    Log::warning('shouldTransitionToReady passed but transitionToReady returned false', [
+                        'session_id' => $session->id,
+                        'session_type' => $this->settingsService->getSessionType($session),
+                    ]);
+                } elseif ($session->status === SessionStatus::SCHEDULED && $readyDiag !== null) {
+                    // Only track diagnostics for SCHEDULED rows — anything else
+                    // is a stable terminal/intermediate state we don't care about.
+                    $results['skipped_ready'][] = array_merge(
+                        ['session_id' => $session->id],
+                        $readyDiag,
+                    );
                 }
 
                 // Auto-complete sessions whose time has passed

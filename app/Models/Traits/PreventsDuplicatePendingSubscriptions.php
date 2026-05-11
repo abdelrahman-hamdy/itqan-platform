@@ -145,12 +145,19 @@ trait PreventsDuplicatePendingSubscriptions
     /**
      * Cancel this subscription as duplicate or expired.
      *
+     * Also clears payment_status to FAILED so the student-facing payable list
+     * (which keys off payment_status=PENDING) drops this row immediately,
+     * and so a fresh gateway payment cannot resurrect the cancelled thread
+     * through QuranSubscriptionPaymentController::getPendingSubscription().
+     * See followup_payment_routing_to_cancelled_sub.md, defect 1.
+     *
      * @param  string|null  $reason  Cancellation reason (uses config default if null)
      */
     public function cancelAsDuplicateOrExpired(?string $reason = null): void
     {
         $this->update([
             'status' => $this->getCancelledStatus(),
+            'payment_status' => SubscriptionPaymentStatus::FAILED,
             'cancelled_at' => now(),
             'cancellation_reason' => $reason ?? config('subscriptions.cancellation_reasons.expired'),
             'auto_renew' => false,
@@ -200,6 +207,37 @@ trait PreventsDuplicatePendingSubscriptions
         }
 
         return $query->first();
+    }
+
+    /**
+     * Find a recently-cancelled subscription matching the same combination,
+     * suitable for reuse by a gateway-retry flow.
+     *
+     * Window matches the per-payment retry envelope (default 60 minutes):
+     * when a student bounces between Paymob and Tap because the first
+     * gateway expired, we want to un-cancel the prior row instead of
+     * minting a sibling that produces a ghost activation.
+     *
+     * @param  int  $windowMinutes  Max age of the cancelled row to consider
+     */
+    public function findRecentCancelledForRetry(int $windowMinutes = 60): ?static
+    {
+        $query = static::where('academy_id', $this->academy_id)
+            ->where('student_id', $this->student_id)
+            ->where('status', $this->getCancelledStatus())
+            ->where('cancelled_at', '>=', now()->subMinutes($windowMinutes));
+
+        if ($this->id) {
+            $query->where('id', '!=', $this->id);
+        }
+
+        foreach ($this->getDuplicateKeyFields() as $field) {
+            if ($this->$field !== null) {
+                $query->where($field, $this->$field);
+            }
+        }
+
+        return $query->orderByDesc('cancelled_at')->first();
     }
 
     /**
