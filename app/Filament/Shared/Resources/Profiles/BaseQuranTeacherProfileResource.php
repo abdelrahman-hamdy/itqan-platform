@@ -259,12 +259,7 @@ abstract class BaseQuranTeacherProfileResource extends Resource
 
     protected static function getPhoneInput(string $name = 'phone', string $label = 'رقم الهاتف'): PhoneInput
     {
-        // Teacher profile tables no longer carry phone_country* columns
-        // (migration 2025_12_30_141314 moved phone storage to the users
-        // table). Phone is bound to the User via form hooks elsewhere in
-        // the resource, so we deliberately do NOT wire `countryStatePath`
-        // here — that would try to write to a non-existent column on the
-        // teacher profile.
+        // Phone lives on User (migration 2025_12_30_141314); no countryStatePath here.
         return PhoneInput::make($name)->label($label)->defaultCountry('SA')->initialCountry('sa')
             ->excludeCountries(['il'])->separateDialCode(true)->formatAsYouType(true)->showFlags(true)
             ->strictMode(true)->locale('ar')->i18n(['ps' => 'فلسطين']);
