@@ -184,12 +184,16 @@
                 @livewire(\App\Filament\Widgets\SuperAdminMonthlyStatsWidget::class)
             @endif
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
                 @if(\App\Filament\Widgets\UserAnalyticsChartWidget::canView())
-                    @livewire(\App\Filament\Widgets\UserAnalyticsChartWidget::class)
+                    <div class="min-w-0">
+                        @livewire(\App\Filament\Widgets\UserAnalyticsChartWidget::class)
+                    </div>
                 @endif
                 @if(\App\Filament\Widgets\SessionAnalyticsChartWidget::canView())
-                    @livewire(\App\Filament\Widgets\SessionAnalyticsChartWidget::class)
+                    <div class="min-w-0">
+                        @livewire(\App\Filament\Widgets\SessionAnalyticsChartWidget::class)
+                    </div>
                 @endif
             </div>
 

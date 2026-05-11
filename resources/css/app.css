@@ -1158,3 +1158,11 @@ body {
 .phone-input-container + .mt-1\.5 {
     margin-top: 0.375rem;
 }
+
+/* Safari fix: Chart.js canvases inherit 300px intrinsic width and collapse
+   their CSS Grid/Flex track. Force the wrapper to fill the column and let
+   the canvas shrink to the wrapper width. */
+canvas[id$="Chart"] {
+    width: 100% !important;
+    max-width: 100%;
+}

@@ -88,3 +88,20 @@
     display: none;
   }
 }
+
+/* Safari fix: Filament ChartWidget renders <canvas> with intrinsic 300px width
+   inside a grid item. Without min-width:0 and width:100% on the wrappers,
+   Safari sizes the track to canvas intrinsic width and the chart collapses. */
+.fi-wi-chart {
+    width: 100%;
+    min-width: 0;
+}
+.fi-wi-chart canvas {
+    width: 100% !important;
+    max-width: 100%;
+}
+/* The Livewire root that wraps each widget on the dashboard grid must also
+   allow shrinking below content size — otherwise the grid track inflates. */
+.fi-dashboard-widgets-ctn > [wire\:id] {
+    min-width: 0;
+}

@@ -202,37 +202,37 @@
 
     @if($isAdmin && $chartData)
         {{-- Admin/SuperAdmin: Analytics Charts --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6 min-w-0">
             {{-- User Growth Chart --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 min-w-0">
                 <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
                     <i class="ri-line-chart-line text-emerald-500 me-1.5"></i>
                     {{ __('supervisor.dashboard.chart_user_growth') }}
                 </h2>
-                <div style="height: 300px;">
+                <div class="w-full" style="height: 300px;">
                     <canvas id="userGrowthChart"></canvas>
                 </div>
             </div>
 
             {{-- Session Activity Chart --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 min-w-0">
                 <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
                     <i class="ri-bar-chart-grouped-line text-blue-500 me-1.5"></i>
                     {{ __('supervisor.dashboard.chart_session_activity') }}
                 </h2>
-                <div style="height: 300px;">
+                <div class="w-full" style="height: 300px;">
                     <canvas id="sessionActivityChart"></canvas>
                 </div>
             </div>
         </div>
 
         {{-- Earnings Breakdown Chart (full width) --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 min-w-0">
             <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4">
                 <i class="ri-money-dollar-circle-line text-yellow-500 me-1.5"></i>
                 {{ __('supervisor.dashboard.chart_earnings') }}
             </h2>
-            <div style="height: 320px;">
+            <div class="w-full" style="height: 320px;">
                 <canvas id="earningsChart"></canvas>
             </div>
         </div>
