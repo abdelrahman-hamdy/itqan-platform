@@ -12,6 +12,7 @@ use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\TeacherEarning;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
@@ -99,7 +100,7 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
                     'academy_id' => $session->academy_id ?? $this->getAcademyId($session),
                     'teacher_type' => $teacherData['type'],
                     'teacher_id' => $teacherData['id'],
-                    'session_type' => $session->getMorphClass(),
+                    'session_type' => TeacherEarning::normalizeSessionType($session->getMorphClass()),
                     'session_id' => $session->id,
                     'amount' => $amount,
                     'calculation_method' => $this->getCalculationMethod($session),
@@ -618,9 +619,17 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
      */
     protected function findExistingEarning(BaseSession $session, bool $forUpdate = false): ?TeacherEarning
     {
+        // Match BOTH the morph alias (the canonical form used by all writes)
+        // AND the FQCN (legacy rows inserted before the morph map was added,
+        // before the D2 normalization migration ran). This is defense in
+        // depth: D2 sweeps the historical data, but the lookup must still
+        // find an FQCN row if one slips in via a third-party path so we
+        // don't mint a duplicate.
+        $variants = $this->sessionTypeVariants($session->getMorphClass());
+
         $query = TeacherEarning::withoutGlobalScope('academy')
             ->withTrashed()
-            ->where('session_type', $session->getMorphClass())
+            ->whereIn('session_type', $variants)
             ->where('session_id', $session->id)
             ->where('academy_id', $session->academy_id ?? $this->getAcademyId($session));
 
@@ -629,6 +638,32 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
         }
 
         return $query->first();
+    }
+
+    /**
+     * Build the set of session_type values that should be treated as
+     * equivalent for dedup lookups: the alias and (if mapped) the FQCN.
+     *
+     * Legacy data may carry FQCN rows that pre-date the D2 normalization
+     * migration; querying with both forms means a re-completion never
+     * mints a duplicate.
+     *
+     * @return list<string>
+     */
+    protected function sessionTypeVariants(string $type): array
+    {
+        $alias = TeacherEarning::normalizeSessionType($type);
+        $fqcn = Relation::getMorphedModel($alias);
+
+        $variants = [$alias];
+        if ($fqcn !== null && $fqcn !== $alias) {
+            $variants[] = $fqcn;
+        }
+        if (! in_array($type, $variants, true)) {
+            $variants[] = $type;
+        }
+
+        return $variants;
     }
 
     /**

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TeacherEarning extends Model
@@ -111,11 +112,28 @@ class TeacherEarning extends Model
     }
 
     /**
-     * Scope to filter by session
+     * Normalize a session_type value to its morph alias.
+     *
+     * Bug #5: legacy callers passed the FQCN form which silently bypassed
+     * alias-form rows. All earnings reads/writes must go through this so
+     * the (session_type, session_id) unique index and the dedup BEFORE
+     * INSERT trigger agree on a single canonical value.
+     */
+    public static function normalizeSessionType(string $sessionType): string
+    {
+        if (! str_contains($sessionType, '\\')) {
+            return $sessionType;
+        }
+
+        return Relation::getMorphAlias($sessionType);
+    }
+
+    /**
+     * Scope to filter by session — accepts either alias or FQCN form.
      */
     public function scopeForSession($query, string $sessionType, int $sessionId)
     {
-        return $query->where('session_type', $sessionType)
+        return $query->where('session_type', self::normalizeSessionType($sessionType))
             ->where('session_id', $sessionId);
     }
 
