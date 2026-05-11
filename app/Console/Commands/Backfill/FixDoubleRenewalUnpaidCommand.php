@@ -219,17 +219,16 @@ class FixDoubleRenewalUnpaidCommand extends BaseBackfillCommand
             $queued->delete();
 
             // Mint replacement pending manual-cash payment, link to active cycle.
-            $sub = \App\Models\BaseSubscription::query()
-                ->where('id', $subId)
-                ->first()
-                ?? \App\Models\QuranSubscription::query()->find($subId);
+            // All 3 targeted subs are QuranSubscription per the 2026-05-11 audit;
+            // resolve concretely (BaseSubscription is abstract, can't be queried).
+            $sub = \App\Models\QuranSubscription::query()->find($subId);
 
             $amount = (float) ($current->final_price ?? $current->total_price ?? 0);
             $currency = $current->currency ?? 'SAR';
 
             $replacement = Payment::createPayment([
                 'academy_id' => $current->academy_id,
-                'user_id' => $sub->student_id ?? null,
+                'user_id' => $sub?->student_id,
                 'payable_type' => $sub?->getMorphClass() ?? 'quran_subscription',
                 'payable_id' => $subId,
                 'subscription_cycle_id' => $current->id,
