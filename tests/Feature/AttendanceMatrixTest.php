@@ -212,18 +212,21 @@ it('respects admin override on counts_for_subscription (whereNull guard)', funct
         studentPercent: 90.0,
     );
 
-    // Admin pre-sets counts_for_subscription to false
+    // Use an existing user id for the FK. Hardcoding 1 worked when this test
+    // ran alone (first auto_increment) but MySQL doesn't reset AUTO_INCREMENT
+    // on a rolled-back transaction, so in the full suite no user has id=1.
+    $adminUserId = $this->teacher->id;
+
     $studentAttendance->update([
         'counts_for_subscription' => false,
-        'counts_for_subscription_set_by' => 1,
+        'counts_for_subscription_set_by' => $adminUserId,
         'counts_for_subscription_set_at' => now(),
     ]);
 
     runMatrixPass($session);
 
-    // Admin override must be preserved — matrix skips this row entirely
     expect($studentAttendance->fresh()->counts_for_subscription)->toBeFalse()
-        ->and($studentAttendance->fresh()->counts_for_subscription_set_by)->toBe(1);
+        ->and($studentAttendance->fresh()->counts_for_subscription_set_by)->toBe($adminUserId);
 });
 
 it('respects admin override on counts_for_teacher', function () {
@@ -233,18 +236,18 @@ it('respects admin override on counts_for_teacher', function () {
         studentPercent: 90.0,
     );
 
-    // Admin pre-sets counts_for_teacher to true
+    $adminUserId = $this->teacher->id;
+
     $session->update([
         'counts_for_teacher' => true,
-        'counts_for_teacher_set_by' => 1,
+        'counts_for_teacher_set_by' => $adminUserId,
         'counts_for_teacher_set_at' => now(),
     ]);
 
     runMatrixPass($session);
 
-    // Admin override must be preserved
     expect($session->fresh()->counts_for_teacher)->toBeTrue()
-        ->and($session->fresh()->counts_for_teacher_set_by)->toBe(1);
+        ->and($session->fresh()->counts_for_teacher_set_by)->toBe($adminUserId);
 });
 
 it('does not overwrite counts_for_subscription if it is already set (historical safety)', function () {

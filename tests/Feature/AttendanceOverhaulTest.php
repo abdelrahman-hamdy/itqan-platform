@@ -61,7 +61,11 @@ it('marks completed sessions as final', function () {
 // B. Auto-Completion
 // ============================================
 
-it('auto-completes scheduled sessions when time passes', function () {
+it('does not auto-complete SCHEDULED sessions — they transition to READY first', function () {
+    // Contract: shouldAutoComplete only accepts ONGOING/READY. SCHEDULED rows
+    // are advanced to READY by a separate predicate (shouldTransitionToReady),
+    // and only THEN become eligible for auto-completion. Asserting the negative
+    // here so any future widening of the predicate is reviewed deliberately.
     $session = QuranSession::factory()->create([
         'academy_id' => $this->academy->id,
         'quran_teacher_id' => $this->teacher->id,
@@ -73,16 +77,21 @@ it('auto-completes scheduled sessions when time passes', function () {
 
     $schedulerService = app(SessionSchedulerService::class);
 
-    expect($schedulerService->shouldAutoComplete($session))->toBeTrue();
+    expect($schedulerService->shouldAutoComplete($session))->toBeFalse();
 });
 
 it('auto-completes ready sessions when time passes', function () {
+    // Push scheduled_at past the AUTO_COMPLETE_GRACE_MINUTES (60) so we
+    // exercise the unconditional return-true branch in shouldAutoComplete()
+    // rather than the LiveKit roomHasActiveParticipants check, which
+    // defensively returns true when the API is unreachable (test env has
+    // no LiveKit server).
     $session = QuranSession::factory()->create([
         'academy_id' => $this->academy->id,
         'quran_teacher_id' => $this->teacher->id,
         'student_id' => $this->student->id,
         'status' => SessionStatus::READY,
-        'scheduled_at' => now()->subHours(2),
+        'scheduled_at' => now()->subHours(4),
         'duration_minutes' => 60,
     ]);
 

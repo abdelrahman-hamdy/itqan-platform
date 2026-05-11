@@ -9,8 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Academic Session Report Model
  *
- * Extends BaseSessionReport with Academic-specific fields:
- * - homework_degree: Homework quality score (0-10)
+ * Extends BaseSessionReport with Academic-specific fields. The DB column is
+ * `homework_completion_degree`; this model exposes it as `homework_degree`
+ * via fillable alias + accessor/mutator so the mobile API and the
+ * InteractiveSessionReport sibling can use the same key.
  *
  * @property float|null $homework_degree
  */
@@ -19,10 +21,13 @@ class AcademicSessionReport extends BaseSessionReport
     use HasHomeworkEvaluation;
 
     /**
-     * Academic-specific fillable fields (merged with parent in constructor)
+     * Academic-specific fillable fields (merged with parent in constructor).
+     * `homework_degree` is the alias; the mutator below routes it to the
+     * actual `homework_completion_degree` column.
      */
     protected $fillable = [
         'homework_degree',
+        'homework_completion_degree',
     ];
 
     /**
@@ -43,8 +48,27 @@ class AcademicSessionReport extends BaseSessionReport
     public function getCasts(): array
     {
         return array_merge(parent::getCasts(), [
-            'homework_degree' => 'decimal:1',
+            'homework_completion_degree' => 'decimal:1',
         ]);
+    }
+
+    /**
+     * Read the homework score via the API-facing name.
+     */
+    public function getHomeworkDegreeAttribute(): ?float
+    {
+        $value = $this->attributes['homework_completion_degree'] ?? null;
+
+        return $value === null ? null : (float) $value;
+    }
+
+    /**
+     * Write the homework score via the API-facing name. Routes to the
+     * actual DB column so existing readers / migrations are unaffected.
+     */
+    public function setHomeworkDegreeAttribute($value): void
+    {
+        $this->attributes['homework_completion_degree'] = $value;
     }
 
     // ========================================
@@ -61,11 +85,11 @@ class AcademicSessionReport extends BaseSessionReport
 
     /**
      * Get Academic-specific performance data
-     * Returns homework_degree as the performance metric (0-10 scale)
+     * Returns homework completion degree as the performance metric (0-10 scale)
      */
     protected function getSessionSpecificPerformanceData(): ?float
     {
-        return $this->homework_degree;
+        return $this->homework_completion_degree;
     }
 
     /** @deprecated Unused — percentage-based status. */

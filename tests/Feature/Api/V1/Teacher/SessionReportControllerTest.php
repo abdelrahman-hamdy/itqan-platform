@@ -188,14 +188,13 @@ describe('PUT /api/v1/teacher/{type}/sessions/{id}/reports/{studentId}', functio
     });
 
     it('writes homework_degree (not memorization fields) for academic sessions', function () {
-        $academicTeacher = User::factory()->create([
-            'academy_id' => $this->academy->id,
-            'user_type' => 'academic_teacher',
-        ]);
-        $academicProfile = AcademicTeacherProfile::factory()->create([
-            'user_id' => $academicTeacher->id,
-            'academy_id' => $this->academy->id,
-        ]);
+        // Use the helper instead of User::factory()->create() so we don't end
+        // up with two AcademicTeacherProfile rows — the factory's
+        // afterCreating hook auto-creates one when user_type=academic_teacher,
+        // and a second manual create makes hasOne pick the wrong one, which
+        // makes resolveAcademicSession return null with "Session not found".
+        $academicTeacher = createAcademicTeacher($this->academy);
+        $academicProfile = $academicTeacher->academicTeacherProfile;
 
         $academicSession = AcademicSession::factory()->create([
             'academy_id' => $this->academy->id,
@@ -244,14 +243,20 @@ describe('PUT /api/v1/teacher/{type}/sessions/{id}/lesson-content', function () 
             ->toBe('Reviewed Surah Al-Fatiha and started Al-Baqarah verses 1-5');
     });
 
-    it('rejects empty lesson content', function () {
+    it('accepts empty lesson content so teachers can clear their notes', function () {
+        // The validation rule is ['present', 'nullable', 'string', 'max:5000']
+        // — empty + null are explicitly allowed. Setting the field to "" is
+        // the API contract for "I want to delete my saved notes".
         $response = $this->putJson(
             "/api/v1/teacher/quran/sessions/{$this->session->id}/lesson-content",
             ['lesson_content' => ''],
             ['X-Academy-Subdomain' => 'test-academy'],
         );
 
-        $response->assertStatus(422);
+        $response->assertStatus(200);
+        // The DB stores empty string as null on this column; the contract
+        // is "saved with no content", not specifically "" vs null.
+        expect($this->session->fresh()->lesson_content)->toBeIn(['', null]);
     });
 
     it('caps lesson content at 5000 chars', function () {

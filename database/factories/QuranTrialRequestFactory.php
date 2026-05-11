@@ -46,12 +46,16 @@ class QuranTrialRequestFactory extends Factory
     }
 
     /**
-     * Approved status
+     * Approved + scheduled state.
+     *
+     * Approval is the same act as scheduling in the trial request lifecycle —
+     * an approved request becomes a SCHEDULED row with a teacher assigned.
+     * The TrialRequestStatus enum has no separate APPROVED case.
      */
     public function approved(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'approved',
+            'status' => 'scheduled',
             'teacher_id' => QuranTeacherProfile::factory(),
         ]);
     }

@@ -725,19 +725,24 @@ class HomeworkController extends Controller
 
     /**
      * Show Quran session homework (no submissions — evaluated orally).
+     *
+     * {id} on the route is the QuranSessionHomework id — matches what the
+     * listing endpoint returns as `homework.id`. We dereference to the session
+     * after loading the homework row so ownership is enforced via the session
+     * relationship.
      */
-    protected function showQuranHomework($user, int $sessionId): JsonResponse
+    protected function showQuranHomework($user, int $homeworkId): JsonResponse
     {
-        $session = $this->resolveQuranSession($user, $sessionId);
-
-        if (! $session) {
-            return $this->notFound(__('Session not found.'));
-        }
-
-        $homework = QuranSessionHomework::where('session_id', $session->id)->first();
+        $homework = QuranSessionHomework::find($homeworkId);
 
         if (! $homework) {
             return $this->notFound(__('Homework not found.'));
+        }
+
+        $session = $this->resolveQuranSession($user, $homework->session_id);
+
+        if (! $session) {
+            return $this->notFound(__('Session not found.'));
         }
 
         return $this->success([
