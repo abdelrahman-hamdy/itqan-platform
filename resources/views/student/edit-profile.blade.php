@@ -55,7 +55,7 @@
               :required="false"
               countryCodeField="phone_country_code"
               countryField="phone_country"
-              :initialCountry="strtolower(\App\Helpers\CountryList::dialCodeToIso($studentProfile?->phone_country_code, 'SA'))"
+              :initialCountry="strtolower($studentProfile?->phone_country ?: (\App\Helpers\CountryList::dialCodeToIso($studentProfile?->phone_country_code) ?? 'SA'))"
               :value="$studentProfile?->phone ?? ''"
               :error="$errors->first('phone')"
           />
@@ -92,7 +92,7 @@
               :required="false"
               countryCodeField="emergency_contact_country_code"
               countryField="emergency_contact_country"
-              initialCountry="sa"
+              :initialCountry="strtolower($studentProfile?->emergency_contact_country ?: (\App\Helpers\CountryList::dialCodeToIso($studentProfile?->emergency_contact_country_code) ?? 'SA'))"
               :value="$studentProfile?->emergency_contact ?? ''"
               :error="$errors->first('emergency_contact')"
           />
