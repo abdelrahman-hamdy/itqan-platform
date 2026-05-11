@@ -10,6 +10,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\BaseSubscription;
+use App\Models\CourseSubscription;
 use App\Models\Payment;
 use App\Services\NotificationService;
 use App\Services\StudentDashboardService;
@@ -163,6 +164,13 @@ class BaseSubscriptionObserver
      */
     public function updated(BaseSubscription $subscription): void
     {
+        // CourseSubscription has its own activation path (activateFromPayment) and
+        // uses EnrollmentStatus, which is incompatible with handleStatusChange's
+        // SessionSubscriptionStatus|string|null contract. Skip the shared path.
+        if ($subscription instanceof CourseSubscription) {
+            return;
+        }
+
         // Use getOriginal() for thread-safe previous status tracking
         if ($subscription->wasChanged('status')) {
             $previousStatus = $subscription->getOriginal('status');

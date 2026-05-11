@@ -755,6 +755,115 @@ abstract class BaseSubscription extends Model
     // SUBSCRIPTION LIFECYCLE METHODS
     // ========================================
 
+    // ========================================
+    // PAYABLE-STATUS PREDICATES
+    // ========================================
+
+    /**
+     * Status values for the session-based subscription types (Quran / Academic).
+     * `CourseSubscription` overrides this with the `EnrollmentStatus` mapping.
+     */
+    protected function payableStatuses(): array
+    {
+        return [
+            SessionSubscriptionStatus::PENDING,
+            SessionSubscriptionStatus::ACTIVE,
+            SessionSubscriptionStatus::PAUSED,
+        ];
+    }
+
+    /**
+     * Terminal statuses that block manual payment confirmation.
+     * Session-based default; `CourseSubscription` overrides with EnrollmentStatus.
+     */
+    protected function terminalStatuses(): array
+    {
+        return [
+            SessionSubscriptionStatus::CANCELLED,
+            SessionSubscriptionStatus::EXPIRED,
+        ];
+    }
+
+    /**
+     * True when the subscription is in a status that can be charged.
+     *
+     * Used by the API payment-intent controller to refuse a charge on a stale
+     * (CANCELLED / EXPIRED) row before billing the gateway — see Bug #11.
+     */
+    public function isPayable(): bool
+    {
+        return in_array($this->status, $this->payableStatuses(), true);
+    }
+
+    /**
+     * Scope counterpart of `isPayable()` for cross-type query filters.
+     */
+    public function scopePayable(Builder $query): Builder
+    {
+        return $query->whereIn('status', $this->payableStatuses());
+    }
+
+    /**
+     * True when this row accepts a fresh retry-payment attempt.
+     *
+     * Both `status` and `payment_status` must be PENDING. Filtering on
+     * `payment_status` alone latches onto cancelled-PENDING subs and lets fresh
+     * gateway payments resurrect them — the zombie-routing bug.
+     */
+    public function acceptsRetryPayment(): bool
+    {
+        return $this->status === $this->getPendingStatus()
+            && $this->payment_status === SubscriptionPaymentStatus::PENDING;
+    }
+
+    /**
+     * Scope counterpart of `acceptsRetryPayment()`.
+     */
+    public function scopeAcceptsRetryPayment(Builder $query): Builder
+    {
+        return $query->where('status', $this->getPendingStatus())
+            ->where('payment_status', SubscriptionPaymentStatus::PENDING);
+    }
+
+    /**
+     * True when supervisor can manually confirm a payment on this row.
+     *
+     * Not terminal (not CANCELLED/EXPIRED/COMPLETED), and payment_status is
+     * still in a manually-resolvable state (PENDING or FAILED).
+     */
+    public function canConfirmManualPayment(): bool
+    {
+        return ! in_array($this->status, $this->terminalStatuses(), true)
+            && in_array($this->payment_status, [
+                SubscriptionPaymentStatus::PENDING,
+                SubscriptionPaymentStatus::FAILED,
+            ], true);
+    }
+
+    /**
+     * Refuse to activate a CANCELLED subscription from a fresh gateway payment.
+     *
+     * Operator/owner intent (`resubscribe()`) is the only allowed reactivation
+     * path — otherwise stray retry payments resurrect the cancelled thread and
+     * create phantom circles/sessions (student-391 incident).
+     *
+     * @return bool True when activation should proceed; false when it must abort.
+     */
+    protected function guardAgainstCancelledActivation(Payment $payment): bool
+    {
+        if ($this->status !== $this->getCancelledStatus()) {
+            return true;
+        }
+
+        Log::warning('['.class_basename(static::class).'] Refusing to activate CANCELLED sub from payment', [
+            'subscription_id' => $this->id,
+            'payment_id' => $payment->id,
+            'cancelled_at' => $this->cancelled_at?->toIso8601String(),
+        ]);
+
+        return false;
+    }
+
     /**
      * Activate subscription (after successful payment)
      */
@@ -878,7 +987,7 @@ abstract class BaseSubscription extends Model
 
         // Extend ends_at by the paused duration (time compensation)
         if ($this->paused_at && $this->ends_at) {
-            $pausedDuration = now()->diffInSeconds($this->paused_at);
+            $pausedDuration = $this->paused_at->diffInSeconds(now());
             $updateData['ends_at'] = $this->ends_at->copy()->addSeconds($pausedDuration);
             if ($this->next_billing_date) {
                 $updateData['next_billing_date'] = $this->next_billing_date->copy()->addSeconds($pausedDuration);

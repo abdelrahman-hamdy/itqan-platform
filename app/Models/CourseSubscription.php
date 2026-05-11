@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Services\CertificateService;
 use Exception;
-use Log;
 use App\Enums\BillingCycle;
 use App\Enums\CourseType;
 use App\Enums\EnrollmentStatus;
@@ -15,6 +14,7 @@ use App\Services\NotificationService;
 use App\Models\Traits\PreventsDuplicatePendingSubscriptions;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Log;
 
 /**
  * CourseSubscription Model
@@ -100,6 +100,28 @@ class CourseSubscription extends BaseSubscription
     protected function getCancelledStatus(): mixed
     {
         return EnrollmentStatus::CANCELLED;
+    }
+
+    /**
+     * Course subscriptions accept charges while PENDING or ENROLLED.
+     */
+    protected function payableStatuses(): array
+    {
+        return [
+            EnrollmentStatus::PENDING,
+            EnrollmentStatus::ENROLLED,
+        ];
+    }
+
+    /**
+     * Course subscriptions are terminal once CANCELLED or COMPLETED.
+     */
+    protected function terminalStatuses(): array
+    {
+        return [
+            EnrollmentStatus::CANCELLED,
+            EnrollmentStatus::COMPLETED,
+        ];
     }
 
     /**
@@ -995,6 +1017,10 @@ class CourseSubscription extends BaseSubscription
      */
     public function activateFromPayment(Payment $payment): void
     {
+        if (! $this->guardAgainstCancelledActivation($payment)) {
+            return;
+        }
+
         $this->update([
             'status' => EnrollmentStatus::ENROLLED,
             'payment_status' => SubscriptionPaymentStatus::PAID,
@@ -1020,12 +1046,12 @@ class CourseSubscription extends BaseSubscription
 
         try {
             $courseName = $this->recordedCourse?->title ?? $this->interactiveCourse?->title ?? __('payments.course');
-            app(NotificationService::class)->sendNotification(
-                user: $this->student,
-                title: __('payments.subscription_activated_title'),
-                body: __('payments.course_subscription_activated', ['course' => $courseName]),
-                type: NotificationType::PAYMENT,
+            app(NotificationService::class)->send(
+                users: $this->student,
+                type: NotificationType::SUBSCRIPTION_ACTIVATED,
                 data: [
+                    'title' => __('payments.subscription_activated_title'),
+                    'body' => __('payments.course_subscription_activated', ['course' => $courseName]),
                     'subscription_id' => $this->id,
                     'subscription_type' => 'course',
                     'course_type' => $this->course_type?->value ?? $this->course_type,

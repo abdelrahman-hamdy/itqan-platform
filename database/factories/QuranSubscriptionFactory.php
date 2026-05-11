@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Constants\PauseReason;
 use App\Enums\SessionDuration;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\Academy;
@@ -39,6 +40,7 @@ class QuranSubscriptionFactory extends Factory
             'package_session_duration_minutes' => fake()->randomElement(SessionDuration::values()),
             'total_sessions' => $totalSessions,
             'total_price' => $totalPrice,
+            'final_price' => $totalPrice,
             'currency' => 'SAR',
             'status' => SessionSubscriptionStatus::ACTIVE,
             'starts_at' => $startDate,
@@ -124,6 +126,51 @@ class QuranSubscriptionFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'quran_teacher_id' => $teacher->id,
             'academy_id' => $teacher->academy_id,
+        ]);
+    }
+
+    /**
+     * Create a subscription auto-paused at end-of-period (the cron path).
+     * `pause_reason = END_OF_PERIOD` triggers the Phase 2 Resume-button gate.
+     */
+    public function autoPaused(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => SessionSubscriptionStatus::PAUSED,
+            'starts_at' => now()->subDays(35),
+            'ends_at' => now()->subDays(2),
+            'paused_at' => now()->subDay(),
+            'pause_reason' => PauseReason::END_OF_PERIOD,
+        ]);
+    }
+
+    /**
+     * Create a subscription manually paused mid-period by an admin.
+     * Resume should be available; resume() compensates ends_at by paused-duration.
+     */
+    public function manuallyPaused(?string $reason = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => SessionSubscriptionStatus::PAUSED,
+            'starts_at' => now()->subDays(5),
+            'ends_at' => now()->addDays(25),
+            'paused_at' => now()->subHours(3),
+            'pause_reason' => $reason ?? 'الطالب مسافر',
+        ]);
+    }
+
+    /**
+     * Create an active subscription with an admin-granted grace period.
+     */
+    public function inGracePeriod(int $graceDays = 7): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => SessionSubscriptionStatus::ACTIVE,
+            'starts_at' => now()->subDays(35),
+            'ends_at' => now()->subDay(),
+            'metadata' => [
+                'grace_period_ends_at' => now()->addDays($graceDays)->toDateTimeString(),
+            ],
         ]);
     }
 

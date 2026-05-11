@@ -2,8 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Constants\PauseReason;
 use App\Enums\BillingCycle;
 use App\Enums\SessionDuration;
+use App\Enums\SessionSubscriptionStatus;
+use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
@@ -29,6 +32,7 @@ class AcademicSubscriptionFactory extends Factory
             'student_id' => User::factory()->state(['user_type' => 'student']),
             'teacher_id' => AcademicTeacherProfile::factory(),
             'subject_id' => AcademicSubject::factory(),
+            'grade_level_id' => AcademicGradeLevel::factory(),
             'subject_name' => fake()->randomElement(['اللغة العربية', 'الرياضيات', 'العلوم', 'اللغة الإنجليزية']),
             'subscription_code' => 'ACD-'.rand(1, 999).'-'.strtoupper(Str::random(6)),
             'subscription_type' => 'private', // Valid enum: private, group
@@ -45,7 +49,7 @@ class AcademicSubscriptionFactory extends Factory
             'next_billing_date' => fn (array $attrs) => BillingCycle::from($attrs['billing_cycle'])->calculateEndDate(now()),
             'auto_create_google_meet' => true,
             'status' => 'active', // Valid enum: active, paused, suspended, cancelled, expired, completed
-            'payment_status' => 'current', // Valid enum: current, pending, overdue, failed, refunded
+            'payment_status' => 'paid', // Valid enum: pending, paid, failed
             'certificate_issued' => false,
             'has_trial_session' => false,
             'trial_session_used' => false,
@@ -75,7 +79,7 @@ class AcademicSubscriptionFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'active',
-            'payment_status' => 'current',
+            'payment_status' => 'paid',
         ]);
     }
 
@@ -87,6 +91,54 @@ class AcademicSubscriptionFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'status' => 'paused',
             'paused_at' => now(),
+        ]);
+    }
+
+    /**
+     * Create a subscription auto-paused at end-of-period (the cron path).
+     * `pause_reason = END_OF_PERIOD` triggers the Phase 2 Resume-button gate.
+     */
+    public function autoPaused(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => SessionSubscriptionStatus::PAUSED,
+            'starts_at' => now()->subDays(35),
+            'ends_at' => now()->subDays(2),
+            'end_date' => now()->subDays(2),
+            'paused_at' => now()->subDay(),
+            'pause_reason' => PauseReason::END_OF_PERIOD,
+        ]);
+    }
+
+    /**
+     * Create a subscription manually paused mid-period by an admin.
+     * Resume should be available; resume() compensates ends_at by paused-duration.
+     */
+    public function manuallyPaused(?string $reason = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => SessionSubscriptionStatus::PAUSED,
+            'starts_at' => now()->subDays(5),
+            'ends_at' => now()->addDays(25),
+            'end_date' => now()->addDays(25),
+            'paused_at' => now()->subHours(3),
+            'pause_reason' => $reason ?? 'الطالب مسافر',
+        ]);
+    }
+
+    /**
+     * Create an active subscription with an admin-granted grace period.
+     */
+    public function inGracePeriod(int $graceDays = 7): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => SessionSubscriptionStatus::ACTIVE,
+            'starts_at' => now()->subDays(35),
+            'ends_at' => now()->subDay(),
+            'end_date' => now()->subDay(),
+            'metadata' => [
+                'grace_period_ends_at' => now()->addDays($graceDays)->toDateTimeString(),
+            ],
         ]);
     }
 
