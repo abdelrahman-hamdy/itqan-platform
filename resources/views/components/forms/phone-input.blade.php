@@ -101,15 +101,19 @@
         const input = document.getElementById(inputId);
         if (!input) return;
 
-        // Check if already initialized
+        // Already wrapped by intl-tel-input → bail.
         if (input.hasAttribute('data-iti-initialized')) return;
-        input.setAttribute('data-iti-initialized', 'true');
 
-        // Wait for intl-tel-input library
+        // Lazy-loaded chunk (resources/js/phone-input.js) sets window.intlTelInput.
+        // Keep polling until it's available; do NOT mark the input as
+        // initialized until we actually wrap it — otherwise the retry exits
+        // at the guard above and the picker never renders.
         if (typeof window.intlTelInput === 'undefined') {
             setTimeout(initPhoneInput, 100);
             return;
         }
+
+        input.setAttribute('data-iti-initialized', 'true');
 
         const iti = window.intlTelInput(input, {
             initialCountry: initialCountry,
