@@ -10,10 +10,33 @@ pest()->extend(Tests\DuskTestCase::class)
 |--------------------------------------------------------------------------
 */
 
+use App\Services\AcademyContextService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 pest()->extend(Tests\TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        // Reset leaked global state between tests so a freezeTime() in one
+        // test cannot influence another, and so the AcademyContextService's
+        // static API context cannot bleed across tests.
+        Carbon::setTestNow(null);
+        AcademyContextService::clearApiContext();
+
+        if (app()->bound('session.store')) {
+            session()->forget([
+                AcademyContextService::SELECTED_ACADEMY_SESSION_KEY,
+                AcademyContextService::ACADEMY_OBJECT_SESSION_KEY,
+                AcademyContextService::GLOBAL_VIEW_SESSION_KEY,
+            ]);
+        }
+    })
+    ->afterEach(function () {
+        // Mirror in afterEach so a test that sets static state and errors
+        // out cannot leak into the next test.
+        Carbon::setTestNow(null);
+        AcademyContextService::clearApiContext();
+    })
     ->in('Feature', 'Unit');
 
 /*
