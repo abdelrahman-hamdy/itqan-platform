@@ -121,16 +121,15 @@ class AuditPhoneDataCommand extends Command
     private function detectFlags(?string $phone, ?string $dialCode, ?string $iso, ?string $nationality): array
     {
         $flags = [];
+        $phoneIsoFromPrefix = $this->phoneIsoFromExplicitPrefix($phone);
 
-        // 1. Stored dial code is the old '+966' default but the phone digits
-        //    actually start with a different international prefix.
-        if ($dialCode === '+966' && $phone !== null && $phone !== '') {
-            $phoneIso = CountryList::dialCodeToIso($phone);
-            $digits = preg_replace('/\D+/', '', $phone) ?? '';
-            $stripped = preg_replace('/^00/', '', $digits) ?? '';
-            if ($phoneIso !== null && $phoneIso !== 'SA' && ! str_starts_with($stripped, '966')) {
-                $flags[] = "phone_starts_with_{$phoneIso}_but_country_code_is_+966";
-            }
+        // 1. Stored dial code is the old '+966' default but the phone carries
+        //    an explicit international prefix that resolves to a different ISO.
+        //    Saudi mobile numbers are typically 9 digits beginning with `5`,
+        //    e.g. `509150788` = `+966 50 915 0788` — we must NOT mistake those
+        //    for Haiti (+509) just because the leading digits collide.
+        if ($dialCode === '+966' && $phoneIsoFromPrefix !== null && $phoneIsoFromPrefix !== 'SA') {
+            $flags[] = "phone_starts_with_{$phoneIsoFromPrefix}_but_country_code_is_+966";
         }
 
         if ($dialCode === '+966' && $nationality !== null && $nationality !== '' && strtoupper($nationality) !== 'SA') {
@@ -158,11 +157,31 @@ class AuditPhoneDataCommand extends Command
     }
 
     /**
+     * Resolve an ISO from a phone string ONLY when it has an explicit
+     * international prefix (`+` or leading `00`). A bare `509150788` is
+     * almost certainly a Saudi mobile number — not Haiti — so we return
+     * null in that case rather than guessing.
+     */
+    private function phoneIsoFromExplicitPrefix(?string $phone): ?string
+    {
+        if ($phone === null || $phone === '') {
+            return null;
+        }
+
+        $trimmed = ltrim($phone);
+        if (! str_starts_with($trimmed, '+') && ! str_starts_with($trimmed, '00')) {
+            return null;
+        }
+
+        return CountryList::dialCodeToIso($trimmed);
+    }
+
+    /**
      * @return array{0: ?string, 1: ?string}
      */
     private function suggestFromPhone(?string $phone, ?string $dialCode): array
     {
-        $iso = CountryList::dialCodeToIso($phone) ?? CountryList::dialCodeToIso($dialCode);
+        $iso = $this->phoneIsoFromExplicitPrefix($phone) ?? CountryList::dialCodeToIso($dialCode);
         if ($iso === null) {
             return [null, null];
         }

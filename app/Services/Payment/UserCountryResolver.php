@@ -10,21 +10,19 @@ use App\Models\User;
  * Resolves a user's country (ISO 3166-1 alpha-2) for payment gateway filtering.
  *
  * Resolution priority when a user is given:
- *   1. Explicit `phone_country` ISO column on the user row (most authoritative —
- *      written from the phone-input component's hidden ISO field, no inference).
- *   2. Explicit `phone_country` ISO column on the student profile.
- *   3. ISO derived from `phone_country_code` on the user row (dial-code map).
- *   4. ISO derived from `phone_country_code` on the student profile.
- *   5. Leading dial code parsed from the raw `phone` string (legacy rows).
- *   6. Student profile declared nationality (self-declared fallback —
- *      legal nationality ≠ residence, but better than nothing).
- *   7. `null` — we deliberately do NOT fall back to `$academy->country` when
- *      the user is known, because the same academy serves many countries
- *      and assuming the academy's home country leads to incorrect
- *      gateway routing (e.g. USA student auto-routed to a KSA-locked gateway).
+ *   1. Explicit `phone_country` ISO column (user, then student profile).
+ *   2. ISO derived from a raw `phone` string that carries an EXPLICIT
+ *      international prefix (`+` or leading `00`). Critical: the historical
+ *      `phone_country_code='+966'` NOT NULL DEFAULT silently mis-labelled
+ *      ~930 of our 931 users as Saudi, so we cannot trust that column when
+ *      the phone itself indicates otherwise. A bare `509150788` is a Saudi
+ *      mobile, NOT Haiti (+509); the prefix gate guards against that.
+ *   3. `phone_country_code` (user, then student profile) via dial-code map.
+ *   4. Raw `phone` without an explicit prefix — last-chance fallback.
+ *   5. Student profile declared nationality.
+ *   6. `null` — never fall back to `$academy->country` when a user is given.
  *
- * When no user is given (anonymous flows, e.g. landing-page gateway preview),
- * the academy country is the only signal available and is returned as-is.
+ * When no user is given (anonymous flows), the academy country is returned.
  */
 final class UserCountryResolver
 {
@@ -34,40 +32,57 @@ final class UserCountryResolver
             return $academy?->country?->value;
         }
 
-        $userIso = $this->normalizeIso($user->phone_country ?? null);
-        if ($userIso !== null) {
-            return $userIso;
-        }
-
-        $studentProfile = $user->studentProfile;
-        $profileIso = $this->normalizeIso($studentProfile?->phone_country ?? null);
-        if ($profileIso !== null) {
-            return $profileIso;
-        }
-
-        $iso = CountryList::dialCodeToIso($user->phone_country_code);
-        if ($iso !== null) {
+        if ($iso = $this->normalizeIso($user->phone_country ?? null)) {
             return $iso;
         }
 
-        $iso = CountryList::dialCodeToIso($studentProfile?->phone_country_code);
-        if ($iso !== null) {
+        $studentProfile = $user->studentProfile;
+        if ($iso = $this->normalizeIso($studentProfile?->phone_country ?? null)) {
+            return $iso;
+        }
+
+        if ($iso = $this->isoFromExplicitPhonePrefix($user->phone)) {
+            return $iso;
+        }
+
+        if ($iso = $this->isoFromExplicitPhonePrefix($studentProfile?->phone)) {
+            return $iso;
+        }
+
+        if ($iso = CountryList::dialCodeToIso($user->phone_country_code)) {
+            return $iso;
+        }
+
+        if ($iso = CountryList::dialCodeToIso($studentProfile?->phone_country_code)) {
             return $iso;
         }
 
         if (! empty($user->phone)) {
-            $iso = CountryList::dialCodeToIso($user->phone);
-            if ($iso !== null) {
+            if ($iso = CountryList::dialCodeToIso($user->phone)) {
                 return $iso;
             }
         }
 
-        $nationality = $this->normalizeIso($studentProfile?->nationality);
-        if ($nationality !== null) {
-            return $nationality;
+        return $this->normalizeIso($studentProfile?->nationality);
+    }
+
+    /**
+     * Resolve an ISO from a phone only when it has an explicit `+` or `00`
+     * international prefix. Returns null otherwise so that bare local-format
+     * numbers fall through to the dial-code column instead of being guessed.
+     */
+    private function isoFromExplicitPhonePrefix(?string $phone): ?string
+    {
+        if ($phone === null || $phone === '') {
+            return null;
         }
 
-        return null;
+        $trimmed = ltrim($phone);
+        if (! str_starts_with($trimmed, '+') && ! str_starts_with($trimmed, '00')) {
+            return null;
+        }
+
+        return CountryList::dialCodeToIso($trimmed);
     }
 
     private function normalizeIso(?string $value): ?string
@@ -77,10 +92,7 @@ final class UserCountryResolver
         }
 
         $upper = strtoupper(trim($value));
-        if (! CountryList::isValid($upper)) {
-            return null;
-        }
 
-        return $upper;
+        return CountryList::isValid($upper) ? $upper : null;
     }
 }

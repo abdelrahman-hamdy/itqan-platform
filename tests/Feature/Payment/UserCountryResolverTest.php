@@ -83,3 +83,49 @@ it('returns null (not academy country) when a user has no country signals', func
 it('falls back to academy country only when no user is given', function () {
     expect($this->resolver->resolve(null, $this->academy))->toBe('SA');
 });
+
+it('treats explicit +/00 phone prefix as more authoritative than the bad +966 default', function () {
+    $user = User::factory()->create([
+        'academy_id' => $this->academy->id,
+        'user_type' => 'student',
+        'phone' => '00201554919543',
+        'phone_country_code' => '+966',
+        'phone_country' => null,
+    ]);
+
+    StudentProfile::withoutGlobalScopes()
+        ->where('user_id', $user->id)
+        ->update(['nationality' => null, 'phone_country_code' => null, 'phone_country' => null]);
+    DB::table('users')->where('id', $user->id)->update([
+        'phone_country_code' => '+966',
+        'phone_country' => null,
+    ]);
+
+    $user->refresh();
+    $user->load('studentProfile');
+
+    expect($this->resolver->resolve($user, $this->academy))->toBe('EG');
+});
+
+it('keeps bare local Saudi mobile as SA via the dial-code column', function () {
+    $user = User::factory()->create([
+        'academy_id' => $this->academy->id,
+        'user_type' => 'student',
+        'phone' => '509150788',
+        'phone_country_code' => '+966',
+        'phone_country' => null,
+    ]);
+
+    StudentProfile::withoutGlobalScopes()
+        ->where('user_id', $user->id)
+        ->update(['nationality' => null, 'phone_country_code' => null, 'phone_country' => null]);
+    DB::table('users')->where('id', $user->id)->update([
+        'phone_country_code' => '+966',
+        'phone_country' => null,
+    ]);
+
+    $user->refresh();
+    $user->load('studentProfile');
+
+    expect($this->resolver->resolve($user, $this->academy))->toBe('SA');
+});
