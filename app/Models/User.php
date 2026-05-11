@@ -77,6 +77,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
     use LogsActivity;
     use Notifiable;
     use SoftDeletes;
+    use \App\Models\Traits\SyncsPhoneCountryColumns;
 
     /**
      * Boot method to add observers
@@ -119,6 +120,12 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
                 }
             }
         });
+
+    }
+
+    protected function phoneColumnPairs(): array
+    {
+        return [['phone_country', 'phone_country_code']];
     }
 
     /**
@@ -210,6 +217,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
         'email',
         'phone',
         'phone_country_code',
+        'phone_country',
         'gender', // Used for teacher profiles via API
         'password',
         'plain_password',

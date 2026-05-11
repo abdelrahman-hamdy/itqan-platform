@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# =============================================================================
+# itqan-alert — Telegram dispatcher used by every non-Laravel producer.
+# Mirrors the original LiveKit VPS copy at /usr/local/bin/itqan-alert.
+#
+# Usage: itqan-alert <severity> <source> <message>
+#   severity: crit | medium | info
+#   source  : short tag (e.g. egress-load, disk-app, deploy)
+#   message : free-form body
+#
+# Reads TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID from /etc/itqan-alerts.env.
+# Rate-limits 5 min per (severity, source) tuple via /var/run/itqan-alerts/
+# so simultaneous producers can't flood the inbox. 'crit' bypasses the
+# rate-limit so true outages always page.
+# =============================================================================
+set -u
+
+ENV_FILE="${ITQAN_ALERT_ENV:-/etc/itqan-alerts.env}"
+LOCK_DIR="${ITQAN_ALERT_LOCK_DIR:-/var/run/itqan-alerts}"
+RATE_LIMIT_SECONDS="${ITQAN_ALERT_RATE_LIMIT:-300}"
+HTTP_TIMEOUT="${ITQAN_ALERT_TIMEOUT:-8}"
+
+if [[ $# -lt 3 ]]; then
+    echo "usage: $0 <crit|medium|info> <source> <message>" >&2
+    exit 2
+fi
+
+severity="$1"
+source_tag="$2"
+shift 2
+message="$*"
+
+case "$severity" in
+    crit|critical) severity="crit"; tag="[CRIT]"; emoji="🚨" ;;
+    medium|warn)   severity="medium"; tag="[MED]"; emoji="⚠️" ;;
+    info|*)        severity="info"; tag="[INFO]"; emoji="ℹ️" ;;
+esac
+
+if [[ ! -r "$ENV_FILE" ]]; then
+    logger -t itqan-alert "env file not readable: $ENV_FILE"
+    exit 1
+fi
+# shellcheck disable=SC1090
+source "$ENV_FILE"
+
+if [[ -z "${TELEGRAM_BOT_TOKEN:-}" || -z "${TELEGRAM_CHAT_ID:-}" ]]; then
+    logger -t itqan-alert "TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing in $ENV_FILE"
+    exit 1
+fi
+
+mkdir -p "$LOCK_DIR" 2>/dev/null || true
+lock_file="${LOCK_DIR}/${severity}-${source_tag}.lock"
+
+# Crit bypasses the rate-limit. Non-crit honors a 5-min lock per
+# (severity, source) tuple.
+if [[ "$severity" != "crit" && -f "$lock_file" ]]; then
+    last_ts="$(stat -c '%Y' "$lock_file" 2>/dev/null || echo 0)"
+    now_ts="$(date +%s)"
+    age=$(( now_ts - last_ts ))
+    if (( age < RATE_LIMIT_SECONDS )); then
+        exit 0
+    fi
+fi
+: > "$lock_file" 2>/dev/null || true
+
+host="$(hostname -s 2>/dev/null || hostname)"
+timestamp="$(date -u +'%Y-%m-%d %H:%M:%S') UTC"
+
+text="${emoji} ${tag} ${source_tag} @ ${host}
+${timestamp}
+
+${message}"
+
+curl --silent --show-error --max-time "$HTTP_TIMEOUT" \
+    --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+    --data-urlencode "text=${text}" \
+    --data-urlencode "disable_web_page_preview=true" \
+    "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+    >/dev/null 2>&1 || logger -t itqan-alert "delivery failed for severity=${severity} source=${source_tag}"

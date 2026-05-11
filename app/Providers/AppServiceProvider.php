@@ -27,10 +27,14 @@ use App\Contracts\SubscriptionServiceInterface;
 use App\Contracts\SupervisedChatGroupServiceInterface;
 use App\Contracts\UnifiedHomeworkServiceInterface;
 use App\Contracts\UnifiedSessionStatusServiceInterface;
+use App\Health\Checks\HorizonRunningCheck;
 use App\Health\Checks\LogFilesCheck;
 use App\Health\Checks\MediaLibrarySizeCheck;
 use App\Health\Checks\PHPMemoryCheck;
+use App\Health\Checks\QueueDepthCheck;
+use App\Health\Checks\SchedulerHeartbeatCheck;
 use App\Health\Checks\ServerMemoryCheck;
+use App\Health\Checks\SslCertExpiryCheck;
 use App\Health\Checks\TenantStorageCheck;
 use App\Helpers\AcademyHelper;
 use App\Http\Middleware\AcademyContext;
@@ -218,6 +222,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // bootstrap/app.php already mutes E_DEPRECATED in local; nothing
+        // to do here on that front.
+
         // Prevent lazy loading in non-production to catch N+1 queries early
         Model::preventLazyLoading(! $this->app->isProduction());
 
@@ -436,6 +443,22 @@ class AppServiceProvider extends ServiceProvider
             // Queue health is verified via: RedisCheck (queue backend), ScheduleCheck (scheduler),
             // and supervisor monitoring of queue workers.
             ScheduleCheck::new()->heartbeatMaxAgeInMinutes(2),
+
+            // Telegram-paging checks (see app/Health/Checks/*.php). Failures
+            // route via HealthCheckFailedTelegramNotification → TelegramChannel.
+            QueueDepthCheck::new()
+                ->queues(['default', 'notifications', 'messages', 'meetings'])
+                ->warnAbove(100)
+                ->failAbove(500),
+
+            SslCertExpiryCheck::new()
+                ->certPath(config('telegram.ssl_cert_path'))
+                ->warnWhenDaysRemainingBelow(14)
+                ->failWhenDaysRemainingBelow(3),
+
+            SchedulerHeartbeatCheck::new()->maxAgeInMinutes(2),
+
+            HorizonRunningCheck::new(),
         ]);
     }
 }

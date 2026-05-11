@@ -2,13 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\View\View;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Database\QueryException;
-use Log;
-use Exception;
 use App\Enums\UserType;
+use App\Helpers\CountryList;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
 use App\Models\ParentProfile;
@@ -16,10 +11,16 @@ use App\Models\StudentProfile;
 use App\Models\User;
 use App\Rules\PasswordRules;
 use App\Services\AcademyContextService;
+use Exception;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\View\View;
+use Log;
 
 class ParentRegistrationController extends Controller
 {
@@ -191,13 +192,11 @@ class ParentRegistrationController extends Controller
                 }
             }],
             'parent_phone' => 'required|string|max:20',
-            'parent_phone_country_code' => 'required|string|max:5',
-            'parent_phone_country' => 'required|string|max:2',
             'password' => PasswordRules::create(),
             'student_codes' => 'required|string', // Comma-separated student codes
             'occupation' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:500',
-        ], [
+        ] + CountryList::phoneCountryRules('parent_phone_country_code', 'parent_phone_country', required: true), [
             // Arabic validation messages
             'first_name.required' => 'الاسم الأول مطلوب',
             'first_name.string' => 'الاسم الأول يجب أن يكون نصاً',
@@ -273,6 +272,8 @@ class ParentRegistrationController extends Controller
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'phone' => $request->parent_phone, // Use parent_phone from verification step
+                'phone_country_code' => $request->input('parent_phone_country_code'),
+                'phone_country' => $request->input('parent_phone_country'),
                 'password' => Hash::make($request->password),
                 'plain_password' => $request->password,
             ]);
@@ -295,6 +296,8 @@ class ParentRegistrationController extends Controller
                     'last_name' => $request->last_name,
                     'email' => $request->email,
                     'phone' => $request->parent_phone,
+                    'phone_country_code' => $request->input('parent_phone_country_code'),
+                    'phone_country' => $request->input('parent_phone_country'),
                     'relationship_type' => 'father', // Default
                     'preferred_contact_method' => 'phone', // Default
                 ]);
@@ -302,6 +305,8 @@ class ParentRegistrationController extends Controller
 
             // Update parent profile with additional fields (occupation, address)
             $parentProfile->update([
+                'phone_country_code' => $request->input('parent_phone_country_code'),
+                'phone_country' => $request->input('parent_phone_country'),
                 'occupation' => $request->occupation,
                 'address' => $request->address,
             ]);

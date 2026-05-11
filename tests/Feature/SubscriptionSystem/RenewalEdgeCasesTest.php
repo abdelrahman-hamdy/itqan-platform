@@ -58,6 +58,12 @@ function renewSub(array $attrs = []): QuranSubscription
             'total_sessions' => 8,
             'sessions_used' => 2,
             'sessions_remaining' => 6,
+            // Default the current cycle to PAID. The H tests in this file
+            // aren't covering the unpaid-current-cycle gate (see
+            // RenewBlocksUnpaidCurrentCycleTest for that). Without this,
+            // the materialized cycle inherits the DB default PENDING and
+            // the gate added 2026-05-11 trips every renew() call.
+            'payment_status' => SubscriptionPaymentStatus::PAID,
         ], $attrs));
     $sub->ensureCurrentCycle();
 

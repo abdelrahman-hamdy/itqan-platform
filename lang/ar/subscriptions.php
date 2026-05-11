@@ -149,6 +149,7 @@ return [
         'certificate_not_eligible' => 'الاشتراك غير مؤهل للحصول على شهادة.',
         'invalid_package' => 'الباقة المحددة غير متاحة.',
         'queued_cycle_exists' => 'تم بالفعل تحضير تجديد قادم لهذا الاشتراك، وسيُفعَّل تلقائياً عند انتهاء الاشتراك الحالي.',
+        'current_cycle_unpaid' => 'الاشتراك الحالي لم يُدفع بعد. يرجى إكمال دفع الدورة الحالية قبل تجديد الاشتراك.',
         'cannot_cancel_paid' => 'لا يمكن إلغاء اشتراك مدفوع. سينتهي الاشتراك تلقائياً في تاريخ الانتهاء.',
         'cancel_reason_student' => 'إلغاء من قبل الطالب',
         'cannot_delete_package_with_subscriptions' => 'لا يمكن حذف الباقة لوجود اشتراكات مرتبطة بها. يمكنك تعطيلها بدلاً من ذلك.',
@@ -191,6 +192,13 @@ return [
     'extend_grace_label' => 'تمديد فترة السماح',
     'extend_grace_modal_heading' => 'تمديد فترة السماح',
     'extend_grace_modal_description' => 'منح الطالب فترة سماح إضافية. تاريخ انتهاء الاشتراك الأصلي (:ends_at) لن يتغير.',
+    'extend_grace_modal_description_for_paused' => 'هذا الاشتراك أُوقِف تلقائياً لانتهاء مدته المدفوعة. تمديد فترة السماح يمنح الطالب أيام إضافية للاستفادة من الجلسات المتبقية دون الحاجة إلى دفع جديد. تاريخ نهاية الاشتراك الأصلي (:ends_at) لن يتغير. للحصول على دورة جديدة كاملة، استخدم خيار التجديد بدلاً من ذلك.',
+
+    // End-of-period pause banner (shown on subscription view page when
+    // pause_reason === PauseReason::END_OF_PERIOD). Directs the admin to
+    // Extend or Renew rather than Resume.
+    'end_of_period_pause_title' => 'انتهت المدة المدفوعة لهذا الاشتراك',
+    'end_of_period_pause_body' => 'تم إيقاف الاشتراك تلقائياً لأن مدته المدفوعة انتهت ولا توجد فترة سماح أو دورة جديدة بانتظار التفعيل. لإعادة تفعيله: استخدم "تمديد فترة السماح" لمنح الطالب أيام إضافية على الجلسات المتبقية، أو "تجديد الاشتراك" لبدء دورة دفع جديدة.',
     'not_specified' => 'غير محدد',
     'grace_days_label' => 'عدد أيام فترة السماح',
     'day_suffix' => 'يوم',

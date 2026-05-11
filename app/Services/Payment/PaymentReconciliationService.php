@@ -162,20 +162,14 @@ class PaymentReconciliationService
             'last_payment_date' => now(),
         ];
 
-        // If PENDING or CANCELLED, activate the subscription
-        if (in_array($subscription->status, [
-            SessionSubscriptionStatus::PENDING,
-            SessionSubscriptionStatus::CANCELLED,
-        ])) {
+        // Only PENDING flips to ACTIVE here. CANCELLED was historically in
+        // this allowlist, but a fresh gateway payment for a deliberately
+        // cancelled sub must not silently resurrect it — that's the
+        // student-391-style zombie. Reactivation goes through
+        // `resubscribe()` (operator/owner-initiated), never through the
+        // webhook activation path.
+        if ($subscription->status === SessionSubscriptionStatus::PENDING) {
             $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
-
-            // Clear cancellation fields if reactivating from CANCELLED
-            // Do NOT re-enable auto_renew — the student cancelled deliberately
-            if ($subscription->status === SessionSubscriptionStatus::CANCELLED) {
-                $updateData['cancelled_at'] = null;
-                $updateData['cancellation_reason'] = null;
-                $updateData['auto_renew'] = false;
-            }
 
             // If no start date or dates expired, reset them
             if (! $subscription->starts_at || $subscription->ends_at?->isPast()) {

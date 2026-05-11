@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shared\Traits;
 
+use App\Constants\PauseReason;
 use App\Enums\EnrollmentStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SessionDuration;
@@ -187,6 +188,11 @@ trait HasSubscriptionActions
     /**
      * Resume action — reactivates a paused subscription.
      * Extends ends_at by the paused duration to compensate for lost time.
+     *
+     * Hidden on auto-paused subscriptions (`pause_reason = END_OF_PERIOD`)
+     * because resume's time-compensation is unearned in that case — the paid
+     * window already ended. Admins should use Extend (grace days) or Renew
+     * (full new cycle) instead. See docs/subscription-behavior-spec.md §1.3.
      */
     protected static function getResumeAction(): Action
     {
@@ -215,7 +221,8 @@ trait HasSubscriptionActions
                     ->title(__('subscriptions.resume_success'))
                     ->send();
             })
-            ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::PAUSED);
+            ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::PAUSED
+                && $record->pause_reason !== PauseReason::END_OF_PERIOD);
     }
 
     /**
@@ -306,9 +313,13 @@ trait HasSubscriptionActions
             ->color('warning')
             ->requiresConfirmation()
             ->modalHeading(__('subscriptions.extend_grace_modal_heading'))
-            ->modalDescription(fn (BaseSubscription $record) => __('subscriptions.extend_grace_modal_description', [
-                'ends_at' => $record->ends_at?->format('Y-m-d') ?? __('subscriptions.not_specified'),
-            ]))
+            ->modalDescription(fn (BaseSubscription $record) => __(
+                $record->status === SessionSubscriptionStatus::PAUSED
+                    && $record->pause_reason === PauseReason::END_OF_PERIOD
+                    ? 'subscriptions.extend_grace_modal_description_for_paused'
+                    : 'subscriptions.extend_grace_modal_description',
+                ['ends_at' => $record->ends_at?->format('Y-m-d') ?? __('subscriptions.not_specified')]
+            ))
             ->schema([
                 TextInput::make('grace_days')
                     ->label(__('subscriptions.grace_days_label'))

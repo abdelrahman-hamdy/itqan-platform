@@ -78,6 +78,25 @@ class SubscriptionRenewalService
             // in that case we materialize one from the subscription's current columns.
             $currentCycle = $this->ensureCurrentCycle($subscription);
 
+            // Refuse to stack a new renewal while the current active cycle is still
+            // unpaid. Forces the student to settle the current period first — otherwise
+            // each renew click mints a fresh manual-cash payment row attached to a
+            // FUTURE cycle, leaving the current cycle un-payable through the normal
+            // student UI. See sub-772 incident 2026-05-11.
+            //
+            // Dormant-reactivation paths (`resubscribe()` and similar) pass
+            // `force_replace_now: true` and are exempt: the current cycle is
+            // about to be archived in-place, so we're not stacking a future
+            // cycle on top of an unpaid one.
+            if (
+                empty($options['force_replace_now'])
+                && ! empty($currentCycle)
+                && $currentCycle->cycle_state === SubscriptionCycle::STATE_ACTIVE
+                && $currentCycle->payment_status === SubscriptionCycle::PAYMENT_PENDING
+            ) {
+                throw new Exception(__('subscriptions.errors.current_cycle_unpaid'));
+            }
+
             // Guard against rapid duplicate renewals (e.g., double form submission)
             $recentRenewalExists = SubscriptionCycle::where('subscribable_type', $subscription->getMorphClass())
                 ->where('subscribable_id', $subscription->id)
@@ -95,8 +114,10 @@ class SubscriptionRenewalService
             }
 
             // Decide whether the new cycle REPLACES current immediately, or is QUEUED
-            // to start when the current cycle ends.
-            $replaceNow = $this->shouldReplaceImmediately($subscription, $currentCycle);
+            // to start when the current cycle ends. `resubscribe()` (and other dormant-
+            // reactivation callers) pass `force_replace_now: true` to bypass the
+            // heuristic — those paths always want an immediate replacement.
+            $replaceNow = $this->shouldReplaceImmediately($subscription, $currentCycle, $options);
 
             // Reconcile any pre-existing queued cycle:
             //   - If abandoned (unpaid), delete it on either path so a new cycle
@@ -271,16 +292,22 @@ class SubscriptionRenewalService
             /** @var BaseSubscription $subscription */
             $subscription = $old::lockForUpdate()->find($old->id);
 
-            // Clear cancellation state and flip back to ACTIVE so the shared
-            // `renew()` path naturally triggers immediate replacement
-            // (exhausted/past-end branch) rather than queuing a future cycle.
+            // Clear cancellation state and flip back to ACTIVE. `force_replace_now`
+            // then signals `renew()` to skip the queue/replace heuristic and
+            // unconditionally archive-and-replace — `syncSubscriptionToCycle()`
+            // overwrites the stale starts_at / ends_at / current_cycle_id from
+            // the new cycle. We no longer pre-null those columns here: that was
+            // a leaky abstraction that influenced `shouldReplaceImmediately()`
+            // through subscription state instead of through an explicit option.
             $subscription->update([
                 'cancelled_at' => null,
                 'cancellation_reason' => null,
                 'status' => SessionSubscriptionStatus::ACTIVE,
             ]);
 
-            return $this->renew($subscription, $options);
+            return $this->renew($subscription, array_merge($options, [
+                'force_replace_now' => true,
+            ]));
         });
     }
 
@@ -384,7 +411,16 @@ class SubscriptionRenewalService
     private function shouldReplaceImmediately(
         BaseSubscription $subscription,
         ?SubscriptionCycle $currentCycle,
+        array $options = [],
     ): bool {
+        // Explicit override from `resubscribe()` and other dormant-reactivation
+        // callers: never queue, always replace. Keeps the contract local to one
+        // option instead of pre-mutating subscription columns to influence the
+        // heuristic two function calls down.
+        if (! empty($options['force_replace_now'])) {
+            return true;
+        }
+
         if (! $currentCycle) {
             return true;
         }
@@ -474,7 +510,6 @@ class SubscriptionRenewalService
             'current_cycle_id' => $cycle->id,
             'cycle_count' => $cycle->cycle_number,
             'auto_renew' => BillingCycle::from($cycle->billing_cycle)->supportsAutoRenewal(),
-            'total_price' => $pricing['price_fields']['total_price'] ?? $subscription->total_price,
             'discount_amount' => $pricing['price_fields']['discount_amount'] ?? $subscription->discount_amount,
             'final_price' => $pricing['price_fields']['final_price'] ?? $subscription->final_price,
             'is_recurring_discount' => $options['is_recurring_discount'] ?? $subscription->is_recurring_discount,
@@ -498,6 +533,11 @@ class SubscriptionRenewalService
 
         // Type-specific field preservation
         if ($subscription instanceof QuranSubscription) {
+            // `total_price` lives only on `quran_subscriptions`; writing it
+            // unconditionally would crash any academic renewal with
+            // SQLSTATE[42S22] (Unknown column 'total_price').
+            $updateData['total_price'] = $pricing['price_fields']['total_price']
+                ?? $subscription->total_price;
             if (isset($options['package_id'])) {
                 $updateData['package_id'] = $options['package_id'];
             }
@@ -661,7 +701,11 @@ class SubscriptionRenewalService
         if ($old instanceof QuranSubscription) {
             $currentTeacherId = $teacherId ?? $old->quran_teacher_id;
             if ($currentTeacherId) {
-                $teacherProfile = QuranTeacherProfile::find($currentTeacherId);
+                // quran_subscriptions.quran_teacher_id stores users.id, not
+                // quran_teacher_profiles.id. ::find() returned null for every
+                // active teacher and surfaced the "teacher unavailable" error
+                // on every resubscribe attempt.
+                $teacherProfile = QuranTeacherProfile::where('user_id', $currentTeacherId)->first();
                 if (! $teacherProfile || ! $teacherProfile->user?->active_status) {
                     if (! $teacherId) {
                         throw new Exception(__('subscriptions.teacher_unavailable_select_new'));

@@ -167,8 +167,15 @@ class PaymentApiController extends Controller
                 return null;
             }
 
-            // Try QuranSubscription
+            // Refuse CANCELLED/EXPIRED subs so a stale mobile client can't
+            // initiate a real Paymob charge against a zombie row. The webhook
+            // path already refuses activation (Bug #11), but charging the card
+            // first is real money — pre-empt at intent creation.
+            // `payable()` scope encodes the [PENDING, ACTIVE, PAUSED] set in
+            // `BaseSubscription` so it stays consistent with the model-level
+            // `isPayable()` predicate.
             $sub = QuranSubscription::when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                ->payable()
                 ->find($subscriptionId);
             if ($sub) {
                 $price = $sub->getPriceForBillingCycle() ?? $sub->final_price ?? 0;
@@ -176,8 +183,8 @@ class PaymentApiController extends Controller
                 return (int) round($price * 100);
             }
 
-            // Try AcademicSubscription
             $sub = AcademicSubscription::when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+                ->payable()
                 ->find($subscriptionId);
             if ($sub) {
                 $price = $sub->getPriceForBillingCycle() ?? $sub->final_price ?? 0;

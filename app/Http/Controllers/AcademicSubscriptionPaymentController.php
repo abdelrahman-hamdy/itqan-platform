@@ -228,13 +228,19 @@ class AcademicSubscriptionPaymentController extends Controller
 
     /**
      * Get the pending subscription for the current user.
+     *
+     * Delegates the "accepts a payment retry attempt" predicate to the model
+     * so the rule (status=PENDING AND payment_status=PENDING) lives in one
+     * place — see `BaseSubscription::acceptsRetryPayment()`. Filtering on
+     * payment_status alone would latch onto cancelled-PENDING subs and let
+     * fresh gateway payments resurrect them (the zombie-routing bug).
      */
     private function getPendingSubscription(Academy $academy, $subscriptionId): ?AcademicSubscription
     {
         return AcademicSubscription::where('academy_id', $academy->id)
             ->where('id', $subscriptionId)
             ->where('student_id', Auth::id())
-            ->where('payment_status', SubscriptionPaymentStatus::PENDING)
+            ->acceptsRetryPayment()
             ->first();
     }
 }

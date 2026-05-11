@@ -503,7 +503,7 @@
                                         @endif
 
                                         {{-- Confirm Payment --}}
-                                        @if(in_array($sub['model']->payment_status, [\App\Enums\SubscriptionPaymentStatus::PENDING, \App\Enums\SubscriptionPaymentStatus::FAILED]))
+                                        @if($sub['model']->canConfirmManualPayment())
                                             <button type="button"
                                                 onclick="document.getElementById('confirm-payment-modal-{{ $sub['id'] }}').classList.remove('hidden')"
                                                 class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
@@ -592,7 +592,7 @@
                     @endif
 
                     {{-- Confirm Payment Modal --}}
-                    @if($canManage && in_array($sub['model']->payment_status, [\App\Enums\SubscriptionPaymentStatus::PENDING, \App\Enums\SubscriptionPaymentStatus::FAILED]))
+                    @if($canManage && $sub['model']->canConfirmManualPayment())
                         <div id="confirm-payment-modal-{{ $sub['id'] }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
                             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
                             <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">

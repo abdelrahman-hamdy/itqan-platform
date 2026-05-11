@@ -95,8 +95,9 @@ class AcademyPaymentGatewayFactory
                     continue;
                 }
 
-                // Apply country filter when we know the user's country.
-                if ($userCountry !== null && ! $this->isGatewayAllowedForCountry($gateway, $userCountry, $settings)) {
+                // Null country must never silently inherit the academy country
+                // — country-locked gateways stay hidden when the signal is missing.
+                if ($user !== null && ! $this->isGatewayAllowedForCountry($gateway, $userCountry, $settings)) {
                     continue;
                 }
 
@@ -117,14 +118,18 @@ class AcademyPaymentGatewayFactory
      * Rules:
      *  - If the academy configured an `allowed_countries` list, the user's
      *    country must be in it (further intersected with the gateway's own
-     *    supported countries when that baseline is non-empty).
+     *    supported countries when that baseline is non-empty). A `null`
+     *    country fails this check (we can't prove inclusion).
      *  - Else if the academy configured a `blocked_countries` list, the user's
      *    country must not be in it, AND must still be supported by the gateway.
+     *    A `null` country can't be on a blocklist; it passes the blocklist
+     *    check but still has to satisfy the baseline (empty baseline = allow).
      *  - Else, fall back to the gateway's own baseline (empty baseline = allow).
+     *    A `null` country only passes if the baseline is empty.
      */
     private function isGatewayAllowedForCountry(
         PaymentGatewayInterface $gateway,
-        string $country,
+        ?string $country,
         AcademyPaymentSettings $settings,
     ): bool {
         $baseline = $gateway->getSupportedCountries();
@@ -133,6 +138,10 @@ class AcademyPaymentGatewayFactory
         $blocked = is_array($cfg['blocked_countries'] ?? null) ? $cfg['blocked_countries'] : [];
 
         if (! empty($allowed)) {
+            if ($country === null) {
+                return false;
+            }
+
             $effective = ! empty($baseline)
                 ? array_values(array_intersect($allowed, $baseline))
                 : $allowed;
@@ -141,14 +150,22 @@ class AcademyPaymentGatewayFactory
         }
 
         if (! empty($blocked)) {
-            if (in_array($country, $blocked, true)) {
+            if ($country !== null && in_array($country, $blocked, true)) {
                 return false;
             }
 
-            return empty($baseline) || in_array($country, $baseline, true);
+            if (empty($baseline)) {
+                return true;
+            }
+
+            return $country !== null && in_array($country, $baseline, true);
         }
 
-        return empty($baseline) || in_array($country, $baseline, true);
+        if (empty($baseline)) {
+            return true;
+        }
+
+        return $country !== null && in_array($country, $baseline, true);
     }
 
     /**

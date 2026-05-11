@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Constants\PauseReason;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
@@ -86,9 +87,15 @@ class ExpireActiveSubscriptions extends Command
 
                         try {
                             DB::transaction(function () use ($subscription) {
+                                // Stamp `pause_reason = END_OF_PERIOD` so admins (and the
+                                // Filament Resume action's `->visible()` predicate) can tell
+                                // this from a manual mid-period pause. Manual pauses use
+                                // Resume to recover lost time; auto-paused subscriptions
+                                // need Extend or Renew instead.
                                 $subscription->update([
                                     'status' => SessionSubscriptionStatus::PAUSED,
                                     'paused_at' => now(),
+                                    'pause_reason' => PauseReason::END_OF_PERIOD,
                                 ]);
 
                                 $subscription->syncLinkedEducationUnitActiveFlag(false);
@@ -113,6 +120,7 @@ class ExpireActiveSubscriptions extends Command
                                 'type' => $type,
                                 'error' => $e->getMessage(),
                             ]);
+                            \App\Services\Subscription\SubscriptionFailureCounter::recordFailure();
                         }
                     }
                 });

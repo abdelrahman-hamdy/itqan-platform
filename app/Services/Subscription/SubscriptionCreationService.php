@@ -122,6 +122,15 @@ class SubscriptionCreationService
         array $duplicateKeyValues
     ): BaseSubscription {
         return DB::transaction(function () use ($type, $data, $duplicateKeyValues) {
+            // Gateway-retry reuse: a recent-cancelled sibling for the same
+            // (student, teacher/lesson, package) combination should be
+            // un-cancelled and reused rather than mint a new row that
+            // surfaces months later as a ghost activation.
+            $reused = $this->reuseRecentCancelled($type, $data, $duplicateKeyValues);
+            if ($reused !== null) {
+                return $reused;
+            }
+
             // Cancel any existing pending subscriptions for this combination
             $this->cancelDuplicatePending(
                 $type,
@@ -133,6 +142,53 @@ class SubscriptionCreationService
             // Create the new subscription
             return $this->create($type, $data);
         });
+    }
+
+    /**
+     * If a recently-cancelled subscription matches this combination, un-cancel
+     * it (flip back to PENDING, clear cancellation fields) and overlay any
+     * fresh data the caller sent. Returns the reused row, or null if none.
+     *
+     * Delegates the lookup to `PreventsDuplicatePendingSubscriptions::findRecentCancelledForRetry()`
+     * via a transient probe so the per-type cancelled-status enum + duplicate-key
+     * field list live in one place (the trait), not duplicated in this service.
+     */
+    private function reuseRecentCancelled(
+        string $type,
+        array $data,
+        array $duplicateKeyValues
+    ): ?BaseSubscription {
+        $modelClass = $this->getModelClass($type);
+
+        $pendingStatus = $this->isSessionBased($type)
+            ? SessionSubscriptionStatus::PENDING
+            : EnrollmentStatus::PENDING;
+
+        $windowMinutes = (int) config('subscriptions.duplicates.retry_window_minutes', 60);
+
+        /** @var BaseSubscription $probe */
+        $probe = new $modelClass(array_merge($data, $duplicateKeyValues));
+
+        $recent = $probe->findRecentCancelledForRetry($windowMinutes);
+
+        if (! $recent) {
+            return null;
+        }
+
+        $recent->fill($data);
+        $recent->status = $pendingStatus;
+        $recent->payment_status = SubscriptionPaymentStatus::PENDING;
+        $recent->cancelled_at = null;
+        $recent->cancellation_reason = null;
+        $recent->save();
+
+        Log::info('Reused recent-cancelled subscription for gateway retry', [
+            'id' => $recent->id,
+            'type' => $type,
+            'window_minutes' => $windowMinutes,
+        ]);
+
+        return $recent;
     }
 
     /**

@@ -491,6 +491,7 @@ class QuranSubscriptionResource extends BaseSubscriptionResource
     {
         return $schema
             ->components(array_merge(
+                [static::getEndOfPeriodPauseBannerSection()],
                 static::getTypeSpecificInfolistSections(),
                 [static::getExtensionHistoryInfolistSection()]
             ));

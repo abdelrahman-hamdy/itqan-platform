@@ -329,6 +329,10 @@ describe('CA1 — promote a queued cycle adds carryover from prior cycle', funct
                 'total_sessions' => 8,
                 'sessions_used' => 5,
                 'sessions_remaining' => 3,
+                // Realistic: an active sub is paid. Without this, the
+                // materialized cycle inherits the DB default PENDING and the
+                // unpaid-current-cycle gate (2026-05-11) blocks renew().
+                'payment_status' => SubscriptionPaymentStatus::PAID,
             ]);
         $current = $sub->ensureCurrentCycle();
         $current->update([
@@ -365,6 +369,10 @@ describe('CA4 — at most ONE queued cycle per subscription', function () {
                 'ends_at' => now()->addDays(20),
                 'total_sessions' => 8,
                 'sessions_remaining' => 8,
+                // Mark sub paid so the materialized current cycle is PAID and
+                // the unpaid-current-cycle gate (2026-05-11) doesn't fire
+                // before the queued-cycle-exists check this test is asserting.
+                'payment_status' => SubscriptionPaymentStatus::PAID,
             ]);
         $sub->ensureCurrentCycle();
 

@@ -425,7 +425,12 @@ class BaseSessionObserver
                     $session->reverseSubscriptionUsage();
                 }
 
-                TeacherEarning::where('session_type', get_class($session))
+                // Earnings are written with the morph alias
+                // ($session->getMorphClass(), e.g. 'quran_session'); using
+                // get_class() here passed the FQCN and deleted zero rows,
+                // so soft-deletes left the earnings ledger out of sync with
+                // session state and a re-completion minted duplicates.
+                TeacherEarning::where('session_type', $session->getMorphClass())
                     ->where('session_id', $session->id)
                     ->delete();
             });

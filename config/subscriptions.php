@@ -41,6 +41,13 @@ return [
 
         // Whether to automatically cancel old pending subscriptions when a new one is created
         'auto_cancel_old_pending' => true,
+
+        // Bug #9 gateway-retry envelope: when a fresh sub-creation attempt finds
+        // a CANCELLED sibling for the same combination within this many minutes,
+        // the service un-cancels and reuses that row instead of minting a new
+        // one. The ghost-sub failure mode was a 1-minute spread between expire
+        // and retry; 60m is a generous safety buffer.
+        'retry_window_minutes' => env('SUBSCRIPTION_RETRY_WINDOW_MINUTES', 60),
     ],
 
     /*
@@ -115,6 +122,30 @@ return [
 
     'cycles' => [
         'max_queued_per_thread' => 1,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bug-Fix Feature Flags
+    |--------------------------------------------------------------------------
+    |
+    | Each bug fix from docs/subscription-bugs-found.md is gated by its own
+    | flag so a single change can be killed in prod via `.env` without
+    | redeploy. Default-on; flip to false to disable a specific fix.
+    |
+    */
+
+    'fixes' => [
+        'bug_1_supervisor_pause_resume' => env('BUG_1_ENABLED', true),
+        'bug_2_quran_teacher_lookup' => env('BUG_2_ENABLED', true),
+        'bug_3_academic_total_price_skip' => env('BUG_3_ENABLED', true),
+        'bug_5_earnings_morph_alias' => env('BUG_5_ENABLED', true),
+        'bug_9_gateway_retry_reuse' => env('BUG_9_ENABLED', true),
+        'bug_11_activate_cancelled_guard' => env('BUG_11_ENABLED', true),
+        'bug_12_pending_filter_status' => env('BUG_12_ENABLED', true),
+        'bug_13_queued_cycle_paid_only' => env('BUG_13_ENABLED', true),
+        'bug_14_cleanup_payment_status_column' => env('BUG_14_ENABLED', true),
+        'bug_16_resubscribe_starts_at_reset' => env('BUG_16_ENABLED', true),
     ],
 
 ];

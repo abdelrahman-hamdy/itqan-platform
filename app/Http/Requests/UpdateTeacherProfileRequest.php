@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\EducationalQualification;
+use App\Helpers\CountryList;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
@@ -42,11 +43,10 @@ class UpdateTeacherProfileRequest extends FormRequest
      */
     public function rules(): array
     {
-        $rules = [
+        $rules = array_merge([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'phone_country_code' => 'nullable|string|max:5',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'preview_video' => 'nullable|file|mimes:mp4,webm,mov|max:51200',
             'remove_preview_video' => 'nullable|boolean',
@@ -58,7 +58,7 @@ class UpdateTeacherProfileRequest extends FormRequest
             'teaching_experience_years' => 'nullable|integer|min:0|max:50',
             'certifications' => 'nullable|array',
             'languages' => 'nullable|array',
-        ];
+        ], CountryList::phoneCountryRules());
 
         // Add Quran teacher specific fields
         if ($this->user()->isQuranTeacher()) {

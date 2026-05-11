@@ -1,13 +1,24 @@
 <?php
 
+use App\Exceptions\CriticalException;
+use App\Services\Payment\Exceptions\PaymentException;
+use App\Services\Payment\PaymentFailureStormDetector;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+
+// PHP 8.5 deprecates PDO::MYSQL_ATTR_SSL_CA-style constants used in
+// config/database.php; the upstream Laravel fix has not landed yet. Suppress
+// the noise locally only — production runs PHP 8.4 and is unaffected.
+if ((getenv('APP_ENV') ?: 'local') === 'local') {
+    error_reporting(error_reporting() & ~E_DEPRECATED);
+}
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -145,6 +156,43 @@ return Application::configure(basePath: dirname(__DIR__))
                         'api_version' => 'v1',
                     ],
                 ], 422);
+            }
+        });
+
+        // PaymentException: tally per-gateway storm counter. The detector
+        // pages Telegram itself when the sliding-window threshold trips.
+        $exceptions->report(function (PaymentException $e) {
+            if (! app()->environment('production')) {
+                return;
+            }
+            try {
+                app(PaymentFailureStormDetector::class)->recordFailure($e);
+            } catch (\Throwable $detectorErr) {
+                Log::warning('PaymentFailureStormDetector failed', [
+                    'error' => $detectorErr->getMessage(),
+                ]);
+            }
+        });
+
+        // CriticalException marker: opt-in Telegram page for anything
+        // we deliberately flag as critical.
+        $exceptions->report(function (\Throwable $e) {
+            if (! app()->environment('production')) {
+                return;
+            }
+            if (! $e instanceof CriticalException) {
+                return;
+            }
+            try {
+                alert_telegram(
+                    'crit',
+                    'app-exception',
+                    class_basename($e).': '.$e->getMessage()
+                );
+            } catch (\Throwable $alertErr) {
+                Log::warning('CriticalException Telegram hook failed', [
+                    'error' => $alertErr->getMessage(),
+                ]);
             }
         });
 

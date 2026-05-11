@@ -65,7 +65,11 @@ class ProfileController extends Controller
             'first_name' => ['sometimes', 'string', 'max:255'],
             'last_name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'string', 'max:20'],
+            'phone_country_code' => ['sometimes', 'nullable', 'string', 'max:5'],
+            'phone_country' => ['sometimes', 'nullable', 'string', 'in:'.\App\Helpers\CountryList::validationRule()],
             'secondary_phone' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'secondary_phone_country_code' => ['sometimes', 'nullable', 'string', 'max:5'],
+            'secondary_phone_country' => ['sometimes', 'nullable', 'string', 'in:'.\App\Helpers\CountryList::validationRule()],
             'occupation' => ['sometimes', 'nullable', 'string', 'max:255'],
             'relationship_type' => ['sometimes', 'nullable', 'string', 'in:father,mother,guardian,other'],
             'address' => ['sometimes', 'nullable', 'string', 'max:500'],
@@ -83,7 +87,11 @@ class ProfileController extends Controller
             'first_name',
             'last_name',
             'phone',
+            'phone_country_code',
+            'phone_country',
             'secondary_phone',
+            'secondary_phone_country_code',
+            'secondary_phone_country',
             'occupation',
             'relationship_type',
             'address',
@@ -103,8 +111,18 @@ class ProfileController extends Controller
         }
 
         // Update phone on user if provided
+        $userPhoneUpdate = [];
         if (isset($data['phone'])) {
-            $user->update(['phone' => $data['phone']]);
+            $userPhoneUpdate['phone'] = $data['phone'];
+        }
+        if (array_key_exists('phone_country_code', $data)) {
+            $userPhoneUpdate['phone_country_code'] = $data['phone_country_code'];
+        }
+        if (array_key_exists('phone_country', $data)) {
+            $userPhoneUpdate['phone_country'] = $data['phone_country'];
+        }
+        if (! empty($userPhoneUpdate)) {
+            $user->update($userPhoneUpdate);
         }
 
         // Reload parent profile

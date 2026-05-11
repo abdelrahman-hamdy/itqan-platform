@@ -106,10 +106,7 @@ class UserResource extends BaseResource
                                     ->required()
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(255),
-                                TextInput::make('phone')
-                                    ->label('رقم الهاتف')
-                                    ->tel()
-                                    ->maxLength(20),
+                                static::getPhoneInput('phone', 'رقم الهاتف'),
                             ]),
                         FileUpload::make('avatar')
                             ->label('الصورة الشخصية')

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Helpers\CountryList;
 use App\Models\AcademicIndividualLesson;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
@@ -262,19 +263,23 @@ class SupervisorParentsController extends BaseSupervisorWebController
 
         $academy = AcademyContextService::getCurrentAcademy();
 
-        $rules = [
+        $rules = array_merge([
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users', 'email')->where('academy_id', $academy->id)->whereNull('deleted_at')],
             'phone' => 'nullable|string|max:20',
+            'secondary_phone' => 'nullable|string|max:20',
             'relationship_type' => 'required|in:father,mother,other',
             'occupation' => 'nullable|string|max:255',
             'password' => ['required', PasswordRules::min(6)->letters()->numbers()],
             'password_confirmation' => 'required|same:password',
             'student_ids' => 'required|array|min:1',
             'student_ids.*' => 'exists:users,id',
-        ];
+        ],
+            CountryList::phoneCountryRules(),
+            CountryList::phoneCountryRules('secondary_phone_country_code', 'secondary_phone_country'),
+        );
 
         $validator = Validator::make($request->all(), $rules, [
             'first_name.required' => __('supervisor.parents.first_name_required'),
@@ -301,6 +306,8 @@ class SupervisorParentsController extends BaseSupervisorWebController
             'last_name' => $request->last_name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'phone_country_code' => $request->input('phone_country_code'),
+            'phone_country' => $request->input('phone_country'),
             'password' => Hash::make($request->password),
             'plain_password' => $request->password,
         ]);
@@ -319,20 +326,25 @@ class SupervisorParentsController extends BaseSupervisorWebController
         try {
             // The User observer may auto-create a ParentProfile; update it with our fields
             $profile = ParentProfile::where('user_id', $user->id)->first();
+            $profileData = [
+                'phone' => $request->phone,
+                'phone_country_code' => $request->input('phone_country_code'),
+                'phone_country' => $request->input('phone_country'),
+                'secondary_phone' => $request->input('secondary_phone'),
+                'secondary_phone_country_code' => $request->input('secondary_phone_country_code'),
+                'secondary_phone_country' => $request->input('secondary_phone_country'),
+                'relationship_type' => $request->relationship_type,
+                'occupation' => $request->occupation,
+                'avatar' => $avatarPath,
+            ];
+
             if ($profile) {
-                $profile->update([
-                    'relationship_type' => $request->relationship_type,
-                    'occupation' => $request->occupation,
-                    'avatar' => $avatarPath,
-                ]);
+                $profile->update($profileData);
             } else {
-                ParentProfile::create([
+                ParentProfile::create(array_merge($profileData, [
                     'academy_id' => $academy->id,
                     'user_id' => $user->id,
-                    'relationship_type' => $request->relationship_type,
-                    'occupation' => $request->occupation,
-                    'avatar' => $avatarPath,
-                ]);
+                ]));
             }
 
             // Link selected students to the parent

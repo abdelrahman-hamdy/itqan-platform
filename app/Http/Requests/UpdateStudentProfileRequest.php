@@ -24,11 +24,10 @@ class UpdateStudentProfileRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'phone_country_code' => 'nullable|string|max:5',
             'birth_date' => 'nullable|date',
             'gender' => 'nullable|in:male,female',
             'nationality' => 'nullable|string|in:'.CountryList::validationRule(),
@@ -36,7 +35,10 @@ class UpdateStudentProfileRequest extends FormRequest
             'emergency_contact' => 'nullable|string|max:20',
             'grade_level_id' => ['nullable', Rule::exists('academic_grade_levels', 'id')->where('academy_id', $this->user()->academy_id)],
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ];
+        ],
+            CountryList::phoneCountryRules(),
+            CountryList::phoneCountryRules('emergency_contact_country_code', 'emergency_contact_country'),
+        );
     }
 
     /**

@@ -411,13 +411,19 @@ abstract class BaseParentProfileResource extends Resource
     // Helper Methods
     // ========================================
 
-    protected static function getPhoneInput(string $name = 'phone', string $label = 'رقم الهاتف'): PhoneInput
+    protected static function getPhoneInput(string $name = 'phone', string $label = 'رقم الهاتف', ?string $countryStatePath = null): PhoneInput
     {
+        // Default ISO column inferred from field name:
+        //   phone           → phone_country
+        //   secondary_phone → secondary_phone_country
+        $countryStatePath ??= ($name === 'phone' ? 'phone_country' : $name.'_country');
+
         return PhoneInput::make($name)
             ->label($label)
             ->defaultCountry('SA')
             ->initialCountry('sa')
             ->excludeCountries(['il'])
+            ->countryStatePath($countryStatePath)
             ->separateDialCode(true)
             ->formatAsYouType(true)
             ->showFlags(true)

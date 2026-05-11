@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 class StudentProfile extends Model
 {
     use CascadesSoftDeleteToUser, HasFactory, ScopedToAcademyViaRelationship, SoftDeletes;
+    use \App\Models\Traits\SyncsPhoneCountryColumns;
 
     protected $fillable = [
         'user_id', // Nullable - will be linked during registration
@@ -23,6 +24,7 @@ class StudentProfile extends Model
         'last_name',
         'phone',
         'phone_country_code',
+        'phone_country', // ISO 3166-1 alpha-2 for the student phone (e.g., SA)
         'avatar',
         'student_code',
         'grade_level_id',
@@ -32,6 +34,8 @@ class StudentProfile extends Model
         'parent_id',
         'address',
         'emergency_contact',
+        'emergency_contact_country_code', // e.g., +966
+        'emergency_contact_country', // ISO 3166-1 alpha-2 for the emergency contact
         'parent_phone', // International phone number in E.164 format
         'parent_phone_country_code', // e.g., +966
         'parent_phone_country', // ISO 3166-1 alpha-2 (e.g., SA)
@@ -91,6 +95,16 @@ class StudentProfile extends Model
                 }
             }
         });
+
+    }
+
+    protected function phoneColumnPairs(): array
+    {
+        return [
+            ['phone_country', 'phone_country_code'],
+            ['parent_phone_country', 'parent_phone_country_code'],
+            ['emergency_contact_country', 'emergency_contact_country_code'],
+        ];
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Helpers\CountryList;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -35,18 +36,19 @@ class UpdateParentProfileRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'phone_country_code' => 'nullable|string|max:5',
             'secondary_phone' => 'nullable|string|max:20',
-            'secondary_phone_country_code' => 'nullable|string|max:5',
             'address' => 'nullable|string|max:500',
             'occupation' => 'nullable|string|max:255',
             'preferred_contact_method' => 'nullable|in:phone,email,sms,whatsapp',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ];
+        ],
+            CountryList::phoneCountryRules(),
+            CountryList::phoneCountryRules('secondary_phone_country_code', 'secondary_phone_country'),
+        );
     }
 
     /**

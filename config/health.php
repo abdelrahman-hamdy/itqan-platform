@@ -37,8 +37,15 @@ return [
          */
         'enabled' => true,
 
+        // RunHealthChecksCommand uses array_key_first(...) to pick the
+        // notification class, so our Telegram subclass MUST be first. The
+        // mail variant is kept commented as a reference; re-enable it by
+        // putting Spatie's CheckFailedNotification back at the top of this
+        // map.
         'notifications' => [
-            Spatie\Health\Notifications\CheckFailedNotification::class => ['mail'],
+            \App\Notifications\HealthCheckFailedTelegramNotification::class => [
+                \App\Notifications\Channels\TelegramChannel::class,
+            ],
         ],
 
         /*
@@ -54,7 +61,10 @@ return [
          * With this setting, notifications are throttled. By default, you'll
          * only get one notification per hour.
          */
-        'throttle_notifications_for_minutes' => 60,
+        // Telegram channel does its own per-(severity, source) rate-limit
+        // and never throttles 'crit'. Keep Spatie's throttle short so a
+        // recurring failure can keep paging on the 5-min scheduler cadence.
+        'throttle_notifications_for_minutes' => 5,
         'throttle_notifications_key' => 'health:latestNotificationSentAt:',
 
         'mail' => [

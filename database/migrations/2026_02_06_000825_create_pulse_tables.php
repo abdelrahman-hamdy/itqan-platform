@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Pulse\Support\PulseMigration;
 
@@ -13,6 +14,17 @@ return new class extends PulseMigration
     {
         if (! $this->shouldRun()) {
             return;
+        }
+
+        // MySQL 9.x bans md5() inside generated-column expressions, which the
+        // Pulse upstream still uses. Production runs MySQL 8 (unaffected); this
+        // guard lets local MySQL 9 dev DBs migrate cleanly. Pulse stays disabled
+        // until upstream ships a MySQL-9-safe schema.
+        if (in_array(DB::connection($this->getConnection())->getDriverName(), ['mysql', 'mariadb'], true)) {
+            $version = DB::connection($this->getConnection())->getPdo()->getAttribute(\PDO::ATTR_SERVER_VERSION);
+            if (version_compare($version, '9.0.0', '>=')) {
+                return;
+            }
         }
 
         Schema::create('pulse_values', function (Blueprint $table) {

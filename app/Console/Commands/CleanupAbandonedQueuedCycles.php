@@ -35,7 +35,10 @@ class CleanupAbandonedQueuedCycles extends Command
             ->where('cycle_state', SubscriptionCycle::STATE_QUEUED)
             ->where('payment_status', SubscriptionCycle::PAYMENT_PENDING)
             ->where('created_at', '<', $cutoff)
-            ->get(['id', 'subscribable_type', 'subscribable_id', 'academy_id', 'payment_id', 'created_at']);
+            // `payment_status` is required: `deleteIfAbandoned()` re-checks it
+            // and a null on the hydrated model makes the guard fail open,
+            // which is what kept the cleanup at zero deletes for months.
+            ->get(['id', 'subscribable_type', 'subscribable_id', 'academy_id', 'payment_id', 'payment_status', 'created_at']);
 
         $this->info(sprintf(
             'Found %d abandoned queued cycle(s) older than %d hour(s) (cutoff: %s).',

@@ -177,7 +177,7 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Academy not found or inactive'])->withInput();
         }
 
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), array_merge([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')->where('academy_id', $academy->id)],
@@ -188,7 +188,10 @@ class AuthController extends Controller
             'gender' => 'required|in:male,female',
             'nationality' => 'required|string|in:'.CountryList::validationRule(),
             'grade_level' => 'required|exists:academic_grade_levels,id',
-        ], [
+        ],
+            CountryList::phoneCountryRules(),
+            CountryList::phoneCountryRules('parent_phone_country_code', 'parent_phone_country'),
+        ), [
             'first_name.required' => 'الاسم الأول مطلوب',
             'last_name.required' => 'اسم العائلة مطلوب',
             'email.required' => 'البريد الإلكتروني مطلوب',
@@ -220,6 +223,8 @@ class AuthController extends Controller
             'last_name' => $request->last_name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'phone_country_code' => $request->input('phone_country_code'),
+            'phone_country' => $request->input('phone_country'),
             'password' => Hash::make($request->password),
             'plain_password' => $request->password,
         ]);
@@ -233,11 +238,15 @@ class AuthController extends Controller
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'phone' => $request->phone,
+            'phone_country_code' => $request->input('phone_country_code'),
+            'phone_country' => $request->input('phone_country'),
             'birth_date' => $request->birth_date,
             'gender' => $request->gender,
             'nationality' => $request->nationality,
             'grade_level_id' => $request->grade_level,
             'parent_phone' => $request->parent_phone,
+            'parent_phone_country_code' => $request->input('parent_phone_country_code'),
+            'parent_phone_country' => $request->input('parent_phone_country'),
         ];
 
         StudentProfile::withoutGlobalScopes()
@@ -330,7 +339,7 @@ class AuthController extends Controller
         }
 
         // Validation rules based on teacher type
-        $rules = [
+        $rules = array_merge([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users', 'email')->where('academy_id', $academy->id)],
@@ -340,7 +349,7 @@ class AuthController extends Controller
             'education_level' => 'required|in:diploma,bachelor,master,phd,other',
             'university' => 'required|string|max:255',
             'years_experience' => 'required|integer|min:0|max:50',
-        ];
+        ], CountryList::phoneCountryRules());
 
         if ($teacherType === UserType::ACADEMIC_TEACHER->value) {
             $rules['subjects'] = 'required|array|min:1';
@@ -390,6 +399,8 @@ class AuthController extends Controller
                     'last_name' => $request->last_name,
                     'email' => $request->email,
                     'phone' => $request->phone,
+                    'phone_country_code' => $request->input('phone_country_code'),
+                    'phone_country' => $request->input('phone_country'),
                     'password' => Hash::make($request->password),
                     'plain_password' => $request->password,
                     'education_level' => $request->education_level,

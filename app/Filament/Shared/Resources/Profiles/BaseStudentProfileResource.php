@@ -2,30 +2,27 @@
 
 namespace App\Filament\Shared\Resources\Profiles;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use App\Enums\Gender;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\BaseResource;
 use App\Helpers\CountryList;
 use App\Models\StudentProfile;
-use Filament\Forms;
-use Filament\Tables;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 /**
  * Base Student Profile Resource
@@ -41,11 +38,11 @@ abstract class BaseStudentProfileResource extends BaseResource
 
     protected static ?string $tenantOwnershipRelationshipName = 'gradeLevel';
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-users';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $navigationLabel = 'الطلاب';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'إدارة المستخدمين';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة المستخدمين';
 
     protected static ?string $modelLabel = 'طالب';
 
@@ -329,13 +326,21 @@ abstract class BaseStudentProfileResource extends BaseResource
 
     protected static function getPhoneInput(
         string $name = 'phone',
-        string $label = 'رقم الهاتف'
+        string $label = 'رقم الهاتف',
+        ?string $countryStatePath = null,
     ): PhoneInput {
+        // Default ISO column inferred from field name:
+        //   phone        → phone_country
+        //   parent_phone → parent_phone_country
+        //   secondary_phone → secondary_phone_country
+        $countryStatePath ??= ($name === 'phone' ? 'phone_country' : $name.'_country');
+
         return PhoneInput::make($name)
             ->label($label)
             ->defaultCountry('SA')
             ->initialCountry('sa')
             ->excludeCountries(['il'])
+            ->countryStatePath($countryStatePath)
             ->separateDialCode(true)
             ->formatAsYouType(true)
             ->showFlags(true)

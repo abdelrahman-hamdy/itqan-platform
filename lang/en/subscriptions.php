@@ -143,6 +143,7 @@ return [
         'certificate_not_eligible' => 'Subscription is not eligible for a certificate.',
         'invalid_package' => 'The selected package is not available.',
         'queued_cycle_exists' => 'A renewal is already prepared for this subscription and will activate automatically when the current cycle ends.',
+        'current_cycle_unpaid' => 'The current subscription period is still unpaid. Please complete payment for it before renewing.',
         'cannot_cancel_paid' => 'Cannot cancel a paid subscription. It will expire automatically at the end date.',
         'cancel_reason_student' => 'Cancelled by student',
         'cannot_delete_package_with_subscriptions' => 'Cannot delete package with linked subscriptions. Deactivate it instead.',
@@ -185,6 +186,13 @@ return [
     'extend_grace_label' => 'Extend Grace Period',
     'extend_grace_modal_heading' => 'Extend Grace Period',
     'extend_grace_modal_description' => 'Grant the student an additional grace period. The original subscription end date (:ends_at) will not change.',
+    'extend_grace_modal_description_for_paused' => 'This subscription was auto-paused because its paid window ended. Extending the grace period gives the student additional days to use any remaining sessions without a new payment. The original end date (:ends_at) will not change. For a full new billing cycle, use Renew instead.',
+
+    // End-of-period pause banner (shown on subscription view page when
+    // pause_reason === PauseReason::END_OF_PERIOD). Directs the admin to
+    // Extend or Renew rather than Resume.
+    'end_of_period_pause_title' => 'Paid window has ended',
+    'end_of_period_pause_body' => 'This subscription was auto-paused because its paid window ended with no grace period and no queued cycle. To unblock: use "Extend Grace Period" to grant additional days on remaining sessions, or "Renew Subscription" to start a new billing cycle.',
     'not_specified' => 'not specified',
     'grace_days_label' => 'Grace Period Days',
     'day_suffix' => 'day(s)',

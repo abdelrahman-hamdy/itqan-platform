@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * QuranSubscription Model
@@ -841,7 +842,7 @@ class QuranSubscription extends BaseSubscription
 
         // Validate before creating individual subscription
         static::creating(function ($subscription) {
-            \Log::info('[QuranSubscription::creating] Status before save', [
+            Log::info('[QuranSubscription::creating] Status before save', [
                 'subscription_type' => $subscription->subscription_type,
                 'status' => $subscription->status,
                 'status_type' => gettype($subscription->status),
@@ -854,7 +855,7 @@ class QuranSubscription extends BaseSubscription
         // After subscription created - send notification (NO auto-creation of circles)
         // DECOUPLED ARCHITECTURE: Education units are created independently
         static::created(function ($subscription) {
-            \Log::info('[QuranSubscription::created] Subscription saved', [
+            Log::info('[QuranSubscription::created] Subscription saved', [
                 'id' => $subscription->id,
                 'subscription_type' => $subscription->subscription_type,
                 'status' => $subscription->status,
@@ -949,6 +950,10 @@ class QuranSubscription extends BaseSubscription
             static::lockForUpdate()->find($this->id);
             $this->refresh();
 
+            if (! $this->guardAgainstCancelledActivation($payment)) {
+                return;
+            }
+
             // Early-renewal payment targeting a QUEUED (non-current) cycle:
             // settle just that cycle. The active cycle, lifecycle dates, and
             // first-time-activation side effects (circle creation, group
@@ -1008,7 +1013,7 @@ class QuranSubscription extends BaseSubscription
             ]);
 
             // For group subscriptions, enroll student in the circle using CircleEnrollmentService
-            \Log::info('[QuranSubscription] Checking for group enrollment', [
+            Log::info('[QuranSubscription] Checking for group enrollment', [
                 'subscription_id' => $this->id,
                 'subscription_type' => $this->subscription_type,
                 'education_unit_id' => $this->education_unit_id,
@@ -1016,21 +1021,21 @@ class QuranSubscription extends BaseSubscription
             ]);
 
             if ($this->subscription_type === self::SUBSCRIPTION_TYPE_GROUP && $this->education_unit_id) {
-                \Log::info('[QuranSubscription] Starting circle enrollment', [
+                Log::info('[QuranSubscription] Starting circle enrollment', [
                     'subscription_id' => $this->id,
                 ]);
 
                 $enrollmentService = app(CircleEnrollmentService::class);
                 $result = $enrollmentService->completeEnrollmentAfterPayment($this);
 
-                \Log::info('[QuranSubscription] Circle enrollment result', [
+                Log::info('[QuranSubscription] Circle enrollment result', [
                     'subscription_id' => $this->id,
                     'success' => $result['success'] ?? false,
                     'message' => $result['message'] ?? $result['error'] ?? 'No message',
                 ]);
 
                 if (! $result['success']) {
-                    \Log::warning('[QuranSubscription] Failed to complete enrollment after payment', [
+                    Log::warning('[QuranSubscription] Failed to complete enrollment after payment', [
                         'subscription_id' => $this->id,
                         'error' => $result['error'] ?? 'Unknown error',
                     ]);
@@ -1039,19 +1044,19 @@ class QuranSubscription extends BaseSubscription
 
             // For individual subscriptions, create the individual circle
             if ($this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL) {
-                \Log::info('[QuranSubscription] Creating individual circle for subscription', [
+                Log::info('[QuranSubscription] Creating individual circle for subscription', [
                     'subscription_id' => $this->id,
                 ]);
 
                 try {
                     $circle = $this->createIndividualCircle();
 
-                    \Log::info('[QuranSubscription] Individual circle created', [
+                    Log::info('[QuranSubscription] Individual circle created', [
                         'subscription_id' => $this->id,
                         'circle_id' => $circle?->id,
                     ]);
                 } catch (Exception $e) {
-                    \Log::error('[QuranSubscription] Failed to create individual circle', [
+                    Log::error('[QuranSubscription] Failed to create individual circle', [
                         'subscription_id' => $this->id,
                         'error' => $e->getMessage(),
                     ]);
@@ -1177,7 +1182,7 @@ class QuranSubscription extends BaseSubscription
                 );
             }
         } catch (Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send subscription activated notification', [
+            Log::error('Failed to send subscription activated notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
@@ -1254,7 +1259,7 @@ class QuranSubscription extends BaseSubscription
                 );
             }
         } catch (Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send subscription expired notification', [
+            Log::error('Failed to send subscription expired notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);

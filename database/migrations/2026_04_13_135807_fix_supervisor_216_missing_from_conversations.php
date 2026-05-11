@@ -20,8 +20,23 @@ return new class extends Migration
 
     public function up(): void
     {
+        // Skip silently if the supervisor user or referenced conversations/groups
+        // don't exist. Hard-coded IDs are prod-specific; on a fresh dev/test DB
+        // none of these rows exist, and inserting would fail the FK constraint.
+        $supervisorExists = DB::table('users')->where('id', self::SUPERVISOR_USER_ID)->exists();
+        if (! $supervisorExists) {
+            return;
+        }
+
         // 1. Add user 216 to wire_participants for all 5 conversations (idempotent)
         foreach (self::CONVERSATION_IDS as $conversationId) {
+            $conversationExists = DB::table('wire_conversations')
+                ->where('id', $conversationId)
+                ->exists();
+            if (! $conversationExists) {
+                continue;
+            }
+
             $exists = DB::table('wire_participants')
                 ->where('conversation_id', $conversationId)
                 ->where('participantable_id', self::SUPERVISOR_USER_ID)
@@ -42,6 +57,11 @@ return new class extends Migration
 
         // 2. Add user 216 to chat_group_members for groups 142 and 209 (missing entirely)
         foreach (self::MISSING_CHAT_GROUP_IDS as $groupId) {
+            $groupExists = DB::table('chat_groups')->where('id', $groupId)->exists();
+            if (! $groupExists) {
+                continue;
+            }
+
             $exists = DB::table('chat_group_members')
                 ->where('group_id', $groupId)
                 ->where('user_id', self::SUPERVISOR_USER_ID)

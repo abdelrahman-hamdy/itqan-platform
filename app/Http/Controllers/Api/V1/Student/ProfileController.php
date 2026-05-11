@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Helpers\CountryList;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Rules\PasswordRules;
@@ -87,14 +88,20 @@ class ProfileController extends Controller
             'first_name' => ['sometimes', 'string', 'max:255'],
             'last_name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'string', 'max:20'],
+            'phone_country_code' => ['sometimes', 'nullable', 'string', 'max:5'],
+            'phone_country' => ['sometimes', 'nullable', 'string', 'in:'.CountryList::validationRule()],
             'birth_date' => ['sometimes', 'date', 'before:today'],
             'date_of_birth' => ['sometimes', 'date', 'before:today'], // Mobile app sends this
             'gender' => ['sometimes', 'in:male,female'],
-            'nationality' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'nationality' => ['sometimes', 'nullable', 'string', 'in:'.CountryList::validationRule()],
             'address' => ['sometimes', 'nullable', 'string', 'max:500'],
             'grade_level_id' => ['sometimes', 'nullable', 'integer', 'exists:academic_grade_levels,id'],
             'parent_phone' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'parent_phone_country_code' => ['sometimes', 'nullable', 'string', 'max:5'],
+            'parent_phone_country' => ['sometimes', 'nullable', 'string', 'in:'.CountryList::validationRule()],
             'emergency_contact' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'emergency_contact_country_code' => ['sometimes', 'nullable', 'string', 'max:5'],
+            'emergency_contact_country' => ['sometimes', 'nullable', 'string', 'in:'.CountryList::validationRule()],
             'current_password' => ['required_with:new_password', 'string'],
             'new_password' => ['sometimes', 'string', 'confirmed', PasswordRules::rule()],
         ]);
@@ -124,13 +131,19 @@ class ProfileController extends Controller
             'first_name',
             'last_name',
             'phone',
+            'phone_country_code',
+            'phone_country',
             'birth_date',
             'gender',
             'nationality',
             'address',
             'grade_level_id',
             'parent_phone',
+            'parent_phone_country_code',
+            'parent_phone_country',
             'emergency_contact',
+            'emergency_contact_country_code',
+            'emergency_contact_country',
         ]);
 
         // Handle date_of_birth from mobile app (maps to birth_date)
@@ -150,6 +163,12 @@ class ProfileController extends Controller
         }
         if ($request->filled('phone')) {
             $userData['phone'] = $request->phone;
+        }
+        if ($request->has('phone_country_code')) {
+            $userData['phone_country_code'] = $request->input('phone_country_code');
+        }
+        if ($request->has('phone_country')) {
+            $userData['phone_country'] = $request->input('phone_country');
         }
 
         if (! empty($userData)) {

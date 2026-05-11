@@ -93,6 +93,8 @@ class ProfileController extends Controller
             'first_name' => ['sometimes', 'string', 'max:255'],
             'last_name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'string', 'max:20'],
+            'phone_country_code' => ['sometimes', 'nullable', 'string', 'max:5'],
+            'phone_country' => ['sometimes', 'nullable', 'string', 'in:'.\App\Helpers\CountryList::validationRule()],
             'gender' => ['sometimes', 'nullable', 'string', 'in:male,female'],
 
             // Quran teacher fields
@@ -143,6 +145,12 @@ class ProfileController extends Controller
         }
         if (isset($data['phone'])) {
             $userUpdates['phone'] = $data['phone'];
+        }
+        if (array_key_exists('phone_country_code', $data)) {
+            $userUpdates['phone_country_code'] = $data['phone_country_code'];
+        }
+        if (array_key_exists('phone_country', $data)) {
+            $userUpdates['phone_country'] = $data['phone_country'];
         }
         if (isset($data['gender'])) {
             $userUpdates['gender'] = $data['gender'];

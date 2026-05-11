@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 class ParentProfile extends Model
 {
     use CascadesSoftDeleteToUser, HasFactory, ScopedToAcademy, SoftDeletes;
+    use \App\Models\Traits\SyncsPhoneCountryColumns;
 
     protected $fillable = [
         'academy_id', // Direct academy relationship
@@ -24,6 +25,7 @@ class ParentProfile extends Model
         'last_name',
         'phone',
         'phone_country_code',
+        'phone_country', // ISO 3166-1 alpha-2 (e.g., SA)
         'avatar',
         'parent_code',
         'occupation',
@@ -31,6 +33,7 @@ class ParentProfile extends Model
         'address',
         'secondary_phone',
         'secondary_phone_country_code',
+        'secondary_phone_country', // ISO 3166-1 alpha-2 for the secondary phone
         'preferred_contact_method',
         'admin_notes', // Visible to admin only
     ];
@@ -65,6 +68,15 @@ class ParentProfile extends Model
                 });
             }
         });
+
+    }
+
+    protected function phoneColumnPairs(): array
+    {
+        return [
+            ['phone_country', 'phone_country_code'],
+            ['secondary_phone_country', 'secondary_phone_country_code'],
+        ];
     }
 
     /**

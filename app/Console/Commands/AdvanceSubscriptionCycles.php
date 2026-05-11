@@ -60,7 +60,14 @@ class AdvanceSubscriptionCycles extends Command
                 ->whereHas('currentCycle', function ($q) {
                     $q->whereNotNull('ends_at')->where('ends_at', '<=', now());
                 })
-                ->whereHas('queuedCycle')
+                ->whereHas('queuedCycle', function ($q) {
+                    // Money-blocking invariant: an unpaid queued cycle must
+                    // never be promoted. Filtering on the relation here
+                    // (rather than on `queuedCycle()` itself) preserves
+                    // `pendingPaymentCycle()`'s ability to see the same
+                    // queued cycle for gateway redirect/payment.
+                    $q->where('payment_status', SubscriptionCycle::PAYMENT_PAID);
+                })
                 ->with(['currentCycle', 'queuedCycle'])
                 ->chunkById(50, function ($subscriptions) use ($dryRun, &$stats, $type) {
                     foreach ($subscriptions as $subscription) {
@@ -81,6 +88,7 @@ class AdvanceSubscriptionCycles extends Command
                                 'type' => $type,
                                 'error' => $e->getMessage(),
                             ]);
+                            \App\Services\Subscription\SubscriptionFailureCounter::recordFailure();
                         }
                     }
                 });
@@ -117,6 +125,20 @@ class AdvanceSubscriptionCycles extends Command
             $queuedCycle = $subscription->queuedCycle;
 
             if (! $currentCycle || ! $queuedCycle) {
+                return;
+            }
+
+            // Defense-in-depth: the outer whereHas filters by PAID, but if
+            // data state ever surfaces an unpaid queued cycle here (e.g. the
+            // single-queued-per-thread invariant briefly violated), refuse
+            // to promote. Real money should never be conjured by the cron.
+            if ($queuedCycle->payment_status !== SubscriptionCycle::PAYMENT_PAID) {
+                Log::warning('Skipped advancing unpaid queued cycle', [
+                    'subscription_id' => $subscription->id,
+                    'queued_cycle_id' => $queuedCycle->id,
+                    'payment_status' => $queuedCycle->payment_status,
+                ]);
+
                 return;
             }
 

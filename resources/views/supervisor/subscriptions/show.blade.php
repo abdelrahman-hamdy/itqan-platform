@@ -100,7 +100,7 @@
                     <form id="show-activate-form" method="POST" action="{{ route('manage.subscriptions.activate', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">@csrf</form>
                     <button onclick="window.confirmAction({title:@js(__('supervisor.subscriptions.action_activate')),message:@js(__('supervisor.subscriptions.confirm_activate')),confirmText:@js(__('supervisor.subscriptions.action_activate')),isDangerous:false,icon:'ri-checkbox-circle-line',onConfirm:()=>document.getElementById('show-activate-form').submit()})" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 cursor-pointer"><i class="ri-checkbox-circle-line"></i>{{ __('supervisor.subscriptions.action_activate') }}</button>
                 @endif
-                @if(in_array($subscription->payment_status, [\App\Enums\SubscriptionPaymentStatus::PENDING, \App\Enums\SubscriptionPaymentStatus::FAILED]))
+                @if($subscription->canConfirmManualPayment())
                     <button onclick="document.getElementById('show-confirm-payment-modal').classList.remove('hidden')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 cursor-pointer"><i class="ri-check-double-line"></i>{{ __('supervisor.subscriptions.action_confirm_payment') }}</button>
                 @endif
                 @if($subscription->canRenew() || $subscription->is_sessions_exhausted)

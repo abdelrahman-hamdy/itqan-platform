@@ -1375,6 +1375,8 @@ return [
         'confirm_cancel' => 'Do you want to cancel this subscription? This action cannot be undone.',
         'activated' => 'Subscription activated',
         'paused_success' => 'Subscription paused',
+        'resumed_success' => 'Subscription resumed',
+        'pause_reason_manual_default' => 'Manual pause by supervisor',
         'resumed' => 'Subscription resumed',
         'extended' => 'Subscription extended',
         'cancelled' => 'Subscription cancelled',

@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 /**
  * AcademicSubscription Model
@@ -157,6 +157,12 @@ class AcademicSubscription extends BaseSubscription
         'pause_days_remaining',
         'completion_rate',
 
+        // Pause support (mirrors QuranSubscription so the shared
+        // BaseSubscription::pause()/resume() and ExpireActiveSubscriptions
+        // cron can persist these columns instead of silently dropping them).
+        'paused_at',
+        'pause_reason',
+
         // Session tracking (aligned with QuranSubscription pattern)
         'total_sessions',
         'total_sessions_scheduled',
@@ -207,6 +213,9 @@ class AcademicSubscription extends BaseSubscription
             'total_sessions_missed' => 'integer',
             'sessions_used' => 'integer',        // Legacy
             'sessions_remaining' => 'integer',   // Legacy
+
+            // Pause support (mirrors QuranSubscription)
+            'paused_at' => 'datetime',
         ]);
     }
 
@@ -940,7 +949,7 @@ class AcademicSubscription extends BaseSubscription
                 );
             }
         } catch (Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send academic subscription activated notification', [
+            Log::error('Failed to send academic subscription activated notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
@@ -1008,7 +1017,7 @@ class AcademicSubscription extends BaseSubscription
                 );
             }
         } catch (Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send academic subscription expired notification', [
+            Log::error('Failed to send academic subscription expired notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
@@ -1033,6 +1042,10 @@ class AcademicSubscription extends BaseSubscription
             // Lock the subscription row to serialize concurrent webhook calls.
             static::lockForUpdate()->find($this->id);
             $this->refresh();
+
+            if (! $this->guardAgainstCancelledActivation($payment)) {
+                return;
+            }
 
             // Early-renewal payment targeting a QUEUED (non-current) cycle:
             // settle just that cycle. The active cycle, lifecycle dates, lesson

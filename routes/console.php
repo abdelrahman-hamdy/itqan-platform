@@ -12,6 +12,10 @@ Artisan::command('inspire', function () {
 
 $isLocal = config('app.env') === 'local';
 
+$pageOnFail = static fn (string $cmd): \Closure => static function () use ($cmd): void {
+    alert_telegram('crit', 'schedule-fail', "{$cmd} failed");
+};
+
 // LiveKit meeting management
 // Create meetings for upcoming sessions (backup for observer-based creation)
 $createMeetingsCommand = Schedule::command('meetings:create-scheduled')
@@ -46,6 +50,7 @@ $updateStatusesCommand = Schedule::command('sessions:update-statuses')
     ->name('update-session-statuses')
     ->withoutOverlapping(5)
     ->runInBackground()
+    ->onFailure($pageOnFail('sessions:update-statuses'))
     ->description('Update session statuses based on current time and business rules');
 
 // Run every minute for near-instant status updates
@@ -133,6 +138,7 @@ Schedule::command('recordings:cleanup --days=7')
     ->dailyAt('03:00')
     ->withoutOverlapping()
     ->runInBackground()
+    ->onFailure($pageOnFail('recordings:cleanup'))
     ->description('Delete session recordings older than 7 days');
 
 // RECORDING: Process stale recording queue entries (safety net for missed webhooks)
@@ -153,7 +159,20 @@ Schedule::command('recordings:reconcile-orphaned')
     ->everyFiveMinutes()
     ->withoutOverlapping(15)
     ->runInBackground()
+    ->onFailure($pageOnFail('recordings:reconcile-orphaned'))
     ->description('Repair recordings stuck in PROCESSING/RECORDING by polling LiveKit ListEgress');
+
+// Cross-check stuck `recording` rows against LiveKit ListEgress every 10
+// minutes and page Telegram on confirmed webhook misses. Reconciliation
+// itself is handled by `recordings:reconcile-orphaned` above; this exists
+// purely so a missed webhook never sits silently for hours.
+Schedule::command('recordings:check-webhook-sla')
+    ->name('check-recording-webhook-sla')
+    ->everyTenMinutes()
+    ->withoutOverlapping(15)
+    ->runInBackground()
+    ->onFailure($pageOnFail('recordings:check-webhook-sla'))
+    ->description('Page Telegram for SessionRecording rows stuck in recording past the SLA');
 
 // ════════════════════════════════════════════════════════════════
 // SUBSCRIPTION MANAGEMENT
@@ -166,6 +185,7 @@ Schedule::command('subscriptions:expire-active --force')
     ->hourly()
     ->withoutOverlapping()
     ->runInBackground()
+    ->onFailure($pageOnFail('subscriptions:expire-active'))
     ->description('Pause active subscriptions past their end date (respects queued cycles + grace)');
 
 // Advance queued subscription cycles into active state when the current cycle ends
@@ -175,6 +195,7 @@ Schedule::command('subscriptions:advance-cycles')
     ->hourly()
     ->withoutOverlapping()
     ->runInBackground()
+    ->onFailure($pageOnFail('subscriptions:advance-cycles'))
     ->description('Promote queued subscription cycles to active when the current cycle ends');
 
 // Send expiry reminders for subscriptions expiring in 7, 3, or 1 days
@@ -335,6 +356,7 @@ Schedule::command('payments:send-missed-notifications')
     ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->runInBackground()
+    ->onFailure($pageOnFail('payments:send-missed-notifications'))
     ->description('Send notifications for successful payments that missed webhook delivery');
 
 // ════════════════════════════════════════════════════════════════

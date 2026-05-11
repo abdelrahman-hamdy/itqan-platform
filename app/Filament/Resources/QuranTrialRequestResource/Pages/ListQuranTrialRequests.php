@@ -21,6 +21,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class ListQuranTrialRequests extends ListRecords
 {
@@ -109,10 +110,16 @@ class ListQuranTrialRequests extends ListRecords
 
                             Grid::make(2)
                                 ->schema([
-                                    TextInput::make('phone')
+                                    PhoneInput::make('phone')
                                         ->label('رقم الهاتف')
-                                        ->tel()
-                                        ->extraInputAttributes(['dir' => 'ltr']),
+                                        ->defaultCountry('SA')
+                                        ->initialCountry('sa')
+                                        ->excludeCountries(['il'])
+                                        ->separateDialCode(true)
+                                        ->formatAsYouType(true)
+                                        ->showFlags(true)
+                                        ->locale('ar')
+                                        ->i18n(['ps' => 'فلسطين']),
 
                                     TextInput::make('email')
                                         ->label('البريد الإلكتروني')

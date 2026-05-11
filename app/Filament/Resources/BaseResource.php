@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Facades\Filament;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Filters\SelectFilter;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
+use Filament\Facades\Filament;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
@@ -226,14 +226,22 @@ abstract class BaseResource extends Resource
      * - Format as you type with strict mode (enforces country digit format)
      * - Arabic locale with Palestine name corrected to 'فلسطين'
      *
+     * The ISO alpha-2 country code is persisted to the column named by
+     * `$countryStatePath` (defaults to `phone_country` — the new column).
+     * Pass `null` to disable that wiring on tables that don't yet have the
+     * column. The dial-code column (`phone_country_code`) is filled by the
+     * matching model `saving` hook, so callers don't need to wire it up here.
+     *
      * @param  string  $name  The field name (default: 'phone')
      * @param  string  $label  The field label (default: 'رقم الهاتف')
+     * @param  string|null  $countryStatePath  Column for ISO storage (default: 'phone_country')
      */
     protected static function getPhoneInput(
         string $name = 'phone',
-        string $label = 'رقم الهاتف'
+        string $label = 'رقم الهاتف',
+        ?string $countryStatePath = 'phone_country',
     ): PhoneInput {
-        return PhoneInput::make($name)
+        $input = PhoneInput::make($name)
             ->label($label)
             ->defaultCountry('SA')
             ->initialCountry('sa')
@@ -247,5 +255,11 @@ abstract class BaseResource extends Resource
             ->i18n([
                 'ps' => 'فلسطين',
             ]);
+
+        if ($countryStatePath !== null) {
+            $input = $input->countryStatePath($countryStatePath);
+        }
+
+        return $input;
     }
 }

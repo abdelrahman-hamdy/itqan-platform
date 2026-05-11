@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Helpers\CountryList;
 use App\Models\SupervisorProfile;
 use App\Models\SupervisorResponsibility;
 use App\Models\User;
@@ -211,7 +212,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             abort(403);
         }
 
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), array_merge([
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -235,7 +236,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             'quran_teacher_ids.*' => [Rule::exists('users', 'id')->where('academy_id', AcademyContextService::getCurrentAcademy()->id)->where('user_type', 'quran_teacher')],
             'academic_teacher_ids' => 'nullable|array',
             'academic_teacher_ids.*' => [Rule::exists('users', 'id')->where('academy_id', AcademyContextService::getCurrentAcademy()->id)->where('user_type', 'academic_teacher')],
-        ], [
+        ], CountryList::phoneCountryRules()), [
             'first_name.required' => __('auth.register.teacher.step2.validation.first_name_required', [], 'ar'),
             'last_name.required' => __('auth.register.teacher.step2.validation.last_name_required', [], 'ar'),
             'email.required' => __('auth.register.teacher.step2.validation.email_required', [], 'ar'),
@@ -260,6 +261,8 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             'last_name' => $request->last_name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'phone_country_code' => $request->input('phone_country_code'),
+            'phone_country' => $request->input('phone_country'),
             'password' => Hash::make($request->password),
             'plain_password' => $request->password,
         ]);
@@ -366,7 +369,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
 
         $this->ensureSupervisorBelongsToAcademy($supervisor);
 
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), array_merge([
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -391,7 +394,7 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             'quran_teacher_ids.*' => [Rule::exists('users', 'id')->where('academy_id', AcademyContextService::getCurrentAcademy()->id)->where('user_type', 'quran_teacher')],
             'academic_teacher_ids' => 'nullable|array',
             'academic_teacher_ids.*' => [Rule::exists('users', 'id')->where('academy_id', AcademyContextService::getCurrentAcademy()->id)->where('user_type', 'academic_teacher')],
-        ], [
+        ], CountryList::phoneCountryRules()), [
             'first_name.required' => __('auth.register.teacher.step2.validation.first_name_required', [], 'ar'),
             'last_name.required' => __('auth.register.teacher.step2.validation.last_name_required', [], 'ar'),
             'email.required' => __('auth.register.teacher.step2.validation.email_required', [], 'ar'),
@@ -411,6 +414,8 @@ class SupervisorSupervisorsController extends BaseSupervisorWebController
             $supervisor->last_name = $request->last_name;
             $supervisor->email = $request->email;
             $supervisor->phone = $request->phone;
+            $supervisor->phone_country_code = $request->input('phone_country_code');
+            $supervisor->phone_country = $request->input('phone_country');
 
             if (filled($request->password)) {
                 $supervisor->password = Hash::make($request->password);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Auth;
 use App\Enums\EducationalQualification;
 use App\Enums\NotificationType;
 use App\Enums\UserType;
+use App\Helpers\CountryList;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\Academy\AcademyBrandingResource;
 use App\Http\Resources\Api\V1\User\UserResource;
@@ -40,7 +41,7 @@ class RegisterController extends Controller
     {
         $academy = $request->attributes->get('academy') ?? current_academy();
 
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), array_merge([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
@@ -48,10 +49,13 @@ class RegisterController extends Controller
             'password' => PasswordRules::create(),
             'birth_date' => ['required', 'date', 'before:today'],
             'gender' => ['required', 'in:male,female'],
-            'nationality' => ['nullable', 'string', 'max:100'],
+            'nationality' => ['nullable', 'string', 'in:'.CountryList::validationRule()],
             'grade_level_id' => ['required', 'exists:academic_grade_levels,id'],
             'parent_phone' => ['nullable', 'string', 'max:20'],
-        ]);
+        ],
+            CountryList::phoneCountryRules(),
+            CountryList::phoneCountryRules('parent_phone_country_code', 'parent_phone_country'),
+        ));
 
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
@@ -78,6 +82,8 @@ class RegisterController extends Controller
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'phone' => $request->phone,
+                'phone_country_code' => $request->input('phone_country_code'),
+                'phone_country' => $request->input('phone_country'),
                 'password' => Hash::make($request->password),
                 'plain_password' => $request->password,
             ]);
@@ -90,11 +96,16 @@ class RegisterController extends Controller
 
             // Update the auto-created student profile with registration-specific data
             $user->studentProfile->update([
+                'phone' => $request->phone,
+                'phone_country_code' => $request->input('phone_country_code'),
+                'phone_country' => $request->input('phone_country'),
                 'grade_level_id' => $request->grade_level_id,
                 'birth_date' => $request->birth_date,
                 'gender' => $request->gender,
                 'nationality' => $request->nationality,
                 'parent_phone' => $request->parent_phone,
+                'parent_phone_country_code' => $request->input('parent_phone_country_code'),
+                'parent_phone_country' => $request->input('parent_phone_country'),
                 'enrollment_date' => now(),
             ]);
 
@@ -206,7 +217,7 @@ class RegisterController extends Controller
     {
         $academy = $request->attributes->get('academy') ?? current_academy();
 
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), array_merge([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
@@ -216,7 +227,7 @@ class RegisterController extends Controller
             'relationship_type' => ['required', 'in:father,mother,guardian,other'],
             'preferred_contact_method' => ['sometimes', 'in:phone,email,whatsapp'],
             'occupation' => ['nullable', 'string', 'max:255'],
-        ]);
+        ], CountryList::phoneCountryRules()));
 
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
@@ -258,6 +269,8 @@ class RegisterController extends Controller
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'phone' => $request->phone,
+                'phone_country_code' => $request->input('phone_country_code'),
+                'phone_country' => $request->input('phone_country'),
                 'password' => Hash::make($request->password),
                 'plain_password' => $request->password,
             ]);
@@ -271,6 +284,9 @@ class RegisterController extends Controller
             // Update the auto-created parent profile with registration-specific data
             $parentProfile = $user->parentProfile;
             $parentProfile->update([
+                'phone' => $request->phone,
+                'phone_country_code' => $request->input('phone_country_code'),
+                'phone_country' => $request->input('phone_country'),
                 'relationship_type' => $request->relationship_type,
                 'preferred_contact_method' => $request->input('preferred_contact_method', 'phone'),
                 'occupation' => $request->occupation,
@@ -395,7 +411,7 @@ class RegisterController extends Controller
         }
 
         // Common validation rules
-        $rules = [
+        $rules = array_merge([
             'registration_token' => ['nullable', 'string'],
             'teacher_type' => ['required_without:registration_token', 'in:quran_teacher,academic_teacher'],
             'first_name' => ['required', 'string', 'max:255'],
@@ -408,7 +424,7 @@ class RegisterController extends Controller
             'years_experience' => ['required', 'integer', 'min:0', 'max:50'],
             'gender' => ['required', 'in:male,female'],
             'bio' => ['nullable', 'string', 'max:2000'],
-        ];
+        ], CountryList::phoneCountryRules());
 
         // Add academic-specific rules
         if ($teacherType === 'academic_teacher') {
@@ -445,6 +461,8 @@ class RegisterController extends Controller
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'phone' => $request->phone,
+                'phone_country_code' => $request->input('phone_country_code'),
+                'phone_country' => $request->input('phone_country'),
                 'password' => Hash::make($request->password),
                 'plain_password' => $request->password,
             ]);

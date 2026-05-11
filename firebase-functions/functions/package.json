@@ -1,0 +1,17 @@
+{
+  "name": "itqan-firebase-functions",
+  "description": "Itqan Cloud Functions — Crashlytics velocity alerts to Telegram.",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "scripts": {
+    "deploy": "firebase deploy --only functions:crashlyticsToTelegram",
+    "lint": "echo 'no linter configured yet' && exit 0"
+  },
+  "dependencies": {
+    "firebase-functions": "^6.0.1"
+  }
+}

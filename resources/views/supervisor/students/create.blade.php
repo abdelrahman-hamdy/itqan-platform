@@ -219,8 +219,13 @@
                         <label for="nationality" class="block text-sm font-medium text-gray-700 mb-1">
                             {{ __('supervisor.students.nationality') }}
                         </label>
-                        <input type="text" name="nationality" id="nationality" value="{{ old('nationality') }}"
-                               class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('nationality') border-red-500 @enderror">
+                        <select name="nationality" id="nationality"
+                                class="min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('nationality') border-red-500 @enderror">
+                            <option value="">{{ __('supervisor.students.nationality') }}</option>
+                            @foreach($countries as $code => $name)
+                                <option value="{{ $code }}" {{ old('nationality') == $code ? 'selected' : '' }}>{{ $name }}</option>
+                            @endforeach
+                        </select>
                         @error('nationality')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

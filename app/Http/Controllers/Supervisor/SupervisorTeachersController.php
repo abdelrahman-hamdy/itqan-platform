@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Helpers\CountryList;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
@@ -292,7 +293,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
         $teacherType = $request->input('teacher_type', 'quran_teacher');
 
-        $rules = [
+        $rules = array_merge([
             'teacher_type' => 'required|in:quran_teacher,academic_teacher',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
@@ -305,7 +306,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'education_level' => 'required|in:diploma,bachelor,master,phd,other',
             'university' => 'nullable|string|max:255',
             'years_experience' => 'required|integer|min:0|max:50',
-        ];
+        ], CountryList::phoneCountryRules());
 
         if ($teacherType === 'academic_teacher') {
             $rules['subjects'] = 'required|array|min:1';
@@ -344,6 +345,8 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'last_name' => $request->last_name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'phone_country_code' => $request->input('phone_country_code'),
+            'phone_country' => $request->input('phone_country'),
             'password' => Hash::make($request->password),
             'plain_password' => $request->password,
             'education_level' => $request->education_level,
@@ -435,7 +438,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
 
         $this->ensureTeacherBelongsToScope($teacher);
 
-        $rules = [
+        $rules = array_merge([
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -445,7 +448,7 @@ class SupervisorTeachersController extends BaseSupervisorWebController
             'education_level' => 'required|in:diploma,bachelor,master,phd,other',
             'university' => 'nullable|string|max:255',
             'years_experience' => 'required|integer|min:0|max:50',
-        ];
+        ], CountryList::phoneCountryRules());
 
         $isQuran = $teacher->user_type === 'quran_teacher';
         $isAcademic = $teacher->user_type === 'academic_teacher';
@@ -476,6 +479,8 @@ class SupervisorTeachersController extends BaseSupervisorWebController
         $teacher->last_name = $request->last_name;
         $teacher->email = $request->email;
         $teacher->phone = $request->phone;
+        $teacher->phone_country_code = $request->input('phone_country_code');
+        $teacher->phone_country = $request->input('phone_country');
 
         try {
             $teacher->save();

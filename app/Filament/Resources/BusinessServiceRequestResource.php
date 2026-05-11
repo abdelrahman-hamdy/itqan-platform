@@ -32,6 +32,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class BusinessServiceRequestResource extends Resource
 {
@@ -106,11 +107,17 @@ class BusinessServiceRequestResource extends Resource
                             ->required()
                             ->maxLength(255),
 
-                        TextInput::make('client_phone')
+                        PhoneInput::make('client_phone')
                             ->label('رقم الهاتف')
-                            ->tel()
                             ->required()
-                            ->maxLength(255),
+                            ->defaultCountry('SA')
+                            ->initialCountry('sa')
+                            ->excludeCountries(['il'])
+                            ->separateDialCode(true)
+                            ->formatAsYouType(true)
+                            ->showFlags(true)
+                            ->locale('ar')
+                            ->i18n(['ps' => 'فلسطين']),
 
                         TextInput::make('client_email')
                             ->label('البريد الإلكتروني')

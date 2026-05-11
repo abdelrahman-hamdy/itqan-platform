@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Enums\AttendanceStatus;
+use App\Helpers\CountryList;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
@@ -335,8 +336,9 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         $academy = AcademyContextService::getCurrentAcademy();
         $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)
             ->where('is_active', true)->orderBy('name')->get();
+        $countries = CountryList::toSelectArray();
 
-        return view('supervisor.students.create', compact('academy', 'gradeLevels'));
+        return view('supervisor.students.create', compact('academy', 'gradeLevels', 'countries'));
     }
 
     public function store(Request $request, $subdomain = null): RedirectResponse
@@ -345,7 +347,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             abort(403);
         }
 
-        $rules = [
+        $rules = array_merge([
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -353,12 +355,15 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             'phone' => 'nullable|string|max:20',
             'gender' => 'required|in:male,female',
             'birth_date' => 'nullable|date|before:today',
-            'nationality' => 'nullable|string|max:100',
+            'nationality' => 'nullable|string|in:'.CountryList::validationRule(),
             'grade_level_id' => 'required|exists:academic_grade_levels,id',
             'parent_phone' => 'nullable|string|max:20',
             'password' => ['required', PasswordRules::min(6)->letters()->numbers()],
             'password_confirmation' => 'required|same:password',
-        ];
+        ],
+            CountryList::phoneCountryRules(),
+            CountryList::phoneCountryRules('parent_phone_country_code', 'parent_phone_country'),
+        );
 
         $validator = Validator::make($request->all(), $rules, [
             'first_name.required' => __('auth.register.student.first_name_required', [], 'ar'),
@@ -385,6 +390,8 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             'last_name' => $request->last_name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'phone_country_code' => $request->input('phone_country_code'),
+            'phone_country' => $request->input('phone_country'),
             'password' => Hash::make($request->password),
             'plain_password' => $request->password,
         ]);
@@ -403,27 +410,27 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         try {
             // The User observer may auto-create a StudentProfile; update it with our fields
             $profile = StudentProfile::where('user_id', $user->id)->first();
+            $profileData = [
+                'phone' => $request->phone,
+                'phone_country_code' => $request->input('phone_country_code'),
+                'phone_country' => $request->input('phone_country'),
+                'gender' => $request->gender,
+                'birth_date' => $request->birth_date,
+                'nationality' => $request->nationality,
+                'grade_level_id' => $request->grade_level_id,
+                'parent_phone' => $request->parent_phone,
+                'parent_phone_country_code' => $request->input('parent_phone_country_code'),
+                'parent_phone_country' => $request->input('parent_phone_country'),
+                'enrollment_date' => now(),
+                'avatar' => $avatarPath,
+            ];
+
             if ($profile) {
-                $profile->update([
-                    'gender' => $request->gender,
-                    'birth_date' => $request->birth_date,
-                    'nationality' => $request->nationality,
-                    'grade_level_id' => $request->grade_level_id,
-                    'parent_phone' => $request->parent_phone,
-                    'enrollment_date' => now(),
-                    'avatar' => $avatarPath,
-                ]);
+                $profile->update($profileData);
             } else {
-                StudentProfile::create([
+                StudentProfile::create(array_merge($profileData, [
                     'user_id' => $user->id,
-                    'gender' => $request->gender,
-                    'birth_date' => $request->birth_date,
-                    'nationality' => $request->nationality,
-                    'grade_level_id' => $request->grade_level_id,
-                    'parent_phone' => $request->parent_phone,
-                    'enrollment_date' => now(),
-                    'avatar' => $avatarPath,
-                ]);
+                ]));
             }
         } catch (QueryException $e) {
             Log::error('Student creation failed: '.$e->getMessage(), [
@@ -456,8 +463,9 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         $academy = AcademyContextService::getCurrentAcademy();
         $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)
             ->where('is_active', true)->orderBy('name')->get();
+        $countries = CountryList::toSelectArray();
 
-        return view('supervisor.students.edit', compact('student', 'gradeLevels'));
+        return view('supervisor.students.edit', compact('student', 'gradeLevels', 'countries'));
     }
 
     public function update(Request $request, $subdomain, User $student): RedirectResponse
@@ -468,7 +476,7 @@ class SupervisorStudentsController extends BaseSupervisorWebController
 
         $this->ensureStudentBelongsToScope($student);
 
-        $rules = [
+        $rules = array_merge([
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -476,10 +484,13 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             'phone' => 'nullable|string|max:20',
             'gender' => 'required|in:male,female',
             'birth_date' => 'nullable|date|before:today',
-            'nationality' => 'nullable|string|max:100',
+            'nationality' => 'nullable|string|in:'.CountryList::validationRule(),
             'grade_level_id' => 'required|exists:academic_grade_levels,id',
             'parent_phone' => 'nullable|string|max:20',
-        ];
+        ],
+            CountryList::phoneCountryRules(),
+            CountryList::phoneCountryRules('parent_phone_country_code', 'parent_phone_country'),
+        );
 
         $validator = Validator::make($request->all(), $rules);
 
@@ -491,6 +502,8 @@ class SupervisorStudentsController extends BaseSupervisorWebController
         $student->last_name = $request->last_name;
         $student->email = $request->email;
         $student->phone = $request->phone;
+        $student->phone_country_code = $request->input('phone_country_code');
+        $student->phone_country = $request->input('phone_country');
         $student->save();
 
         if ($request->hasFile('avatar')) {
@@ -507,11 +520,16 @@ class SupervisorStudentsController extends BaseSupervisorWebController
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'email' => $student->email,
+            'phone' => $request->phone,
+            'phone_country_code' => $request->input('phone_country_code'),
+            'phone_country' => $request->input('phone_country'),
             'gender' => $request->gender,
             'birth_date' => $request->birth_date,
             'nationality' => $request->nationality,
             'grade_level_id' => $request->grade_level_id,
             'parent_phone' => $request->parent_phone,
+            'parent_phone_country_code' => $request->input('parent_phone_country_code'),
+            'parent_phone_country' => $request->input('parent_phone_country'),
         ];
 
         if ($profile) {

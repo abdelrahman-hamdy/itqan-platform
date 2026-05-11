@@ -281,12 +281,51 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
     public function pause(Request $request, $subdomain, string $type, $id): RedirectResponse
     {
-        return $this->changeStatus($subdomain, $type, $id, SessionSubscriptionStatus::PAUSED);
+        if (! $this->canManageSubscriptions()) {
+            abort(403);
+        }
+
+        $subscription = $this->resolveSubscription($type, $id);
+        $this->ensureSubscriptionInScope($subscription, $type);
+
+        // Delegate to the model so paused_at + pause_reason are stamped and
+        // canPause()/transition gating fires. The previous raw-update path
+        // left 40+ subs in PAUSED status with paused_at=null, which broke
+        // resume()'s ends_at time compensation.
+        $reason = trim((string) $request->input('pause_reason', ''));
+        if ($reason === '') {
+            $reason = __('supervisor.subscriptions.pause_reason_manual_default');
+        }
+
+        try {
+            $subscription->pause($reason);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.paused_success'));
     }
 
     public function resume(Request $request, $subdomain, string $type, $id): RedirectResponse
     {
-        return $this->changeStatus($subdomain, $type, $id, SessionSubscriptionStatus::ACTIVE);
+        if (! $this->canManageSubscriptions()) {
+            abort(403);
+        }
+
+        $subscription = $this->resolveSubscription($type, $id);
+        $this->ensureSubscriptionInScope($subscription, $type);
+
+        // Delegate to the model so ends_at is extended by the paused
+        // duration and any SUSPENDED sessions in window are restored to
+        // SCHEDULED. The raw-update path left 52 subs ACTIVE with stale
+        // paused_at, and 16 sessions stranded in SUSPENDED on prod.
+        try {
+            $subscription->resume();
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.resumed_success'));
     }
 
     public function extend(Request $request, $subdomain, string $type, $id): RedirectResponse
@@ -379,20 +418,6 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
     // ========================================================================
     // Helpers
     // ========================================================================
-
-    private function changeStatus(string $subdomain, string $type, $id, SessionSubscriptionStatus $status): RedirectResponse
-    {
-        if (! $this->canManageSubscriptions()) {
-            abort(403);
-        }
-
-        $subscription = $this->resolveSubscription($type, $id);
-        $this->ensureSubscriptionInScope($subscription, $type);
-
-        $subscription->update(['status' => $status]);
-
-        return redirect()->back()->with('success', __('supervisor.subscriptions.status_updated'));
-    }
 
     private function resolveSubscription(string $type, $id): QuranSubscription|AcademicSubscription
     {

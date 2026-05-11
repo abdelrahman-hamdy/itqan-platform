@@ -75,7 +75,8 @@
         },
         "files": [
             "app/helpers.php",
-            "app/Helpers/TimeHelper.php"
+            "app/Helpers/TimeHelper.php",
+            "app/Helpers/Alert.php"
         ]
     },
     "autoload-dev": {
@@ -111,6 +112,10 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "test:subscriptions": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test tests/Feature/SubscriptionSystem"
         ]
     },
     "extra": {

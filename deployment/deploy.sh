@@ -20,6 +20,23 @@ NC='\033[0m' # No Color
 APP_DIR="/var/www/itqan-platform"
 BACKUP_DIR="/var/www/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
+ALERT_BIN="${ALERT_BIN:-/usr/local/bin/itqan-alert}"
+
+# Telegram hook: noop if the dispatcher isn't installed yet so deploys
+# never fail just because the alert binary is missing.
+alert() {
+    local severity="$1"; shift
+    local message="$*"
+    if [[ -x "$ALERT_BIN" ]]; then
+        "$ALERT_BIN" "$severity" "deploy" "$message" || true
+    fi
+}
+
+CURRENT_STEP="init"
+on_error() {
+    alert crit "Deploy failed at step: ${CURRENT_STEP}"
+}
+trap on_error ERR
 
 # Parse arguments
 FRESH_MIGRATE=false
@@ -40,6 +57,9 @@ echo -e "${BLUE}  Itqan Platform Deployment Script${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
+DEPLOY_HEAD="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+alert info "Deploy started: ${DEPLOY_HEAD}"
+
 # Check if we're in the right directory
 if [ ! -f "artisan" ]; then
     echo -e "${RED}Error: artisan not found. Run this script from the Laravel project root.${NC}"
@@ -47,6 +67,7 @@ if [ ! -f "artisan" ]; then
 fi
 
 # Pre-deployment checks
+CURRENT_STEP="pre-deployment-checks"
 echo -e "${YELLOW}[1/12] Running pre-deployment checks...${NC}"
 
 # Check .env exists
@@ -74,10 +95,12 @@ fi
 echo -e "${GREEN}Pre-deployment checks passed.${NC}"
 
 # Enable maintenance mode
+CURRENT_STEP="maintenance-on"
 echo -e "${YELLOW}[2/12] Enabling maintenance mode...${NC}"
 php artisan down --render="errors::maintenance" || true
 
 # Pull latest code (if using git)
+CURRENT_STEP="git-pull"
 echo -e "${YELLOW}[3/12] Pulling latest code...${NC}"
 if [ -d ".git" ]; then
     git pull origin main
@@ -86,14 +109,17 @@ else
 fi
 
 # Install/update PHP dependencies
+CURRENT_STEP="composer-install"
 echo -e "${YELLOW}[4/12] Installing PHP dependencies...${NC}"
 composer install --no-dev --optimize-autoloader --no-interaction
 
 # Install/update Node dependencies and build assets
 if [ "$SKIP_NPM" = false ]; then
+    CURRENT_STEP="npm-ci"
     echo -e "${YELLOW}[5/12] Installing Node dependencies...${NC}"
     npm ci --production=false
 
+    CURRENT_STEP="npm-build"
     echo -e "${YELLOW}[6/12] Building frontend assets...${NC}"
     npm run build
 else
@@ -102,6 +128,7 @@ else
 fi
 
 # Run database migrations
+CURRENT_STEP="migrate"
 echo -e "${YELLOW}[7/12] Running database migrations...${NC}"
 if [ "$FRESH_MIGRATE" = true ]; then
     echo -e "${RED}WARNING: Running fresh migrations! This will DESTROY all data!${NC}"
@@ -118,25 +145,35 @@ else
 fi
 
 # Clear and cache configuration
+CURRENT_STEP="config-cache"
 echo -e "${YELLOW}[8/12] Optimizing configuration...${NC}"
 php artisan config:clear
 php artisan config:cache
 
 # Cache routes
+CURRENT_STEP="route-cache"
 echo -e "${YELLOW}[9/12] Caching routes...${NC}"
 php artisan route:cache
 
 # Cache views
+CURRENT_STEP="view-cache"
 echo -e "${YELLOW}[10/12] Caching views...${NC}"
 php artisan view:cache
 
 # Restart queue workers
+CURRENT_STEP="queue-restart"
 echo -e "${YELLOW}[11/12] Restarting queue workers...${NC}"
 php artisan queue:restart
 
 # Disable maintenance mode
+CURRENT_STEP="maintenance-off"
 echo -e "${YELLOW}[12/12] Disabling maintenance mode...${NC}"
 php artisan up
+
+# Reset trap so a stray post-success error doesn't generate a false page.
+trap - ERR
+
+alert info "Deploy succeeded: ${DEPLOY_HEAD}"
 
 echo ""
 echo -e "${GREEN}========================================${NC}"
