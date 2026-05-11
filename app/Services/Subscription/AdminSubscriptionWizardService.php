@@ -204,20 +204,46 @@ class AdminSubscriptionWizardService
     private function setInitialProgress(BaseSubscription $subscription, array $data): void
     {
         $consumed = (int) ($data['consumed_sessions'] ?? 0);
-        if ($consumed > 0 && $consumed < $subscription->total_sessions) {
-            $remaining = $subscription->total_sessions - $consumed;
-            $subscription->update([
-                'sessions_used' => $consumed,
-                'sessions_remaining' => $remaining,
-                'total_sessions_completed' => $consumed,
-                'progress_percentage' => round(($consumed / $subscription->total_sessions) * 100, 2),
+        if ($consumed <= 0) {
+            return;
+        }
+
+        // Defense in depth: the wizard is only invoked from the creation flow,
+        // but if it is ever reused for a renewal-style path the preset must NOT
+        // leak into a cycle > 1. The admin "pre-consumed" semantics are only
+        // ever meaningful on a brand-new subscription with no prior cycle.
+        if ((int) ($subscription->cycle_count ?? 0) > 1) {
+            Log::warning('AdminSubscriptionWizard.setInitialProgress refused — subscription already has multiple cycles', [
+                'subscription_id' => $subscription->id,
+                'cycle_count' => $subscription->cycle_count,
+                'consumed_sessions' => $consumed,
             ]);
 
-            // Sync circle's sessions_remaining so calendar scheduling sees the correct count
-            if ($subscription instanceof QuranSubscription) {
-                $circle = $subscription->individualCircle;
-                $circle?->update(['sessions_remaining' => $remaining]);
-            }
+            return;
+        }
+
+        if ($consumed >= $subscription->total_sessions) {
+            Log::warning('AdminSubscriptionWizard.setInitialProgress refused — consumed >= total_sessions', [
+                'subscription_id' => $subscription->id,
+                'total_sessions' => $subscription->total_sessions,
+                'consumed_sessions' => $consumed,
+            ]);
+
+            return;
+        }
+
+        $remaining = $subscription->total_sessions - $consumed;
+        $subscription->update([
+            'sessions_used' => $consumed,
+            'sessions_remaining' => $remaining,
+            'total_sessions_completed' => $consumed,
+            'progress_percentage' => round(($consumed / $subscription->total_sessions) * 100, 2),
+        ]);
+
+        // Sync circle's sessions_remaining so calendar scheduling sees the correct count
+        if ($subscription instanceof QuranSubscription) {
+            $circle = $subscription->individualCircle;
+            $circle?->update(['sessions_remaining' => $remaining]);
         }
     }
 

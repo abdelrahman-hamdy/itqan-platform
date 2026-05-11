@@ -213,29 +213,38 @@ class SubscriptionCycle extends Model
         string $state = self::STATE_ACTIVE,
         array $overrides = [],
     ): self {
-        $nextNumber = $overrides['cycle_number']
+        $nextNumber = max(1, (int) ($overrides['cycle_number']
             ?? (((int) static::query()
                 ->where('subscribable_type', $owner->getMorphClass())
                 ->where('subscribable_id', $owner->id)
-                ->max('cycle_number')) + 1);
+                ->max('cycle_number')) + 1)));
 
         $paymentStatus = $source->payment_status?->value === SubscriptionPaymentStatus::PAID->value
             ? self::PAYMENT_PAID
             : self::PAYMENT_PENDING;
 
+        // Consumption counters carry over from `$source` only when this is the
+        // very first cycle (cycle_number = 1). For renewals / queued cycles /
+        // any cycle_number >= 2, counters start at zero — otherwise the parent
+        // subscription's running sessions_used (which already reflects all
+        // prior cycles AND any admin pre-consumed preset from creation) gets
+        // silently baked into the new cycle's row, double-counting consumption.
+        // See followup_cycle_counter_drift_repair.md.
+        $isFirstCycle = $nextNumber === 1;
+
         $defaults = [
             'subscribable_type' => $owner->getMorphClass(),
             'subscribable_id' => $owner->id,
             'academy_id' => $source->academy_id,
-            'cycle_number' => max(1, (int) $nextNumber),
+            'cycle_number' => $nextNumber,
             'cycle_state' => $state,
             'billing_cycle' => $source->billing_cycle?->value ?? 'monthly',
             'starts_at' => $source->starts_at,
             'ends_at' => $source->ends_at,
             'total_sessions' => (int) ($source->total_sessions ?? 0),
-            'sessions_used' => (int) ($source->sessions_used ?? 0),
-            'sessions_completed' => (int) ($source->total_sessions_completed ?? 0),
-            'sessions_missed' => (int) ($source->total_sessions_missed ?? 0),
+            'sessions_used' => $isFirstCycle ? (int) ($source->sessions_used ?? 0) : 0,
+            'sessions_completed' => $isFirstCycle ? (int) ($source->total_sessions_completed ?? 0) : 0,
+            'sessions_missed' => $isFirstCycle ? (int) ($source->total_sessions_missed ?? 0) : 0,
             'carryover_sessions' => 0,
             'total_price' => (float) ($source->total_price ?? 0),
             'discount_amount' => (float) ($source->discount_amount ?? 0),
