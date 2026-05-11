@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class Payment extends Model
@@ -166,6 +167,28 @@ class Payment extends Model
         }
 
         return self::$morphMapCache;
+    }
+
+    /**
+     * Soft-validate currency. See BaseSubscription::setCurrencyAttribute.
+     * Payment 1761 inherited currency="1" from cycle 918 via the sub-772
+     * backfill faithfully copying the parent's corrupt value; this tripwire
+     * stops a regression from poisoning new payments.
+     */
+    public function setCurrencyAttribute(mixed $value): void
+    {
+        $allowed = ['SAR', 'EGP'];
+        if ($value !== null && ! in_array(strtoupper((string) $value), $allowed, true)) {
+            $fallback = $this->academy?->currency ?? 'SAR';
+            Log::warning('Invalid currency coerced to academy default', [
+                'model' => static::class,
+                'pk' => $this->getKey(),
+                'rejected_value' => $value,
+                'coerced_to' => $fallback,
+            ]);
+            $value = $fallback;
+        }
+        $this->attributes['currency'] = $value;
     }
 
     // Relationships

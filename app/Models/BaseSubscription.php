@@ -230,6 +230,33 @@ abstract class BaseSubscription extends Model
         'certificate_issued' => false,
     ];
 
+    /**
+     * Soft-validate currency at the model boundary.
+     *
+     * Why: the 2026-04 corruption (3 subs + 7 cycles + 1 payment carrying
+     * currency="1"/"2") was caused by a non-string value getting mapped into
+     * the column. No live writer reproduces it today, but the mutator stays
+     * as a tripwire — if a regression returns, the log line names the model
+     * + PK + rejected value so we can find the path, and the value is
+     * coerced to the academy default instead of poisoning downstream price
+     * formatting.
+     */
+    public function setCurrencyAttribute(mixed $value): void
+    {
+        $allowed = ['SAR', 'EGP'];
+        if ($value !== null && ! in_array(strtoupper((string) $value), $allowed, true)) {
+            $fallback = $this->academy?->currency ?? 'SAR';
+            Log::warning('Invalid currency coerced to academy default', [
+                'model' => static::class,
+                'pk' => $this->getKey(),
+                'rejected_value' => $value,
+                'coerced_to' => $fallback,
+            ]);
+            $value = $fallback;
+        }
+        $this->attributes['currency'] = $value;
+    }
+
     // ========================================
     // RELATIONSHIPS (Common to all subscriptions)
     // ========================================

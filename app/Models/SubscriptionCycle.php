@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\Log;
 
 /**
  * SubscriptionCycle
@@ -86,6 +87,28 @@ class SubscriptionCycle extends Model
         'package_snapshot' => 'array',
         'metadata' => 'array',
     ];
+
+    /**
+     * Soft-validate currency. See BaseSubscription::setCurrencyAttribute.
+     * Cycle 918 inherited currency="1" from the parent subscription during
+     * the 2026-04 corruption; this tripwire stops a regression from doing
+     * the same.
+     */
+    public function setCurrencyAttribute(mixed $value): void
+    {
+        $allowed = ['SAR', 'EGP'];
+        if ($value !== null && ! in_array(strtoupper((string) $value), $allowed, true)) {
+            $fallback = $this->academy?->currency ?? 'SAR';
+            Log::warning('Invalid currency coerced to academy default', [
+                'model' => static::class,
+                'pk' => $this->getKey(),
+                'rejected_value' => $value,
+                'coerced_to' => $fallback,
+            ]);
+            $value = $fallback;
+        }
+        $this->attributes['currency'] = $value;
+    }
 
     // ========================================================================
     // Relations
