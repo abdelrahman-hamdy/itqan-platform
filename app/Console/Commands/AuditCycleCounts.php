@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
+use App\Models\BackfillLog;
 use App\Models\BaseSubscription;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
@@ -38,6 +39,14 @@ class AuditCycleCounts extends Command
                             {--type= : Limit to quran|academic (omit for both)}';
 
     protected $description = 'Detect and optionally repair drift between subscription_cycles.sessions_used and the actual counted-session count';
+
+    /**
+     * BackfillLog stamp so `subscriptions:diagnose-cycle-drift` can detect
+     * re-drift (a cycle previously repaired by --apply that has drifted again).
+     */
+    private const BACKFILL_BUG_ID = 'cycle_counter_drift_2026_05_11';
+
+    private const BACKFILL_COMMAND_NAME = 'subscriptions:audit-cycle-counts';
 
     public function handle(): int
     {
@@ -179,7 +188,17 @@ class AuditCycleCounts extends Command
                 return;
             }
 
-            $delta = $expected - (int) $lockedCycle->sessions_used;
+            $previousUsed = (int) $lockedCycle->sessions_used;
+            $delta = $expected - $previousUsed;
+
+            BackfillLog::record(
+                self::BACKFILL_BUG_ID,
+                self::BACKFILL_COMMAND_NAME,
+                $lockedCycle,
+                'sessions_used',
+                $previousUsed,
+                $expected,
+            );
 
             $lockedCycle->update([
                 'sessions_used' => $expected,
