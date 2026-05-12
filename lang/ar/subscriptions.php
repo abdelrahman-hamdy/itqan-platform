@@ -166,6 +166,15 @@ return [
         'academic_group' => 'دروس أكاديمية جماعية',
     ],
 
+    // Hybrid status the enum cannot express: status=active but current cycle
+    // payment_status=pending. UI consumers read it via
+    // BaseSubscription::isCurrentCyclePaymentPending().
+    'status' => [
+        'awaiting_payment' => 'بانتظار الدفع',
+        'awaiting_payment_long' => 'الشهر الحالي غير مدفوع — أكمل الدفع لمتابعة الجدولة.',
+        'pay_current_cycle' => 'ادفع الآن',
+    ],
+
     'generic_error' => 'حدث خطأ أثناء المعالجة. يرجى المحاولة مرة أخرى.',
 
     // Pause action

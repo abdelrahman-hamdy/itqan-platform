@@ -9,6 +9,7 @@ use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\TimeSlot;
 use App\Enums\WeekDays;
 use App\Filament\Shared\Traits\HasSubscriptionActions;
+use App\Models\BaseSubscription;
 use App\Services\AcademyContextService;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\CheckboxList;
@@ -174,15 +175,24 @@ abstract class BaseSubscriptionResource extends Resource
             TextColumn::make('status')
                 ->badge()
                 ->label('حالة الاشتراك')
-                ->formatStateUsing(fn (mixed $state): string => $state instanceof SessionSubscriptionStatus
-                    ? $state->label()
-                    : (SessionSubscriptionStatus::tryFrom($state)?->label() ?? (string) $state))
-                ->color(fn (mixed $state): string => $state instanceof SessionSubscriptionStatus
-                    ? $state->color()
-                    : (SessionSubscriptionStatus::tryFrom($state)?->color() ?? 'gray'))
-                ->icon(fn (mixed $state): string => $state instanceof SessionSubscriptionStatus
-                    ? $state->icon()
-                    : (SessionSubscriptionStatus::tryFrom($state)?->icon() ?? 'heroicon-o-question-mark-circle')),
+                // The "active+unpaid-cycle" hybrid (pre-fix damage where
+                // status=active but current_cycle.payment_status=pending)
+                // overrides the normal status mapping.
+                ->formatStateUsing(fn (mixed $state, $record): string => static::awaitingPayment($record)
+                    ? __('subscriptions.status.awaiting_payment')
+                    : ($state instanceof SessionSubscriptionStatus
+                        ? $state->label()
+                        : (SessionSubscriptionStatus::tryFrom($state)?->label() ?? (string) $state)))
+                ->color(fn (mixed $state, $record): string => static::awaitingPayment($record)
+                    ? 'warning'
+                    : ($state instanceof SessionSubscriptionStatus
+                        ? $state->color()
+                        : (SessionSubscriptionStatus::tryFrom($state)?->color() ?? 'gray')))
+                ->icon(fn (mixed $state, $record): string => static::awaitingPayment($record)
+                    ? 'heroicon-o-banknotes'
+                    : ($state instanceof SessionSubscriptionStatus
+                        ? $state->icon()
+                        : (SessionSubscriptionStatus::tryFrom($state)?->icon() ?? 'heroicon-o-question-mark-circle'))),
 
             TextColumn::make('payment_status')
                 ->badge()
@@ -458,11 +468,16 @@ abstract class BaseSubscriptionResource extends Resource
             ->placeholder('غير محدد');
     }
 
+    private static function awaitingPayment(mixed $record): bool
+    {
+        return $record instanceof BaseSubscription && $record->isCurrentCyclePaymentPending();
+    }
+
     // Apply panel-specific scoping
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
-            ->with(['student', 'academy']);
+            ->with(['student', 'academy', 'currentCycle']);
 
         return static::scopeEloquentQuery($query);
     }

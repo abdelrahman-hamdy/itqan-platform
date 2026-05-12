@@ -148,4 +148,11 @@ return [
 
     'reschedule_deadline_passed' => 'لا يمكن إعادة جدولة الجلسة. يجب إعادة الجدولة قبل :hours ساعة على الأقل من موعد الجلسة.',
     'reschedule_teacher_restricted' => 'التعديل متاح للإدارة فقط',
+
+    'errors' => [
+        // Short, surfaced to teacher when bulk-schedule action fails because
+        // the student's current cycle was never paid. Keep brief — UI shows
+        // it inline.
+        'current_cycle_unpaid' => 'اشتراك غير مدفوع',
+    ],
 ];

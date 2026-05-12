@@ -1,6 +1,7 @@
 @php
     use App\Enums\SessionSubscriptionStatus;
     use App\Enums\SubscriptionPaymentStatus;
+    use App\Models\BaseSubscription;
 
     $academy = auth()->user()->academy;
     $subdomain = request()->route('subdomain') ?? $academy->subdomain ?? 'itqan-academy';
@@ -375,6 +376,16 @@
                             <div class="text-sm text-amber-800">
                                 <div class="font-semibold mb-0.5">{{ __('subscriptions.expired_with_leftover_title') }}</div>
                                 <div>{{ trans_choice('subscriptions.expired_with_leftover_body', $expiredLeftoverCount, ['count' => $expiredLeftoverCount]) }}</div>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if(($subscription['model'] ?? null) instanceof BaseSubscription && $subscription['model']->isCurrentCyclePaymentPending())
+                        <div class="border-b border-yellow-200 bg-yellow-50 px-4 md:px-5 lg:px-6 py-3 flex items-start gap-3" dir="auto">
+                            <i class="ri-wallet-3-line text-yellow-700 text-xl shrink-0 mt-0.5"></i>
+                            <div class="text-sm text-yellow-900">
+                                <div class="font-semibold mb-0.5">{{ __('subscriptions.status.awaiting_payment') }}</div>
+                                <div>{{ __('subscriptions.status.awaiting_payment_long') }}</div>
                             </div>
                         </div>
                     @endif

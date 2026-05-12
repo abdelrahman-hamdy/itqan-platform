@@ -159,7 +159,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
         $teacherId = $this->getTargetUserId();
 
         return QuranIndividualCircle::where('quran_teacher_id', $teacherId)
-            ->with(['subscription.package', 'sessions', 'student'])
+            ->with(['subscription.package', 'subscription.currentCycle', 'sessions', 'student'])
             ->whereHas('subscription', function ($query) {
                 // Use the schedulable() scope so only subscriptions that would
                 // actually pass `isSchedulable()` appear in the teacher's list.
@@ -224,6 +224,8 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                     }
                 }
 
+                $cycleUnpaid = $subscription?->isCurrentCyclePaymentPending() ?? false;
+
                 return [
                     'id' => $circle->id,
                     'type' => 'individual',
@@ -237,7 +239,8 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                     'subscription_end' => $subscription?->ends_at?->toDateString(),
                     'student_name' => $circle->student->name ?? __('calendar.strategy.unspecified'),
                     'monthly_sessions' => $subscription?->package?->monthly_sessions ?? 4,
-                    'can_schedule' => $remainingSessions > 0,
+                    'can_schedule' => $remainingSessions > 0 && ! $cycleUnpaid,
+                    'status_arabic' => $cycleUnpaid ? __('subscriptions.status.awaiting_payment') : null,
                     'session_duration_minutes' => $circle->default_duration_minutes ?? $subscription?->package?->session_duration_minutes ?? 60,
                 ];
             });

@@ -8,6 +8,7 @@ use App\Enums\TrialRequestStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
 use App\Models\QuranIndividualCircle;
+use App\Models\BaseSubscription;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
 use App\Services\Calendar\BatchScheduleResult;
@@ -45,6 +46,8 @@ class SessionManagementService
             // Lock the circle row to prevent a TOCTOU race condition where two concurrent
             // requests both see remaining > 0 and both create a session.
             $lockedCircle = QuranIndividualCircle::lockForUpdate()->findOrFail($circle->id);
+
+            $this->assertCurrentCyclePaymentOk($lockedCircle->subscription);
 
             // Re-check remaining sessions inside the lock. Don't add an
             // all-time-count guard here: it falsely rejects renewed/cycled
@@ -479,6 +482,18 @@ class SessionManagementService
     }
 
     /**
+     * Refuse to schedule sessions when the subscription's current cycle is
+     * unpaid. Legacy circles without a subscription are allowed through —
+     * the downstream remaining-sessions check covers that path.
+     */
+    private function assertCurrentCyclePaymentOk(?BaseSubscription $subscription): void
+    {
+        if ($subscription?->isCurrentCyclePaymentPending()) {
+            throw new Exception(__('scheduling.errors.current_cycle_unpaid'));
+        }
+    }
+
+    /**
      * Generate exact number of group sessions from a schedule
      *
      * @param  QuranCircleSchedule  $schedule  The circle schedule with weekly_schedule
@@ -590,6 +605,8 @@ class SessionManagementService
         // concurrent scheduling requests from over-booking the subscription.
         return DB::transaction(function () use ($circle, $data) {
             $lockedCircle = QuranIndividualCircle::lockForUpdate()->findOrFail($circle->id);
+
+            $this->assertCurrentCyclePaymentOk($lockedCircle->subscription);
 
             $remainingSessions = $this->getRemainingIndividualSessions($lockedCircle);
             $requestedCount = (int) $data['session_count'];

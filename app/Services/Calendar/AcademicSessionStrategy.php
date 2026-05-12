@@ -94,7 +94,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                             });
                     });
             })
-            ->with(['student', 'subject', 'sessions'])
+            ->with(['student', 'subject', 'sessions', 'currentCycle'])
             ->get()
             ->map(function ($subscription) {
                 $allSessions = $subscription->sessions;
@@ -128,6 +128,8 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                     }
                 }
 
+                $cycleUnpaid = $subscription->isCurrentCyclePaymentPending();
+
                 return [
                     'id' => $subscription->id,
                     'type' => 'private_lesson',
@@ -140,7 +142,8 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                     'subject_name' => $subscription->subject_name ?? __('calendar.strategy.academic_subject'),
                     'subscription_start' => $subscription->starts_at?->toDateString(),
                     'subscription_end' => $subscription->ends_at?->toDateString(),
-                    'can_schedule' => $unscheduledSessions > 0,
+                    'can_schedule' => $unscheduledSessions > 0 && ! $cycleUnpaid,
+                    'status_arabic' => $cycleUnpaid ? __('subscriptions.status.awaiting_payment') : null,
                 ];
             });
     }

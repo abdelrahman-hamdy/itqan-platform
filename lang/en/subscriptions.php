@@ -160,6 +160,12 @@ return [
         'academic_group' => 'Group Academic Lessons',
     ],
 
+    'status' => [
+        'awaiting_payment' => 'Awaiting payment',
+        'awaiting_payment_long' => 'Current month is unpaid — complete payment to keep scheduling.',
+        'pay_current_cycle' => 'Pay now',
+    ],
+
     'generic_error' => 'An error occurred while processing. Please try again.',
 
     // Pause action

@@ -130,4 +130,8 @@ return [
 
     'reschedule_deadline_passed' => 'Cannot reschedule session. Must reschedule at least :hours hours before the session start time.',
     'reschedule_teacher_restricted' => 'Editing available for admin only',
+
+    'errors' => [
+        'current_cycle_unpaid' => 'Subscription unpaid',
+    ],
 ];

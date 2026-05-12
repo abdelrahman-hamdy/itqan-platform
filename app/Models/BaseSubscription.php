@@ -868,6 +868,23 @@ abstract class BaseSubscription extends Model
     }
 
     /**
+     * Hybrid "active subscription, but current cycle payment is pending" —
+     * a state the status enum cannot express. Caused by pre-fix cron paths
+     * promoting unpaid queued cycles; UI surfaces this as an
+     * "awaiting payment" badge so it stops looking like a paid Active sub.
+     */
+    public function isCurrentCyclePaymentPending(): bool
+    {
+        if ($this->status !== SessionSubscriptionStatus::ACTIVE) {
+            return false;
+        }
+
+        $cycle = $this->currentCycle;
+
+        return $cycle !== null && $cycle->isActive() && $cycle->isPaymentPending();
+    }
+
+    /**
      * Refuse to activate a CANCELLED subscription from a fresh gateway payment.
      *
      * Operator/owner intent (`resubscribe()`) is the only allowed reactivation
