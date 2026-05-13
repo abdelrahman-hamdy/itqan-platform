@@ -184,6 +184,13 @@ class StudentSubscriptionController extends Controller
 
     /**
      * Process the renewal and redirect to payment.
+     *
+     * Intent routing: when the current cycle is still in the hybrid
+     * "active+pending payment" shape, the student's "Renew" click really
+     * means "let me pay the cycle I'm already on" — bypass `renew()`
+     * entirely and route to the existing subscription-payment flow,
+     * which mints a fresh gateway payment for the current cycle.
+     * `renew()` only runs when the current cycle is paid.
      */
     public function processRenew(Request $request, string $subdomain, string $type, string $id): RedirectResponse
     {
@@ -194,6 +201,17 @@ class StudentSubscriptionController extends Controller
         if (! $subscription) {
             return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
                 ->with('error', __('subscriptions.subscription_not_found'));
+        }
+
+        if ($subscription->isCurrentCyclePaymentPending()) {
+            $paymentRoute = $type === 'academic'
+                ? 'academic.subscription.payment'
+                : 'quran.subscription.payment';
+
+            return redirect()->route($paymentRoute, [
+                'subdomain' => $subdomain,
+                'subscription' => $subscription->id,
+            ]);
         }
 
         $request->validate([
@@ -260,6 +278,7 @@ class StudentSubscriptionController extends Controller
         return $modelClass::where('id', $id)
             ->where('student_id', $user->id)
             ->where('academy_id', $user->academy_id)
+            ->with('currentCycle')
             ->first();
     }
 }

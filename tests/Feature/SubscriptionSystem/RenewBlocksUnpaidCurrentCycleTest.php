@@ -2,35 +2,47 @@
 
 declare(strict_types=1);
 
-use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Http\Controllers\StudentSubscriptionController;
 use App\Models\QuranSubscription;
 use App\Models\SubscriptionCycle;
-use App\Services\Subscription\SubscriptionMaintenanceService;
 use App\Services\Subscription\SubscriptionRenewalService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * Regression: the gate that blocks renew() when the current active cycle is
- * still unpaid. Added 2026-05-11 after the sub-772 incident where a student
- * who had not paid for her current cycle could keep clicking renew and stack
- * fresh manual-cash payment rows attached to FUTURE cycles, leaving the
- * current cycle un-payable through the normal student UI.
+ * Renew-flow intent routing — Scenarios R1–R5.
  *
- *   U1 — happy path:  current cycle PAID  → renew succeeds, queues a cycle.
- *   U2 — block path:  current cycle PENDING + ACTIVE → renew throws.
- *   U3 — exhausted:   sessions=0 + cycle pending → still blocked (no silent
- *                     archive of an unpaid cycle on the replace-now path).
- *   U4 — extend path: grace-period extension is unaffected by the gate.
- *   U5 — resubscribe: dormant-reactivation bypasses the gate via
- *                     `force_replace_now` even with an unpaid prior cycle.
+ * Replaces the May-11 sub-772 gate that threw `current_cycle_unpaid` whenever
+ * the current active cycle was still in payment_status=PENDING. That gate
+ * blocked 131 prod subs whose current cycle was in the hybrid "active+pending"
+ * shape (pre-May-11 cron damage, FixDoubleRenewalUnpaid output, and any new
+ * "renew now, pay later" flow that didn't complete the gateway redirect).
  *
- * See: SubscriptionRenewalService::renew() — `current_cycle_unpaid` gate.
+ * The new contract:
+ *   R1 — Hybrid sub: controller redirects the student straight to the existing
+ *        subscription-payment route. `renew()` is NOT called; no new cycle
+ *        is created.
+ *   R2 — Paid current cycle + remaining sessions: `renew()` queues a new
+ *        cycle starting at current.ends_at (Rule 2: queue).
+ *   R3 — Paid current cycle + exhausted sessions: `renew()` archives the
+ *        current cycle and creates an active cycle starting today (Rule 1:
+ *        replace).
+ *   R4 — 60-second guard: a second rapid renew click on a paid sub is
+ *        absorbed without minting a duplicate cycle.
+ *   R5 — Hybrid sub: `QuranSubscriptionPaymentController::create()` accepts
+ *        the sub (regression for the `getPendingSubscription()` loosening
+ *        that allows paying off the active hybrid cycle).
+ *
+ * See: SubscriptionRenewalService::renew(),
+ *      StudentSubscriptionController::processRenew(),
+ *      QuranSubscriptionPaymentController::getPendingSubscription().
  */
 beforeEach(function () {
     Notification::fake();
 
-    $this->academy = createAcademy(['subdomain' => 'unpaidgate-'.uniqid()]);
+    $this->academy = createAcademy(['subdomain' => 'renewroute-'.uniqid()]);
     $this->student = createStudent($this->academy);
     $this->teacher = createQuranTeacher($this->academy);
 
@@ -43,7 +55,7 @@ beforeEach(function () {
  * Build an active subscription with a current cycle whose payment_status
  * mirrors `$paid`. Used by every test in this file.
  */
-function subWithCycle(bool $paid, array $attrs = []): QuranSubscription
+function subWithCycleForRouting(bool $paid, array $attrs = []): QuranSubscription
 {
     $sub = QuranSubscription::factory()
         ->forStudent(test()->student)
@@ -60,9 +72,6 @@ function subWithCycle(bool $paid, array $attrs = []): QuranSubscription
                 : SubscriptionPaymentStatus::PENDING,
         ], $attrs));
     $sub->ensureCurrentCycle();
-    // ensureCurrentCycle reads sub.payment_status to set cycle.payment_status,
-    // but we also force the cycle column directly so the gate's read is
-    // deterministic regardless of upstream materialization logic changes.
     $sub->currentCycle()->update([
         'payment_status' => $paid
             ? SubscriptionCycle::PAYMENT_PAID
@@ -73,47 +82,29 @@ function subWithCycle(bool $paid, array $attrs = []): QuranSubscription
     return $sub->fresh();
 }
 
-describe('U1 — renew succeeds when current cycle is paid', function () {
-    it('U1 — paid current cycle: renew() queues a new cycle and does not throw', function () {
-        $sub = subWithCycle(paid: true);
+describe('R1 — controller routes hybrid renew clicks to the payment route', function () {
+    it('R1 — hybrid sub: processRenew() redirects to quran.subscription.payment without calling renew()', function () {
+        $sub = subWithCycleForRouting(paid: false);
+        Auth::login($this->student);
 
-        $renewed = $this->renewal->renew($sub, [
-            'billing_cycle' => 'monthly',
-            'payment_mode' => 'paid',
-        ]);
-
-        // Either a queued or active new cycle is fine — the gate must not
-        // have blocked. What we're asserting is "no exception, a new cycle
-        // row was minted".
-        $newCycles = SubscriptionCycle::query()
-            ->where('subscribable_type', $renewed->getMorphClass())
-            ->where('subscribable_id', $renewed->id)
-            ->count();
-        expect($newCycles)->toBeGreaterThanOrEqual(2, 'renew must materialise a second cycle');
-    });
-});
-
-describe('U2 — renew is blocked when current cycle is unpaid (the regression)', function () {
-    it('U2 — pending current cycle: renew() throws current_cycle_unpaid', function () {
-        $sub = subWithCycle(paid: false);
-
-        $threw = null;
-        try {
-            $this->renewal->renew($sub, [
-                'billing_cycle' => 'monthly',
-                'payment_mode' => 'unpaid',
-            ]);
-        } catch (\Throwable $e) {
-            $threw = $e;
-        }
-
-        expect($threw)->not->toBeNull(
-            'renew on a sub whose current cycle is unpaid must throw — sub-772 regression'
+        $controller = app(StudentSubscriptionController::class);
+        $request = Request::create(
+            "/student/subscriptions/quran/{$sub->id}/renew",
+            'POST',
+            ['billing_cycle' => 'monthly'],
         );
-        expect($threw->getMessage())->toBe(
-            __('subscriptions.errors.current_cycle_unpaid'),
-            'exception message must be the localized current_cycle_unpaid string'
+        $request->setUserResolver(fn () => $this->student);
+
+        $response = $controller->processRenew(
+            $request,
+            $this->academy->subdomain,
+            'quran',
+            (string) $sub->id,
         );
+
+        expect($response->getStatusCode())->toBe(302);
+        expect($response->getTargetUrl())
+            ->toContain("/quran/subscription/{$sub->id}/payment");
 
         // No new cycle row should have been created.
         $cycleCount = SubscriptionCycle::query()
@@ -122,14 +113,48 @@ describe('U2 — renew is blocked when current cycle is unpaid (the regression)'
             ->count();
         expect($cycleCount)->toBe(
             1,
-            'blocked renew must not create a stacked future cycle'
+            'redirect-to-pay path must not stack a new cycle on top of the unpaid current cycle',
         );
     });
 });
 
-describe('U3 — renew is blocked even when current cycle is exhausted', function () {
-    it('U3 — sessions exhausted + cycle pending: still blocked, no silent archive', function () {
-        $sub = subWithCycle(paid: false, attrs: [
+describe('R2 — paid current cycle + remaining sessions: queue a new cycle (Rule 2)', function () {
+    it('R2 — paid + remaining sessions: renew() creates a queued cycle starting at current.ends_at', function () {
+        $sub = subWithCycleForRouting(paid: true);
+
+        $renewed = $this->renewal->renew($sub, [
+            'billing_cycle' => 'monthly',
+            'payment_mode' => 'paid',
+        ]);
+
+        $cycles = SubscriptionCycle::query()
+            ->where('subscribable_type', $renewed->getMorphClass())
+            ->where('subscribable_id', $renewed->id)
+            ->orderBy('cycle_number')
+            ->get();
+
+        expect($cycles)->toHaveCount(2, 'renew must materialise a second cycle');
+
+        $current = $cycles->first();
+        $queued = $cycles->last();
+
+        expect($current->cycle_state)->toBe(
+            SubscriptionCycle::STATE_ACTIVE,
+            'original paid current cycle must remain ACTIVE — Rule 2 queues, does not replace',
+        );
+        expect($queued->cycle_state)->toBe(
+            SubscriptionCycle::STATE_QUEUED,
+            'new cycle must be queued behind the current one',
+        );
+        expect($queued->starts_at->equalTo($current->ends_at))->toBeTrue(
+            'queued cycle must start at current.ends_at — not today',
+        );
+    });
+});
+
+describe('R3 — paid current cycle + exhausted sessions: replace today (Rule 1)', function () {
+    it('R3 — paid + exhausted: renew() archives current and creates an active cycle starting today', function () {
+        $sub = subWithCycleForRouting(paid: true, attrs: [
             'sessions_used' => 8,
             'sessions_remaining' => 0,
         ]);
@@ -138,79 +163,70 @@ describe('U3 — renew is blocked even when current cycle is exhausted', functio
             'sessions_completed' => 8,
         ]);
         $sub = $sub->fresh();
+        $oldCycleId = $sub->currentCycle->id;
 
-        $threw = null;
-        try {
-            $this->renewal->renew($sub, [
-                'billing_cycle' => 'monthly',
-                'payment_mode' => 'paid',
-            ]);
-        } catch (\Throwable $e) {
-            $threw = $e;
-        }
-
-        expect($threw)->not->toBeNull(
-            'replace-now path must not silently archive an unpaid current cycle'
-        );
-        expect($threw->getMessage())->toBe(
-            __('subscriptions.errors.current_cycle_unpaid'),
-        );
-
-        // Original cycle is still ACTIVE — we did NOT archive it.
-        $sub = $sub->fresh()->load('currentCycle');
-        expect($sub->currentCycle->cycle_state)->toBe(
-            SubscriptionCycle::STATE_ACTIVE,
-            'rejected renew must leave the unpaid cycle in place (not archived)'
-        );
-    });
-});
-
-describe('U4 — extend (grace-period) is unaffected by the gate', function () {
-    it('U4 — extend() on a sub with unpaid current cycle still adds grace', function () {
-        $sub = subWithCycle(paid: false);
-
-        $service = app(SubscriptionMaintenanceService::class);
-        // extend signature is (BaseSubscription, int $graceDays, array $actor = [])
-        $result = $service->extend($sub, 7, [
-            'extended_by' => $this->student->id,
-            'extended_by_name' => $this->student->name ?? 'student',
-        ]);
-
-        $sub = $sub->fresh();
-        // Grace metadata is stamped — gate is service-local to renew(), not extend.
-        expect($sub->metadata['grace_period_ends_at'] ?? null)
-            ->not->toBeNull('extend() must succeed regardless of cycle payment_status');
-    });
-});
-
-describe('U5 — resubscribe bypasses the gate via force_replace_now', function () {
-    it('U5 — resubscribe on CANCELLED sub with unpaid prior cycle still succeeds', function () {
-        $sub = subWithCycle(paid: false);
-        // Flip to CANCELLED so resubscribe() accepts it. The current cycle
-        // row is left as-is (STATE_ACTIVE, payment_status=PENDING) to mirror
-        // production: cancel-the-sub doesn't archive the cycle.
-        $cancelledAt = now()->subDays(2);
-        $sub->update([
-            'status' => SessionSubscriptionStatus::CANCELLED,
-            'cancelled_at' => $cancelledAt,
-            'ends_at' => $cancelledAt->copy()->subDay(),
-        ]);
-
-        $resubbed = $this->renewal->resubscribe($sub->fresh(), [
+        $renewed = $this->renewal->renew($sub, [
             'billing_cycle' => 'monthly',
             'payment_mode' => 'paid',
-            // validateTeacherAvailability looks up by primary key but the
-            // column stores user_id. Pass explicit teacher_id to short-circuit.
-            'teacher_id' => $this->teacher->id,
         ]);
 
-        $fresh = $resubbed->fresh()->load('currentCycle');
-        expect($fresh->status)->toBe(
-            SessionSubscriptionStatus::ACTIVE,
-            'resubscribe must reactivate even when the prior cycle was unpaid'
+        $oldCycle = SubscriptionCycle::find($oldCycleId);
+        expect($oldCycle->cycle_state)->toBe(
+            SubscriptionCycle::STATE_ARCHIVED,
+            'exhausted current cycle must be archived on replace-now',
         );
-        expect($fresh->currentCycle)->not->toBeNull(
-            'resubscribe must produce a new active cycle (force_replace_now exempts the gate)'
+
+        $newCurrent = $renewed->fresh()->currentCycle;
+        expect($newCurrent)->not->toBeNull('a new active current cycle must exist');
+        expect($newCurrent->cycle_state)->toBe(SubscriptionCycle::STATE_ACTIVE);
+        expect($newCurrent->starts_at->isToday())->toBeTrue(
+            'replace-now path must start the new cycle today, not at the prior cycle\'s ends_at',
+        );
+    });
+});
+
+describe('R4 — 60-second rapid renewal guard catches double-submit', function () {
+    it('R4 — second click within 60s: returns subscription unchanged, no duplicate cycle', function () {
+        $sub = subWithCycleForRouting(paid: true);
+
+        $firstRenew = $this->renewal->renew($sub, [
+            'billing_cycle' => 'monthly',
+            'payment_mode' => 'paid',
+        ]);
+
+        $countAfterFirst = SubscriptionCycle::query()
+            ->where('subscribable_type', $firstRenew->getMorphClass())
+            ->where('subscribable_id', $firstRenew->id)
+            ->count();
+
+        // Second click immediately after — within the 60-sec window.
+        $secondRenew = $this->renewal->renew($firstRenew, [
+            'billing_cycle' => 'monthly',
+            'payment_mode' => 'paid',
+        ]);
+
+        $countAfterSecond = SubscriptionCycle::query()
+            ->where('subscribable_type', $secondRenew->getMorphClass())
+            ->where('subscribable_id', $secondRenew->id)
+            ->count();
+
+        expect($countAfterSecond)->toBe(
+            $countAfterFirst,
+            '60-sec rapid-renewal guard must absorb the second click — no duplicate cycle',
+        );
+    });
+});
+
+describe('R5 — hybrid sub satisfies the payment-eligibility predicate', function () {
+    it('R5 — hybrid sub: isCurrentCyclePaymentPending OR acceptsRetryPayment must hold so getPendingSubscription accepts it', function () {
+        $sub = subWithCycleForRouting(paid: false);
+
+        // getPendingSubscription() in both payment controllers gates on
+        // ($sub->acceptsRetryPayment() || $sub->isCurrentCyclePaymentPending()).
+        // The model-level disjunction is the actual contract — assert it
+        // directly instead of reaching through controller internals.
+        expect($sub->isCurrentCyclePaymentPending() || $sub->acceptsRetryPayment())->toBeTrue(
+            'hybrid sub must satisfy the payment-eligibility predicate so the student can pay off the current cycle',
         );
     });
 });

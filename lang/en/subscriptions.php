@@ -60,6 +60,7 @@ return [
     'select_billing_cycle' => 'Select Billing Cycle',
     'renewal_success' => 'Subscription renewed successfully.',
     'resubscribe_success' => 'Subscription re-subscribed successfully.',
+    'pay_current_cycle_first' => 'Please complete payment for the current period to continue.',
     'activation_mode' => 'Activation Mode',
     'activate_immediately' => 'Activate Immediately',
     'create_as_pending' => 'Create as Pending (requires payment)',

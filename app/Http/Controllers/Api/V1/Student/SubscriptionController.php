@@ -582,6 +582,13 @@ class SubscriptionController extends Controller
 
     /**
      * Renew or resubscribe to a subscription.
+     *
+     * Intent routing: when the current cycle is in the hybrid
+     * "active+pending payment" shape, "renew" really means "let me pay
+     * the cycle I'm already on" — return a payload that points the
+     * client at the existing subscription-payment route. The client
+     * opens that URL in a webview so the gateway redirect flow runs
+     * exactly as it does on the web.
      */
     public function renew(Request $request, string $type, string $id): JsonResponse
     {
@@ -590,6 +597,10 @@ class SubscriptionController extends Controller
 
         if (! $subscription) {
             return $this->error(__('subscriptions.subscription_not_found'), 404);
+        }
+
+        if ($subscription->isCurrentCyclePaymentPending()) {
+            return $this->buildPayCurrentCycleResponse($subscription, $type);
         }
 
         $validator = Validator::make($request->all(), [
@@ -625,6 +636,33 @@ class SubscriptionController extends Controller
 
             return $this->error(__('subscriptions.generic_error'), 422);
         }
+    }
+
+    /**
+     * Build the "pay current cycle" payload for the API renew route.
+     *
+     * The mobile client opens `payment_url` in an in-app webview; the
+     * gateway redirect flow then matches the web exactly.
+     */
+    protected function buildPayCurrentCycleResponse($subscription, string $type): JsonResponse
+    {
+        $academy = $subscription->academy;
+        $subdomain = $academy?->subdomain;
+
+        $routeName = ($type === 'academic')
+            ? 'academic.subscription.payment'
+            : 'quran.subscription.payment';
+
+        $paymentUrl = route($routeName, [
+            'subdomain' => $subdomain,
+            'subscription' => $subscription->id,
+        ]);
+
+        return $this->success([
+            'action' => 'pay_current_cycle',
+            'payment_url' => $paymentUrl,
+            'subscription' => $this->formatSubscription($subscription, $type),
+        ], __('subscriptions.pay_current_cycle_first'));
     }
 
     /**

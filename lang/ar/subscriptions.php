@@ -66,6 +66,7 @@ return [
     'select_billing_cycle' => 'اختر دورة الفوترة',
     'renewal_success' => 'تم تجديد الاشتراك بنجاح.',
     'resubscribe_success' => 'تم إعادة الاشتراك بنجاح.',
+    'pay_current_cycle_first' => 'يرجى إكمال دفع الدورة الحالية للمتابعة.',
     'activation_mode' => 'طريقة التفعيل',
     'activate_immediately' => 'تفعيل فوري',
     'create_as_pending' => 'إنشاء كمعلق (يتطلب دفع)',

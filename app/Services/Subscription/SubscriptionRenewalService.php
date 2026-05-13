@@ -78,24 +78,11 @@ class SubscriptionRenewalService
             // in that case we materialize one from the subscription's current columns.
             $currentCycle = $this->ensureCurrentCycle($subscription);
 
-            // Refuse to stack a new renewal while the current active cycle is still
-            // unpaid. Forces the student to settle the current period first — otherwise
-            // each renew click mints a fresh manual-cash payment row attached to a
-            // FUTURE cycle, leaving the current cycle un-payable through the normal
-            // student UI. See sub-772 incident 2026-05-11.
-            //
-            // Dormant-reactivation paths (`resubscribe()` and similar) pass
-            // `force_replace_now: true` and are exempt: the current cycle is
-            // about to be archived in-place, so we're not stacking a future
-            // cycle on top of an unpaid one.
-            if (
-                empty($options['force_replace_now'])
-                && ! empty($currentCycle)
-                && $currentCycle->cycle_state === SubscriptionCycle::STATE_ACTIVE
-                && $currentCycle->payment_status === SubscriptionCycle::PAYMENT_PENDING
-            ) {
-                throw new Exception(__('subscriptions.errors.current_cycle_unpaid'));
-            }
+            // Hybrid "active+pending current cycle" subs are handled before they
+            // reach renew() — controllers route the click to the existing
+            // payment flow instead. Anti-stacking protection now comes from
+            // the existing existingQueued->deleteIfAbandoned() reconciliation
+            // below (line ~129) plus the 60-second rapid-renewal guard.
 
             // Guard against rapid duplicate renewals (e.g., double form submission)
             $recentRenewalExists = SubscriptionCycle::where('subscribable_type', $subscription->getMorphClass())
