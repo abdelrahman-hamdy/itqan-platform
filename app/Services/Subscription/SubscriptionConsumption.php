@@ -221,64 +221,79 @@ class SubscriptionConsumption
      * the existing row unchanged. (Re-running with a different reason is
      * intentionally a no-op; if you need to amend a reason, write a new
      * audit log entry.)
+     *
+     * Use {@see reverseLocked()} from any caller that already holds the
+     * SubscriptionLock for $row->subscription — re-acquiring the same lock
+     * here would deadlock (INV-C1; the cache lock has no reentrancy
+     * registry, second acquire would block 5s then throw).
      */
     public function reverse(
         SessionConsumption $row,
         string $reason,
         User $reverser,
     ): SessionConsumption {
-        $sub = $row->subscription;
+        $sub = $this->resolveSubscriptionOrFail($row);
 
-        if (! $sub instanceof BaseSubscription) {
-            throw new \RuntimeException(sprintf(
-                'SessionConsumption#%d has no resolvable subscription (subscription_type=%s, subscription_id=%d).',
-                $row->id,
-                $row->subscription_type,
-                $row->subscription_id,
-            ));
-        }
+        return SubscriptionLock::for($sub, function () use ($row, $reason, $reverser) {
+            return $this->reverseLocked($row, $reason, $reverser);
+        });
+    }
 
-        return SubscriptionLock::for($sub, function () use ($row, $reason, $reverser, $sub) {
-            return DB::transaction(function () use ($row, $reason, $reverser, $sub) {
-                return $this->withAudit($sub, 'consumption.reverse', 'admin', $reverser, function () use ($row, $reason, $reverser, $sub) {
-                    /** @var SessionConsumption $locked */
-                    $locked = SessionConsumption::query()
-                        ->whereKey($row->id)
-                        ->lockForUpdate()
-                        ->first();
+    /**
+     * Lock-free reverse body — for callers already inside
+     * {@see SubscriptionLock::for}. See {@see reverse()} for the lock-
+     * acquiring variant.
+     *
+     * Nested DB::transaction is a savepoint per Laravel; withAudit only
+     * captures snapshots + writes an audit row (no lock); reconciler->sync
+     * does not re-enter the lock — all safe under the existing hold.
+     */
+    public function reverseLocked(
+        SessionConsumption $row,
+        string $reason,
+        User $reverser,
+    ): SessionConsumption {
+        $sub = $this->resolveSubscriptionOrFail($row);
 
-                    if ($locked === null) {
-                        throw new \RuntimeException("SessionConsumption#{$row->id} disappeared mid-reverse.");
-                    }
+        return DB::transaction(function () use ($row, $reason, $reverser, $sub) {
+            return $this->withAudit($sub, 'consumption.reverse', 'admin', $reverser, function () use ($row, $reason, $reverser, $sub) {
+                /** @var SessionConsumption $locked */
+                $locked = SessionConsumption::query()
+                    ->whereKey($row->id)
+                    ->lockForUpdate()
+                    ->first();
 
-                    if ($locked->reversed_at !== null) {
-                        // Already reversed — no-op. Surface for caller's
-                        // observability but don't double-write.
-                        Log::info('consumption_reverse_noop_already_reversed', [
-                            'session_consumption_id' => $locked->id,
-                            'reversed_at' => $locked->reversed_at?->toIso8601String(),
-                        ]);
+                if ($locked === null) {
+                    throw new \RuntimeException("SessionConsumption#{$row->id} disappeared mid-reverse.");
+                }
 
-                        return $locked;
-                    }
-
-                    $locked->fill([
-                        'reversed_at' => now(),
-                        'reversed_reason' => $reason,
-                        'reversed_by_user_id' => $reverser->getKey(),
-                    ]);
-                    $locked->save();
-
-                    Log::info('consumption_reversed', [
+                if ($locked->reversed_at !== null) {
+                    // Already reversed — no-op. Surface for caller's
+                    // observability but don't double-write.
+                    Log::info('consumption_reverse_noop_already_reversed', [
                         'session_consumption_id' => $locked->id,
-                        'reason' => $reason,
-                        'reversed_by_user_id' => $reverser->getKey(),
+                        'reversed_at' => $locked->reversed_at?->toIso8601String(),
                     ]);
 
-                    $this->reconciler->sync($sub);
+                    return $locked;
+                }
 
-                    return $locked->fresh();
-                });
+                $locked->fill([
+                    'reversed_at' => now(),
+                    'reversed_reason' => $reason,
+                    'reversed_by_user_id' => $reverser->getKey(),
+                ]);
+                $locked->save();
+
+                Log::info('consumption_reversed', [
+                    'session_consumption_id' => $locked->id,
+                    'reason' => $reason,
+                    'reversed_by_user_id' => $reverser->getKey(),
+                ]);
+
+                $this->reconciler->sync($sub);
+
+                return $locked->fresh();
             });
         });
     }
@@ -309,6 +324,22 @@ class SubscriptionConsumption
      * Raises if neither resolves — callers should validate before reaching
      * the writer.
      */
+    private function resolveSubscriptionOrFail(SessionConsumption $row): BaseSubscription
+    {
+        $sub = $row->subscription;
+
+        if (! $sub instanceof BaseSubscription) {
+            throw new \RuntimeException(sprintf(
+                'SessionConsumption#%d has no resolvable subscription (subscription_type=%s, subscription_id=%d).',
+                $row->id,
+                $row->subscription_type,
+                $row->subscription_id,
+            ));
+        }
+
+        return $sub;
+    }
+
     private function resolveAnchorCycle(BaseSession $session, BaseSubscription $sub): SubscriptionCycle
     {
         $cycleId = $session->subscription_cycle_id ?? $sub->current_cycle_id;

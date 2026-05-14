@@ -274,7 +274,15 @@ class SubscriptionLifecycle
 
                         $queuedCycle = $sub->queuedCycle()->lockForUpdate()->first();
                         if ($queuedCycle && $currentCycle) {
+                            // Shift the queued window by the same amount so the
+                            // student doesn't lose `$extension` seconds of paid
+                            // time. Re-anchor starts_at to the new current
+                            // ends_at (INV-A5) and slide ends_at by the same
+                            // delta so the queued window length is preserved.
                             $queuedCycle->starts_at = $currentCycle->ends_at;
+                            if ($queuedCycle->ends_at) {
+                                $queuedCycle->ends_at = $queuedCycle->ends_at->copy()->addSeconds($extension);
+                            }
                             $queuedCycle->save();
                         }
 
@@ -910,7 +918,11 @@ class SubscriptionLifecycle
                 ->get();
 
             foreach ($consumptionRows as $row) {
-                $this->consumption->reverse($row, $consumptionReason, $actor);
+                // INV-C1: caller already holds SubscriptionLock::for($sub).
+                // The cache lock has no reentrancy registry — calling
+                // reverse() here would block 5s on its own lock and throw
+                // SubscriptionLockTimeout, rolling back the whole pause/cancel.
+                $this->consumption->reverseLocked($row, $consumptionReason, $actor);
             }
 
             // Notify the student so the upcoming-session card disappears
@@ -997,13 +1009,27 @@ class SubscriptionLifecycle
         User $actor,
     ): SubscriptionCycle {
         return $this->runAdminMutation($sub, 'admin.edit_cycle', $actor, function () use ($sub, $cycle, $patch) {
+            // Capture before fill() — once fill() runs `$cycle->ends_at`
+            // already reflects the patched value and the delta would be zero.
+            $previousEndsAt = $cycle->ends_at;
+
             $cycle->fill($patch);
             $cycle->save();
 
             if (array_key_exists('ends_at', $patch)) {
                 $queued = $sub->queuedCycle()->first();
                 if ($queued !== null && $queued->id !== $cycle->id) {
+                    // INV-A5: starts_at re-anchors to the new current ends_at.
+                    // Slide ends_at by the same delta so the queued window
+                    // length is preserved — admin shifting the current cycle
+                    // shouldn't silently shrink (or grow) paid queued time.
                     $queued->starts_at = $cycle->ends_at;
+                    if ($previousEndsAt && $cycle->ends_at && $queued->ends_at) {
+                        $deltaSeconds = $previousEndsAt->diffInSeconds($cycle->ends_at, false);
+                        if ($deltaSeconds !== 0) {
+                            $queued->ends_at = $queued->ends_at->copy()->addSeconds($deltaSeconds);
+                        }
+                    }
                     $queued->save();
                 }
             }

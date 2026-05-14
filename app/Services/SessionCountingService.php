@@ -139,7 +139,7 @@ class SessionCountingService
                 $student = User::find($studentId);
                 if ($student instanceof User) {
                     $consumptionType = AttendanceConsumptionMapper::consumptionTypeFor(
-                        $attendance->status ?? null,
+                        $attendance->attendance_status,
                         countsForSubscription: true,
                     ) ?? SessionConsumption::TYPE_ATTENDED;
 
@@ -191,12 +191,19 @@ class SessionCountingService
                 ?? ($session->subscription_cycle_id ?? null);
 
             if (config('subscriptions.v2_consumption_enabled')) {
+                // INV-B1: the consumption row is uniquely identified by
+                // (session_id, session_type, subscription_id, subscription_type)
+                // — cycle_id is NOT part of the unique key. Filtering on
+                // $cycleAnchor here diverges from the record path (which writes
+                // `sub.current_cycle_id` when `session.subscription_cycle_id`
+                // is NULL) and would silently miss the row, leaving it active
+                // while the legacy flags get cleared. $cycleAnchor stays in
+                // scope only for the legacy `returnSession()` fallback below.
                 $existing = SessionConsumption::query()
                     ->where('session_id', $session->getKey())
                     ->where('session_type', $session->getMorphClass())
                     ->where('subscription_id', $subscription->getKey())
                     ->where('subscription_type', $subscription->getMorphClass())
-                    ->where('cycle_id', $cycleAnchor)
                     ->whereNull('reversed_at')
                     ->first();
 

@@ -9,6 +9,7 @@ use App\Enums\UserType;
 use App\Models\Traits\CountsTowardsSubscription;
 use App\Models\Traits\HasRecording;
 use App\Services\NotificationService;
+use Carbon\Carbon;
 use DB;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -802,6 +803,51 @@ class AcademicSession extends BaseSession implements RecordingCapable
 
             return true;
         });
+    }
+
+    /**
+     * Reschedule the session. Overrides HasSessionScheduling::reschedule so a
+     * date-shift across a cycle boundary re-anchors `subscription_cycle_id` —
+     * mirrors the QuranSession override and the INV-E1 guarantee in
+     * docs/subscription-invariants.md. AcademicSession resolves its owning
+     * subscription via getSubscriptionForCounting() rather than a plain
+     * `subscription` relation, so the override stays here instead of the trait.
+     */
+    public function reschedule(Carbon $newDateTime, ?string $reason = null): bool
+    {
+        if ($this->isCancelled() || $this->isCompleted()) {
+            return false;
+        }
+
+        $oldDateTime = $this->scheduled_at;
+
+        $updates = [
+            'scheduled_at' => $newDateTime,
+            'rescheduled_from' => $oldDateTime,
+            'rescheduled_to' => $newDateTime,
+            'reschedule_reason' => $reason,
+        ];
+
+        $subscription = $this->getSubscriptionForCounting();
+        if ($subscription instanceof BaseSubscription) {
+            $newCycle = SubscriptionCycle::cycleForDate($subscription, $newDateTime);
+            if ($newCycle !== null && (int) $newCycle->id !== (int) $this->subscription_cycle_id) {
+                $updates['subscription_cycle_id'] = $newCycle->id;
+            }
+        }
+
+        $updated = $this->update($updates);
+
+        if ($updated && $this->meeting_room_name) {
+            $this->update([
+                'meeting_link' => null,
+                'meeting_room_name' => null,
+                'meeting_id' => null,
+                'meeting_expires_at' => null,
+            ]);
+        }
+
+        return $updated;
     }
 
     // ========================================

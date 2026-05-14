@@ -390,8 +390,12 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                     continue;
                 }
 
+                // The per-student attendance row is the canonical input; the
+                // mapper's null return already covers "no recorded status",
+                // so no session-level fallback is needed.
+                // (MeetingAttendance has `attendance_status`, not `status`.)
                 $consumptionType = AttendanceConsumptionMapper::consumptionTypeFor(
-                    $attendance->status ?? $session->attendance_status,
+                    $attendance->attendance_status,
                     countsForSubscription: $attendance->counts_for_subscription !== false,
                 );
                 if ($consumptionType === null) {
