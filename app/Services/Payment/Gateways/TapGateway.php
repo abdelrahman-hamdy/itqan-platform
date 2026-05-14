@@ -68,12 +68,13 @@ class TapGateway extends AbstractGateway implements SupportsWebhooks
     }
 
     /**
-     * Baseline countries Tap can process payments for.
-     * Covers the GCC markets Tap officially supports.
+     * Baseline countries. Empty array = no baseline restriction;
+     * country eligibility is controlled entirely by per-academy
+     * allowed_countries / blocked_countries settings.
      */
     public function getSupportedCountries(): array
     {
-        return ['SA', 'AE', 'KW', 'QA', 'BH', 'OM'];
+        return [];
     }
 
     /**

@@ -104,11 +104,13 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
     }
 
     /**
-     * Baseline countries EasyKash can process payments for.
+     * Baseline countries. Empty array = no baseline restriction;
+     * country eligibility is controlled entirely by per-academy
+     * allowed_countries / blocked_countries settings.
      */
     public function getSupportedCountries(): array
     {
-        return ['EG'];
+        return [];
     }
 
     /**

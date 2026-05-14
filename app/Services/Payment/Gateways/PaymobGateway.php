@@ -79,11 +79,13 @@ class PaymobGateway extends AbstractGateway implements SupportsRefunds, Supports
     }
 
     /**
-     * Baseline countries Paymob can process payments for.
+     * Baseline countries. Empty array = no baseline restriction;
+     * country eligibility is controlled entirely by per-academy
+     * allowed_countries / blocked_countries settings.
      */
     public function getSupportedCountries(): array
     {
-        return ['EG', 'SA', 'AE'];
+        return [];
     }
 
     /**

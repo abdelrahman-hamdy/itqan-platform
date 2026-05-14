@@ -63,6 +63,8 @@ class EditPaymentSettings extends EditRecord
                 && ! array_is_list($existing[$key])
             ) {
                 $existing[$key] = $this->mergePaymentSettings($existing[$key], $value);
+            } elseif (is_array($value) && array_is_list($value)) {
+                $existing[$key] = array_values(array_unique($value));
             } else {
                 $existing[$key] = $value;
             }
