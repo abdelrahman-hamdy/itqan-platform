@@ -156,7 +156,15 @@
                 </div>
             </div>
         @elseif($context === 'individual' && $circle->subscription)
-            <!-- Circle Start Date for Individual Circles -->
+            {{-- Circle Start Date for Individual Circles.
+                 Reads `first_cycle_started_at` (root of the renewal chain →
+                 cycle_number = 1's starts_at) so the date doesn't reset on
+                 every renewal. Renewal end-dates were dropped intentionally:
+                 the sidebar shows when the student joined this circle, not
+                 the rolling billing window. --}}
+            @php
+                $firstCycleStartedAt = $circle->subscription->first_cycle_started_at;
+            @endphp
             <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <div class="flex items-start gap-3">
                     <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
@@ -164,21 +172,13 @@
                     </div>
                     <div class="flex-1">
                         <span class="text-xs font-medium text-blue-600 uppercase tracking-wide">{{ __('components.circle.info_sidebar.circle_start_date') }}</span>
-                        <div class="space-y-1">
-                            <p class="font-bold text-blue-900 text-sm">
-                                @if($circle->subscription->starts_at)
-                                    {{ $circle->subscription->starts_at->locale(app()->getLocale())->translatedFormat('d F Y') }}
-                                @else
-                                    {{ __('components.circle.info_sidebar.unspecified') }}
-                                @endif
-                            </p>
-                            @if($circle->subscription->expires_at)
-                                <p class="text-xs text-blue-700 flex items-center">
-                                    <i class="ri-time-line ms-1 rtl:ms-1 ltr:me-1"></i>
-                                    {{ __('components.circle.info_sidebar.ends_on') }} {{ $circle->subscription->expires_at->locale(app()->getLocale())->translatedFormat('d F Y') }}
-                                </p>
+                        <p class="font-bold text-blue-900 text-sm">
+                            @if($firstCycleStartedAt)
+                                {{ $firstCycleStartedAt->locale(app()->getLocale())->translatedFormat('d F Y') }}
+                            @else
+                                {{ __('components.circle.info_sidebar.unspecified') }}
                             @endif
-                        </div>
+                        </p>
                     </div>
                 </div>
             </div>

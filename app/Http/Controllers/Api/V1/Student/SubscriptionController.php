@@ -720,6 +720,12 @@ class SubscriptionController extends Controller
             'status' => $subscription->status->value ?? $subscription->status,
             'status_label' => $subscription->status->label ?? $subscription->status,
             'start_date' => ($subscription->starts_at ?? $subscription->start_date)?->toDateString(),
+            // `first_cycle_started_at` is the original sign-up date — walks
+            // the renewal chain to its root and returns cycle_number=1's
+            // starts_at. The web circle info sidebar and the mobile circle
+            // info widget both read this instead of `start_date` so the
+            // "circle start date" doesn't reset on every renewal cycle.
+            'first_cycle_started_at' => $subscription->first_cycle_started_at?->toDateString(),
             'end_date' => ($subscription->ends_at ?? $subscription->end_date)?->toDateString(),
             'auto_renew' => $subscription->auto_renew ?? false,
             'price' => (float) ($subscription->final_price ?? $subscription->monthly_price ?? 0),

@@ -286,6 +286,54 @@ abstract class BaseSubscription extends Model
     }
 
     /**
+     * Walk back through `previous_subscription_id` to find the root of this
+     * subscription chain.
+     *
+     * Each subscription row represents one renewal in the chain; the very
+     * first row (where `previous_subscription_id IS NULL`) is the original
+     * sign-up. Loop is bounded by a hard cap to avoid infinite loops if
+     * data is ever corrupted (cycles shouldn't exist, but be defensive).
+     */
+    public function getFirstSubscriptionAttribute(): self
+    {
+        $current = $this;
+        $guard = 0;
+        while ($current->previous_subscription_id && $guard < 50) {
+            $prev = $current->previousSubscription()->first();
+            if (! $prev) {
+                break;
+            }
+            $current = $prev;
+            $guard++;
+        }
+
+        return $current;
+    }
+
+    /**
+     * Start date of the very first cycle ever opened for this subscription's
+     * subscribable — i.e. when the student originally signed up, ignoring any
+     * subsequent renewals/cycles.
+     *
+     * Resolution order:
+     *   1. Walk to the root of the renewal chain via [[getFirstSubscriptionAttribute]].
+     *   2. Return that root's `cycle_number = 1` cycle's `starts_at`.
+     *   3. Fall back to the root's `starts_at` column if no cycle rows exist
+     *      (older data predating the cycle-based model).
+     */
+    public function getFirstCycleStartedAtAttribute(): ?Carbon
+    {
+        $root = $this->first_subscription;
+
+        $firstCycle = $root->cycles()
+            ->where('cycle_number', 1)
+            ->orderBy('starts_at')
+            ->first();
+
+        return $firstCycle?->starts_at ?? $root->starts_at;
+    }
+
+    /**
      * Get the subscription that renewed this one (if any).
      */
     public function renewedBySubscription(): \Illuminate\Database\Eloquent\Relations\HasOne
