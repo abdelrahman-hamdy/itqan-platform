@@ -10,6 +10,22 @@
     // Status is automatically cast to SubscriptionStatus enum by the model
     $statusEnum = $subscription->status ?? SubscriptionStatus::PENDING;
 
+    // Phase A.7 / INV-J1: canonical view-state badge.
+    $viewState = ($subscription instanceof \App\Models\BaseSubscription)
+        ? app(\App\Services\Subscription\SubscriptionPresentation::class)->viewStateFor($subscription)
+        : null;
+    $viewStateBadgeClasses = [
+        'success' => 'bg-green-100 text-green-800',
+        'warning' => 'bg-yellow-100 text-yellow-800',
+        'danger' => 'bg-red-100 text-red-800',
+        'info' => 'bg-blue-100 text-blue-800',
+        'primary' => 'bg-indigo-100 text-indigo-800',
+        'gray' => 'bg-gray-100 text-gray-800',
+    ];
+    $viewStateBadgeClass = $viewState
+        ? ($viewStateBadgeClasses[$viewState->badgeColor()] ?? $viewStateBadgeClasses['gray'])
+        : null;
+
     $teacher = $subscription->quranTeacher;
     $teacherName = $teacher?->full_name ?? $subscription->quranTeacherUser?->name ?? __('components.cards.subscription.teacher_not_assigned');
 
@@ -66,11 +82,17 @@
             </div>
         </div>
 
-        <!-- Status Badge -->
+        <!-- Status Badge (Phase A.7 / INV-J1: ONE canonical view-state badge). -->
         <div class="flex flex-col items-end space-y-2">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusEnum->badgeClasses() }}">
-                {{ $statusEnum->label() }}
-            </span>
+            @if($viewState)
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $viewStateBadgeClass }}">
+                    {{ $viewState->label() }}
+                </span>
+            @else
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusEnum->badgeClasses() }}">
+                    {{ $statusEnum->label() }}
+                </span>
+            @endif
 
             @if($canAccess)
                 <i class="ri-arrow-left-s-line text-gray-400 {{ $compact ? 'text-sm' : '' }}"></i>

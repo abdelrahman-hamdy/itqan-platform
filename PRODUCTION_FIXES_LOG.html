@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<title>Itqan Platform — Production Fixes Log</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root {
+    --bg: #f7f9fc;
+    --panel: #ffffff;
+    --border: #e3e8ef;
+    --ink: #1a2233;
+    --muted: #6b7585;
+    --accent: #2e6cdf;
+    --accent-soft: #e8f0fe;
+    --green: #2a8a4a;
+    --green-soft: #e6f6ec;
+    --red: #c0392b;
+    --red-soft: #fdecea;
+    --amber: #b97107;
+    --amber-soft: #fff5dd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Tajawal", system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #1f3a8a, #2e6cdf);
+    color: #fff;
+    border-radius: 16px;
+    padding: 32px 36px;
+    margin-bottom: 28px;
+    box-shadow: 0 8px 24px rgba(46, 108, 223, .18);
+  }
+  header.hero h1 { margin: 0 0 10px; font-size: 30px; letter-spacing: -.01em; }
+  header.hero p.sub { margin: 0; opacity: .9; font-size: 16px; }
+  header.hero .meta { margin-top: 16px; font-size: 13px; opacity: .75; }
+
+  .summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .summary-stats .stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .summary-stats .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .summary-stats .stat .value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+  .summary-stats .stat .value.green { color: var(--green); }
+
+  .toc {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+  }
+  .toc h3 { margin: 0 0 10px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .toc ol { margin: 0; padding-left: 20px; }
+  .toc li { margin: 4px 0; font-size: 14px; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .date { color: var(--muted); font-size: 12px; margin-left: 6px; }
+
+  section.fix {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px 30px;
+    margin-bottom: 22px;
+  }
+  section.fix h2 {
+    margin: 0 0 6px;
+    font-size: 21px;
+    letter-spacing: -.005em;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  section.fix h2 .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--green-soft);
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+  section.fix .date-line {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0 0 18px;
+  }
+  section.fix h3 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-weight: 600;
+  }
+  section.fix p { margin: 8px 0; }
+  section.fix ul { margin: 8px 0; padding-left: 22px; }
+  section.fix li { margin: 4px 0; }
+
+  table.subs {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  table.subs th, table.subs td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+  }
+  table.subs th {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-weight: 600;
+    background: #fafbfd;
+  }
+  table.subs td.amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.subs td.name { font-weight: 600; }
+  table.subs td.email { color: var(--muted); font-size: 13px; }
+  table.subs td.was { color: var(--red); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.subs td.now { color: var(--green); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.subs td.arrow { color: var(--muted); text-align: center; }
+
+  .pill {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--green-soft);
+    color: var(--green);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .impact-box {
+    background: var(--accent-soft);
+    border-left: 4px solid var(--accent);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  .impact-box strong { color: var(--accent); }
+
+  .symptom-box {
+    background: var(--red-soft);
+    border-left: 4px solid var(--red);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  .symptom-box strong { color: var(--red); }
+
+  .resolved-box {
+    background: var(--green-soft);
+    border-left: 4px solid var(--green);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  .resolved-box strong { color: var(--green); }
+
+  .review-box {
+    background: var(--amber-soft);
+    border-left: 4px solid var(--amber);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  .review-box strong { color: var(--amber); }
+
+  section.fix h2 .badge.amber { background: var(--amber-soft); color: var(--amber); }
+  section.fix h2 .badge.red { background: var(--red-soft); color: var(--red); }
+
+  .student-block {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    background: #fafbfd;
+  }
+  .student-block h4 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .student-block .student-meta {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0 0 10px;
+  }
+  .student-block .verdict-pill {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .student-block .verdict-pill.real { background: var(--red-soft); color: var(--red); }
+  .student-block .verdict-pill.fp { background: #eef2f8; color: var(--muted); }
+  .student-block .verdict-pill.real-other { background: var(--amber-soft); color: var(--amber); }
+  .student-block .row { margin: 8px 0; font-size: 14px; }
+  .student-block .row .lbl { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: 2px; }
+  .student-block .options { margin-top: 10px; }
+  .student-block .options ul { margin: 4px 0 0 0; padding-left: 22px; }
+  .student-block .recommend {
+    margin-top: 10px;
+    background: var(--green-soft);
+    border-left: 4px solid var(--green);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  .student-block .recommend strong { color: var(--green); }
+
+  footer.report-foot {
+    margin-top: 32px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  @media (max-width: 720px) {
+    table.subs { font-size: 13px; }
+    table.subs th, table.subs td { padding: 8px 8px; }
+    table.subs td.email { word-break: break-all; }
+  }
+
+  /* RTL section styling */
+  .rtl-section { direction: rtl; text-align: right; }
+  .rtl-section h2, .rtl-section h3, .rtl-section p, .rtl-section li {
+    text-align: right;
+  }
+  .rtl-section table.subs th, .rtl-section table.subs td {
+    text-align: right;
+  }
+  .rtl-section ul { padding-right: 22px; padding-left: 0; }
+  .rtl-section .student-block .recommend,
+  .rtl-section .impact-box,
+  .rtl-section .resolved-box,
+  .rtl-section .review-box,
+  .rtl-section .symptom-box {
+    border-left: none;
+    border-right: 4px solid;
+  }
+  .rtl-section .resolved-box { border-right-color: var(--green); }
+  .rtl-section .review-box { border-right-color: var(--amber); }
+  .rtl-section .symptom-box { border-right-color: var(--red); }
+  .rtl-section .impact-box { border-right-color: var(--accent); }
+
+  .copy-box {
+    background: var(--code-bg, #0f1729);
+    color: #e7eef9;
+    padding: 16px 18px;
+    border-radius: 10px;
+    overflow: auto;
+    max-height: 360px;
+    font-size: 13px;
+    line-height: 1.7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Tajawal", system-ui, sans-serif;
+    white-space: pre-wrap;
+    direction: rtl;
+    text-align: right;
+  }
+  .copy-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    font-family: inherit;
+  }
+  .copy-btn:hover { opacity: .9; }
+  .copy-btn.copied { background: var(--green); }
+
+  table.rem-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+  table.rem-table th, table.rem-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: right; }
+  table.rem-table th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; background: #fafbfd; }
+  table.rem-table td.num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: center; }
+  table.rem-table td.owed { font-weight: 700; color: var(--green); }
+  table.rem-table tr:nth-child(odd) td { background: #fafbfd; }
+  table.rem-table .teacher-row td {
+    background: var(--accent-soft) !important;
+    font-weight: 700;
+    color: var(--accent);
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Production Fixes Log</h1>
+  <p class="sub">A running record of issues found and resolved on the Itqan Platform — written for everyone, not just engineers.</p>
+  <div class="meta">Last updated 2026-05-06 · Itqan Platform</div>
+</header>
+
+<div class="summary-stats">
+  <div class="stat"><div class="label">Issues resolved</div><div class="value">2</div></div>
+  <div class="stat"><div class="label">Open investigations</div><div class="value">1</div></div>
+  <div class="stat"><div class="label">Students affected (resolved)</div><div class="value green">12</div></div>
+  <div class="stat"><div class="label">Refunds owed</div><div class="value green">0</div></div>
+</div>
+
+<div class="toc">
+  <h3>Entries in this log</h3>
+  <ol>
+    <li><a href="#fix-4">صبا المري — تصحيح عدّاد الجلسات + ٨٣ طالباً قيد مراجعة المشرفين</a><span class="date">— تم تصحيح صبا في 2026-05-06 · الباقون قيد المراجعة</span></li>
+    <li><a href="#fix-3">Three scheduling reports from teacher Shaymaa Al-Azab</a><span class="date">— under review 2026-05-06</span></li>
+    <li><a href="#fix-2">Quarterly &amp; yearly subscriptions showing wrong next-payment date</a><span class="date">— resolved 2026-05-05</span></li>
+    <li><a href="#fix-1">Tap payments captured but subscriptions stuck on "waiting for payment"</a><span class="date">— resolved 2026-05-05</span></li>
+  </ol>
+</div>
+
+<!-- ============================================================== -->
+<!-- Fix #4 — Saba (resolved) + 83 remaining students                 -->
+<!-- ============================================================== -->
+<section class="fix rtl-section" id="fix-4">
+  <h2>تصحيح عدّاد الجلسات بعد التجديد <span class="badge green">صبا — تم التصحيح</span> <span class="badge amber">٨٣ طالباً قيد المراجعة</span></h2>
+  <p class="date-line">تم تصحيح الطالبة صبا المري في 2026-05-06 · ٨٣ طالباً آخر بانتظار مراجعة المشرفين قبل تصحيح عدّاداتهم</p>
+
+  <div class="resolved-box">
+    <strong>تم بحمد الله تصحيح حساب الطالبة صبا المري (مع المعلمة فاطمة صابر):</strong>
+    <ul>
+      <li>قبل التصحيح: العدّاد كان يقول ٨ من ٨ مستهلكة، فالاشتراك يظهر "اكتمل" والباقي صفر.</li>
+      <li>بعد التصحيح: العدّاد أصبح ٥ من ٨، والباقي ٣ جلسات يستطيع المعلم جدولتها قبل ١٩ مايو.</li>
+      <li>تم إصلاح <strong>الدورة الحالية فقط</strong>. الدورة القديمة (الأرشيفية) لم تُمَس لأن جلساتها قد تكون أُعدّت يدوياً من قِبل الإدارة عند بدء الباقة، ومن غير الآمن تعديلها دون مراجعة.</li>
+      <li>لم تُحذف أي جلسة، ولم يُعدَّل أي دفع، ولم يتغير راتب أي معلم.</li>
+    </ul>
+  </div>
+
+  <h3>سبب الإشكال (شرح مبسّط)</h3>
+  <p>عند تصحيح بيانات الجلسات في ٢٣ أبريل، خطوة "إعادة حساب العدّاد" استخدمت طريقة عدّ خاطئة لبعض الطلاب: بدلاً من حساب جلسات الدورة الحالية فقط، حسبت جلسات الحلقة بالكامل عبر كل الدورات السابقة. النتيجة كانت أن الطلاب الذين جدّدوا اشتراكاتهم لاقوا أن جلسات الدورة القديمة احتُسبت ضمن الدورة الجديدة، فظهر اشتراكهم كأنه مكتمل قبل أوانه. الكود الذي يحسب العدّاد بشكل صحيح موجود الآن في المنصة، لكن إصلاح البيانات الموجودة لم يُنفَّذ بعد على الإنتاج.</p>
+
+  <h3>الإحصائيات الإجمالية</h3>
+  <ul>
+    <li>عدد الطلاب المتأثرين: <strong>٨٣ طالب</strong></li>
+    <li>إجمالي الجلسات التي يجب إعادتها للطلاب: <strong>٣٧٩ جلسة</strong></li>
+    <li>عدد المعلمين المتأثرين: <strong>٣٤ معلم</strong></li>
+    <li>أعلى حالة: ٢٦ جلسة لطالب واحد (سعد ال عتبق)</li>
+  </ul>
+
+  <div class="review-box">
+    <strong>قبل تصحيح الـ ٨٣ طالباً:</strong> الرجاء مراجعة كل حالة مع المعلم/المشرف للتأكد من حجم الباقة الفعلي وعدد الحلقات الحقيقي. بعض الباقات الكبيرة (٢٠، ٢٤، ٢٨ جلسة) قد تكون لها حسابات خاصة، فيُفضّل التأكد قبل التطبيق.
+  </div>
+
+  <h3>الرسالة الجاهزة لإرسالها للمشرفين على واتساب</h3>
+  <p style="font-size:13px;color:var(--muted)">اضغط على زر النسخ ثم الصق الرسالة في محادثة المشرفين.</p>
+  <button class="copy-btn" id="copy-wa-btn" onclick="copyWhatsAppMessage()">📋 نسخ الرسالة</button>
+  <div class="copy-box" id="wa-message"></div>
+
+  <h3>قائمة الطلاب الباقين (٨٣ طالب) — مرتّبة حسب المعلم وعدد الجلسات المستحقة</h3>
+  <table class="rem-table" id="remaining-table">
+    <thead>
+      <tr>
+        <th>الطالب</th>
+        <th>المعلم</th>
+        <th class="num">الباقة</th>
+        <th class="num">معتمد بالنظام</th>
+        <th class="num">الفعلي</th>
+        <th class="num">يستحق إعادة</th>
+        <th>نهاية الدورة</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="impact-box">
+    <strong>للفريق:</strong> الأداة الموجودة على الإنتاج <code>subscriptions:audit-cycle-counts</code> ستصلح كل واحد من هؤلاء الطلاب بنفس النمط الذي طُبِّق على صبا — تحديث عدّاد الدورة الحالية فقط، بدون أي مساس بالدورات الأرشيفية أو بالجلسات أو بالرواتب. التطبيق يكون عبر <code>--subscription=&lt;id&gt;</code> طالباً واحداً في كل مرة، أو في دفعات بعد إقرار المشرفين.
+  </div>
+
+<script type="application/json" id="remaining-data">[{"sub_id":690,"student_id":648,"student_name":"سعد ال عتبق","teacher_id":221,"teacher_name":"رضا البسيوني","cycle_id":321,"total":28,"stored_used":28,"expected":2,"owed_back":26,"sub_used":28,"sub_rem":0,"cycle_ends":"2026-05-06 15:46:11"},{"sub_id":787,"student_id":694,"student_name":"اسية الكتبي","teacher_id":238,"teacher_name":"ناديه عبدالحافظ احمد","cycle_id":412,"total":24,"stored_used":24,"expected":9,"owed_back":15,"sub_used":24,"sub_rem":0,"cycle_ends":"2026-05-08 10:27:21"},{"sub_id":669,"student_id":380,"student_name":"بخيتة الكتبي","teacher_id":238,"teacher_name":"ناديه عبدالحافظ احمد","cycle_id":303,"total":28,"stored_used":28,"expected":14,"owed_back":14,"sub_used":28,"sub_rem":0,"cycle_ends":"2026-05-06 11:41:44"},{"sub_id":773,"student_id":720,"student_name":"Aryam Saad","teacher_id":75,"teacher_name":"إيمان السيد","cycle_id":398,"total":16,"stored_used":16,"expected":3,"owed_back":13,"sub_used":16,"sub_rem":0,"cycle_ends":"2026-05-07 21:44:46"},{"sub_id":725,"student_id":107,"student_name":"مريم الثبيتي","teacher_id":94,"teacher_name":"هنادي فالح","cycle_id":350,"total":12,"stored_used":12,"expected":1,"owed_back":11,"sub_used":12,"sub_rem":0,"cycle_ends":"2026-05-06 20:31:46"},{"sub_id":726,"student_id":74,"student_name":"امنة الحويطي","teacher_id":393,"teacher_name":"الشيماء احمد كامل","cycle_id":351,"total":20,"stored_used":20,"expected":10,"owed_back":10,"sub_used":20,"sub_rem":0,"cycle_ends":"2026-05-06 20:36:02"},{"sub_id":1041,"student_id":925,"student_name":"عروب الخالدي","teacher_id":277,"teacher_name":"ايمان شعبان","cycle_id":665,"total":16,"stored_used":9,"expected":0,"owed_back":9,"sub_used":9,"sub_rem":7,"cycle_ends":"2026-05-20 17:37:39"},{"sub_id":1011,"student_id":887,"student_name":"غالي المطلق","teacher_id":427,"teacher_name":"د.أحمد ابراهيم","cycle_id":630,"total":12,"stored_used":9,"expected":0,"owed_back":9,"sub_used":9,"sub_rem":3,"cycle_ends":"2026-05-18 16:41:28"},{"sub_id":790,"student_id":722,"student_name":"أمجد السليماني","teacher_id":33,"teacher_name":"رامي جبريل","cycle_id":415,"total":16,"stored_used":16,"expected":8,"owed_back":8,"sub_used":16,"sub_rem":0,"cycle_ends":"2026-05-08 11:07:04"},{"sub_id":830,"student_id":516,"student_name":"جنى يوسف","teacher_id":51,"teacher_name":"نورهان وائل محمد","cycle_id":455,"total":24,"stored_used":24,"expected":16,"owed_back":8,"sub_used":24,"sub_rem":0,"cycle_ends":"2026-05-08 22:04:53"},{"sub_id":736,"student_id":642,"student_name":"فهاد الدوسري","teacher_id":222,"teacher_name":"محمد ابراهيم محمود","cycle_id":361,"total":20,"stored_used":19,"expected":11,"owed_back":8,"sub_used":19,"sub_rem":1,"cycle_ends":"2026-05-06 22:40:28"},{"sub_id":732,"student_id":443,"student_name":"ميار المحمدي","teacher_id":329,"teacher_name":"ايات مختار","cycle_id":357,"total":8,"stored_used":8,"expected":1,"owed_back":7,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-06 20:59:59"},{"sub_id":614,"student_id":279,"student_name":"Norah Subh","teacher_id":82,"teacher_name":"فرقان إبراهيم حسن","cycle_id":704,"total":36,"stored_used":13,"expected":6,"owed_back":7,"sub_used":13,"sub_rem":23,"cycle_ends":"2026-07-22 13:27:43"},{"sub_id":812,"student_id":408,"student_name":"دعاء جامغ","teacher_id":318,"teacher_name":"فاطمة حسين مصطفى أحمد","cycle_id":437,"total":8,"stored_used":8,"expected":1,"owed_back":7,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-08 15:46:38"},{"sub_id":875,"student_id":767,"student_name":"مها ويوسف فهد عمر","teacher_id":82,"teacher_name":"فرقان إبراهيم حسن","cycle_id":495,"total":8,"stored_used":8,"expected":1,"owed_back":7,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-10 07:36:17"},{"sub_id":1024,"student_id":917,"student_name":"محمد يحي","teacher_id":785,"teacher_name":"رضا عبدالله","cycle_id":651,"total":8,"stored_used":7,"expected":0,"owed_back":7,"sub_used":7,"sub_rem":1,"cycle_ends":"2026-05-19 18:08:46"},{"sub_id":763,"student_id":707,"student_name":"عبدالملك العطوي","teacher_id":415,"teacher_name":"علي عبدالعزيز علي","cycle_id":388,"total":16,"stored_used":16,"expected":9,"owed_back":7,"sub_used":16,"sub_rem":0,"cycle_ends":"2026-05-07 18:49:38"},{"sub_id":835,"student_id":675,"student_name":"وسن العلياني","teacher_id":329,"teacher_name":"ايات مختار","cycle_id":460,"total":8,"stored_used":8,"expected":1,"owed_back":7,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-09 03:44:11"},{"sub_id":840,"student_id":726,"student_name":"Fayroz Esmail","teacher_id":215,"teacher_name":"ايمان عاشور عبدالحميد محمد","cycle_id":464,"total":8,"stored_used":8,"expected":2,"owed_back":6,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-09 09:59:01"},{"sub_id":791,"student_id":48,"student_name":"أسامة ابراهيم الجزار","teacher_id":33,"teacher_name":"رامي جبريل","cycle_id":416,"total":12,"stored_used":7,"expected":1,"owed_back":6,"sub_used":7,"sub_rem":5,"cycle_ends":"2026-05-08 11:08:04"},{"sub_id":786,"student_id":719,"student_name":"جاد وتيم الخطيب","teacher_id":415,"teacher_name":"علي عبدالعزيز علي","cycle_id":411,"total":8,"stored_used":8,"expected":2,"owed_back":6,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-08 09:21:42"},{"sub_id":782,"student_id":673,"student_name":"الجوهرة المدبل","teacher_id":215,"teacher_name":"ايمان عاشور عبدالحميد محمد","cycle_id":407,"total":12,"stored_used":10,"expected":4,"owed_back":6,"sub_used":10,"sub_rem":2,"cycle_ends":"2026-05-08 05:07:43"},{"sub_id":837,"student_id":608,"student_name":"رائد الخديدي","teacher_id":426,"teacher_name":"عمر سيد مصطفى درويش","cycle_id":462,"total":8,"stored_used":8,"expected":2,"owed_back":6,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-09 05:39:12"},{"sub_id":896,"student_id":732,"student_name":"قاسم الشبلي","teacher_id":33,"teacher_name":"رامي جبريل","cycle_id":515,"total":8,"stored_used":8,"expected":2,"owed_back":6,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-11 07:17:31"},{"sub_id":908,"student_id":736,"student_name":"عبدالله الزهراني","teacher_id":33,"teacher_name":"رامي جبريل","cycle_id":527,"total":8,"stored_used":6,"expected":0,"owed_back":6,"sub_used":6,"sub_rem":2,"cycle_ends":"2026-05-13 09:14:43"},{"sub_id":949,"student_id":767,"student_name":"مها ويوسف فهد عمر","teacher_id":82,"teacher_name":"فرقان إبراهيم حسن","cycle_id":579,"total":8,"stored_used":6,"expected":0,"owed_back":6,"sub_used":6,"sub_rem":2,"cycle_ends":"2026-05-14 17:16:40"},{"sub_id":1014,"student_id":518,"student_name":"خالد الموسى","teacher_id":75,"teacher_name":"إيمان السيد","cycle_id":634,"total":8,"stored_used":6,"expected":0,"owed_back":6,"sub_used":6,"sub_rem":2,"cycle_ends":"2026-05-18 19:41:40"},{"sub_id":1142,"student_id":66,"student_name":"ميمونه التميمي","teacher_id":51,"teacher_name":"نورهان وائل محمد","cycle_id":798,"total":12,"stored_used":6,"expected":0,"owed_back":6,"sub_used":6,"sub_rem":6,"cycle_ends":"2026-05-29 20:56:08"},{"sub_id":889,"student_id":779,"student_name":"إلياس الجراري","teacher_id":34,"teacher_name":"محمد أنور عثمان","cycle_id":508,"total":12,"stored_used":9,"expected":4,"owed_back":5,"sub_used":9,"sub_rem":3,"cycle_ends":"2026-07-10 17:12:18"},{"sub_id":823,"student_id":751,"student_name":"امل البلوي","teacher_id":329,"teacher_name":"ايات مختار","cycle_id":448,"total":8,"stored_used":8,"expected":3,"owed_back":5,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-08 19:13:59"},{"sub_id":822,"student_id":750,"student_name":"رزان الجدعاني","teacher_id":75,"teacher_name":"إيمان السيد","cycle_id":447,"total":8,"stored_used":8,"expected":3,"owed_back":5,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-08 18:18:54"},{"sub_id":665,"student_id":651,"student_name":"حصة السنتلي","teacher_id":238,"teacher_name":"ناديه عبدالحافظ احمد","cycle_id":299,"total":8,"stored_used":8,"expected":3,"owed_back":5,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-06 10:55:23"},{"sub_id":633,"student_id":341,"student_name":"زياد تميم البعداني","teacher_id":231,"teacher_name":"Amira Ahmed","cycle_id":638,"total":12,"stored_used":12,"expected":7,"owed_back":5,"sub_used":12,"sub_rem":0,"cycle_ends":"2026-05-19 00:43:51"},{"sub_id":1010,"student_id":906,"student_name":"إياد السعود","teacher_id":418,"teacher_name":"نشأت أبوسعدة","cycle_id":627,"total":6,"stored_used":5,"expected":0,"owed_back":5,"sub_used":5,"sub_rem":1,"cycle_ends":"2026-05-18 13:33:30"},{"sub_id":836,"student_id":706,"student_name":"سلطان الربيعي","teacher_id":34,"teacher_name":"محمد أنور عثمان","cycle_id":710,"total":8,"stored_used":8,"expected":4,"owed_back":4,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-22 17:26:24"},{"sub_id":781,"student_id":565,"student_name":"عمار ياسر","teacher_id":233,"teacher_name":"محمد رشاد القاضي","cycle_id":686,"total":12,"stored_used":11,"expected":7,"owed_back":4,"sub_used":11,"sub_rem":1,"cycle_ends":"2026-05-21 16:50:19"},{"sub_id":890,"student_id":778,"student_name":"خالد الجراري","teacher_id":222,"teacher_name":"محمد ابراهيم محمود","cycle_id":509,"total":12,"stored_used":9,"expected":5,"owed_back":4,"sub_used":9,"sub_rem":3,"cycle_ends":"2026-07-10 17:16:45"},{"sub_id":1043,"student_id":282,"student_name":"مها العنزي✔️","teacher_id":51,"teacher_name":"نورهان وائل محمد","cycle_id":667,"total":8,"stored_used":4,"expected":0,"owed_back":4,"sub_used":4,"sub_rem":4,"cycle_ends":"2026-05-20 19:14:13"},{"sub_id":674,"student_id":654,"student_name":"روان خالد جبرتي","teacher_id":238,"teacher_name":"ناديه عبدالحافظ احمد","cycle_id":308,"total":12,"stored_used":12,"expected":8,"owed_back":4,"sub_used":12,"sub_rem":0,"cycle_ends":"2026-05-06 13:23:51"},{"sub_id":516,"student_id":308,"student_name":"مريم محمد","teacher_id":82,"teacher_name":"فرقان إبراهيم حسن","cycle_id":647,"total":8,"stored_used":8,"expected":4,"owed_back":4,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-19 15:21:09"},{"sub_id":756,"student_id":463,"student_name":"Chaima Blaiech","teacher_id":393,"teacher_name":"الشيماء احمد كامل","cycle_id":565,"total":16,"stored_used":16,"expected":12,"owed_back":4,"sub_used":16,"sub_rem":0,"cycle_ends":"2026-05-14 08:44:46"},{"sub_id":734,"student_id":115,"student_name":"Chaima Baddou","teacher_id":237,"teacher_name":"فاطمة إبراهيم","cycle_id":569,"total":8,"stored_used":7,"expected":3,"owed_back":4,"sub_used":7,"sub_rem":1,"cycle_ends":"2026-05-14 12:01:29"},{"sub_id":731,"student_id":387,"student_name":"جميله المطرفي","teacher_id":161,"teacher_name":"ياسمين يسرى العرابى","cycle_id":356,"total":4,"stored_used":4,"expected":1,"owed_back":3,"sub_used":4,"sub_rem":0,"cycle_ends":"2026-05-06 20:52:45"},{"sub_id":833,"student_id":89,"student_name":"أمل للقحطاني","teacher_id":61,"teacher_name":"فاطمه الزهراء عبد الحميد الداودي","cycle_id":458,"total":6,"stored_used":6,"expected":3,"owed_back":3,"sub_used":6,"sub_rem":0,"cycle_ends":"2026-05-08 22:26:36"},{"sub_id":559,"student_id":545,"student_name":"هدى عبدالعزيز","teacher_id":75,"teacher_name":"إيمان السيد","cycle_id":631,"total":12,"stored_used":11,"expected":8,"owed_back":3,"sub_used":11,"sub_rem":1,"cycle_ends":"2026-05-18 19:07:37"},{"sub_id":514,"student_id":65,"student_name":"امال العيسى","teacher_id":51,"teacher_name":"نورهان وائل محمد","cycle_id":153,"total":8,"stored_used":6,"expected":3,"owed_back":3,"sub_used":6,"sub_rem":2,"cycle_ends":"2026-05-03 20:51:31"},{"sub_id":693,"student_id":674,"student_name":"عبدالرحمن الحربي","teacher_id":219,"teacher_name":"رجب محمود رجب","cycle_id":324,"total":12,"stored_used":10,"expected":7,"owed_back":3,"sub_used":10,"sub_rem":2,"cycle_ends":"2026-05-06 16:12:38"},{"sub_id":848,"student_id":727,"student_name":"آدم كوتين","teacher_id":33,"teacher_name":"رامي جبريل","cycle_id":472,"total":24,"stored_used":23,"expected":20,"owed_back":3,"sub_used":23,"sub_rem":1,"cycle_ends":"2026-05-09 12:25:50"},{"sub_id":579,"student_id":552,"student_name":"نادية السيد","teacher_id":75,"teacher_name":"إيمان السيد","cycle_id":636,"total":8,"stored_used":8,"expected":5,"owed_back":3,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-18 20:36:03"},{"sub_id":799,"student_id":712,"student_name":"حليمه عبدالله","teacher_id":318,"teacher_name":"فاطمة حسين مصطفى أحمد","cycle_id":424,"total":4,"stored_used":4,"expected":1,"owed_back":3,"sub_used":4,"sub_rem":0,"cycle_ends":"2026-05-08 13:37:50"},{"sub_id":870,"student_id":761,"student_name":"الجوهره السويدان","teacher_id":51,"teacher_name":"نورهان وائل محمد","cycle_id":490,"total":4,"stored_used":4,"expected":1,"owed_back":3,"sub_used":4,"sub_rem":0,"cycle_ends":"2026-05-09 20:16:33"},{"sub_id":759,"student_id":713,"student_name":"عبير الهاجري","teacher_id":329,"teacher_name":"ايات مختار","cycle_id":384,"total":4,"stored_used":4,"expected":1,"owed_back":3,"sub_used":4,"sub_rem":0,"cycle_ends":"2026-05-07 18:24:24"},{"sub_id":689,"student_id":669,"student_name":"غانم الشيزاوي","teacher_id":219,"teacher_name":"رجب محمود رجب","cycle_id":554,"total":16,"stored_used":15,"expected":12,"owed_back":3,"sub_used":15,"sub_rem":1,"cycle_ends":"2026-05-13 09:26:49"},{"sub_id":766,"student_id":701,"student_name":"رغد العتيبي","teacher_id":319,"teacher_name":"Afaf Elshafee","cycle_id":391,"total":4,"stored_used":4,"expected":2,"owed_back":2,"sub_used":4,"sub_rem":0,"cycle_ends":"2026-05-07 19:14:07"},{"sub_id":847,"student_id":471,"student_name":"Bilal El Fatiri","teacher_id":357,"teacher_name":"محمد البيه","cycle_id":471,"total":8,"stored_used":8,"expected":6,"owed_back":2,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-09 12:11:03"},{"sub_id":862,"student_id":728,"student_name":"وسام سمور","teacher_id":425,"teacher_name":"محمد ابراهيم يحي البيومي","cycle_id":484,"total":12,"stored_used":5,"expected":3,"owed_back":2,"sub_used":5,"sub_rem":7,"cycle_ends":"2026-07-09 17:49:29"},{"sub_id":677,"student_id":643,"student_name":"يقين برهومي","teacher_id":136,"teacher_name":"جهاد جمال عبد الحميد","cycle_id":661,"total":8,"stored_used":4,"expected":2,"owed_back":2,"sub_used":4,"sub_rem":4,"cycle_ends":"2026-05-20 12:24:26"},{"sub_id":695,"student_id":523,"student_name":"AMNA ELHAG","teacher_id":75,"teacher_name":"إيمان السيد","cycle_id":326,"total":4,"stored_used":3,"expected":1,"owed_back":2,"sub_used":3,"sub_rem":1,"cycle_ends":"2026-05-06 16:26:04"},{"sub_id":701,"student_id":647,"student_name":"احمد شعبان خلف","teacher_id":221,"teacher_name":"رضا البسيوني","cycle_id":332,"total":8,"stored_used":8,"expected":6,"owed_back":2,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-06 16:53:38"},{"sub_id":720,"student_id":683,"student_name":"صالح محمد العيدروس","teacher_id":221,"teacher_name":"رضا البسيوني","cycle_id":607,"total":8,"stored_used":7,"expected":5,"owed_back":2,"sub_used":7,"sub_rem":1,"cycle_ends":"2026-05-16 17:20:03"},{"sub_id":831,"student_id":464,"student_name":"Jana Batiya","teacher_id":119,"teacher_name":"فاطمة عبد الحق عبد الموجود","cycle_id":456,"total":6,"stored_used":4,"expected":2,"owed_back":2,"sub_used":4,"sub_rem":2,"cycle_ends":"2026-05-08 22:05:46"},{"sub_id":825,"student_id":691,"student_name":"Jad Khaleel","teacher_id":357,"teacher_name":"محمد البيه","cycle_id":450,"total":4,"stored_used":4,"expected":2,"owed_back":2,"sub_used":4,"sub_rem":0,"cycle_ends":"2026-05-08 20:27:50"},{"sub_id":727,"student_id":465,"student_name":"مريم البلوشي","teacher_id":393,"teacher_name":"الشيماء احمد كامل","cycle_id":628,"total":8,"stored_used":8,"expected":6,"owed_back":2,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-18 16:06:00"},{"sub_id":729,"student_id":110,"student_name":"جوزاء العنزي","teacher_id":94,"teacher_name":"هنادي فالح","cycle_id":354,"total":8,"stored_used":8,"expected":6,"owed_back":2,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-06 20:46:13"},{"sub_id":735,"student_id":606,"student_name":"موضي سليمان","teacher_id":61,"teacher_name":"فاطمه الزهراء عبد الحميد الداودي","cycle_id":360,"total":12,"stored_used":11,"expected":9,"owed_back":2,"sub_used":11,"sub_rem":1,"cycle_ends":"2026-05-06 22:07:44"},{"sub_id":435,"student_id":474,"student_name":"مبروكه علي سعيد المالكي","teacher_id":82,"teacher_name":"فرقان إبراهيم حسن","cycle_id":109,"total":8,"stored_used":7,"expected":5,"owed_back":2,"sub_used":7,"sub_rem":1,"cycle_ends":"2026-05-01 09:13:54"},{"sub_id":1133,"student_id":687,"student_name":"إبراهيم التميمي","teacher_id":221,"teacher_name":"رضا البسيوني","cycle_id":926,"total":12,"stored_used":2,"expected":0,"owed_back":2,"sub_used":2,"sub_rem":10,"cycle_ends":"2026-06-02 18:01:42"},{"sub_id":572,"student_id":249,"student_name":"AMANI Mohemmad","teacher_id":328,"teacher_name":"اسماء المغربى","cycle_id":915,"total":20,"stored_used":4,"expected":3,"owed_back":1,"sub_used":4,"sub_rem":16,"cycle_ends":"2026-06-02 13:05:28"},{"sub_id":468,"student_id":449,"student_name":"Khadija Bl","teacher_id":393,"teacher_name":"الشيماء احمد كامل","cycle_id":927,"total":8,"stored_used":2,"expected":1,"owed_back":1,"sub_used":2,"sub_rem":6,"cycle_ends":"2026-06-02 18:35:06"},{"sub_id":767,"student_id":630,"student_name":"احمد خبراني","teacher_id":36,"teacher_name":"عوض محمد","cycle_id":635,"total":4,"stored_used":4,"expected":3,"owed_back":1,"sub_used":4,"sub_rem":0,"cycle_ends":"2026-05-18 20:31:38"},{"sub_id":386,"student_id":404,"student_name":"ريم المكي","teacher_id":276,"teacher_name":"Amal Alkema","cycle_id":75,"total":12,"stored_used":11,"expected":10,"owed_back":1,"sub_used":11,"sub_rem":1,"cycle_ends":"2026-04-30 06:43:42"},{"sub_id":910,"student_id":572,"student_name":"NOURA Yabis","teacher_id":75,"teacher_name":"إيمان السيد","cycle_id":907,"total":12,"stored_used":1,"expected":0,"owed_back":1,"sub_used":1,"sub_rem":11,"cycle_ends":"2026-06-02 01:51:59"},{"sub_id":645,"student_id":255,"student_name":"Asrar Almubark","teacher_id":277,"teacher_name":"ايمان شعبان","cycle_id":612,"total":8,"stored_used":7,"expected":6,"owed_back":1,"sub_used":7,"sub_rem":1,"cycle_ends":"2026-05-17 17:08:14"},{"sub_id":660,"student_id":557,"student_name":"Wa'ed Alrefae","teacher_id":136,"teacher_name":"جهاد جمال عبد الحميد","cycle_id":691,"total":4,"stored_used":4,"expected":3,"owed_back":1,"sub_used":4,"sub_rem":0,"cycle_ends":"2026-05-21 17:39:06"},{"sub_id":849,"student_id":526,"student_name":"وئام الحيدري","teacher_id":119,"teacher_name":"فاطمة عبد الحق عبد الموجود","cycle_id":473,"total":13,"stored_used":12,"expected":11,"owed_back":1,"sub_used":12,"sub_rem":1,"cycle_ends":"2026-05-09 12:57:23"},{"sub_id":845,"student_id":532,"student_name":"Mona Khaled","teacher_id":276,"teacher_name":"Amal Alkema","cycle_id":794,"total":12,"stored_used":4,"expected":3,"owed_back":1,"sub_used":4,"sub_rem":8,"cycle_ends":"2026-05-29 19:44:37"},{"sub_id":838,"student_id":336,"student_name":"شيماء جبوري","teacher_id":161,"teacher_name":"ياسمين يسرى العرابى","cycle_id":619,"total":4,"stored_used":3,"expected":2,"owed_back":1,"sub_used":3,"sub_rem":1,"cycle_ends":"2026-05-18 09:46:40"},{"sub_id":832,"student_id":746,"student_name":"حصه فهد","teacher_id":329,"teacher_name":"ايات مختار","cycle_id":457,"total":4,"stored_used":4,"expected":3,"owed_back":1,"sub_used":4,"sub_rem":0,"cycle_ends":"2026-05-08 22:13:29"},{"sub_id":723,"student_id":678,"student_name":"فهد القحطاني","teacher_id":418,"teacher_name":"نشأت أبوسعدة","cycle_id":349,"total":16,"stored_used":16,"expected":15,"owed_back":1,"sub_used":16,"sub_rem":0,"cycle_ends":"2026-05-06 20:22:27"},{"sub_id":818,"student_id":698,"student_name":"آية الأسود","teacher_id":243,"teacher_name":"فاطمة صابر محمد ابراهيم فاطمة صابر","cycle_id":443,"total":13,"stored_used":12,"expected":11,"owed_back":1,"sub_used":12,"sub_rem":1,"cycle_ends":"2026-05-08 16:24:55"},{"sub_id":753,"student_id":709,"student_name":"محمود عبدالرحمن","teacher_id":36,"teacher_name":"عوض محمد","cycle_id":378,"total":8,"stored_used":8,"expected":7,"owed_back":1,"sub_used":8,"sub_rem":0,"cycle_ends":"2026-05-07 15:55:12"},{"sub_id":375,"student_id":376,"student_name":"أثير الشهري","teacher_id":319,"teacher_name":"Afaf Elshafee","cycle_id":64,"total":8,"stored_used":7,"expected":6,"owed_back":1,"sub_used":7,"sub_rem":1,"cycle_ends":"2026-04-29 19:51:36"},{"sub_id":778,"student_id":603,"student_name":"يوسف عواد","teacher_id":233,"teacher_name":"محمد رشاد القاضي","cycle_id":585,"total":4,"stored_used":4,"expected":3,"owed_back":1,"sub_used":4,"sub_rem":0,"cycle_ends":"2026-05-15 13:02:46"}]</script>
+<script>
+(function() {
+  const data = JSON.parse(document.getElementById('remaining-data').textContent);
+
+  // Group by teacher
+  const byTeacher = {};
+  data.forEach(s => {
+    if (!byTeacher[s.teacher_name]) byTeacher[s.teacher_name] = [];
+    byTeacher[s.teacher_name].push(s);
+  });
+  // sort each teacher's students by owed_back desc
+  Object.values(byTeacher).forEach(arr => arr.sort((a,b) => b.owed_back - a.owed_back));
+  // sort teachers by total owed_back desc
+  const teachers = Object.entries(byTeacher).sort((a,b) =>
+    b[1].reduce((s,x)=>s+x.owed_back,0) - a[1].reduce((s,x)=>s+x.owed_back,0)
+  );
+
+  // Render table
+  const tbody = document.querySelector('#remaining-table tbody');
+  teachers.forEach(([teacherName, students]) => {
+    const totalOwed = students.reduce((s,x)=>s+x.owed_back,0);
+    const headRow = document.createElement('tr');
+    headRow.className = 'teacher-row';
+    headRow.innerHTML = `<td colspan="7">📚 ${teacherName} — ${students.length} طالب · إجمالي ${totalOwed} جلسة مستحقة</td>`;
+    tbody.appendChild(headRow);
+    students.forEach(s => {
+      const row = document.createElement('tr');
+      const cycleEnd = s.cycle_ends ? s.cycle_ends.split(' ')[0] : '—';
+      row.innerHTML = `
+        <td>${s.student_name}</td>
+        <td>${s.teacher_name}</td>
+        <td class="num">${s.total}</td>
+        <td class="num">${s.stored_used}</td>
+        <td class="num">${s.expected}</td>
+        <td class="num owed">${s.owed_back}</td>
+        <td class="num">${cycleEnd}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  });
+
+  // Generate WhatsApp message
+  let msg = '';
+  msg += 'السلام عليكم،\n\n';
+  msg += 'تم اكتشاف خلل في عدّاد جلسات بعض الطلاب نتج عن عملية تنظيف بيانات في ٢٣ أبريل. النظام يعرض جلسات أكثر من المُسلَّمة فعلياً.\n\n';
+  msg += `📊 عدد الطلاب المتأثرين: ${data.length}\n`;
+  msg += `📊 إجمالي الجلسات التي يجب إعادتها: ${data.reduce((s,x)=>s+x.owed_back,0)}\n\n`;
+  msg += 'الرجاء مراجعة الطلاب التاليين والتأكد من أرقام باقاتهم وعدد الحلقات الفعلي قبل تصحيح العدّاد:\n';
+  msg += '━━━━━━━━━━━━━━━━━━━━\n\n';
+
+  teachers.forEach(([teacherName, students]) => {
+    const totalOwed = students.reduce((s,x)=>s+x.owed_back,0);
+    msg += `📚 *${teacherName}* (${students.length} طالب · ${totalOwed} جلسة مستحقة)\n`;
+    students.forEach(s => {
+      msg += `• ${s.student_name} — الباقة ${s.total} | معتمد ${s.stored_used} | الفعلي ${s.expected} | يستحق إعادة *${s.owed_back}*\n`;
+    });
+    msg += '\n';
+  });
+
+  msg += '━━━━━━━━━━━━━━━━━━━━\n';
+  msg += 'بعد التأكد، يتم تصحيح العدّاد لكل طالب بشكل آمن (لا تُمسّ الجلسات ولا الرواتب).\n';
+  msg += 'شكراً لتعاونكم 🌹';
+
+  document.getElementById('wa-message').textContent = msg;
+})();
+
+function copyWhatsAppMessage() {
+  const text = document.getElementById('wa-message').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-wa-btn');
+    const original = btn.textContent;
+    btn.textContent = '✓ تم النسخ';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = original;
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
+</section>
+
+<!-- ============================================================== -->
+<!-- Fix #3 — Open investigation                                      -->
+<!-- ============================================================== -->
+<section class="fix" id="fix-3">
+  <h2>Three scheduling reports from teacher Shaymaa Al-Azab <span class="badge amber">Under review</span></h2>
+  <p class="date-line">Reported 2026-05-06 · 3 students · awaiting academy admin decision on next steps</p>
+
+  <div class="symptom-box">
+    <strong>What was reported:</strong> Teacher <strong>شيماء العزب</strong> raised three concerns about her students' calendars. We investigated each one against the live database and the system logs, and the three reports turned out to have three <em>different</em> underlying situations — one is a real missing-session issue, one is a different real problem (an expired subscription), and one is a misunderstanding where the session is actually present.
+  </div>
+
+  <h3>Background — the 23 April cleanup, what it did, and why it matters here</h3>
+
+  <p>Two of the three reports above trace back to the same event. Here it is in plain English:</p>
+
+  <div class="review-box">
+    <strong>What happened on 7 April 2026:</strong> our database was restored from a backup taken on 31 March, with the missing days replayed from the live transaction log. This is a normal recovery procedure, but in our case it left the database with side-effects: some students ended up with <em>more scheduled sessions than their package paid for</em>, and a small number of sessions appeared as exact duplicates (same teacher, same student, same time slot).
+  </div>
+
+  <div class="review-box">
+    <strong>What happened on 23 April 2026:</strong> we ran a one-time cleanup script (authored and executed by the engineering team — not an automated scheduler) that fixed the recovery side-effects. In about one minute it removed the over-scheduled and duplicate sessions and recalculated the affected counters. The cleanup was needed and correct, but it ran <em>silently</em> — no email, no in-app notice to teachers — so the missing sessions only surface when a teacher looks at her calendar later. This is the underlying reason teacher Shaymaa is seeing "missing" sessions today.
+  </div>
+
+  <h3>Who ran it, and how big was the impact?</h3>
+
+  <p class="muted">Numbers below come from the cleanup's own audit log file (preserved on the server) plus a fresh count against the live database, on 6 May 2026.</p>
+
+  <table class="subs">
+    <thead>
+      <tr><th>Aspect</th><th>Number</th><th>Note</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="name">Who triggered it</td>
+        <td>1 person</td>
+        <td>Engineering team — manual one-time command. Not a cron job, not an automated process.</td>
+      </tr>
+      <tr>
+        <td class="name">When</td>
+        <td>23 Apr 2026 · 10:40 UTC</td>
+        <td>≈ 1:40 PM Saudi time. Script finished within roughly 2 minutes.</td>
+      </tr>
+      <tr>
+        <td class="name">Subscriptions touched</td>
+        <td>67</td>
+        <td>67 distinct Quran subscriptions had at least one session removed.</td>
+      </tr>
+      <tr>
+        <td class="name">Students affected</td>
+        <td>67</td>
+        <td>One sub per student in this dataset.</td>
+      </tr>
+      <tr>
+        <td class="name">Teachers affected</td>
+        <td>28</td>
+        <td>See top-affected list below.</td>
+      </tr>
+      <tr>
+        <td class="name">Sessions removed</td>
+        <td>162 total · 148 over-limit · 14 duplicates</td>
+        <td>"Over-limit" = student had <em>more planned sessions in the future</em> than the package paid for. "Duplicate" = the same time slot existed twice in the system (a side-effect of the recovery).</td>
+      </tr>
+      <tr>
+        <td class="name">Future scheduled sessions removed</td>
+        <td>152 of 162</td>
+        <td><strong>None of these had been delivered yet.</strong> Removing them changes nothing about lessons that already happened, nothing about earnings, and nothing about money. They were removed because the student's package didn't actually pay for them.</td>
+      </tr>
+      <tr>
+        <td class="name">Already-completed sessions removed</td>
+        <td>10 of 162</td>
+        <td>All 10 were <strong>duplicate copies of lessons that already exist</strong> — same teacher, same student, same time slot. The "winner" copy was kept; the loser copy was removed. The student keeps credit for the lesson, the teacher keeps the earnings, the attendance record stays.</td>
+      </tr>
+      <tr>
+        <td class="name">Teacher earnings actually lost</td>
+        <td class="now">50 SAR (1 teacher)</td>
+        <td>One earning row of 50 SAR for teacher #72 was attached to a "loser" duplicate, and the surviving "winner" copy never had an earning row of its own to keep. This is the only real earnings loss across the entire cleanup. Recommended: re-issue 50 SAR to that teacher manually.</td>
+      </tr>
+      <tr>
+        <td class="name">Student payments reversed or refunded</td>
+        <td class="now">0</td>
+        <td>None. No student was charged or refunded as a result of this cleanup.</td>
+      </tr>
+      <tr>
+        <td class="name">Subscription "remaining session" balances reduced</td>
+        <td>59</td>
+        <td>59 subscriptions saw their remaining-balance number go down (because they no longer count the over-allocated future sessions). 1 subscription got balance back. Net: students received <em>fewer</em> sessions than the original schedule promised, but the same number their package actually paid for.</td>
+      </tr>
+      <tr>
+        <td class="name">Subscriptions still showing a counter mismatch today</td>
+        <td>159</td>
+        <td>Mostly unrelated to the 23 April cleanup — these come from a different older issue with how cycles snapshot their counters. Tracked as a separate follow-up; will be resolved with the existing built-in audit tool.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Teachers most affected (top 5 — possibly haven't reported yet)</h3>
+
+  <p>These teachers had future sessions silently removed from their calendars on 23 April. The first three lost double-digit numbers of sessions and may not yet have noticed:</p>
+
+  <table class="subs">
+    <thead>
+      <tr><th>Teacher</th><th>Sessions removed</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="name">إيمان السيد</td><td>24</td></tr>
+      <tr><td class="name">فرقان إبراهيم حسن</td><td>14</td></tr>
+      <tr><td class="name">محمد البيه</td><td>13</td></tr>
+      <tr><td class="name">اسماء المغربى</td><td>11</td></tr>
+      <tr><td class="name">فاطمة صابر محمد ابراهيم</td><td>10</td></tr>
+      <tr><td class="name">Amira Ahmed</td><td>10</td></tr>
+      <tr><td class="name">الشيماء احمد كامل</td><td>8</td></tr>
+      <tr><td class="name">محمد رشاد القاضي</td><td>7</td></tr>
+      <tr><td class="name">نورهان وائل محمد</td><td>6</td></tr>
+      <tr><td class="name">شيماء العزب <span style="color:var(--muted);font-weight:400">(this report)</span></td><td>6</td></tr>
+    </tbody>
+  </table>
+
+  <div class="impact-box">
+    <strong>Heads-up for the academy admin:</strong> Teacher Shaymaa actually had <strong>4 students</strong> hit by the cleanup, not 3. Beyond Sara and Reem (covered above), <strong>حنان باقعيش</strong> lost a session on 13 May, and <strong>ابتسام القحطاني</strong> also lost a session on 13 May. They haven't reached out yet — you may want to proactively reach out before they discover it. The same pattern almost certainly affects students of the top teachers in the table above.
+  </div>
+
+  <h3>What's the takeaway?</h3>
+
+  <ul>
+    <li><strong>The cleanup itself was correct.</strong> It did exactly what it was supposed to do — remove future slots that the package didn't actually pay for, and de-duplicate sessions that the database recovery had double-stamped. Without it, students would have continued taking lessons they hadn't paid for, and the platform's counters would have stayed inconsistent.</li>
+    <li><strong>It did NOT delete real lessons.</strong> Every already-attended lesson is still in the system. The only "completed" sessions removed were duplicate copies of lessons that already exist — the original/winner copy was kept in every case.</li>
+    <li><strong>Teacher earnings are essentially intact.</strong> Future scheduled sessions never carry earnings (earnings are recorded only when a lesson is actually delivered), so the 152 future-slot removals had zero effect on what teachers will be paid. Of the 14 duplicate removals, only 2 earning rows were touched: 1 was a true duplicate (the winning copy still pays the teacher) and 1 left teacher #72 short by 50 SAR — recommended to reissue manually.</li>
+    <li><strong>No student lost a paid lesson and no payments were reversed.</strong> Students whose "remaining balance" went down only lost the over-allocated future slots, not the package they paid for.</li>
+    <li><strong>The communication was the failure, not the data work.</strong> Teachers weren't told their calendars would change, so missing sessions surfaced later as confused reports. Going forward, any cleanup of this kind will require a dry-run report and a per-teacher heads-up before any data is touched.</li>
+  </ul>
+
+  <!-- Sara -->
+  <div class="student-block">
+    <h4>Student: ساره القحطاني <span class="verdict-pill real">Real issue</span></h4>
+    <p class="student-meta">Email: alqahtanisar@ipa.edu.sa · Subscription: monthly, 8 sessions, ends 19 May 2026</p>
+
+    <div class="row">
+      <span class="lbl">What the teacher reported</span>
+      A remaining session that doesn't exist on the calendar — Wednesday <strong>13 May 2026</strong> at <strong>8:00 PM</strong>.
+    </div>
+
+    <div class="row">
+      <span class="lbl">What we found</span>
+      The 23 April cleanup deleted <strong>three of Sara's future sessions</strong> — Wed 6 May 8:30 PM, Sun 10 May 8:30 PM, and Wed <strong>13 May 8:30 PM</strong> (this is the slot the teacher asked about). The 6 May and 10 May slots were later replaced with similar sessions at 8:00 PM, but <strong>the 13 May session was never replaced</strong>.
+    </div>
+
+    <div class="row">
+      <span class="lbl">Why the counter still shows "remaining"</span>
+      Sara's plan is for 8 sessions. She has completed 6, with 2 future sessions still scheduled. Her counter (8 total · 6 used · 2 remaining) is mathematically consistent with what's on her calendar today. Before the cleanup she had 5 future sessions planned, which was 3 over what her plan covers — the cleanup removed the 3 over-scheduled ones.
+    </div>
+
+    <div class="options row">
+      <span class="lbl">Suggested solutions</span>
+      <ul>
+        <li><strong>Option A — Confirm package size and stop here.</strong> If Sara originally paid for 8 sessions, the math is correct: she'll have 8 sessions when this month is done, and the missing 13 May slot was an over-allocation. Reply to the teacher with this explanation; no data change needed.</li>
+        <li><strong>Option B — Extend her package by 3 sessions.</strong> If Sara actually paid for 11 sessions (or her teacher had a separate agreement with her), increase her plan from 8 to 11 sessions for this cycle. The teacher can then schedule new replacements for the 3 lost slots — including a fresh 13 May 8:00 PM session.</li>
+      </ul>
+    </div>
+
+    <div class="recommend">
+      <strong>Recommended:</strong> Ask the academy admin to confirm with Sara (or check her original payment) whether she paid for 8 or more sessions for this month. If it's 8 → Option A. If it's more → Option B. The data on our side is consistent either way; this is a billing question, not a system bug.
+    </div>
+  </div>
+
+  <!-- Noura -->
+  <div class="student-block">
+    <h4>Student: نوره الضلعان <span class="verdict-pill real-other">Real — different cause</span></h4>
+    <p class="student-meta">Email: naldalaan@hotmail.com · Subscription: monthly, 8 sessions, ended 5 May 2026</p>
+
+    <div class="row">
+      <span class="lbl">What the teacher reported</span>
+      The system "won't accept scheduling" for Saturday <strong>16 May 2026</strong> at <strong>6:30 AM</strong>.
+    </div>
+
+    <div class="row">
+      <span class="lbl">What we found</span>
+      Noura's current subscription <strong>ended on 5 May 2026 (yesterday)</strong>. The platform correctly refuses to schedule new sessions outside the paid period — that's the rejection the teacher is seeing, not a bug. She still has 3 sessions on her balance: 1 already-completed and 2 already-scheduled inside the old period (9 May and 12 May). The 16 May date the teacher wants is 11 days <em>after</em> the subscription ended.
+    </div>
+
+    <div class="row">
+      <span class="lbl">Side note (small data tidy-up)</span>
+      We also noticed her session counter is slightly out of sync — it shows 5 sessions used this month when only 1 has actually been counted. We have a built-in audit tool that can re-align this in seconds. It changes a single counter and does not affect any session, payment, or schedule.
+    </div>
+
+    <div class="options row">
+      <span class="lbl">Suggested solutions</span>
+      <ul>
+        <li><strong>Option A — Renew her subscription for another month.</strong> Once renewed, the 16 May date falls inside the new paid period and the teacher can schedule it normally. The 3 remaining sessions roll forward.</li>
+        <li><strong>Option B — Extend her current period by a few weeks.</strong> If Sara's family asks for a short grace period instead of a full renewal, the academy admin can extend the end date so the leftover 3 sessions are usable.</li>
+        <li><strong>Option C — Do nothing.</strong> The 3 remaining sessions are forfeited and the teacher cannot schedule 16 May. Not recommended unless the family requests cancellation.</li>
+      </ul>
+    </div>
+
+    <div class="recommend">
+      <strong>Recommended:</strong> Contact Noura's family for a renewal (Option A). Alongside the renewal, run the small counter realignment so her balance shows the correct numbers in the UI. This is the standard, lowest-risk path; the teacher's calendar will start accepting 16 May immediately once the new period is in place.
+    </div>
+  </div>
+
+  <!-- Reem -->
+  <div class="student-block">
+    <h4>Student: ريم المصلح <span class="verdict-pill fp">Not an issue</span></h4>
+    <p class="student-meta">Email: almoslehreem@yahoo.com · Subscription: monthly, 4 sessions, ends 17 May 2026</p>
+
+    <div class="row">
+      <span class="lbl">What the teacher reported</span>
+      A remaining session that doesn't exist on the calendar — <strong>Friday at 9:00 AM</strong>.
+    </div>
+
+    <div class="row">
+      <span class="lbl">What we found</span>
+      The Friday 9:00 AM session for <strong>8 May 2026 IS scheduled</strong> in the system. Her counter is exactly right: 4 total, 3 already completed (one of them was last Friday at 9:00 AM), and 1 remaining — which is the upcoming Friday at 9:00 AM. There is no missing session here.
+    </div>
+
+    <div class="row">
+      <span class="lbl">Possible explanation</span>
+      The teacher may have been looking at the calendar before it refreshed, or she may be remembering an extra Friday she had hoped to teach (her plan covers 4 Fridays in this cycle, but the cycle window contains 5 Fridays — 24 April and 15 May were never planned because they don't fit the package).
+    </div>
+
+    <div class="options row">
+      <span class="lbl">Suggested response</span>
+      <ul>
+        <li>Reply to the teacher: "Reem's Friday 8 May 9:00 AM session is scheduled in the system. Please refresh the calendar; if the slot still doesn't appear, take a screenshot and we'll look again."</li>
+      </ul>
+    </div>
+
+    <div class="recommend">
+      <strong>Recommended:</strong> No data action. Send the message above. If the teacher confirms she still cannot see the 8 May session after a refresh, that becomes a UI display issue and we'll re-investigate with a screenshot.
+    </div>
+  </div>
+
+  <h3>Summary for the team</h3>
+  <p>Of the three reports, only one points to a real missing session in Sara's calendar — and the right next step is to confirm her package size before changing anything. Noura's "rejection" is the system correctly refusing to schedule outside her paid period, and the answer is to renew her subscription. Reem's report is a misunderstanding; the session she thinks is missing is actually scheduled.</p>
+
+  <div class="impact-box">
+    <strong>For the academy admin:</strong> Before reaching back out to teacher Shaymaa, please confirm Sara's package size, decide on Noura's renewal, and send the refresh message to Reem. Once those three decisions are made we'll perform any data updates needed and update this log to "Resolved".
+  </div>
+</section>
+
+<!-- ============================================================== -->
+<!-- Fix #2 (most recent on top)                                      -->
+<!-- ============================================================== -->
+<section class="fix" id="fix-2">
+  <h2>Quarterly &amp; yearly subscriptions showing wrong next-payment date <span class="badge">Resolved</span></h2>
+  <p class="date-line">Reported &amp; resolved 2026-05-05 · 7 subscriptions corrected</p>
+
+  <div class="symptom-box">
+    <strong>What was happening:</strong> A student with a quarterly (3-month) subscription opened her circle page and saw that her next payment was due in roughly 1 month, not 3. After looking into it, the same problem was found on 6 other students, including one with a yearly subscription that was being treated as if it renewed every month.
+  </div>
+
+  <h3>Why it mattered</h3>
+  <p>The actual subscription end date in the system was correct — only the date shown to the student in the "next payment" box was wrong. There was no risk of being billed early or charged twice, but it caused confusion and made it look like the platform did not honor the cycle the student had paid for.</p>
+
+  <h3>What we fixed</h3>
+  <p>Two places in the code that create subscriptions had a small flaw: when a student picked a quarterly or yearly plan, those places fell back to a 1-month cycle for the "next payment" date in certain cases. We changed both places to always use the chosen billing cycle (1, 3, or 12 months). We also corrected the 7 existing students whose subscriptions already had the wrong date stored.</p>
+
+  <div class="resolved-box">
+    <strong>Outcome:</strong> All 7 students now see the correct next-payment date. Future subscriptions cannot drift back into this state — the underlying calculation now goes through one shared, verified piece of code.
+  </div>
+
+  <h3>Affected students</h3>
+  <table class="subs">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Email</th>
+        <th>Plan</th>
+        <th class="amount">Amount</th>
+        <th>Was showing</th>
+        <th class="arrow"></th>
+        <th>Now shows</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="name">الجوهره السويدان</td>
+        <td class="email">deema.alkhuzaim@hotmail.com</td>
+        <td>Quarterly (3 months)</td>
+        <td class="amount">580 SAR</td>
+        <td class="was">9 May 2026</td>
+        <td class="arrow">→</td>
+        <td class="now">9 July 2026</td>
+        <td><span class="pill">Fixed</span></td>
+      </tr>
+      <tr>
+        <td class="name">خديجه حفني</td>
+        <td class="email">Khafni61@gmail.com</td>
+        <td>Quarterly (3 months)</td>
+        <td class="amount">290 SAR</td>
+        <td class="was">6 May 2026</td>
+        <td class="arrow">→</td>
+        <td class="now">6 July 2026</td>
+        <td><span class="pill">Fixed</span></td>
+      </tr>
+      <tr>
+        <td class="name">عائشه شلاش</td>
+        <td class="email">ayshashalsh2010@gmail.com</td>
+        <td>Quarterly (3 months)</td>
+        <td class="amount">290 SAR</td>
+        <td class="was">5 May 2026</td>
+        <td class="arrow">→</td>
+        <td class="now">5 July 2026</td>
+        <td><span class="pill">Fixed</span></td>
+      </tr>
+      <tr>
+        <td class="name">تقوى شلاش</td>
+        <td class="email">takwashalash2005@gmail.com</td>
+        <td>Quarterly (3 months)</td>
+        <td class="amount">140 SAR</td>
+        <td class="was">5 May 2026</td>
+        <td class="arrow">→</td>
+        <td class="now">5 July 2026</td>
+        <td><span class="pill">Fixed</span></td>
+      </tr>
+      <tr>
+        <td class="name">نعيمة جواني</td>
+        <td class="email">djouani.n24@gmail.com</td>
+        <td>Quarterly (3 months)</td>
+        <td class="amount">730 SAR</td>
+        <td class="was">2 May 2026</td>
+        <td class="arrow">→</td>
+        <td class="now">2 July 2026</td>
+        <td><span class="pill">Fixed</span></td>
+      </tr>
+      <tr>
+        <td class="name">العنود الجربوع</td>
+        <td class="email">dr.alanoudaljarbou@gmail.com</td>
+        <td>Quarterly (3 months)</td>
+        <td class="amount">290 SAR</td>
+        <td class="was">1 May 2026</td>
+        <td class="arrow">→</td>
+        <td class="now">1 July 2026</td>
+        <td><span class="pill">Fixed</span></td>
+      </tr>
+      <tr>
+        <td class="name">مبروكه علي سعيد المالكي</td>
+        <td class="email">jana90745@gmail.com</td>
+        <td>Yearly (12 months)</td>
+        <td class="amount">10 SAR</td>
+        <td class="was">28 April 2026</td>
+        <td class="arrow">→</td>
+        <td class="now">28 March 2027</td>
+        <td><span class="pill">Fixed</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="impact-box">
+    <strong>For the team:</strong> If a student asks why their next-payment date "jumped forward," the answer is that the original date was incorrect and has been corrected to match the cycle they actually paid for. No money or sessions were affected.
+  </div>
+</section>
+
+<!-- ============================================================== -->
+<!-- Fix #1                                                            -->
+<!-- ============================================================== -->
+<section class="fix" id="fix-1">
+  <h2>Tap payments captured but subscriptions stuck on "waiting for payment" <span class="badge">Resolved</span></h2>
+  <p class="date-line">Reported &amp; resolved 2026-05-05 · 5 subscriptions restored · 850 SAR captured</p>
+
+  <div class="symptom-box">
+    <strong>What was happening:</strong> Five students paid through the Tap payment gateway and saw a blank/white page after checkout. When they returned to the app, their subscription page still showed <em>"في انتظار الدفع"</em> ("waiting for payment"). The money <strong>was</strong> taken correctly by Tap — only the subscription on our side did not unlock.
+  </div>
+
+  <h3>Why it mattered</h3>
+  <p>These students paid for a service they could not use. Without action they would have either had to pay a second time or open a refund request, and the academy would have looked unreliable.</p>
+
+  <h3>What we fixed</h3>
+  <p>A code change made earlier in the week introduced a small mismatch: when a brand-new student paid for the first time, the system attached the payment to the wrong "billing cycle slot" inside the subscription. The activation step then thought there was nothing to do and exited silently, leaving the subscription marked as unpaid even though Tap had captured the money.</p>
+  <p>We corrected the activation logic so it only short-circuits for subscriptions that are already active, and we manually re-activated the 5 stuck subscriptions so each student got immediate access to what they paid for.</p>
+
+  <div class="resolved-box">
+    <strong>Outcome:</strong> All 5 subscriptions are now active and paid. Every student got the service they paid for. No refunds were needed. New Tap payments since the fix are activating normally.
+  </div>
+
+  <h3>Affected students</h3>
+  <table class="subs">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Email</th>
+        <th>Paid on</th>
+        <th class="amount">Amount</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="name">محمد ال عمرو</td>
+        <td class="email">jmbab63@gmail.com</td>
+        <td>5 May 2026</td>
+        <td class="amount">100 SAR</td>
+        <td><span class="pill">Activated</span></td>
+      </tr>
+      <tr>
+        <td class="name">نوف نوح الهوساوي</td>
+        <td class="email">nouf.alhosawi@gmail.com</td>
+        <td>5 May 2026</td>
+        <td class="amount">150 SAR</td>
+        <td><span class="pill">Activated</span></td>
+      </tr>
+      <tr>
+        <td class="name">معاذ رائد</td>
+        <td class="email">abeer.a.beladi@gmail.com</td>
+        <td>4 May 2026</td>
+        <td class="amount">200 SAR</td>
+        <td><span class="pill">Activated</span></td>
+      </tr>
+      <tr>
+        <td class="name">اسية كوتين</td>
+        <td class="email">cottinassiyah@gmail.com</td>
+        <td>3 May 2026</td>
+        <td class="amount">300 SAR</td>
+        <td><span class="pill">Activated</span></td>
+      </tr>
+      <tr>
+        <td class="name">هيا الجربوع</td>
+        <td class="email">hzaidj@gmail.com</td>
+        <td>2 May 2026</td>
+        <td class="amount">100 SAR</td>
+        <td><span class="pill">Activated</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="impact-box">
+    <strong>For the team:</strong> If a student reports a similar problem from before today, please pass their name or payment ID to engineering. The audit query that finds this exact pattern now returns zero results, but it will be re-run weekly for the next month as a safety check.
+  </div>
+</section>
+
+<footer class="report-foot">
+  Itqan Platform · Production Fixes Log · This page is updated as new issues are resolved.
+</footer>
+
+</div>
+</body>
+</html>

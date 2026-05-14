@@ -68,6 +68,9 @@ class SubscriptionCycle extends Model
         'grace_period_ends_at',
         'archived_at',
         'metadata',
+        'pricing_source',
+        'pricing_override_reason',
+        'pricing_override_actor_id',
     ];
 
     protected $casts = [
@@ -203,6 +206,29 @@ class SubscriptionCycle extends Model
     }
 
     /**
+     * Resolve the cycle that contains the given moment for a given
+     * subscription thread. Used when a session is rescheduled across a
+     * cycle boundary so its `subscription_cycle_id` anchor stays aligned
+     * with the cycle the session is now physically inside.
+     *
+     * Returns the cycle whose [starts_at, ends_at) window contains $when;
+     * falls back to null when no cycle covers the date (e.g. a session
+     * rescheduled past every cycle's end).
+     */
+    public static function cycleForDate(BaseSubscription $sub, \Carbon\Carbon $when): ?self
+    {
+        return self::query()
+            ->where('subscribable_type', $sub->getMorphClass())
+            ->where('subscribable_id', $sub->getKey())
+            ->where('starts_at', '<=', $when)
+            ->where(function (Builder $q) use ($when) {
+                $q->whereNull('ends_at')->orWhere('ends_at', '>', $when);
+            })
+            ->orderByDesc('starts_at')
+            ->first();
+    }
+
+    /**
      * Sessions remaining in this specific cycle.
      */
     public function getSessionsRemainingAttribute(): int
@@ -274,6 +300,12 @@ class SubscriptionCycle extends Model
             'final_price' => (float) ($source->final_price ?? 0),
             'currency' => $source->currency ?? 'SAR',
             'payment_status' => $paymentStatus,
+            // INV-D4: a cycle tagged pricing_source='package' (the default)
+            // MUST carry the package_id snapshot. Without this every freshly-
+            // materialised cycle would trip the invariant on the next
+            // reconciler sync.
+            'package_id' => $source->package_id ?? null,
+            'pricing_source' => 'package',
             'grace_period_ends_at' => $source->getGracePeriodEndsAt(),
             'archived_at' => $state === self::STATE_ARCHIVED ? ($source->ends_at ?? now()) : null,
         ];

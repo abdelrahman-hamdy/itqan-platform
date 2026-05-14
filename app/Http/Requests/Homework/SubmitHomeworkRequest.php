@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Homework;
 
+use App\Enums\SubscriptionType;
 use App\Models\AcademicHomework;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -26,7 +27,7 @@ class SubmitHomeworkRequest extends FormRequest
         $homeworkId = $this->route('id') ?? $this->input('homework_id');
         $type = $this->route('type') ?? 'academic';
 
-        if ($type === 'academic' && $homeworkId) {
+        if ($type === SubscriptionType::ACADEMIC->value && $homeworkId) {
             $homework = AcademicHomework::find($homeworkId);
 
             if ($homework && $homework->submission_type) {

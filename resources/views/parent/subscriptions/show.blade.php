@@ -1,7 +1,29 @@
+@inject('presentation', \App\Services\Subscription\SubscriptionPresentation::class)
 @php
 use App\Enums\SessionStatus;
 
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy?->subdomain ?? 'itqan-academy';
+
+    // Phase A.7 / INV-J1: canonical badge + helper for the parent detail
+    // surface. Course enrollments may not extend BaseSubscription yet — fall
+    // back to the legacy three-state badge below for that case.
+    $parentViewState = ($subscription instanceof \App\Models\BaseSubscription)
+        ? $presentation->viewStateFor($subscription)
+        : null;
+    $parentViewStateBadgeClasses = [
+        'success' => 'bg-green-100 text-green-800',
+        'warning' => 'bg-yellow-100 text-yellow-800',
+        'danger' => 'bg-red-100 text-red-800',
+        'info' => 'bg-blue-100 text-blue-800',
+        'primary' => 'bg-indigo-100 text-indigo-800',
+        'gray' => 'bg-gray-100 text-gray-800',
+    ];
+    $parentViewStateBadgeClass = $parentViewState
+        ? ($parentViewStateBadgeClasses[$parentViewState->badgeColor()] ?? $parentViewStateBadgeClasses['gray'])
+        : null;
+    $parentViewStateHelper = ($subscription instanceof \App\Models\BaseSubscription)
+        ? $presentation->helperLineFor($subscription)
+        : null;
 @endphp
 
 <x-layouts.parent-layout :title="__('parent.subscriptions.title')">
@@ -52,13 +74,24 @@ use App\Enums\SessionStatus;
                         </p>
                     </div>
                 </div>
-                <span class="self-start px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-full flex-shrink-0
-                    {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-800' : '' }}
-                    {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED->value ? 'bg-red-100 text-red-800' : '' }}
-                    {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::PENDING->value ? 'bg-yellow-100 text-yellow-800' : '' }}">
-                    {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? __('parent.subscriptions.status.active') : ($subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED->value ? __('parent.subscriptions.status.expired') : __('parent.subscriptions.status.pending')) }}
-                </span>
+                {{-- Phase A.7 / INV-J1: ONE canonical view-state badge. --}}
+                @if($parentViewState)
+                    <span class="self-start px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-full flex-shrink-0 {{ $parentViewStateBadgeClass }}" title="{{ $parentViewStateHelper }}">
+                        {{ $parentViewState->label() }}
+                    </span>
+                @else
+                    <span class="self-start px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-full flex-shrink-0
+                        {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-800' : '' }}
+                        {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED->value ? 'bg-red-100 text-red-800' : '' }}
+                        {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::PENDING->value ? 'bg-yellow-100 text-yellow-800' : '' }}">
+                        {{ $subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? __('parent.subscriptions.status.active') : ($subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED->value ? __('parent.subscriptions.status.expired') : __('parent.subscriptions.status.pending')) }}
+                    </span>
+                @endif
             </div>
+            @if($parentViewStateHelper)
+                {{-- Phase A.7 / INV-J1: canonical helper line. --}}
+                <p class="mt-3 text-sm text-gray-700" dir="auto">{{ $parentViewStateHelper }}</p>
+            @endif
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">

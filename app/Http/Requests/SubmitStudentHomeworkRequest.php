@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\SubscriptionType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -32,7 +33,7 @@ class SubmitStudentHomeworkRequest extends FormRequest
         $validationRules = [];
 
         // Dynamic validation based on homework type and requirements
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             // Get homework to check submission type (would need to be injected)
             // For now, use flexible validation
             $validationRules['text'] = 'required_without:files|string|min:10';

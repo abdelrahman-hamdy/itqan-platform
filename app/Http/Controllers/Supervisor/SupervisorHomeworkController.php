@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Enums\SubscriptionType;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\InteractiveCourseHomework;
@@ -19,8 +20,7 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
         $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
 
         // --- Quran homework ---
-        $quranBaseQuery = QuranSessionHomework::whereHas('session', fn ($q) =>
-            $q->whereIn('quran_teacher_id', $quranTeacherIds)
+        $quranBaseQuery = QuranSessionHomework::whereHas('session', fn ($q) => $q->whereIn('quran_teacher_id', $quranTeacherIds)
         );
 
         // Stats (before filters)
@@ -29,8 +29,7 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
             ->get();
 
         $quranStatsTotal = $quranAllForStats->count();
-        $quranEvaluatedCount = $quranAllForStats->filter(fn ($hw) =>
-            $hw->session?->studentReport &&
+        $quranEvaluatedCount = $quranAllForStats->filter(fn ($hw) => $hw->session?->studentReport &&
             ($hw->session->studentReport->new_memorization_degree !== null || $hw->session->studentReport->reservation_degree !== null)
         )->count();
 
@@ -75,14 +74,11 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
         $academicAllForStats = (clone $academicBaseQuery)->with('submissions')->get();
         $academicStats = [
             'total' => $academicAllForStats->count(),
-            'pending' => $academicAllForStats->filter(fn ($hw) =>
-                $hw->submissions->isEmpty() || $hw->submissions->every(fn ($s) => $this->submissionIsPending($s))
+            'pending' => $academicAllForStats->filter(fn ($hw) => $hw->submissions->isEmpty() || $hw->submissions->every(fn ($s) => $this->submissionIsPending($s))
             )->count(),
-            'graded' => $academicAllForStats->filter(fn ($hw) =>
-                $hw->submissions->contains(fn ($s) => $s->score !== null)
+            'graded' => $academicAllForStats->filter(fn ($hw) => $hw->submissions->contains(fn ($s) => $s->score !== null)
             )->count(),
-            'overdue' => $academicAllForStats->filter(fn ($hw) =>
-                $hw->due_date && $hw->due_date->isPast() &&
+            'overdue' => $academicAllForStats->filter(fn ($hw) => $hw->due_date && $hw->due_date->isPast() &&
                 $hw->submissions->contains(fn ($s) => $s->score === null)
             )->count(),
         ];
@@ -111,14 +107,11 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
         $interactiveAllForStats = (clone $interactiveBaseQuery)->with('submissions')->get();
         $interactiveStats = [
             'total' => $interactiveAllForStats->count(),
-            'pending' => $interactiveAllForStats->filter(fn ($hw) =>
-                $hw->submissions->isEmpty() || $hw->submissions->every(fn ($s) => $this->submissionIsPending($s))
+            'pending' => $interactiveAllForStats->filter(fn ($hw) => $hw->submissions->isEmpty() || $hw->submissions->every(fn ($s) => $this->submissionIsPending($s))
             )->count(),
-            'graded' => $interactiveAllForStats->filter(fn ($hw) =>
-                $hw->submissions->contains(fn ($s) => $s->score !== null)
+            'graded' => $interactiveAllForStats->filter(fn ($hw) => $hw->submissions->contains(fn ($s) => $s->score !== null)
             )->count(),
-            'overdue' => $interactiveAllForStats->filter(fn ($hw) =>
-                $hw->due_date && $hw->due_date->isPast() &&
+            'overdue' => $interactiveAllForStats->filter(fn ($hw) => $hw->due_date && $hw->due_date->isPast() &&
                 $hw->submissions->contains(fn ($s) => $s->score === null)
             )->count(),
         ];
@@ -182,7 +175,7 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
 
     public function submissions(Request $request, $subdomain = null, $type = null, $id = null): View
     {
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             $homework = AcademicHomework::with(['teacher', 'session'])->findOrFail($id);
             $submissions = AcademicHomeworkSubmission::where('academic_homework_id', $id)
                 ->with(['student', 'grader'])
@@ -222,7 +215,7 @@ class SupervisorHomeworkController extends BaseSupervisorWebController
             ]);
         }
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $homework = QuranSessionHomework::with([
                 'session.quranTeacher',
                 'session.student',

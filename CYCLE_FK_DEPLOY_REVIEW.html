@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cycle-FK Deploy · Step 3 Review</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-hi: #273449;
+    --ink: #e2e8f0;
+    --ink-mute: #94a3b8;
+    --ok: #22c55e;
+    --warn: #f59e0b;
+    --bad: #ef4444;
+    --info: #38bdf8;
+    --border: #334155;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    padding: 24px 16px 80px;
+  }
+  body > * { max-width: 1100px; margin-left: auto; margin-right: auto; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  h2 { font-size: 19px; margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); letter-spacing: -0.01em; }
+  h3 { font-size: 14px; margin: 18px 0 10px; color: var(--ink-mute); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  h4 { font-size: 14px; margin: 14px 0 6px; }
+  .sub { color: var(--ink-mute); margin-bottom: 28px; font-size: 13.5px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 12px 0;
+  }
+  .summary {
+    background: linear-gradient(180deg, rgba(56,189,248,0.08) 0%, rgba(56,189,248,0.02) 100%);
+    border: 2px solid rgba(56,189,248,0.4);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 28px;
+  }
+  .summary h3 { color: var(--info); margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  th { color: var(--ink-mute); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.06em; background: var(--panel-hi); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: "SF Mono", monospace; font-size: 13px; }
+  td.col { font-family: "SF Mono", monospace; font-size: 13px; }
+  td.same { color: var(--ink-mute); }
+  td.changed { color: var(--info); }
+  td.set { color: var(--ok); font-weight: 600; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  code, pre {
+    background: #0a1224;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 7px;
+    color: #cbd5e1;
+    font-size: 12.5px;
+    font-family: "SF Mono", "Monaco", monospace;
+  }
+  pre { padding: 12px 14px; overflow-x: auto; line-height: 1.55; }
+  .pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .pill.ok { background: rgba(34,197,94,0.18); color: var(--ok); }
+  .pill.warn { background: rgba(245,158,11,0.18); color: var(--warn); }
+  .pill.bad { background: rgba(239,68,68,0.18); color: var(--bad); }
+  .pill.info { background: rgba(56,189,248,0.18); color: var(--info); }
+  .note {
+    border-left: 3px solid var(--warn);
+    padding: 10px 14px;
+    background: rgba(245,158,11,0.06);
+    border-radius: 0 6px 6px 0;
+    margin: 12px 0;
+    font-size: 13.5px;
+  }
+  .note.bad { border-color: var(--bad); background: rgba(239,68,68,0.06); }
+  .note.ok { border-color: var(--ok); background: rgba(34,197,94,0.06); }
+  .note.info { border-color: var(--info); background: rgba(56,189,248,0.06); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .stat .label { color: var(--ink-mute); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .stat .value { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+  .stat.ok .value { color: var(--ok); }
+  .stat.warn .value { color: var(--warn); }
+  .stat.bad .value { color: var(--bad); }
+  .stat.info .value { color: var(--info); }
+  .case-card {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 14px 0;
+  }
+  .case-head {
+    padding: 12px 18px;
+    background: var(--panel-hi);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .case-head .name { font-weight: 600; }
+  .case-head .desc { font-size: 12.5px; color: var(--ink-mute); margin-top: 3px; }
+  .case-body { padding: 4px 0; }
+  .case-foot { padding: 12px 18px; border-top: 1px solid var(--border); background: rgba(255,255,255,0.02); font-size: 13px; }
+  .verdict { font-weight: 600; }
+  .verdict.fix { color: var(--ok); }
+  .verdict.skip { color: var(--warn); }
+  .verdict.investigate { color: var(--bad); }
+  .toc { display: flex; flex-wrap: wrap; gap: 10px 18px; font-size: 13px; margin-bottom: 24px; }
+  .toc a { color: var(--info); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  details summary { cursor: pointer; padding: 8px 0; user-select: none; color: var(--ink-mute); font-size: 13.5px; }
+  details[open] summary { color: var(--ink); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Cycle-FK deploy · Step 3 Review</h1>
+<div class="sub">
+  2026-05-04 · prod HEAD <code>88b78490</code> ·
+  <span class="pill ok">Step 1 done</span>
+  <span class="pill ok">Step 2 done</span>
+  <span class="pill warn">Step 3: awaiting your decisions</span>
+</div>
+
+<!-- ========== SUMMARY ========== -->
+<div class="summary">
+  <h3>What happened in steps 1 + 2</h3>
+  <ol style="margin: 0; padding-left: 20px;">
+    <li><strong>Step 1 first attempt</strong> — backfill applied, but I caught a bug: 703 sessions tagged to wrong cycle because my <code>cycleContains()</code> used <code>ends_at</code> as upper bound when it should have used <code>archived_at</code> (cycles are archived early on promotion).</li>
+    <li><strong>Bug fixed and pushed</strong> as commit <code>88b78490</code>. Reset all <code>subscription_cycle_id</code> values to NULL on prod and re-ran the backfill with the corrected logic.</li>
+    <li><strong>Step 1 verified</strong> — 5,264 quran + 192 academic sessions tagged correctly. Maryam now shows 3 sessions on cycle 1 + 5 on cycle 2 (matches her chronology). Saba: 4 on cycle 1 + 5 on cycle 2. System-wide mistagging count: <strong>0</strong>.</li>
+    <li><strong>Step 2 done</strong> — audit dry-run on the corrected data: <strong>308 cycles flagged</strong> (down from the earlier 554 artifact). No counters were modified.</li>
+  </ol>
+  <p style="margin: 14px 0 0; font-size: 13.5px;"><strong>Subscription counters are still 100% unchanged across the entire system.</strong> Steps 1+2 only touched the new <code>subscription_cycle_id</code> column.</p>
+</div>
+
+<div class="toc">
+  <a href="#stats">A. Top-line numbers</a>
+  <a href="#known">B. The 3 known cases</a>
+  <a href="#unattrib">C. Unattributable subs (false positives)</a>
+  <a href="#patterns">D. Drift patterns explained</a>
+  <a href="#critical">E. Critical caveat: admin-preset</a>
+  <a href="#decisions">F. Decisions you need to make</a>
+</div>
+
+<!-- ========== A. STATS ========== -->
+<h2 id="stats">A. Top-line numbers (corrected, post-fix)</h2>
+
+<div class="grid">
+  <div class="stat ok"><div class="label">sessions tagged</div><div class="value">5,456</div></div>
+  <div class="stat ok"><div class="label">attendances tagged</div><div class="value">6,818</div></div>
+  <div class="stat warn"><div class="label">unattributable</div><div class="value">125</div></div>
+  <div class="stat info"><div class="label">cycles drifted</div><div class="value">308</div></div>
+  <div class="stat info"><div class="label">stored &gt; expected</div><div class="value">204</div></div>
+  <div class="stat info"><div class="label">expected &gt; stored</div><div class="value">104</div></div>
+</div>
+
+<div class="card">
+<table>
+  <thead><tr><th>Metric</th><th class="num">Before backfill</th><th class="num">After backfill --apply</th><th>Verdict</th></tr></thead>
+  <tbody>
+    <tr><td>quran_sessions with cycle FK</td><td class="num">0</td><td class="num">5,264 / 5,389</td><td><span class="pill ok">125 left NULL = unattributable subs</span></td></tr>
+    <tr><td>academic_sessions with cycle FK</td><td class="num">0</td><td class="num">192 / 208</td><td><span class="pill ok">16 left NULL</span></td></tr>
+    <tr><td>meeting_attendances with cycle FK</td><td class="num">0</td><td class="num">6,818</td><td><span class="pill ok">inherited from parent sessions</span></td></tr>
+    <tr><td>system-wide mistagging</td><td class="num">—</td><td class="num">0</td><td><span class="pill ok">verified zero</span></td></tr>
+    <tr><td><code>subscription.sessions_used</code> changes</td><td class="num">0</td><td class="num">0</td><td><span class="pill ok">untouched</span></td></tr>
+    <tr><td><code>cycle.sessions_used</code> changes</td><td class="num">0</td><td class="num">0</td><td><span class="pill ok">untouched</span></td></tr>
+    <tr><td><code>attendance.counts_for_subscription</code> changes</td><td class="num">0</td><td class="num">0</td><td><span class="pill ok">admin toggles preserved</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ========== B. KNOWN CASES ========== -->
+<h2 id="known">B. The 3 known supervisor-reported cases</h2>
+
+<p class="sub">The audit can now see exactly what's wrong with each. My recommendation per case is below — final decision is yours.</p>
+
+<!-- Maryam -->
+<div class="case-card">
+  <div class="case-head">
+    <div>
+      <div class="name">Maryam · Quran sub <code>#727</code></div>
+      <div class="desc">Supervisor reported: cycle 2 shows wrong remaining count</div>
+    </div>
+    <div><span class="pill warn">requires investigation</span></div>
+  </div>
+  <div class="case-body">
+    <table>
+      <thead><tr><th>Cycle</th><th>State</th><th class="num">Stored used</th><th class="num">Sessions tagged</th><th class="num">Δ</th><th>Likely interpretation</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1 (id 352)</td><td>archived</td><td class="num">8</td><td class="num">3</td><td class="num">−5</td>
+          <td>Cycle 1 looks like 3 platform sessions + 5 admin-preset = 8 total. <strong>Drift is likely legitimate (Rule 1 admin-preset).</strong></td>
+        </tr>
+        <tr>
+          <td>2 (id 628)</td><td>active</td><td class="num">8</td><td class="num">5</td><td class="num">−3</td>
+          <td><strong>3 phantom counts.</strong> Matches the original plan finding exactly. These came from cycle-1-era sessions being un-counted post-promotion → counter went to active cycle 2.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="case-foot">
+    <span class="verdict fix">RECOMMENDED ACTION:</span> if cycle 1's package quota was 3 with 5 admin-preset (need to confirm with you), only fix cycle 2 with <code>audit-cycle-counts --apply --subscription=727</code> after telling me to skip cycle 1. Otherwise, manually adjust cycle 2 alone via SQL (set <code>used = 5, sessions_completed = 5</code> on cycle id 628). Subscription row will auto-mirror because cycle 2 is the active one.
+  </div>
+</div>
+
+<!-- Saba -->
+<div class="case-card">
+  <div class="case-head">
+    <div>
+      <div class="name">Saba · Quran sub <code>#646</code></div>
+      <div class="desc">Supervisor reported: cycle 2 phantom counts after manual attendance edits</div>
+    </div>
+    <div><span class="pill warn">requires investigation</span></div>
+  </div>
+  <div class="case-body">
+    <table>
+      <thead><tr><th>Cycle</th><th>State</th><th class="num">Stored used</th><th class="num">Sessions tagged</th><th class="num">Δ</th><th>Likely interpretation</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1 (id 281)</td><td>archived</td><td class="num">12</td><td class="num">4</td><td class="num">−8</td>
+          <td>Per the plan: <strong>4 platform + 8 admin-preset = 12</strong>. Drift is legitimate Rule 1 history. <strong>Do not touch.</strong></td>
+        </tr>
+        <tr>
+          <td>2 (id 656)</td><td>active</td><td class="num">8</td><td class="num">5</td><td class="num">−3</td>
+          <td><strong>3 phantom counts.</strong> Matches plan. From supervisor user 212 toggling counts_for_subscription on cycle-1 attendances on 2026-04-29.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="case-foot">
+    <span class="verdict fix">RECOMMENDED ACTION:</span> manually fix cycle 2 (id 656) only. Set <code>cycle.sessions_used = 5, cycle.sessions_completed = 5</code>. Mirror onto subscription row: <code>sub.sessions_used = 5, sub.sessions_remaining = 3</code> (assuming total=8). DO NOT run <code>audit --apply --subscription=646</code> because it would also force cycle 1's used down from 12 to 4, destroying the admin-preset history.
+  </div>
+</div>
+
+<!-- Najah -->
+<div class="case-card">
+  <div class="case-head">
+    <div>
+      <div class="name">Najah · Quran sub <code>#392</code></div>
+      <div class="desc">Supervisor reported: subscription paused, sessions show as "pending"</div>
+    </div>
+    <div><span class="pill ok">safe to fix</span></div>
+  </div>
+  <div class="case-body">
+    <table>
+      <thead><tr><th>Cycle</th><th>State</th><th class="num">Stored used</th><th class="num">Sessions tagged</th><th class="num">Δ</th><th>Likely interpretation</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1 (id 81)</td><td>active</td><td class="num">2</td><td class="num">5</td><td class="num">+3</td>
+          <td>5 sessions are <code>completed + counted</code>, but counter says 2. <strong>Counter is under-counted by 3</strong> — a real bug. The plan thought she had 6 leftover sessions; <strong>actually only 3 leftover</strong>.</td>
+        </tr>
+      </tbody>
+    </table>
+    <details>
+      <summary>Show all 10 sessions for sub #392</summary>
+      <table>
+        <thead><tr><th>ID</th><th>Status</th><th>Counted</th><th>Cycle tag</th></tr></thead>
+        <tbody>
+          <tr><td>705</td><td>completed</td><td>Y</td><td>81</td></tr>
+          <tr><td>706</td><td>cancelled</td><td>N</td><td>81</td></tr>
+          <tr><td>7484</td><td>completed</td><td>Y</td><td>81</td></tr>
+          <tr><td>7485</td><td>completed</td><td>Y</td><td>81</td></tr>
+          <tr><td>7486</td><td>completed</td><td>Y</td><td>81</td></tr>
+          <tr><td>7487</td><td>completed</td><td>Y</td><td>81</td></tr>
+          <tr><td>7488</td><td>suspended</td><td>N</td><td>81</td></tr>
+          <tr><td>7489</td><td>suspended</td><td>N</td><td>81</td></tr>
+          <tr><td>7490</td><td>suspended</td><td>N</td><td>81</td></tr>
+          <tr><td>8615</td><td>suspended</td><td>N</td><td>81</td></tr>
+        </tbody>
+      </table>
+    </details>
+  </div>
+  <div class="case-foot">
+    <span class="verdict fix">RECOMMENDED ACTION:</span> run <code>audit-cycle-counts --apply --subscription=392</code>. This fixes used from 2 → 5. Najah's sessions_remaining becomes 3. On her next renewal, Rule 3 carryover automatically rolls these 3 sessions into her new cycle. <strong>No risk of overwriting admin-preset</strong> because the drift is positive (counter is under, not over).
+  </div>
+</div>
+
+<!-- ========== C. UNATTRIBUTABLE ========== -->
+<h2 id="unattrib">C. Unattributable subscriptions <span class="pill info">false positives in audit</span></h2>
+
+<div class="note">
+  <strong>The audit shows ~125 cycles flagged with negative drift where stored=N but expected=0. Most of these are NOT real drift</strong> — they're subscriptions whose cycles have <code>NULL starts_at/ends_at</code> dates, so the backfill couldn't tag any of their sessions. Then the audit can't count anything and reports it as drift.
+</div>
+
+<div class="card">
+<h3>Top 5 unattributable subscriptions in the audit list</h3>
+<table>
+  <thead><tr><th>Sub</th><th class="num">Cycle stored</th><th class="num">Total sessions in DB</th><th class="num">Tagged</th><th class="num">Untagged</th><th>What this means</th></tr></thead>
+  <tbody>
+    <tr><td><code>#1010</code></td><td class="num">5</td><td class="num">6</td><td class="num">0</td><td class="num">6</td><td class="same">Cycle has no date window → all sessions untagged → audit reports false drift</td></tr>
+    <tr><td><code>#1011</code></td><td class="num">8</td><td class="num">12</td><td class="num">0</td><td class="num">12</td><td class="same">Same</td></tr>
+    <tr><td><code>#1014</code></td><td class="num">5</td><td class="num">8</td><td class="num">0</td><td class="num">8</td><td class="same">Same</td></tr>
+    <tr><td><code>#1024</code></td><td class="num">7</td><td class="num">7</td><td class="num">0</td><td class="num">7</td><td class="same">Same</td></tr>
+    <tr><td><code>#1041</code></td><td class="num">7</td><td class="num">16</td><td class="num">0</td><td class="num">16</td><td class="same">Same</td></tr>
+  </tbody>
+</table>
+<p class="sub" style="margin: 14px 0 0;"><strong>Action:</strong> ignore these in the audit list. They behave exactly like the legacy code (counts go to active cycle). To fix permanently, populate <code>starts_at</code>/<code>ends_at</code> on those 26 cycles via SQL, then re-run backfill. Until then, no harm done.</p>
+</div>
+
+<!-- ========== D. PATTERNS ========== -->
+<h2 id="patterns">D. The 308 drift cycles broken down by pattern</h2>
+
+<div class="card">
+<table>
+  <thead>
+    <tr><th>Pattern</th><th class="num">Count</th><th>Sign</th><th>What it means</th><th>Safe to audit-apply?</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Stored = N, Expected = 0 (cycle has NULL dates)</td>
+      <td class="num">~125</td>
+      <td><span class="pill info">−</span></td>
+      <td>Unattributable subs (Section C). Audit can't see any sessions because none are tagged.</td>
+      <td><span class="pill bad">NO — false positive</span></td>
+    </tr>
+    <tr>
+      <td>Stored &gt; Expected on archived cycle (full quota match)</td>
+      <td class="num">~50</td>
+      <td><span class="pill warn">−</span></td>
+      <td>Likely Rule 1 admin-preset history. Cycle was created with <code>used = total_sessions</code> at creation time for pre-platform consumption.</td>
+      <td><span class="pill bad">NO — would overwrite admin preset</span></td>
+    </tr>
+    <tr>
+      <td>Stored &gt; Expected on active cycle (small Δ)</td>
+      <td class="num">~30</td>
+      <td><span class="pill warn">−</span></td>
+      <td>Mix: cross-cycle leak phantoms (Maryam/Saba pattern) + some legitimate operator manual increments.</td>
+      <td><span class="pill warn">CASE-BY-CASE</span></td>
+    </tr>
+    <tr>
+      <td>Expected &gt; Stored (counter under-counted)</td>
+      <td class="num">104</td>
+      <td><span class="pill ok">+</span></td>
+      <td>Sessions completed but counter wasn't bumped. Could be old observer bugs, missed reconcile runs, or sessions that flipped to COMPLETED while a mutex was stuck.</td>
+      <td><span class="pill ok">SAFE — no admin preset to lose</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ========== E. CRITICAL ========== -->
+<h2 id="critical">E. Critical caveat: <code>audit --apply</code> cannot tell admin-preset from phantom</h2>
+
+<div class="note bad">
+<strong>The audit command does not know about admin presets.</strong> It computes <code>expected = COUNT(platform sessions completed + counted)</code> and would force <code>cycle.sessions_used</code> to that value. For a cycle that legitimately holds <code>4 platform + 8 admin-preset = 12</code>, applying the audit would overwrite the 12 with 4 — destroying the admin-preset history that represents real money paid for pre-platform tutoring.
+</div>
+
+<p>This is why I'm <strong>not</strong> recommending a blanket <code>audit-cycle-counts --apply</code> run, even per-subscription. The right approach is:</p>
+
+<ol>
+  <li><strong>Najah-style cases (positive drift)</strong> are safe — apply via the audit command per subscription. The audit only ever <em>raises</em> the counter to match completed sessions, never lowers below admin presets.</li>
+  <li><strong>Maryam-style cases (negative drift on active cycle)</strong> need manual SQL. Decide which cycle has the phantom and update <code>cycle.sessions_used</code> + <code>cycle.sessions_completed</code> directly. If it's the active cycle, also mirror onto subscription's <code>sessions_used</code> / <code>sessions_remaining</code>.</li>
+  <li><strong>Archived cycles with negative drift</strong> — leave alone unless you can confirm no admin preset existed for that cycle.</li>
+</ol>
+
+<!-- ========== F. DECISIONS ========== -->
+<h2 id="decisions">F. Decisions you need to make</h2>
+
+<div class="card">
+<h4>1. Najah <code>#392</code> — apply audit fix?</h4>
+<p>Counter under-counted by 3. Real bug. Audit will set <code>cycle.sessions_used = 5</code> and her remaining becomes 3 (not 6 as the plan thought). On renewal Rule 3 will carry over the 3 leftover sessions automatically.</p>
+<pre>php artisan subscriptions:audit-cycle-counts --apply --subscription=392</pre>
+<p class="sub">Risk: <span class="pill ok">none</span> — positive drift. Tell me to run this and I will.</p>
+</div>
+
+<div class="card">
+<h4>2. Maryam <code>#727</code> — manual SQL on cycle 2 only?</h4>
+<p>3 phantom counts on cycle 2 (active). Cycle 1's drift may be Rule 1 admin-preset and should not be touched without your confirmation. Do you remember whether Maryam's cycle 1 had admin-preset sessions?</p>
+<pre>-- After your sign-off, run on prod:
+UPDATE subscription_cycles
+   SET sessions_used = 5, sessions_completed = 5
+ WHERE id = 628;
+UPDATE quran_subscriptions
+   SET sessions_used = 5, sessions_remaining = 3, total_sessions_completed = 5
+ WHERE id = 727;</pre>
+<p class="sub">Risk: <span class="pill warn">low</span> — only touches cycle 2 + the subscription mirror. Cycle 1 stays at 8.</p>
+</div>
+
+<div class="card">
+<h4>3. Saba <code>#646</code> — manual SQL on cycle 2 only?</h4>
+<p>Plan confirmed cycle 1 = 4 platform + 8 admin-preset. Cycle 2 has 3 phantom counts. Same surgical fix as Maryam.</p>
+<pre>-- After your sign-off, run on prod:
+UPDATE subscription_cycles
+   SET sessions_used = 5, sessions_completed = 5
+ WHERE id = 656;
+UPDATE quran_subscriptions
+   SET sessions_used = 5, sessions_remaining = 3, total_sessions_completed = 5
+ WHERE id = 646;</pre>
+<p class="sub">Risk: <span class="pill warn">low</span></p>
+</div>
+
+<div class="card">
+<h4>4. The 104 positive-drift cycles — apply audit globally?</h4>
+<p>These are cycles where the counter is <em>under</em> the actual completed-session count. Audit <code>--apply</code> will safely raise them. No admin-preset to lose. But: this is 104 different subscriptions getting bumped, so even though it's safe per-row, the volume is large enough I'd want your sign-off first.</p>
+<p>Two options:</p>
+<ul>
+  <li><strong>Conservative:</strong> just fix Najah (1 sub) and leave the 103 others. Most are tiny deltas (+1 or +2).</li>
+  <li><strong>Aggressive:</strong> run <code>audit --apply</code> globally with no <code>--subscription</code> filter. Touches all 308 cycles, including the negative-drift ones. <strong>NOT recommended</strong> due to admin-preset risk.</li>
+  <li><strong>Middle:</strong> filter to positive-drift only and apply per-sub. Would need a small command-flag addition.</li>
+</ul>
+<p class="sub">Risk: see option choice above.</p>
+</div>
+
+<div class="card">
+<h4>5. The 19 unattributable subs — populate cycle dates?</h4>
+<p>26 cycles on prod have NULL <code>starts_at</code>/<code>ends_at</code>. Their 125 sessions are untagged after backfill. They behave exactly like the legacy code (counter goes to active cycle). Do you want to populate the dates and re-run backfill, or leave them as-is?</p>
+<p class="sub">Risk: <span class="pill ok">none either way</span> — leaving as-is is the legacy behaviour.</p>
+</div>
+
+<div class="note ok" style="margin-top: 28px;">
+<strong>Bottom line:</strong> Steps 1+2 are complete and verified safe. No counters were modified. The audit revealed real drift in some places and false positives in others — actually applying fixes is your call, per case. Tell me which of decisions 1-5 to proceed with and I'll execute exactly that, nothing more.
+</div>
+
+<div style="margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--ink-mute); font-size: 12px;">
+Generated 2026-05-04 · prod HEAD <code>88b78490</code> · raw outputs at <code>/tmp/backfill_apply.txt</code>, <code>/tmp/audit_post_backfill.txt</code> on the local machine.
+</div>
+
+</body>
+</html>

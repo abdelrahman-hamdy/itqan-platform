@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Enums\SessionStatus;
+use App\Enums\SubscriptionType;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -32,16 +33,17 @@ class UnifiedSessionController extends BaseStudentSessionController
         // Get student profile ID for interactive course enrollment queries
         $studentProfileId = $user->studentProfile?->id;
 
-        if (! $type || $type === 'quran') {
+        if (! $type || $type === SubscriptionType::QURAN->value) {
             $quranSessions = $this->getQuranSessions($user->id, $status, $dateFrom, $dateTo);
             $sessions = array_merge($sessions, $quranSessions);
         }
 
-        if (! $type || $type === 'academic') {
+        if (! $type || $type === SubscriptionType::ACADEMIC->value) {
             $academicSessions = $this->getAcademicSessions($user->id, $status, $dateFrom, $dateTo);
             $sessions = array_merge($sessions, $academicSessions);
         }
 
+        // NOTE: 'interactive' is a session-stream filter, not a SubscriptionType case.
         if ((! $type || $type === 'interactive') && $studentProfileId) {
             $interactiveSessions = $this->getInteractiveSessions($studentProfileId, $status, $dateFrom, $dateTo);
             $sessions = array_merge($sessions, $interactiveSessions);

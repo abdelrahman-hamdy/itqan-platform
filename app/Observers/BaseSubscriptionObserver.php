@@ -85,26 +85,33 @@ class BaseSubscriptionObserver
             }
         }
 
-        // Calculate dates if not set
-        if (empty($subscription->starts_at) && $subscription->payment_status === SubscriptionPaymentStatus::PAID) {
-            $subscription->starts_at = now();
-        }
-
-        // For lifetime access subscriptions (e.g., recorded courses), don't set ends_at
-        // This avoids MySQL datetime overflow issues with 100-year dates
-        if (empty($subscription->ends_at) && $subscription->starts_at && $subscription->billing_cycle) {
-            // Skip setting ends_at for lifetime access subscriptions
-            $hasLifetimeAccess = property_exists($subscription, 'lifetime_access')
-                ? $subscription->lifetime_access
-                : false;
-
-            if (! $hasLifetimeAccess && $subscription->billing_cycle !== BillingCycle::LIFETIME) {
-                $subscription->ends_at = $subscription->billing_cycle->calculateEndDate($subscription->starts_at);
+        // INV-A1: starts_at/ends_at are derived fields owned by the
+        // SubscriptionReconciler. When `reconciling = true` the caller is
+        // either the reconciler itself or an invariant-checker fixture
+        // constructing a deliberately broken row — either way, do NOT
+        // auto-fill from defaults. Same pattern as SubscriptionRowGuard.
+        if ($subscription->reconciling !== true) {
+            // Calculate dates if not set
+            if (empty($subscription->starts_at) && $subscription->payment_status === SubscriptionPaymentStatus::PAID) {
+                $subscription->starts_at = now();
             }
-        }
 
-        if (empty($subscription->next_billing_date) && $subscription->ends_at && $subscription->auto_renew) {
-            $subscription->next_billing_date = $subscription->ends_at;
+            // For lifetime access subscriptions (e.g., recorded courses), don't set ends_at
+            // This avoids MySQL datetime overflow issues with 100-year dates
+            if (empty($subscription->ends_at) && $subscription->starts_at && $subscription->billing_cycle) {
+                // Skip setting ends_at for lifetime access subscriptions
+                $hasLifetimeAccess = property_exists($subscription, 'lifetime_access')
+                    ? $subscription->lifetime_access
+                    : false;
+
+                if (! $hasLifetimeAccess && $subscription->billing_cycle !== BillingCycle::LIFETIME) {
+                    $subscription->ends_at = $subscription->billing_cycle->calculateEndDate($subscription->starts_at);
+                }
+            }
+
+            if (empty($subscription->next_billing_date) && $subscription->ends_at && $subscription->auto_renew) {
+                $subscription->next_billing_date = $subscription->ends_at;
+            }
         }
     }
 

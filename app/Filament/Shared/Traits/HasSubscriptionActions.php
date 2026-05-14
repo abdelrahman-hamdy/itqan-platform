@@ -174,7 +174,8 @@ trait HasSubscriptionActions
 
                     return;
                 }
-                $record->pause();
+                app(\App\Services\Subscription\SubscriptionLifecycle::class)
+                    ->pause($record, auth()->user(), reason: 'admin_action');
 
                 Notification::make()
                     ->success()
@@ -214,7 +215,8 @@ trait HasSubscriptionActions
 
                     return;
                 }
-                $record->resume();
+                app(\App\Services\Subscription\SubscriptionLifecycle::class)
+                    ->resume($record, auth()->user());
 
                 Notification::make()
                     ->success()
@@ -250,44 +252,8 @@ trait HasSubscriptionActions
 
                     return;
                 }
-                // Clear grace period metadata on reactivation
-                $metadata = $record->metadata ?? [];
-                unset(
-                    $metadata['grace_period_ends_at'],
-                    $metadata['grace_period_expires_at'],
-                    $metadata['grace_period_started_at'],
-                    $metadata['grace_notification_last_sent_at'],
-                    $metadata['renewal_failed_count'],
-                    $metadata['last_renewal_failure_at'],
-                    $metadata['last_renewal_failure_reason']
-                );
-
-                $updateData = [
-                    'status' => SessionSubscriptionStatus::ACTIVE,
-                    'payment_status' => SubscriptionPaymentStatus::PAID,
-                    'last_payment_date' => now(),
-                    'cancelled_at' => null,
-                    'cancellation_reason' => null,
-                    // Do NOT force auto_renew=true — the student explicitly cancelled this
-                    // subscription and should opt back in to auto-renewal manually.
-                    'auto_renew' => false,
-                    'metadata' => $metadata ?: null,
-                ];
-
-                // Reset dates if subscription has no valid dates
-                if (! $record->starts_at || $record->ends_at?->isPast()) {
-                    $updateData['starts_at'] = now();
-                    $updateData['ends_at'] = $record->calculateEndDate(now());
-                }
-
-                // Wrap both writes in a transaction so the subscription and its linked
-                // circle are always updated atomically.
-                DB::transaction(function () use ($record, $updateData) {
-                    $record->update($updateData);
-
-                    $record->syncLinkedEducationUnitActiveFlag(true);
-                    $record->restoreSuspendedSessions();
-                });
+                app(\App\Services\Subscription\SubscriptionLifecycle::class)
+                    ->reactivate($record, auth()->user());
 
                 Notification::make()
                     ->success()
@@ -448,23 +414,26 @@ trait HasSubscriptionActions
 
                     return;
                 }
-                DB::transaction(function () use ($record) {
-                    $record->cancel();
+                // Count first so we can keep the existing UX message.
+                // SubscriptionLifecycle::cancel handles the actual cancellation
+                // + session suspension + consumption reversal + notifications
+                // inside its locked + audited transaction.
+                $futureSessionsCount = $record->sessions()
+                    ->where('scheduled_at', '>', now())
+                    ->whereIn('status', [
+                        SessionStatus::SCHEDULED->value,
+                        SessionStatus::READY->value,
+                    ])
+                    ->count();
 
-                    // Cancel future scheduled sessions
-                    $cancelledSessions = $record->sessions()
-                        ->where('scheduled_at', '>', now())
-                        ->where('status', SessionStatus::SCHEDULED)
-                        ->update(['status' => SessionStatus::CANCELLED]);
+                app(\App\Services\Subscription\SubscriptionLifecycle::class)
+                    ->cancel($record, auth()->user(), reason: 'admin_action');
 
-                    DB::afterCommit(function () use ($cancelledSessions) {
-                        Notification::make()
-                            ->success()
-                            ->title(__('subscriptions.cancel_success'))
-                            ->body(__('subscriptions.cancel_success_body', ['count' => $cancelledSessions]))
-                            ->send();
-                    });
-                });
+                Notification::make()
+                    ->success()
+                    ->title(__('subscriptions.cancel_success'))
+                    ->body(__('subscriptions.cancel_success_body', ['count' => $futureSessionsCount]))
+                    ->send();
             })
             ->visible(fn (BaseSubscription $record) => $record->canCancel());
     }

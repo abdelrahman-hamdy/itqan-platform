@@ -80,6 +80,14 @@ abstract class BaseSubscription extends Model
     use HasFactory, SoftDeletes;
 
     /**
+     * Transient flag set by SubscriptionReconciler around its save() so the
+     * SubscriptionRowGuard observer knows to permit the derived-field write.
+     * Declared as a real property (not a magic attribute) so Eloquent does
+     * not treat it as a fillable column.
+     */
+    public bool $reconciling = false;
+
+    /**
      * Common fillable fields across all subscription types
      * Child classes should merge their specific fields with this static property
      * IMPORTANT: Made static to allow child classes to access via parent::$baseFillable
@@ -485,6 +493,25 @@ abstract class BaseSubscription extends Model
     public function scopePaid($query)
     {
         return $query->where('payment_status', SubscriptionPaymentStatus::PAID);
+    }
+
+    /**
+     * Scope: Get subscriptions with paid payment status.
+     *
+     * Alias of {@see scopePaid()}; kept under the `paymentPaid` name so callers
+     * can read `->paymentPaid()` / `->paymentPending()` symmetrically.
+     */
+    public function scopePaymentPaid($query)
+    {
+        return $query->where('payment_status', SubscriptionPaymentStatus::PAID);
+    }
+
+    /**
+     * Scope: Get subscriptions whose payment_status is pending.
+     */
+    public function scopePaymentPending($query)
+    {
+        return $query->where('payment_status', SubscriptionPaymentStatus::PENDING);
     }
 
     /**

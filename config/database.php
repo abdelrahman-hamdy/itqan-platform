@@ -53,6 +53,13 @@ return [
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            // Optional explicit MySQL session timezone. Useful on dev/CI
+            // boxes where mysqld's `system_time_zone` reports an unmapped
+            // abbreviation (e.g. "EEST" without zoneinfo) — without this
+            // tests near midnight UTC will throw 1292 "Incorrect datetime
+            // value" when MySQL can't convert a session-time string back
+            // to UTC. Production leaves DB_TIMEZONE unset.
+            'timezone' => env('DB_TIMEZONE'),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,

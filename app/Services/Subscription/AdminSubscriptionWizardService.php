@@ -5,6 +5,7 @@ namespace App\Services\Subscription;
 use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Enums\SubscriptionType;
 use App\Models\AcademicPackage;
 use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
@@ -194,7 +195,7 @@ class AdminSubscriptionWizardService
                     'subscription_id' => $subscription->id,
                 ]);
             }
-        } elseif ($type === 'academic' && $subscription instanceof AcademicSubscription) {
+        } elseif ($type === SubscriptionType::ACADEMIC->value && $subscription instanceof AcademicSubscription) {
             if (method_exists($subscription, 'createLessonAndSessions')) {
                 $subscription->createLessonAndSessions();
             }

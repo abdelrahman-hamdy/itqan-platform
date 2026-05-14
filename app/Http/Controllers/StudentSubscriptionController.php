@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Constants\DefaultAcademy;
+use App\Enums\SubscriptionType;
 use App\Models\AcademicSubscription;
 use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
@@ -107,22 +108,21 @@ class StudentSubscriptionController extends Controller
     }
 
     /**
-     * Cancel a subscription
+     * Cancel a subscription.
+     *
+     * Phase A.7 / P3 / INV-G1: student-initiated cancellation is removed.
+     * Cancellation is admin-only via the supervisor panel. The route stays
+     * registered so legacy bookmarks/forms don't 404, but it now redirects
+     * to the subscriptions index with a localized error explaining the
+     * change. The supporting service method is unused going forward — its
+     * removal is scheduled for Phase E.
      */
     public function cancelSubscription(Request $request, string $subdomain, string $type, string $id): RedirectResponse
     {
         $user = Auth::user();
         $subdomain = $user->academy->subdomain ?? DefaultAcademy::subdomain();
 
-        $result = $this->subscriptionService->cancelSubscription($user, $type, $id);
-
-        if (! $result['success']) {
-            return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
-                ->with('error', $result['error']);
-        }
-
-        return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
-            ->with('success', $result['message']);
+        abort(403, __('subscriptions.errors.student_cancel_forbidden'));
     }
 
     /**
@@ -204,7 +204,7 @@ class StudentSubscriptionController extends Controller
         }
 
         if ($subscription->isCurrentCyclePaymentPending()) {
-            $paymentRoute = $type === 'academic'
+            $paymentRoute = $type === SubscriptionType::ACADEMIC->value
                 ? 'academic.subscription.payment'
                 : 'quran.subscription.payment';
 
@@ -223,14 +223,25 @@ class StudentSubscriptionController extends Controller
         $renewalService = app(\App\Services\Subscription\SubscriptionRenewalService::class);
         $mode = $request->input('mode', 'renew');
 
-        // Validate package_id against available packages (same academy, active only)
+        // Phase A.7 / P7 / INV-H1: student-driven renewal MUST land on a
+        // currently-active package. If the previous package is retired and
+        // the student didn't pick a new one — or picked one that isn't in
+        // the active set — block and ask them to choose. Admin/supervisor
+        // renewals bypass this (INV-H2) by going through the supervisor
+        // controller, not this method.
+        $availableOptions = $renewalService->getRenewalOptions($subscription);
+        $validPackageIds = collect($availableOptions['packages'])->pluck('id')->all();
         $packageId = $request->package_id;
+        $previousPackageId = $availableOptions['current']['package_id'] ?? null;
+        $previousIsActive = $previousPackageId !== null && in_array($previousPackageId, $validPackageIds, true);
+
         if ($packageId) {
-            $availableOptions = $renewalService->getRenewalOptions($subscription);
-            $validPackageIds = collect($availableOptions['packages'])->pluck('id')->all();
-            if (! in_array($packageId, $validPackageIds)) {
+            if (! in_array($packageId, $validPackageIds, true)) {
                 return redirect()->back()->with('error', __('subscriptions.errors.invalid_package'));
             }
+        } elseif (! $previousIsActive) {
+            // No package selected AND previous package isn't active — P7 block.
+            return redirect()->back()->with('error', __('subscriptions.errors.previous_package_retired'));
         }
 
         try {
@@ -245,7 +256,7 @@ class StudentSubscriptionController extends Controller
                 : $renewalService->renew($subscription, $options);
 
             // Redirect to payment page for the new pending subscription
-            $paymentRoute = $type === 'academic'
+            $paymentRoute = $type === SubscriptionType::ACADEMIC->value
                 ? 'academic.subscription.payment'
                 : 'quran.subscription.payment';
 

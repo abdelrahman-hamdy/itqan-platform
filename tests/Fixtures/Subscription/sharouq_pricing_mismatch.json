@@ -1,0 +1,39 @@
+{
+  "description": "Sharouq-shaped pricing mismatch (R4 / I1). cycle.final_price (1100) disagrees with PricingResolver(package, billing_cycle) - discount, AND pricing_source='package' so the override fields are NULL. Surfaces INV-D2. The cycle's package_snapshot is preserved so the checker has data to compute the expected price from. Recovery: re-price via SubscriptionPricing::priceCycle() with a manual_override + reason + actor (no auto-fix — operator must classify).",
+  "subscription": {
+    "status": "active",
+    "payment_status": "paid",
+    "sessions_used": 0,
+    "total_sessions": 8,
+    "sessions_remaining": 8,
+    "starts_at_offset_days": -3,
+    "ends_at_offset_days": 27,
+    "last_payment_date_offset_days": -2
+  },
+  "package": {
+    "monthly_price": 200,
+    "session_duration_minutes": 30
+  },
+  "cycle": {
+    "cycle_state": "active",
+    "payment_status": "paid",
+    "cycle_number": 1,
+    "starts_at_offset_days": -3,
+    "ends_at_offset_days": 27,
+    "sessions_used": 0,
+    "total_sessions": 8,
+    "billing_cycle": "monthly",
+    "discount_amount": 0,
+    "final_price": 1100,
+    "pricing_source": "package",
+    "pricing_override_reason": null,
+    "pricing_override_actor_id": null,
+    "package_snapshot": {
+      "monthly_price": 200,
+      "session_duration_minutes": 30
+    }
+  },
+  "expected_violation_codes": ["INV-D2"],
+  "recovery_action": null,
+  "notes": "Not auto-recoverable: operator must classify the cycle as sale_price or manual_override and supply a reason. Until classified, the cycle stays invariant-violating, exposing the gap for triage."
+}

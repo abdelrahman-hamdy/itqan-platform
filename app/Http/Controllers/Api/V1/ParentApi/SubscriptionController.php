@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\ParentApi;
 
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSubscription;
@@ -216,7 +217,7 @@ class SubscriptionController extends Controller
             'type' => $type,
         ];
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             return array_merge($base, [
                 'child_name' => $subscription->student?->name ?? $subscription->student?->full_name,
                 'name' => $subscription->individualCircle?->name ?? $subscription->circle?->name ?? 'اشتراك قرآني',
@@ -249,7 +250,7 @@ class SubscriptionController extends Controller
             ]);
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             return array_merge($base, [
                 'child_name' => $subscription->student?->name ?? 'طالب',
                 'name' => $subscription->subject?->name ?? $subscription->subject_name ?? 'اشتراك أكاديمي',
@@ -333,28 +334,19 @@ class SubscriptionController extends Controller
 
     /**
      * Cancel a child's subscription.
+     *
+     * Phase A.7 / P3 / INV-G1: parent-initiated cancellation is removed
+     * (parents act on behalf of the student, who cannot self-cancel).
+     * The route stays registered so older mobile-app builds don't crash;
+     * cancellation goes through the supervisor panel.
      */
     public function cancel(Request $request, string $type, string $id): JsonResponse
     {
-        $subscription = $this->resolveChildSubscription($request, $type, $id, true);
-
-        if (! $subscription) {
-            return $this->notFound(__('Subscription not found or cannot be cancelled.'));
-        }
-
-        if ($subscription instanceof CourseSubscription) {
-            $subscription->update(['status' => EnrollmentStatus::CANCELLED->value]);
-        } else {
-            $subscription->update([
-                'status' => SessionSubscriptionStatus::CANCELLED->value,
-                'cancelled_at' => now(),
-                'auto_renew' => false,
-            ]);
-        }
-
-        return $this->success([
-            'status' => 'cancelled',
-        ], __('Subscription cancelled successfully'));
+        return $this->error(
+            __('subscriptions.errors.student_cancel_forbidden'),
+            403,
+            'STUDENT_CANCEL_FORBIDDEN'
+        );
     }
 
     /**

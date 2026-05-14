@@ -8,10 +8,10 @@
 set -u
 
 ALERT_BIN="${ALERT_BIN:-/usr/local/bin/itqan-alert}"
-CERT_PATH="${CERT_PATH:-/etc/letsencrypt/live/conference.itqanway.com/cert.pem}"
+CERT_PATH="${CERT_PATH:-/opt/livekit/conference.itqanway.com/certbot/conf/live/conference.itqanway.com/cert.pem}"
 WARN_DAYS="${WARN_DAYS:-14}"
 CRIT_DAYS="${CRIT_DAYS:-3}"
-RENEW_LOG="${RENEW_LOG:-/var/log/letsencrypt-renew.log}"
+RENEW_LOG="${RENEW_LOG:-/opt/livekit/conference.itqanway.com/certbot-renewal.log}"
 
 if [[ ! -r "$CERT_PATH" ]]; then
     "$ALERT_BIN" medium "cert-livekit" "Cert file not readable: $CERT_PATH"

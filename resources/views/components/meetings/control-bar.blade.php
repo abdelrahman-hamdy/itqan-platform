@@ -29,6 +29,21 @@
         <i class="ri-share-box-line text-xl" aria-hidden="true"></i>
         <span class="control-tooltip">{{ __('meetings.controls.share_screen') }}</span>
     </button>
+
+    <!-- Whiteboard Button (Teachers Only) -->
+    <button id="toggleWhiteboard" aria-label="{{ __('whiteboard.whiteboard') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
+        <i class="ri-quill-pen-line text-xl" aria-hidden="true"></i>
+        <span class="control-tooltip">{{ __('whiteboard.whiteboard') }}</span>
+    </button>
+
+    {{-- Mushaf is Quran-only. We deliberately gate on the Livewire/Blade-set
+         window.sessionType when wiring up the click — see livekit-interface
+         bootstrap below. The button is always rendered for the quran_teacher
+         user-type; non-Quran sessions just won't bind a handler. --}}
+    <button id="toggleMushaf" aria-label="{{ __('mushaf.mushaf') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95" style="display:none">
+        <i class="ri-book-open-line text-xl" aria-hidden="true"></i>
+        <span class="control-tooltip">{{ __('mushaf.mushaf') }}</span>
+    </button>
     @endif
 
     @if(!in_array($userType, ['quran_teacher', 'supervisor', 'admin', 'super_admin']))

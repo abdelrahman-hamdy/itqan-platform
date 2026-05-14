@@ -1,12 +1,30 @@
+@inject('presentation', \App\Services\Subscription\SubscriptionPresentation::class)
 @php
     use App\Enums\SessionSubscriptionStatus;
     use App\Enums\SubscriptionPaymentStatus;
+    use App\Enums\UserType;
     use App\Models\BaseSubscription;
 
     $academy = auth()->user()->academy;
     $subdomain = request()->route('subdomain') ?? $academy->subdomain ?? 'itqan-academy';
     $isParent = ($layout ?? 'student') === 'parent';
     $routePrefix = $isParent ? 'parent.subscriptions' : 'student.subscriptions';
+
+    // Phase A.7 / INV-J1: every subscription surface renders ONE badge, ONE
+    // helper line, and ONE primary action — all derived from the canonical
+    // SubscriptionViewState. Per-state Tailwind color classes are picked from
+    // the enum's `badgeColor()` (success / warning / danger / info /
+    // primary / gray) so the student blade matches the supervisor table and
+    // mobile-app card pixel-for-pixel.
+    $viewStateBadgeClasses = [
+        'success' => 'bg-green-100 text-green-800',
+        'warning' => 'bg-yellow-100 text-yellow-800',
+        'danger' => 'bg-red-100 text-red-800',
+        'info' => 'bg-blue-100 text-blue-800',
+        'primary' => 'bg-indigo-100 text-indigo-800',
+        'gray' => 'bg-gray-100 text-gray-800',
+    ];
+    $studentRole = $isParent ? UserType::PARENT : UserType::STUDENT;
 
     // Build unified subscriptions list
     $allSubscriptions = collect();
@@ -361,6 +379,24 @@
                                 default => $subscription['billing_cycle'],
                             };
                     }
+                    // Phase A.7 / INV-J1: derive ONE badge + ONE helper line +
+                    // ONE primary action from the canonical state model.
+                    // Course enrollments don't extend BaseSubscription yet, so
+                    // we fall back to the legacy badge for the `course` type.
+                    $subscriptionModel = $subscription['model'] ?? null;
+                    $viewState = ($subscriptionModel instanceof BaseSubscription)
+                        ? $presentation->viewStateFor($subscriptionModel)
+                        : null;
+                    $viewStateBadgeColor = $viewState?->badgeColor();
+                    $viewStateBadgeClass = $viewState
+                        ? ($viewStateBadgeClasses[$viewStateBadgeColor] ?? $viewStateBadgeClasses['gray'])
+                        : null;
+                    $viewStateHelper = ($subscriptionModel instanceof BaseSubscription)
+                        ? $presentation->helperLineFor($subscriptionModel)
+                        : null;
+                    $primaryAction = ($subscriptionModel instanceof BaseSubscription)
+                        ? $presentation->primaryActionFor($subscriptionModel, $studentRole)
+                        : null;
                 @endphp
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
                     @php
@@ -403,23 +439,24 @@
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium {{ $colors['light'] }} {{ $colors['text'] }}">
                                             {{ $subscription['type_label'] }}
                                         </span>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $subscription['status_classes'] }}">
-                                            {{ $subscription['status_label'] }}
-                                        </span>
-                                        @if(isset($subscription['payment_status_label']))
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $subscription['payment_status_classes'] }}">
-                                                <i class="ri-wallet-line me-1"></i>
-                                                {{ $subscription['payment_status_label'] }}
+                                        {{-- Phase A.7 / INV-J1: ONE canonical state badge derived from
+                                             SubscriptionViewState. Course enrollments fall back to the
+                                             legacy badge until they extend BaseSubscription. --}}
+                                        @if($viewState)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $viewStateBadgeClass }}">
+                                                {{ $viewState->label() }}
                                             </span>
-                                        @endif
-                                        @if($subscription['sessions_exhausted'] ?? false)
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                                                <i class="ri-check-double-line"></i>
-                                                {{ __('student.subscriptions.sessions_exhausted') }}
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $subscription['status_classes'] }}">
+                                                {{ $subscription['status_label'] }}
                                             </span>
                                         @endif
                                     </div>
                                     <p class="text-sm text-gray-600 mt-0.5">{{ $subscription['subtitle'] }}</p>
+                                    @if($viewStateHelper)
+                                        {{-- Phase A.7 / INV-J1: ONE canonical helper line. --}}
+                                        <p class="text-sm text-gray-700 mt-1" dir="auto">{{ $viewStateHelper }}</p>
+                                    @endif
                                     @if(isset($subscription['amount']) && isset($subscription['payment_status']))
                                         <p class="text-lg font-bold mt-1 {{ $subscription['payment_status']->value === 'paid' ? 'text-green-600' : ($subscription['payment_status']->value === 'pending' ? 'text-amber-600' : 'text-red-600') }}">
                                             {{ number_format($subscription['amount'], 2) }} {{ $subscription['currency'] }}
@@ -430,7 +467,24 @@
 
                             <!-- Left Side: Actions -->
                             <div class="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
-                                @if(!$isParent && ($subscription['can_pay'] ?? false) && $subscription['pay_url'])
+                                {{-- Phase A.7 / INV-J1: ONE primary action button driven by
+                                     SubscriptionPresentation::primaryActionFor(). For students this
+                                     resolves to either 'pay', 'renew', or null (view-only) — never
+                                     'cancel' (P3 / INV-G1). --}}
+                                @if(!$isParent && $primaryAction === 'pay' && ($subscription['pay_url'] ?? null))
+                                    <a href="{{ $subscription['pay_url'] }}"
+                                       class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-primary text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+                                        <i class="ri-secure-payment-line ms-2"></i>
+                                        {{ __('subscriptions.primary_actions.pay') }}
+                                    </a>
+                                @elseif(!$isParent && $primaryAction === 'renew' && isset($subscription['renew_url']))
+                                    <a href="{{ $subscription['renew_url'] }}"
+                                       class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-indigo-600 text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+                                        <i class="ri-refresh-line ms-2"></i>
+                                        {{ __('subscriptions.primary_actions.renew') }}
+                                    </a>
+                                @elseif(!$isParent && !$viewState && ($subscription['can_pay'] ?? false) && $subscription['pay_url'])
+                                    {{-- Legacy fallback for course enrollments not yet on BaseSubscription. --}}
                                     <a href="{{ $subscription['pay_url'] }}"
                                        class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-primary text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
                                         <i class="ri-secure-payment-line ms-2"></i>
@@ -446,14 +500,9 @@
                                     </a>
                                 @endif
 
-                                @if(!$isParent && $subscription['can_cancel'])
-                                    <button type="button"
-                                            onclick="cancelSubscription('{{ $subscription['model_type'] }}', {{ $subscription['id'] }})"
-                                            class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-xl md:rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
-                                        <i class="ri-close-circle-line ms-2"></i>
-                                        {{ __('student.subscriptions.cancel') }}
-                                    </button>
-                                @endif
+                                {{-- Phase A.7 / P3 / INV-G1: the student-facing Cancel button is
+                                     removed. Cancellation is admin-only; old callers receive a
+                                     localized 403 from the API ('subscriptions.errors.student_cancel_forbidden'). --}}
 
                                 @if(!$isParent && ($subscription['can_delete'] ?? false))
                                     <button type="button"
@@ -464,13 +513,17 @@
                                     </button>
                                 @endif
 
-                                @if(!$isParent && ($subscription['can_renew'] ?? false) && isset($subscription['renew_url']))
+                                {{-- Legacy Renew/Resubscribe fallback: still rendered for the
+                                     `course` type which doesn't yet extend BaseSubscription and
+                                     therefore has no `$viewState`. The canonical Renew path lives
+                                     in the primary-action block above. --}}
+                                @if(!$isParent && !$viewState && ($subscription['can_renew'] ?? false) && isset($subscription['renew_url']))
                                     <a href="{{ $subscription['renew_url'] }}"
                                        class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-indigo-600 text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
                                         <i class="ri-refresh-line ms-2"></i>
                                         {{ __('student.subscriptions.renew') }}
                                     </a>
-                                @elseif(!$isParent && ($subscription['can_resubscribe'] ?? false) && isset($subscription['renew_url']))
+                                @elseif(!$isParent && !$viewState && ($subscription['can_resubscribe'] ?? false) && isset($subscription['renew_url']))
                                     <a href="{{ $subscription['renew_url'] }}?mode=resubscribe"
                                        class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-teal-600 text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">
                                         <i class="ri-arrow-go-back-line ms-2"></i>
@@ -667,30 +720,10 @@
 
     @push('scripts')
     <script>
-        // Use route URLs generated by Laravel (includes subdomain automatically)
-        const cancelSubscriptionUrl = "{{ route('student.subscriptions.cancel', ['subdomain' => $subdomain, 'type' => '__TYPE__', 'id' => '__ID__']) }}";
+        // Use route URLs generated by Laravel (includes subdomain automatically).
+        // Phase A.7 / P3: the student-cancel URL + JS function are removed.
+        // Cancellation is admin-only via the supervisor panel.
         const deleteSubscriptionUrl = "{{ route('student.subscriptions.delete', ['subdomain' => $subdomain, 'type' => '__TYPE__', 'id' => '__ID__']) }}";
-
-        function cancelSubscription(type, id) {
-            showModal(
-                'bg-red-100',
-                'ri-close-circle-line text-red-600 text-3xl',
-                '{{ __("student.confirm.cancel_subscription_title") }}',
-                '{{ __("student.confirm.cancel_subscription_message") }}',
-                'bg-red-600 text-white hover:bg-red-700',
-                () => {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = cancelSubscriptionUrl.replace('__TYPE__', type).replace('__ID__', id);
-                    form.innerHTML = `
-                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="_method" value="PATCH">
-                    `;
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            );
-        }
 
         function deleteSubscription(type, id) {
             showModal(

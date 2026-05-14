@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSubscription;
@@ -135,7 +136,7 @@ class PaymentApiController extends Controller
     {
         $type = $validated['payment_type'];
 
-        if ($type === 'course') {
+        if ($type === SubscriptionType::COURSE->value) {
             $courseId = $validated['course_id'] ?? null;
             if (! $courseId) {
                 return null;

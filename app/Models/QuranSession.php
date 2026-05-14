@@ -999,13 +999,27 @@ class QuranSession extends BaseSession implements RecordingCapable
             return false;
         }
 
-        return $this->update([
+        $updates = [
             'rescheduled_from' => $this->scheduled_at,
             'rescheduled_to' => $newDateTime,
             'scheduled_at' => $newDateTime,
             'reschedule_reason' => $reason,
             'status' => SessionStatus::SCHEDULED, // Reset to scheduled after rescheduling
-        ]);
+        ];
+
+        // G4 / INV-E1: when a reschedule moves the session across a cycle
+        // boundary, the consumption anchor MUST move with it. Without this
+        // the new date's consumption row would charge the OLD cycle's quota,
+        // leaking quota into a no-longer-active window.
+        $subscription = $this->subscription ?? null;
+        if ($subscription instanceof \App\Models\BaseSubscription) {
+            $newCycle = \App\Models\SubscriptionCycle::cycleForDate($subscription, $newDateTime);
+            if ($newCycle !== null && (int) $newCycle->id !== (int) $this->subscription_cycle_id) {
+                $updates['subscription_cycle_id'] = $newCycle->id;
+            }
+        }
+
+        return $this->update($updates);
     }
 
     /**

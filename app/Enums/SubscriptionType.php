@@ -32,4 +32,20 @@ enum SubscriptionType: string
     {
         return [self::QURAN, self::ACADEMIC];
     }
+
+    /**
+     * Resolve the polymorphic subscription model class for this type. Replaces
+     * the SubscriptionTypeResolver indirection — kept here so a single enum
+     * value carries both the string identity AND its model binding.
+     *
+     * @return class-string<\App\Models\BaseSubscription>
+     */
+    public function modelClass(): string
+    {
+        return match ($this) {
+            self::QURAN => \App\Models\QuranSubscription::class,
+            self::ACADEMIC => \App\Models\AcademicSubscription::class,
+            self::COURSE => \App\Models\CourseSubscription::class,
+        };
+    }
 }

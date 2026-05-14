@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Student;
 
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\StudentProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -111,11 +112,11 @@ class StudentResource extends JsonResource
         $count = 0;
 
         if ($this->resource->relationLoaded('quranSubscriptions')) {
-            $count += $this->resource->quranSubscriptions->where('status', 'active')->count();
+            $count += $this->resource->quranSubscriptions->where('status', SessionSubscriptionStatus::ACTIVE)->count();
         }
 
         if ($this->resource->relationLoaded('academicSubscriptions')) {
-            $count += $this->resource->academicSubscriptions->where('status', 'active')->count();
+            $count += $this->resource->academicSubscriptions->where('status', SessionSubscriptionStatus::ACTIVE)->count();
         }
 
         return $count;

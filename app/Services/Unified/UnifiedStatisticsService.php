@@ -4,6 +4,7 @@ namespace App\Services\Unified;
 
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionType;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
@@ -324,7 +325,7 @@ class UnifiedStatisticsService
         $total = 0;
         $attended = 0;
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $sessions = QuranSession::query()
                 ->where('academy_id', $academyId)
                 ->where(function ($query) use ($studentId) {
@@ -336,7 +337,7 @@ class UnifiedStatisticsService
 
             $total = $sessions->count();
             $attended = $sessions->where('status', SessionStatus::COMPLETED)->count();
-        } elseif ($type === 'academic') {
+        } elseif ($type === SubscriptionType::ACADEMIC->value) {
             $sessions = AcademicSession::query()
                 ->where('academy_id', $academyId)
                 ->where('student_id', $studentId)

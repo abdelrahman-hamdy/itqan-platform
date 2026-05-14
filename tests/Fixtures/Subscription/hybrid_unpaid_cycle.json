@@ -1,0 +1,26 @@
+{
+  "description": "Hybrid unpaid cycle — the 131-sub prod population. Active+pending current cycle past its ends_at; the cron should have flipped cycle→FAILED+ARCHIVED + sub→EXPIRED, but didn't (yet). Surfaces INV-G4.",
+  "subscription": {
+    "status": "active",
+    "payment_status": "pending",
+    "sessions_used": 0,
+    "total_sessions": 8,
+    "sessions_remaining": 8,
+    "starts_at_offset_days": -35,
+    "ends_at_offset_days": -2,
+    "last_payment_date_offset_days": null
+  },
+  "cycle": {
+    "cycle_state": "active",
+    "payment_status": "pending",
+    "cycle_number": 1,
+    "starts_at_offset_days": -35,
+    "ends_at_offset_days": -2,
+    "sessions_used": 0,
+    "total_sessions": 8,
+    "pricing_source": "package",
+    "final_price": 200
+  },
+  "expected_violation_codes": ["INV-G4"],
+  "recovery_action": "expire"
+}

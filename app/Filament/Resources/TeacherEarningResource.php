@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\SubscriptionType;
 use App\Filament\Resources\TeacherEarningResource\Pages;
 use App\Filament\Resources\TeacherEarningResource\Pages\ListTeacherEarnings;
 use App\Filament\Resources\TeacherEarningResource\Pages\ViewTeacherEarning;
@@ -261,9 +262,9 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                                 continue;
                             }
                             $numericId = (int) $id;
-                            if ($type === 'quran') {
+                            if ($type === SubscriptionType::QURAN->value) {
                                 $quranIds[] = $numericId;
-                            } elseif ($type === 'academic') {
+                            } elseif ($type === SubscriptionType::ACADEMIC->value) {
                                 $academicIds[] = $numericId;
                             }
                         }

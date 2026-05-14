@@ -157,8 +157,8 @@ class QuranSubscriptionPaymentController extends Controller
             // pending forever.
             Payment::forPayable(QuranSubscription::class, $subscription->id)
                 ->where('payment_type', 'subscription')
-                ->where('status', 'pending')
-                ->update(['status' => 'cancelled', 'payment_status' => 'cancelled']);
+                ->where('status', PaymentStatus::PENDING->value)
+                ->update(['status' => PaymentStatus::CANCELLED->value, 'payment_status' => 'cancelled']);
 
             // Create new payment record
             $payment = Payment::create([
@@ -251,8 +251,12 @@ class QuranSubscriptionPaymentController extends Controller
             return null;
         }
 
-        return ($sub->acceptsRetryPayment() || $sub->isCurrentCyclePaymentPending())
-            ? $sub
-            : null;
+        // G6: route through the canonical SubscriptionViewState (same fix as
+        // AcademicSubscriptionPaymentController).
+        return app(\App\Services\Subscription\SubscriptionPresentation::class)
+            ->viewStateFor($sub)
+            ->allowsPaymentRetry()
+                ? $sub
+                : null;
     }
 }

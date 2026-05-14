@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Teacher;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -89,7 +90,7 @@ class SessionReportController extends Controller
             'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ];
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $rules['memorization_degree'] = ['sometimes', 'nullable', 'numeric', 'min:0', 'max:10'];
             $rules['revision_degree'] = ['sometimes', 'nullable', 'numeric', 'min:0', 'max:10'];
         } else {
@@ -123,7 +124,7 @@ class SessionReportController extends Controller
             $payload['notes'] = $request->input('notes');
         }
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             if ($request->has('memorization_degree')) {
                 $payload['new_memorization_degree'] = $request->input('memorization_degree');
             }
@@ -243,11 +244,11 @@ class SessionReportController extends Controller
      */
     protected function getStudentsForSession(string $type, $session)
     {
-        if ($type === 'quran' && method_exists($session, 'getStudentsForSession')) {
+        if ($type === SubscriptionType::QURAN->value && method_exists($session, 'getStudentsForSession')) {
             return $session->getStudentsForSession();
         }
 
-        if ($type === 'academic' && $session->student) {
+        if ($type === SubscriptionType::ACADEMIC->value && $session->student) {
             return collect([$session->student]);
         }
 
@@ -303,14 +304,14 @@ class SessionReportController extends Controller
             'manually_evaluated' => (bool) ($report?->manually_evaluated ?? false),
         ];
 
-        if ($type === 'quran' && $report instanceof StudentSessionReport) {
+        if ($type === SubscriptionType::QURAN->value && $report instanceof StudentSessionReport) {
             $base['memorization_degree'] = $report->new_memorization_degree;
             $base['revision_degree'] = $report->reservation_degree;
         } elseif ($report instanceof AcademicSessionReport || $report instanceof InteractiveSessionReport) {
             $base['homework_degree'] = $report->homework_degree;
         } else {
-            $base[$type === 'quran' ? 'memorization_degree' : 'homework_degree'] = null;
-            if ($type === 'quran') {
+            $base[$type === SubscriptionType::QURAN->value ? 'memorization_degree' : 'homework_degree'] = null;
+            if ($type === SubscriptionType::QURAN->value) {
                 $base['revision_degree'] = null;
             }
         }

@@ -16,6 +16,7 @@ use App\Http\Controllers\LiveKitMeetingController;
 use App\Http\Controllers\LiveKitWebhookController;
 use App\Http\Controllers\MeetingController;
 use App\Http\Controllers\MeetingObserverController;
+use App\Http\Controllers\MushafFontController;
 use App\Http\Controllers\UnifiedMeetingController;
 use Illuminate\Support\Facades\Route;
 
@@ -139,3 +140,16 @@ Route::middleware(['auth'])->prefix('api/recordings')->group(function () {
     Route::get('{recordingId}/stream', [InteractiveCourseRecordingController::class, 'streamRecording'])->name('recordings.stream');
     Route::get('{recordingId}/peaks', [InteractiveCourseRecordingController::class, 'peaksRecording'])->name('recordings.peaks');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Mushaf Page Fonts (Public, Aggressively Cached)
+|--------------------------------------------------------------------------
+| Streams KFGQPC QPC v4 per-page WOFF2 fonts to the interactive Mushaf
+| viewer inside meetings. Public so the cache layer can dedupe across
+| tenants — same font for every academy.
+*/
+
+Route::get('/mushaf/fonts/{page}.woff2', [MushafFontController::class, 'show'])
+    ->where('page', '[1-9]|[1-9][0-9]|[1-5][0-9][0-9]|60[0-4]')
+    ->name('mushaf.fonts');

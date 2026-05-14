@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Enums\SessionStatus;
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -314,7 +315,7 @@ class SessionController extends Controller
         }
 
         // Type-specific details
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $base['quran_details'] = [
                 'from_surah' => $session->from_surah,
                 'from_verse' => $session->from_verse,
@@ -326,7 +327,7 @@ class SessionController extends Controller
             ];
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             $base['academic_details'] = [
                 'subject' => $session->academicSubscription?->subject_name,
                 'homework' => $session->homework,

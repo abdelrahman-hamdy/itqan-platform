@@ -20,6 +20,25 @@
     // Status is automatically cast to SubscriptionStatus enum by the model
     $statusEnum = $subscription->status ?? SubscriptionStatus::PENDING;
 
+    // Phase A.7 / INV-J1: canonical view-state badge replaces the raw status
+    // badge so every subscription-display surface (student blade, supervisor
+    // table, Filament resource, mobile-app card, and these reusable cards)
+    // renders the same label/color from one source.
+    $viewState = ($subscription instanceof \App\Models\BaseSubscription)
+        ? app(\App\Services\Subscription\SubscriptionPresentation::class)->viewStateFor($subscription)
+        : null;
+    $viewStateBadgeClasses = [
+        'success' => 'bg-green-100 text-green-800',
+        'warning' => 'bg-yellow-100 text-yellow-800',
+        'danger' => 'bg-red-100 text-red-800',
+        'info' => 'bg-blue-100 text-blue-800',
+        'primary' => 'bg-indigo-100 text-indigo-800',
+        'gray' => 'bg-gray-100 text-gray-800',
+    ];
+    $viewStateBadgeClass = $viewState
+        ? ($viewStateBadgeClasses[$viewState->badgeColor()] ?? $viewStateBadgeClasses['gray'])
+        : null;
+
     $canAccess = $subscription->individualCircle && $subscription->individualCircle->id;
     $href = $canAccess ?
         route($routeName, [
@@ -63,11 +82,17 @@
             </div>
         </div>
 
-        <!-- Status Badge -->
+        <!-- Status Badge (Phase A.7 / INV-J1: ONE canonical view-state badge). -->
         <div class="flex flex-col items-end gap-1.5 md:gap-2 flex-shrink-0">
-            <span class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium {{ $statusEnum->badgeClasses() }}">
-                {{ $statusEnum->label() }}
-            </span>
+            @if($viewState)
+                <span class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium {{ $viewStateBadgeClass }}">
+                    {{ $viewState->label() }}
+                </span>
+            @else
+                <span class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium {{ $statusEnum->badgeClasses() }}">
+                    {{ $statusEnum->label() }}
+                </span>
+            @endif
 
             @if($canAccess)
                 <i class="ri-arrow-left-s-line text-gray-400 rtl:rotate-180 {{ $compact ? 'text-xs md:text-sm' : 'text-sm' }}"></i>

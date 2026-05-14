@@ -43,6 +43,7 @@ use Throwable;
 class EasyKashWebhookController extends Controller
 {
     use ApiResponses;
+    use \App\Services\Subscription\Concerns\DualExecutesPayment;
 
     public function __construct(
         private EasyKashSignatureService $signatureService,
@@ -399,7 +400,11 @@ class EasyKashWebhookController extends Controller
                 $payable = $payment->payable;
 
                 if ($payable && method_exists($payable, 'activateFromPayment')) {
-                    $payable->activateFromPayment($payment);
+                    $this->runWithDualExecution(
+                        $payment,
+                        fn () => $payable->activateFromPayment($payment),
+                        $this->defaultV2Callable($payment),
+                    );
 
                     SafePaymentLogger::info('EasyKash: activateFromPayment completed via polymorphic', [
                         'payment_id' => $payment->id,
@@ -425,7 +430,11 @@ class EasyKashWebhookController extends Controller
                 if ($subscription && method_exists($subscription, 'activateFromPayment')) {
                     $currentStatus = $subscription->payment_status->value ?? $subscription->status ?? null;
                     if ($currentStatus !== 'paid' && $currentStatus !== 'active') {
-                        $subscription->activateFromPayment($payment);
+                        $this->runWithDualExecution(
+                            $payment,
+                            fn () => $subscription->activateFromPayment($payment),
+                            $this->defaultV2Callable($payment),
+                        );
 
                         SafePaymentLogger::info('EasyKash: subscription activated from legacy subscription_id', [
                             'subscription_id' => $subscription->id,

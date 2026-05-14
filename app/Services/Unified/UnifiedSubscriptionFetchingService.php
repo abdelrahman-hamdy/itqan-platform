@@ -2,6 +2,7 @@
 
 namespace App\Services\Unified;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
@@ -201,13 +202,17 @@ class UnifiedSubscriptionFetchingService
     ): array {
         $all = $this->getForStudent($studentId, $academyId, null, $types);
 
+        // Mixed collection: session-based subs (Quran/Academic) use
+        // SessionSubscriptionStatus, course subs use EnrollmentStatus.
+        // Compare against the enum's value to match both Eloquent-cast and
+        // string-keyed entries in the merged collection.
         return [
-            'active' => $all->where('status', 'active')->count(),
-            'pending' => $all->where('status', 'pending')->count(),
-            'paused' => $all->where('status', 'paused')->count(),
-            'cancelled' => $all->where('status', 'cancelled')->count(),
-            'enrolled' => $all->where('status', 'enrolled')->count(),
-            'completed' => $all->where('status', 'completed')->count(),
+            'active' => $all->where('status', SessionSubscriptionStatus::ACTIVE->value)->count(),
+            'pending' => $all->where('status', SessionSubscriptionStatus::PENDING->value)->count(),
+            'paused' => $all->where('status', SessionSubscriptionStatus::PAUSED->value)->count(),
+            'cancelled' => $all->where('status', SessionSubscriptionStatus::CANCELLED->value)->count(),
+            'enrolled' => $all->where('status', EnrollmentStatus::ENROLLED->value)->count(),
+            'completed' => $all->where('status', EnrollmentStatus::COMPLETED->value)->count(),
             'total' => $all->count(),
         ];
     }

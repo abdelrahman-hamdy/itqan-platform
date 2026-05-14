@@ -29,20 +29,37 @@ class LiveKitRecordingManager
     }
 
     /**
-     * Start recording for a room using LiveKit Egress
+     * Dispatches audio-only recordings to TrackComposite egress (no Chrome
+     * compositor, ~5x lower CPU per recording) when the
+     * use_track_egress_for_audio_only flag is enabled; everything else still
+     * uses RoomComposite egress.
      */
     public function startRecording(string $roomName, array $options = []): array
+    {
+        $audioOnly = $options['audio_only'] ?? false;
+        $useTrackEgress = config('livekit.use_track_egress_for_audio_only', false);
+
+        if ($audioOnly && $useTrackEgress) {
+            return $this->startTrackRecording($roomName, $options);
+        }
+
+        return $this->startRoomCompositeRecording($roomName, $options);
+    }
+
+    /**
+     * RoomComposite egress (Chrome-based compositor). Used when TrackComposite
+     * routing is disabled or video is present.
+     */
+    private function startRoomCompositeRecording(string $roomName, array $options = []): array
     {
         try {
             if (! $this->isConfigured()) {
                 throw new Exception('LiveKit recording manager not configured properly');
             }
 
-            // Build file path for local storage on LiveKit server.
-            // Audio-only AAC content is always written into an MP4 container by
-            // LiveKit egress (which uses gstreamer's mp4mux), so use .mp4 to
-            // avoid the .m4a.mp4 double extension produced when LiveKit appends
-            // its own container suffix to non-recognized extensions.
+            // Audio-only AAC is always written into an MP4 container by LiveKit
+            // egress (gstreamer's mp4mux). Use .mp4 to avoid the .m4a.mp4 double
+            // extension LiveKit appends to non-recognized extensions.
             $audioOnly = $options['audio_only'] ?? false;
             $extension = '.mp4';
             $filename = $options['filename'] ?? sprintf('recording-%s-%s', $roomName, now()->timestamp);
@@ -53,7 +70,6 @@ class LiveKitRecordingManager
                 $extension
             );
 
-            // Prepare Egress request payload for room composite recording
             $payload = [
                 'room_name' => $roomName,
                 'audio_only' => $audioOnly,
@@ -69,14 +85,12 @@ class LiveKitRecordingManager
                     'audio_frequency' => $options['audio_frequency'] ?? config('livekit.audio.recording_frequency', 48000),
                 ];
             } else {
-                // Video options
                 $payload['options'] = [
                     'preset' => $options['preset'] ?? 'HD',
                     'layout' => $options['layout'] ?? 'grid',
                 ];
             }
 
-            // Add metadata if provided
             if (! empty($options['metadata'])) {
                 $payload['metadata'] = json_encode($options['metadata']);
             }
@@ -87,10 +101,8 @@ class LiveKitRecordingManager
                 'api_url' => $this->apiUrl,
             ]);
 
-            // Generate token for Egress API
             $token = $this->tokenGenerator->generateEgressToken();
 
-            // Call LiveKit Egress Twirp API (StartRoomCompositeEgress)
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer '.$token,
                 'Content-Type' => 'application/json',
@@ -297,6 +309,7 @@ class LiveKitRecordingManager
                 throw new Exception('LiveKit recording manager not configured properly');
             }
 
+            $audioOnly = $trackOptions['audio_only'] ?? false;
             $filename = $trackOptions['filename'] ?? sprintf('track-recording-%s-%s', $roomName, now()->timestamp);
             $extension = '.mp4';
             $filepath = sprintf(
@@ -308,20 +321,21 @@ class LiveKitRecordingManager
 
             $fileOutput = ['filepath' => $filepath];
 
-            // Audio quality options
-            if (isset($trackOptions['audio_bitrate'])) {
-                $fileOutput['audio_bitrate'] = $trackOptions['audio_bitrate'];
-            }
-            if (isset($trackOptions['audio_frequency'])) {
-                $fileOutput['audio_frequency'] = $trackOptions['audio_frequency'];
+            if ($audioOnly) {
+                $fileOutput['audio_bitrate'] = $trackOptions['audio_bitrate'] ?? config('livekit.audio.recording_bitrate_kbps', 128);
+                $fileOutput['audio_frequency'] = $trackOptions['audio_frequency'] ?? config('livekit.audio.recording_frequency', 48000);
             }
 
             $payload = [
                 'room_name' => $roomName,
-                'audio_only' => $trackOptions['audio_only'] ?? false,
+                'audio_only' => $audioOnly,
                 'video_only' => $trackOptions['video_only'] ?? false,
                 'file_outputs' => [$fileOutput],
             ];
+
+            if (! empty($trackOptions['metadata'])) {
+                $payload['metadata'] = json_encode($trackOptions['metadata']);
+            }
 
             Log::info('Starting LiveKit track recording', [
                 'room_name' => $roomName,

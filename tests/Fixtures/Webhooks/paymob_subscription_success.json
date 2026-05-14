@@ -1,0 +1,48 @@
+{
+  "type": "TRANSACTION",
+  "obj": {
+    "id": 999000001,
+    "pending": false,
+    "amount_cents": 20000,
+    "success": true,
+    "is_auth": false,
+    "is_capture": false,
+    "is_standalone_payment": true,
+    "is_voided": false,
+    "is_refunded": false,
+    "is_3d_secure": true,
+    "integration_id": 1234567,
+    "profile_id": 7654321,
+    "has_parent_transaction": false,
+    "order": {
+      "id": 888000001,
+      "created_at": "2026-05-14T03:00:00.000000Z",
+      "merchant_order_id": "PAYMENT_CODE_PLACEHOLDER",
+      "amount_cents": 20000,
+      "currency": "EGP"
+    },
+    "created_at": "2026-05-14T03:00:01.000000Z",
+    "currency": "EGP",
+    "error_occured": false,
+    "owner": 1111111,
+    "source_data": {
+      "pan": "5078",
+      "type": "card",
+      "sub_type": "MasterCard"
+    },
+    "payment_key_claims": {
+      "user_id": 7654321,
+      "amount_cents": 20000,
+      "currency": "EGP",
+      "order_id": 888000001,
+      "integration_id": 1234567,
+      "billing_data": {
+        "first_name": "Test",
+        "last_name": "Student",
+        "email": "test@example.com",
+        "phone_number": "+201000000000",
+        "country": "EG"
+      }
+    }
+  }
+}

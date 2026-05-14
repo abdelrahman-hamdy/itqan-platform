@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\EarningsCalculationServiceInterface;
 use App\Enums\SessionStatus;
+use App\Enums\SubscriptionType;
 use App\Helpers\EarningsCycleHelper;
 use App\Models\AcademicSession;
 use App\Models\BaseSession;
@@ -174,9 +175,9 @@ class EarningsCalculationService implements EarningsCalculationServiceInterface
      */
     public function clearTeacherCache(string $type, int $id): void
     {
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             Cache::forget("teacher:quran_profile:{$id}");
-        } elseif ($type === 'academic') {
+        } elseif ($type === SubscriptionType::ACADEMIC->value) {
             Cache::forget("teacher:academic_profile:{$id}");
         }
     }

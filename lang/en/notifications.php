@@ -363,4 +363,16 @@ return [
         'title' => 'Your subscription has expired',
         'body' => 'Your subscription to :name has expired. Renew to continue learning.',
     ],
+
+    // Subscription expired with unpaid current cycle (P8 hybrid path)
+    'subscription_expired_unpaid' => [
+        'title' => 'Subscription expired with an unpaid cycle',
+        'body' => 'Your subscription to :name expired while the current cycle was still unpaid. Please settle the outstanding payment and resubscribe.',
+    ],
+
+    // Session cancelled because the subscription was paused / cancelled
+    'session_cancelled_by_subscription_pause' => [
+        'title' => 'Your upcoming session was cancelled',
+        'body' => 'Your session scheduled for :scheduled_at was cancelled because the related subscription was paused or cancelled.',
+    ],
 ];

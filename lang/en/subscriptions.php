@@ -153,6 +153,27 @@ return [
         'delete_subscription_warning' => 'This will permanently delete the subscription and ALL related data (sessions, circle, lessons, payments, reports). This action cannot be undone.',
         'delete_subscription_confirm' => 'Yes, Delete Permanently',
         'delete_subscription_success' => 'Subscription and all related data deleted successfully.',
+        // Phase A.7 — student-initiated cancellation is removed (P3 / INV-G1).
+        // Old mobile-app builds still hit the cancel endpoint; the API now
+        // returns 403 with this localized message so the client can surface it.
+        'student_cancel_forbidden' => 'Cancellation is handled by your academy admin. Please contact your supervisor if you need to end this subscription.',
+        // Phase A.7 / P7 / INV-H1 — retired-package guards on student-driven
+        // renewal screens. Admin/supervisor renewals bypass these (INV-H2).
+        'previous_package_retired' => 'Your previous package is no longer available. Please pick a currently active package to continue.',
+        'no_active_packages' => 'No active packages are currently available. Please contact your academy admin.',
+    ],
+
+    // Phase A.7 — short user-facing labels for the canonical primary actions
+    // surfaced by `SubscriptionPresentation::primaryActionFor()`. Every
+    // subscription surface (student blade, supervisor table, Filament badge,
+    // mobile-app card) consumes these so labels stay consistent across roles.
+    'primary_actions' => [
+        'pay' => 'Pay now',
+        'renew' => 'Renew',
+        'resume' => 'Resume',
+        'confirm_cash' => 'Confirm cash payment',
+        'cancel' => 'Cancel',
+        'create_new' => 'Start new subscription',
     ],
 
     // Type labels
@@ -274,4 +295,52 @@ return [
     // Expiry-with-leftover banner (subscription expired but paid sessions remain)
     'expired_with_leftover_title' => 'Subscription expired',
     'expired_with_leftover_body' => '{1} This subscription has expired with 1 paid session still unused. It will roll into the next cycle as soon as the student renews.|[2,*] This subscription has expired with :count paid sessions still unused. Remaining sessions will roll into the next cycle as soon as the student renews.',
+
+    // Phase A.2 — bootstrap of session_consumption rows from legacy flags
+    'bootstrap_consumption' => [
+        'dry_run_notice' => 'Dry-run mode — no rows will be inserted. Drop --dry-run to apply.',
+        'apply_notice' => 'Inserting session_consumption rows from legacy flags...',
+        'metric_header' => 'Metric',
+        'count_header' => 'Count',
+    ],
+
+    // Phase A.5 — SubscriptionViewState (docs/subscription-invariants.md §1)
+    // The 8 exhaustive cases that every subscription surface (mobile card,
+    // student blade, supervisor table, Filament badge) renders identically.
+    // `helper` placeholders: :count (sessions_remaining), :date (ends_at),
+    // :grace_date (grace_period_ends_at).
+    'view_state' => [
+        'pending_first_payment' => [
+            'label' => 'Awaiting payment',
+            'helper' => 'Awaiting payment to activate the subscription',
+        ],
+        'active_paid' => [
+            'label' => 'Active',
+            'helper' => 'Active subscription — :count sessions remaining until :date',
+        ],
+        'active_payment_due' => [
+            'label' => 'Payment due',
+            'helper' => 'Subscription is active but payment is overdue — please pay',
+        ],
+        'grace_admin' => [
+            'label' => 'Grace period',
+            'helper' => 'In grace period — renew before :grace_date',
+        ],
+        'paused_admin' => [
+            'label' => 'Paused',
+            'helper' => 'Subscription is temporarily paused',
+        ],
+        'paused_end_of_period' => [
+            'label' => 'Sessions exhausted',
+            'helper' => 'All sessions used — renew to continue',
+        ],
+        'expired' => [
+            'label' => 'Expired',
+            'helper' => 'Subscription expired — renew to continue',
+        ],
+        'cancelled' => [
+            'label' => 'Cancelled',
+            'helper' => 'Subscription cancelled',
+        ],
+    ],
 ];

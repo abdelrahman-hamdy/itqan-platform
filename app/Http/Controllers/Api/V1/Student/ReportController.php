@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -42,13 +43,13 @@ class ReportController extends Controller
         $allReports = collect();
 
         // Quran reports
-        if (! $type || $type === 'quran') {
+        if (! $type || $type === SubscriptionType::QURAN->value) {
             $quranReports = $this->getQuranReports($user->id, $dateFrom, $dateTo);
             $allReports = $allReports->merge($quranReports);
         }
 
         // Academic reports
-        if (! $type || $type === 'academic') {
+        if (! $type || $type === SubscriptionType::ACADEMIC->value) {
             $academicReports = $this->getAcademicReports($user->id, $dateFrom, $dateTo);
             $allReports = $allReports->merge($academicReports);
         }

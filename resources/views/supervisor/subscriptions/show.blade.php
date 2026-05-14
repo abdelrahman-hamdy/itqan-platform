@@ -1,6 +1,32 @@
 <x-layouts.supervisor>
 
+@inject('presentation', \App\Services\Subscription\SubscriptionPresentation::class)
 @php
+    // Phase A.7 / INV-J1: derive the canonical state once and reuse for the
+    // badge + helper line + supervisor primary action. Falls back to the
+    // legacy `status->badgeClasses()` if `$subscription` isn't a
+    // BaseSubscription (defensive — every type extends it today).
+    $viewState = ($subscription instanceof \App\Models\BaseSubscription)
+        ? $presentation->viewStateFor($subscription)
+        : null;
+    $viewStateBadgeClasses = [
+        'success' => 'bg-green-100 text-green-800',
+        'warning' => 'bg-yellow-100 text-yellow-800',
+        'danger' => 'bg-red-100 text-red-800',
+        'info' => 'bg-blue-100 text-blue-800',
+        'primary' => 'bg-indigo-100 text-indigo-800',
+        'gray' => 'bg-gray-100 text-gray-800',
+    ];
+    $viewStateBadgeClass = $viewState
+        ? ($viewStateBadgeClasses[$viewState->badgeColor()] ?? $viewStateBadgeClasses['gray'])
+        : null;
+    $viewStateHelper = ($subscription instanceof \App\Models\BaseSubscription)
+        ? $presentation->helperLineFor($subscription)
+        : null;
+    $supervisorPrimaryAction = ($subscription instanceof \App\Models\BaseSubscription)
+        ? $presentation->primaryActionFor($subscription, \App\Enums\UserType::SUPERVISOR)
+        : null;
+
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
     $studentUser = $subscription->student;
     $studentName = $studentUser ? trim($studentUser->first_name . ' ' . $studentUser->last_name) : '-';
@@ -55,19 +81,25 @@
             </a>
         </div>
 
-        {{-- Badges --}}
+        {{-- Badges. Phase A.7 / INV-J1: ONE canonical view-state badge replaces
+             the legacy status + payment_status pair. The recurring-discount and
+             purchase-source pills stay — they're orthogonal facts. --}}
         <div class="flex flex-wrap items-center gap-2 mb-4">
             <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full {{ $typeColor }}">{{ $typeLabel }}</span>
-            <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $subscription->status->badgeClasses() }}">{{ $subscription->status->label() }}</span>
-            @if($subscription->is_sessions_exhausted)
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-800"><i class="ri-check-double-line"></i>{{ __('supervisor.subscriptions.sessions_exhausted_badge') }}</span>
+            @if($viewState)
+                <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $viewStateBadgeClass }}" title="{{ $viewStateHelper }}">{{ $viewState->label() }}</span>
+            @else
+                <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $subscription->status->badgeClasses() }}">{{ $subscription->status->label() }}</span>
             @endif
-            <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $subscription->payment_status->badgeClasses() }}">{{ $subscription->payment_status->label() }}</span>
             @if($subscription->is_recurring_discount && $subscription->discount_amount > 0)
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700"><i class="ri-refresh-line"></i>{{ __('subscriptions.recurring_discount_badge') }}</span>
             @endif
             <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">{{ $source === 'admin' ? __('supervisor.subscriptions.source_admin') : __('supervisor.subscriptions.source_student') }}</span>
         </div>
+        @if($viewStateHelper)
+            {{-- Phase A.7 / INV-J1: canonical helper line. --}}
+            <p class="text-sm text-gray-700 mb-3" dir="auto">{{ $viewStateHelper }}</p>
+        @endif
 
         {{-- Action Buttons (directly visible) --}}
         @if($canManage)
@@ -100,8 +132,16 @@
                     <form id="show-activate-form" method="POST" action="{{ route('manage.subscriptions.activate', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">@csrf</form>
                     <button onclick="window.confirmAction({title:@js(__('supervisor.subscriptions.action_activate')),message:@js(__('supervisor.subscriptions.confirm_activate')),confirmText:@js(__('supervisor.subscriptions.action_activate')),isDangerous:false,icon:'ri-checkbox-circle-line',onConfirm:()=>document.getElementById('show-activate-form').submit()})" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 cursor-pointer"><i class="ri-checkbox-circle-line"></i>{{ __('supervisor.subscriptions.action_activate') }}</button>
                 @endif
-                @if($subscription->canConfirmManualPayment())
-                    <button onclick="document.getElementById('show-confirm-payment-modal').classList.remove('hidden')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 cursor-pointer"><i class="ri-check-double-line"></i>{{ __('supervisor.subscriptions.action_confirm_payment') }}</button>
+                {{-- Confirm Payment.
+                     Phase A.7 / INV-J1 / P4: visibility driven by
+                     SubscriptionPresentation::primaryActionFor(...,
+                     UserType::SUPERVISOR) === 'confirm_cash'. Includes the P4
+                     supervisor-late-cash-on-expired path (the matrix maps
+                     EXPIRED + SUPERVISOR → confirm_cash). Legacy
+                     canConfirmManualPayment() fallback for non-BaseSubscription
+                     models. --}}
+                @if($supervisorPrimaryAction === 'confirm_cash' || (! $viewState && $subscription->canConfirmManualPayment()))
+                    <button onclick="document.getElementById('show-confirm-payment-modal').classList.remove('hidden')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 cursor-pointer"><i class="ri-check-double-line"></i>{{ __('subscriptions.primary_actions.confirm_cash') }}</button>
                 @endif
                 @if($subscription->canRenew() || $subscription->is_sessions_exhausted)
                     <button onclick="document.getElementById('show-renew-modal').classList.remove('hidden')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 cursor-pointer"><i class="ri-refresh-line"></i>{{ __('supervisor.subscriptions.action_renew') }}</button>
@@ -280,6 +320,14 @@
                         <div class="flex items-center gap-3 text-xs text-gray-500 flex-shrink-0">
                             <span>{{ $sCycle->sessions_used }} / {{ $sCycle->total_sessions }}</span>
                             <span class="font-medium text-gray-700">{{ number_format((float) $sCycle->final_price, 2) }} {{ $sCycle->currency }}</span>
+                            @if($canManage ?? false)
+                                <a href="{{ route('manage.subscriptions.cycles.inspect', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id, 'cycle' => $sCycle->id]) }}"
+                                   class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-medium"
+                                   title="{{ __('supervisor.subscriptions.inspect_cycle') }}">
+                                    <i class="ri-search-line"></i>
+                                    {{ __('supervisor.subscriptions.inspect') }}
+                                </a>
+                            @endif
                         </div>
                     </div>
                 @endforeach
@@ -417,23 +465,92 @@
     </div>
 
     {{-- Renew Modal --}}
+    @php
+        $renewalPackages = $renewalOptions['packages'] ?? [];
+        $currentPackageId = $renewalOptions['current']['package_id'] ?? null;
+        $activePackageIds = collect($renewalPackages)->pluck('id')->all();
+        $previousPackageRetired = $currentPackageId !== null && ! in_array($currentPackageId, $activePackageIds, true);
+        $currentPackageName = $subscription->package_name_ar ?? $subscription->package?->name ?? '-';
+        $renewBillingCycle = $subscription->billing_cycle?->value ?? 'monthly';
+    @endphp
     <div id="show-renew-modal" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
         <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
-            <div class="relative bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+            <div class="relative bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+                 onclick="event.stopPropagation()"
+                 x-data="{
+                    packages: {{ Js::from($renewalPackages) }},
+                    selectedPackageId: {{ $currentPackageId !== null && in_array($currentPackageId, $activePackageIds, true) ? (int) $currentPackageId : 'null' }},
+                    selectedCycle: '{{ $renewBillingCycle }}',
+                    get selectedPackage() { return this.packages.find(p => p.id === this.selectedPackageId) || {}; },
+                    getPrice(cycle) {
+                        const pkg = this.selectedPackage;
+                        return pkg[`effective_${cycle}_price`] ?? pkg[`${cycle}_price`] ?? 0;
+                    },
+                    formatPrice(price) {
+                        return new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(price);
+                    }
+                 }">
                 <div class="p-6 pt-8 md:pt-6">
                     <div class="mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-indigo-100 mb-4"><i class="ri-refresh-line text-2xl text-indigo-600"></i></div>
                     <h3 class="text-lg font-bold text-center text-gray-900 mb-2">{{ __('supervisor.subscriptions.renew_title') }}</h3>
                     @if($sessionsRemaining > 0)<div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-sm text-blue-700"><i class="ri-information-line"></i> {{ __('supervisor.subscriptions.sessions_carryover_message', ['count' => $sessionsRemaining]) }}</div>@endif
+
+                    {{-- Current package badge --}}
+                    <div class="mb-4 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600 flex items-center justify-between">
+                        <span>{{ __('supervisor.subscriptions.current_package_label') }}</span>
+                        <span class="font-semibold text-gray-900">{{ $currentPackageName }}</span>
+                    </div>
+                    @if($previousPackageRetired)
+                        <div class="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800" dir="auto">
+                            <i class="ri-error-warning-line"></i> {{ __('supervisor.subscriptions.previous_package_retired_admin') }}
+                        </div>
+                    @endif
+
                     <form method="POST" action="{{ route('manage.subscriptions.renew', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}" id="show-renew-form">
                         @csrf
-                        <div class="mb-3"><label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.subscriptions.billing_cycle_label') }}</label><div class="flex gap-2">@foreach(['monthly'=>__('enums.billing_cycle.monthly'),'quarterly'=>__('enums.billing_cycle.quarterly'),'yearly'=>__('enums.billing_cycle.yearly')] as $v=>$l)<label class="flex-1 cursor-pointer"><input type="radio" name="billing_cycle" value="{{ $v }}" {{ $subscription->billing_cycle?->value===$v?'checked':'' }} class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700">{{ $l }}</div></label>@endforeach</div></div>
+
+                        {{-- Package picker (INV-H2: admin can switch package even when previous is active). --}}
+                        @if(count($renewalPackages) > 0)
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.subscriptions.package_label') }}</label>
+                                <select name="package_id"
+                                        x-model.number="selectedPackageId"
+                                        class="w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    @if($previousPackageRetired)
+                                        <option value="">— {{ __('supervisor.subscriptions.choose_package') }} —</option>
+                                    @endif
+                                    @foreach($renewalPackages as $pkg)
+                                        <option value="{{ $pkg['id'] }}"
+                                                {{ ((int) $currentPackageId === (int) $pkg['id']) ? 'selected' : '' }}>
+                                            {{ $pkg['name'] }}
+                                            ({{ $pkg['sessions_per_month'] }} × {{ $pkg['session_duration_minutes'] }}{{ __('supervisor.subscriptions.min_suffix') }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        <div class="mb-3"><label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.subscriptions.billing_cycle_label') }}</label><div class="flex gap-2">@foreach(['monthly'=>__('enums.billing_cycle.monthly'),'quarterly'=>__('enums.billing_cycle.quarterly'),'yearly'=>__('enums.billing_cycle.yearly')] as $v=>$l)<label class="flex-1 cursor-pointer"><input type="radio" name="billing_cycle" value="{{ $v }}" {{ $renewBillingCycle===$v?'checked':'' }} x-model="selectedCycle" class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700">{{ $l }}</div></label>@endforeach</div></div>
+
+                        {{-- Live price preview --}}
+                        @if(count($renewalPackages) > 0)
+                            <div class="mb-3 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-xs text-indigo-800 flex items-center justify-between">
+                                <span>{{ __('supervisor.subscriptions.new_price_preview') }}</span>
+                                <span class="font-bold text-base" x-text="formatPrice(getPrice(selectedCycle)) + ' ' + (selectedPackage.currency || 'SAR')">—</span>
+                            </div>
+                        @endif
+
                         <div class="mb-3"><label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.subscriptions.payment_mode_label') }}</label><div class="flex gap-2"><label class="flex-1 cursor-pointer"><input type="radio" name="payment_mode" value="paid" checked class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-700">{{ __('supervisor.subscriptions.payment_mode_paid') }}</div></label><label class="flex-1 cursor-pointer"><input type="radio" name="payment_mode" value="unpaid" class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-yellow-600 peer-checked:bg-yellow-50 peer-checked:text-yellow-700">{{ __('supervisor.subscriptions.payment_mode_unpaid') }}</div></label></div></div>
                     </form>
                 </div>
                 <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
-                    <button onclick="document.getElementById('show-renew-modal').classList.add('hidden')" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl">{{ __('common.cancel') }}</button>
-                    <button onclick="document.getElementById('show-renew-form').submit()" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md">{{ __('supervisor.subscriptions.action_renew') }}</button>
+                    <button type="button" onclick="document.getElementById('show-renew-modal').classList.add('hidden')" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl">{{ __('common.cancel') }}</button>
+                    <button type="button"
+                            onclick="document.getElementById('show-renew-form').submit()"
+                            :disabled="{{ $previousPackageRetired ? 'true' : 'false' }} && !selectedPackageId"
+                            :class="(({{ $previousPackageRetired ? 'true' : 'false' }} && !selectedPackageId)) ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'"
+                            class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md">{{ __('supervisor.subscriptions.action_renew') }}</button>
                 </div>
             </div>
         </div>

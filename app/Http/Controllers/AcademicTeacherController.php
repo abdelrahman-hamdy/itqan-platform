@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\EducationalQualification;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicTeacherProfile;
 use Exception;
@@ -444,10 +445,10 @@ class AcademicTeacherController extends Controller
                 'published_courses' => $teacher->interactiveCourses()->where('is_published', true)->count(),
                 'average_rating' => $teacher->rating,
                 'total_earnings' => $teacher->subscriptions()
-                    ->where('payment_status', 'paid')
+                    ->where('payment_status', SubscriptionPaymentStatus::PAID->value)
                     ->sum('final_monthly_amount'),
                 'monthly_earnings' => $teacher->subscriptions()
-                    ->where('payment_status', 'paid')
+                    ->where('payment_status', SubscriptionPaymentStatus::PAID->value)
                     ->whereMonth('last_payment_date', now()->month)
                     ->sum('final_monthly_amount'),
             ];

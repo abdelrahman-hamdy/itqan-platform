@@ -1,0 +1,9 @@
+{
+    "lie_state": [],
+    "hybrid_unpaid": [],
+    "missing_dates": [],
+    "paused_extended": [],
+    "package_change_duration": [],
+    "pricing_mismatch": [],
+    "_notes": "Populate IDs after running subscriptions:audit-pricing-trust and subscriptions:invariant-check on prod-snapshot. Each category's IDs become repeatable test fixtures. Each entry is an object: {\"type\": \"quran|academic|course\", \"id\": <int>, \"note\": \"<short description>\"}. The importer (subscriptions:import-prod-fixtures) reads this file, pulls those rows from the prod_snapshot DB connection (configured per docs/subscription-prod-observation-runbook.md), sanitises PII, and inserts into the local DB. Never commit real prod sub IDs to this repo without product-owner sign-off; treat these IDs as low-risk because the importer sanitises PII, but the policy is still: keep this list to the minimum needed for repeatable bug reproduction."
+}

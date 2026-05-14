@@ -10,6 +10,16 @@
     $isResubscribe = $mode === 'resubscribe';
     $currentPackageId = $options['current']['package_id'] ?? null;
     $currentBillingCycle = $options['current']['billing_cycle'] ?? 'monthly';
+
+    // Phase A.7 / P7 / INV-H1: on student-driven renewal the previous
+    // package must be currently-active. `$options['packages']` is already
+    // filtered to active packages by SubscriptionRenewalService; if the
+    // snapshotted package no longer appears, force the student to pick a
+    // new one (block proceed + show explanation). Admin/supervisor renewals
+    // bypass this surface — INV-H2.
+    $activePackageIds = collect($options['packages'])->pluck('id')->all();
+    $previousPackageRetired = $currentPackageId !== null && ! in_array($currentPackageId, $activePackageIds, true);
+    $noActivePackages = count($activePackageIds) === 0;
 @endphp
 
 <div class="max-w-2xl mx-auto px-4 py-8">
@@ -81,8 +91,27 @@
             @csrf
             <input type="hidden" name="mode" value="{{ $mode }}">
 
-            {{-- Package Selection --}}
-            @if(count($options['packages']) > 1)
+            {{-- Phase A.7 / P7 / INV-H1: retired-package banner. --}}
+            @if($previousPackageRetired && ! $noActivePackages)
+                <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800" dir="auto">
+                    <i class="ri-error-warning-line"></i>
+                    {{ __('subscriptions.errors.previous_package_retired') }}
+                </div>
+            @endif
+
+            @if($noActivePackages)
+                <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800" dir="auto">
+                    <i class="ri-error-warning-line"></i>
+                    {{ __('subscriptions.errors.no_active_packages') }}
+                </div>
+            @endif
+
+            {{-- Package Selection.
+                 Phase A.7 / P7: render the selector whenever the previous
+                 package is retired (force student to pick) even if only one
+                 active package exists. The hidden-input fallback is now
+                 only used when the previous package is still active. --}}
+            @if(count($options['packages']) >= 1 && ($previousPackageRetired || count($options['packages']) > 1))
                 <div class="mb-6">
                     <label class="block text-sm font-semibold text-gray-700 mb-3">{{ __('student.subscriptions.select_package') }}</label>
                     <div class="grid grid-cols-1 gap-3">
@@ -164,12 +193,28 @@
                 <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{{ session('error') }}</div>
             @endif
 
-            {{-- Submit --}}
-            <button type="submit"
-                    class="w-full min-h-[48px] px-6 py-3 bg-indigo-600 text-white rounded-xl text-base font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
-                <i class="ri-secure-payment-line ms-2"></i>
-                {{ __('student.subscriptions.proceed_to_payment') }}
-            </button>
+            {{-- Submit.
+                 Phase A.7 / P7: block proceed when there are no active
+                 packages, OR the previous package is retired and the student
+                 hasn't picked a fresh one yet. The button binds its disabled
+                 state to the Alpine selectedPackageId so the gate stays
+                 honest when the user hasn't clicked any of the radios. --}}
+            @if($noActivePackages)
+                <button type="button"
+                        disabled
+                        class="w-full min-h-[48px] px-6 py-3 bg-gray-300 text-gray-600 rounded-xl text-base font-semibold cursor-not-allowed">
+                    <i class="ri-lock-line ms-2"></i>
+                    {{ __('subscriptions.errors.no_active_packages') }}
+                </button>
+            @else
+                <button type="submit"
+                        :disabled="{{ $previousPackageRetired ? '!selectedPackageId || !' . json_encode($activePackageIds) . '.includes(selectedPackageId)' : 'false' }}"
+                        :class="{{ $previousPackageRetired ? '(!selectedPackageId || !' . json_encode($activePackageIds) . '.includes(selectedPackageId)) ? \'bg-gray-300 text-gray-600 cursor-not-allowed\' : \'bg-indigo-600 text-white hover:bg-indigo-700\'' : "'bg-indigo-600 text-white hover:bg-indigo-700'" }}"
+                        class="w-full min-h-[48px] px-6 py-3 rounded-xl text-base font-semibold transition-colors shadow-sm">
+                    <i class="ri-secure-payment-line ms-2"></i>
+                    {{ __('student.subscriptions.proceed_to_payment') }}
+                </button>
+            @endif
         </form>
     </div>
 </div>

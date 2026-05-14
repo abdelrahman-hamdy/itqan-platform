@@ -49,7 +49,7 @@ describe('POST /api/v1/register/student', function () {
             'password_confirmation' => 'SecurePassword123',
             'birth_date' => '2010-01-15',
             'gender' => 'male',
-            'nationality' => 'Saudi',
+            'nationality' => 'SA',
             'grade_level_id' => $this->gradeLevel->id,
         ], [
             'X-Academy-Subdomain' => 'test-academy',

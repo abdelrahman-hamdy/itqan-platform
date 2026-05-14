@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\InteractiveCourseHomework;
-use App\Models\AcademicSession;
-use App\Models\QuranSession;
-use App\Models\AcademicHomework;
 use App\Contracts\UnifiedHomeworkServiceInterface;
+use App\Enums\SubscriptionType;
 use App\Http\Middleware\ChildSelectionMiddleware;
+use App\Models\AcademicHomework;
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseHomework;
+use App\Models\QuranSession;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -168,9 +169,9 @@ class ParentHomeworkController extends Controller
         // Authorization: Use appropriate policy based on homework type
         if ($type === 'interactive' && $homework instanceof InteractiveCourseHomework) {
             $this->authorize('view', $homework);
-        } elseif ($type === 'academic' && $homework instanceof AcademicSession) {
+        } elseif ($type === SubscriptionType::ACADEMIC->value && $homework instanceof AcademicSession) {
             $this->authorize('viewAcademicHomework', $homework);
-        } elseif ($type === 'quran' && $homework instanceof QuranSession) {
+        } elseif ($type === SubscriptionType::QURAN->value && $homework instanceof QuranSession) {
             $this->authorize('viewQuranHomework', $homework);
         } else {
             // Fallback: Verify homework belongs to one of parent's children

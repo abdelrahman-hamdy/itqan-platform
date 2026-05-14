@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Student;
 
-use Exception;
-use App\Models\AcademicHomework;
-use App\Models\InteractiveCourseHomework;
 use App\Contracts\UnifiedHomeworkServiceInterface;
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SubmitStudentHomeworkRequest;
+use App\Models\AcademicHomework;
+use App\Models\InteractiveCourseHomework;
 use App\Services\HomeworkService;
+use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -207,7 +208,7 @@ class HomeworkController extends Controller
      */
     private function formatHomeworkForView($homework, $submission, $type)
     {
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             return [
                 'type' => 'academic',
                 'id' => $homework->id,

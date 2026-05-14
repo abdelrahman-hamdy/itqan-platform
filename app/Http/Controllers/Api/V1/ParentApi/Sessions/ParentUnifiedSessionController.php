@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\ParentApi\Sessions;
 
 use App\Enums\SessionStatus;
+use App\Enums\SubscriptionType;
 use App\Http\Helpers\PaginationHelper;
 use App\Models\AcademicSession;
 use App\Models\CourseSubscription;
@@ -52,7 +53,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
         $limit = config('api.parent_sessions_limit', 50);
 
         // Batch load Quran sessions for all children
-        if (! $type || $type === 'quran') {
+        if (! $type || $type === SubscriptionType::QURAN->value) {
             $sessions = array_merge(
                 $sessions,
                 $this->getBatchQuranSessions($childUserIds, $studentMap, $request, $limit)
@@ -60,7 +61,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
         }
 
         // Batch load Academic sessions for all children
-        if (! $type || $type === 'academic') {
+        if (! $type || $type === SubscriptionType::ACADEMIC->value) {
             $sessions = array_merge(
                 $sessions,
                 $this->getBatchAcademicSessions($childUserIds, $studentMap, $request, $limit)
@@ -574,7 +575,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
     {
         $base = $this->formatSessionSimple($type, $session, $student);
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             return array_merge($base, [
                 'teacher' => $session->quranTeacher ? [
                     'id' => $session->quranTeacher->id,
@@ -607,7 +608,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
             ]);
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             return array_merge($base, [
                 'teacher' => $session->academicTeacher?->user ? [
                     'id' => $session->academicTeacher->user->id,

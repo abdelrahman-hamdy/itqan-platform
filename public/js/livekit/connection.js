@@ -288,10 +288,14 @@ class LiveKitConnection {
             }, 250);
         });
 
-        // Data received
-        this.room.on(window.LiveKit.RoomEvent.DataReceived, (payload, participant) => {
+        // Data received — pass topic through so the meeting can route
+        // `whiteboard` / `mushaf` packets to feature modules without going
+        // through the chat/handraise switch in controls.js. Older publishers
+        // that don't set a topic arrive as `topic === undefined` and fall
+        // through to the existing path.
+        this.room.on(window.LiveKit.RoomEvent.DataReceived, (payload, participant, _kind, topic) => {
             if (this.config.onDataReceived) {
-                this.config.onDataReceived(payload, participant);
+                this.config.onDataReceived(payload, participant, topic);
             }
         });
 

@@ -2,16 +2,17 @@
 
 namespace App\Services;
 
-use Carbon\Carbon;
 use App\Constants\DefaultAcademy;
+use App\Contracts\UnifiedHomeworkServiceInterface;
 use App\Enums\HomeworkSubmissionStatus;
+use App\Enums\SubscriptionType;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
-use App\Contracts\UnifiedHomeworkServiceInterface;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -47,7 +48,7 @@ class UnifiedHomeworkService implements UnifiedHomeworkServiceInterface
         $homework = collect();
 
         // Get Academic homework
-        if (! $type || $type === 'academic') {
+        if (! $type || $type === SubscriptionType::ACADEMIC->value) {
             $academicHomework = $this->getAcademicHomework($studentId, $academyId, $status);
             $homework = $homework->merge($academicHomework);
         }
@@ -59,7 +60,7 @@ class UnifiedHomeworkService implements UnifiedHomeworkServiceInterface
         }
 
         // Get Quran homework (view-only)
-        if (! $type || $type === 'quran') {
+        if (! $type || $type === SubscriptionType::QURAN->value) {
             $quranHomework = $this->getQuranHomework($studentId, $academyId, $status);
             $homework = $homework->merge($quranHomework);
         }

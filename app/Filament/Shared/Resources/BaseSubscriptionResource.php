@@ -11,6 +11,7 @@ use App\Enums\WeekDays;
 use App\Filament\Shared\Traits\HasSubscriptionActions;
 use App\Models\BaseSubscription;
 use App\Services\AcademyContextService;
+use App\Services\Subscription\SubscriptionPresentation;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
@@ -171,6 +172,21 @@ abstract class BaseSubscriptionResource extends Resource
                 ->label('الطالب')
                 ->searchable()
                 ->sortable(),
+
+            // Phase A.7 / INV-J1: canonical view-state badge. The legacy
+            // `status` and `payment_status` columns below stay for now so
+            // admins can compare during the migration; Phase E removes them.
+            TextColumn::make('view_state')
+                ->label('الحالة الموحدة')
+                ->badge()
+                ->getStateUsing(fn ($record) => $record instanceof BaseSubscription
+                    ? resolve(SubscriptionPresentation::class)->viewStateFor($record)
+                    : null)
+                ->formatStateUsing(fn ($state): string => $state?->label() ?? '-')
+                ->color(fn ($state): string => $state?->badgeColor() ?? 'gray')
+                ->tooltip(fn ($record): ?string => $record instanceof BaseSubscription
+                    ? resolve(SubscriptionPresentation::class)->helperLineFor($record)
+                    : null),
 
             TextColumn::make('status')
                 ->badge()

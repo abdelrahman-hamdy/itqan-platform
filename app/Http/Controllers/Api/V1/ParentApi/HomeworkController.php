@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -312,7 +313,7 @@ class HomeworkController extends Controller
 
         $childUserIds = $this->getLinkedChildUserIds($parentProfile->id);
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $session = QuranSession::where('id', $id)
                 ->whereIn('student_id', $childUserIds)
                 ->whereHas('sessionHomework')

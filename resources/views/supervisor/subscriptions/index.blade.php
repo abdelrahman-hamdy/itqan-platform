@@ -1,7 +1,22 @@
 <x-layouts.supervisor>
 
+@inject('presentation', \App\Services\Subscription\SubscriptionPresentation::class)
 @php
+    // Phase A.7 / INV-J1: fully-qualified class refs (no `use` statements —
+    // Blade splices @php into an outer `if (...)`, which forbids `use`).
+    $supervisorRole = \App\Enums\UserType::SUPERVISOR;
+
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+
+    // Phase A.7 / INV-J1 — Tailwind classes for SubscriptionViewState::badgeColor().
+    $viewStateBadgeClasses = [
+        'success' => 'bg-green-100 text-green-800',
+        'warning' => 'bg-yellow-100 text-yellow-800',
+        'danger' => 'bg-red-100 text-red-800',
+        'info' => 'bg-blue-100 text-blue-800',
+        'primary' => 'bg-indigo-100 text-indigo-800',
+        'gray' => 'bg-gray-100 text-gray-800',
+    ];
 
     $userFilterParam = request('student_id') ? 'student_id' : (request('teacher_user_id') ? 'teacher_user_id' : null);
     $hasUserFilter = $userFilterParam !== null && ($filterUser ?? null) !== null;
@@ -256,6 +271,21 @@
                             'group' => 'ri-group-line',
                             default => 'ri-graduation-cap-line',
                         };
+
+                        // Phase A.7 / INV-J1: derive canonical state + helper + primary action.
+                        $subModel = $sub['model'] ?? null;
+                        $viewState = ($subModel instanceof \App\Models\BaseSubscription)
+                            ? $presentation->viewStateFor($subModel)
+                            : null;
+                        $viewStateBadgeClass = $viewState
+                            ? ($viewStateBadgeClasses[$viewState->badgeColor()] ?? $viewStateBadgeClasses['gray'])
+                            : null;
+                        $viewStateHelper = ($subModel instanceof \App\Models\BaseSubscription)
+                            ? $presentation->helperLineFor($subModel)
+                            : null;
+                        $supervisorPrimaryAction = ($subModel instanceof \App\Models\BaseSubscription)
+                            ? $presentation->primaryActionFor($subModel, $supervisorRole)
+                            : null;
                     @endphp
 
                     <div class="px-4 md:px-6 py-4 md:py-5 hover:bg-gray-50/50 transition-colors">
@@ -272,17 +302,18 @@
                                             <i class="{{ $typeIcon }}"></i>
                                             {{ $typeLabel }}
                                         </span>
-                                        @if($sub['status'])
+                                        {{-- Phase A.7 / INV-J1: ONE canonical state badge. --}}
+                                        @if($viewState)
+                                            <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $viewStateBadgeClass }}"
+                                                  title="{{ $viewStateHelper }}">
+                                                {{ $viewState->label() }}
+                                            </span>
+                                        @elseif($sub['status'])
                                             <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $sub['status']->badgeClasses() }}">
                                                 {{ $sub['status']->label() }}
                                             </span>
                                         @else
                                             <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">-</span>
-                                        @endif
-                                        @if($sub['model']->payment_status !== \App\Enums\SubscriptionPaymentStatus::PAID)
-                                            <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $sub['model']->payment_status->badgeClasses() }}">
-                                                {{ $sub['model']->payment_status->label() }}
-                                            </span>
                                         @endif
                                         @if($sub['model']->is_sessions_exhausted)
                                             <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
@@ -333,6 +364,10 @@
                                             {{ $sub['end_date']?->format('Y-m-d') ?? '-' }}
                                         </span>
                                     </div>
+                                    {{-- Phase A.7 / INV-J1: canonical helper line. --}}
+                                    @if($viewStateHelper)
+                                        <p class="text-xs md:text-sm text-gray-700 mt-1" dir="auto">{{ $viewStateHelper }}</p>
+                                    @endif
                                 </div>
 
                                 <!-- Right: sessions progress (desktop: side panel, mobile: below) -->
@@ -502,12 +537,18 @@
                                             </button>
                                         @endif
 
-                                        {{-- Confirm Payment --}}
-                                        @if($sub['model']->canConfirmManualPayment())
+                                        {{-- Confirm Payment.
+                                             Phase A.7 / INV-J1: visibility now driven by
+                                             SubscriptionPresentation::primaryActionFor(...,
+                                             UserType::SUPERVISOR) === 'confirm_cash'. Falls back to
+                                             the legacy canConfirmManualPayment() predicate for
+                                             subscription types that don't yet flow through the
+                                             canonical state model. --}}
+                                        @if($supervisorPrimaryAction === 'confirm_cash' || (! $viewState && $sub['model']->canConfirmManualPayment()))
                                             <button type="button"
                                                 onclick="document.getElementById('confirm-payment-modal-{{ $sub['id'] }}').classList.remove('hidden')"
                                                 class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
-                                                <i class="ri-check-double-line"></i>{{ __('supervisor.subscriptions.action_confirm_payment') }}
+                                                <i class="ri-check-double-line"></i>{{ __('subscriptions.primary_actions.confirm_cash') }}
                                             </button>
                                         @endif
 
@@ -591,8 +632,11 @@
                         </div>
                     @endif
 
-                    {{-- Confirm Payment Modal --}}
-                    @if($canManage && $sub['model']->canConfirmManualPayment())
+                    {{-- Confirm Payment Modal.
+                         Phase A.7 / INV-J1: modal renders when the canonical state grants
+                         confirm_cash to the supervisor, or (legacy fallback) when the model's
+                         manual-payment predicate accepts. --}}
+                    @if($canManage && ($supervisorPrimaryAction === 'confirm_cash' || (! $viewState && $sub['model']->canConfirmManualPayment())))
                         <div id="confirm-payment-modal-{{ $sub['id'] }}" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
                             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
                             <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">

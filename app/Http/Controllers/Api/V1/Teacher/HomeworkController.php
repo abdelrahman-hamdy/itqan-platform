@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Teacher;
 
 use App\Enums\HomeworkSubmissionStatus;
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -107,7 +108,7 @@ class HomeworkController extends Controller
     {
         $user = $request->user();
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             return $this->showQuranHomework($user, (int) $id);
         }
 
@@ -117,7 +118,7 @@ class HomeworkController extends Controller
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             $session = AcademicSession::where('id', $id)
                 ->where('academic_teacher_id', $academicTeacherId)
                 ->with(['student', 'academicSubscription', 'homeworkSubmissions.student'])
@@ -307,7 +308,7 @@ class HomeworkController extends Controller
     {
         $user = $request->user();
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             return $this->updateQuranHomework($user, $request, (int) $id);
         }
 
@@ -327,7 +328,7 @@ class HomeworkController extends Controller
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             $session = AcademicSession::where('id', $id)
                 ->where('academic_teacher_id', $academicTeacherId)
                 ->first();
@@ -386,7 +387,7 @@ class HomeworkController extends Controller
     {
         $user = $request->user();
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $homework = QuranSessionHomework::find($id);
 
             if (! $homework) {
@@ -412,7 +413,7 @@ class HomeworkController extends Controller
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             $session = AcademicSession::where('id', $id)
                 ->where('academic_teacher_id', $academicTeacherId)
                 ->first();
@@ -472,7 +473,7 @@ class HomeworkController extends Controller
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             $session = AcademicSession::where('id', $id)
                 ->where('academic_teacher_id', $academicTeacherId)
                 ->first();
@@ -573,7 +574,7 @@ class HomeworkController extends Controller
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             $submission = AcademicHomeworkSubmission::with('homework.session')->find($submissionId);
 
             if (! $submission) {
@@ -644,7 +645,7 @@ class HomeworkController extends Controller
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             $submission = AcademicHomeworkSubmission::with('homework.session')->find($submissionId);
 
             if (! $submission) {

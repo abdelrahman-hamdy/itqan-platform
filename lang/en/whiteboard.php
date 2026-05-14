@@ -1,0 +1,24 @@
+<?php
+
+return [
+    'whiteboard' => 'Whiteboard',
+    'pen' => 'Pen',
+    'eraser' => 'Eraser',
+    'undo' => 'Undo',
+    'redo' => 'Redo',
+    'fit' => 'Fit view',
+    'clear' => 'Clear',
+    'clear_title' => 'Clear whiteboard',
+    'clear_confirm' => 'Clear the whiteboard for everyone? This cannot be undone.',
+    'close' => 'Close whiteboard',
+    'opened_by_teacher' => 'Whiteboard opened by the teacher',
+    'waiting_for_teacher' => 'Waiting for the teacher to share the whiteboard…',
+    'width_label' => 'Width',
+    'color_black' => 'Black',
+    'color_red' => 'Red',
+    'color_blue' => 'Blue',
+    'color_green' => 'Green',
+    'color_yellow' => 'Yellow',
+    'color_orange' => 'Orange',
+    'color_purple' => 'Purple',
+];

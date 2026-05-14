@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Enums\HomeworkSubmissionStatus;
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseHomeworkSubmission;
-use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -427,7 +427,7 @@ class HomeworkController extends Controller
 
         $user = $request->user();
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             return $this->error(__('Quran homework does not support submissions.'), 400, 'NOT_SUBMITTABLE');
         }
 

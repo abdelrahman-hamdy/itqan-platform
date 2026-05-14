@@ -4,7 +4,11 @@ namespace App\Services;
 
 use App\Jobs\CalculateSessionEarningsJob;
 use App\Models\BaseSession;
+use App\Models\SessionConsumption;
 use App\Models\TeacherEarning;
+use App\Models\User;
+use App\Services\Subscription\SubscriptionConsumption;
+use App\Support\Subscriptions\AttendanceConsumptionMapper;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -126,7 +130,32 @@ class SessionCountingService
             // edits on archived-cycle rows can't bleed into the active cycle.
             $cycleAnchor = $attendance->subscription_cycle_id
                 ?? ($session->subscription_cycle_id ?? null);
-            $subscription->useSession($cycleAnchor);
+
+            // Tier 3 / G5 — when the v2 consumption flag is on, every manual
+            // override routes through SubscriptionConsumption::record so the
+            // lock + audit + reconciler invariants all stay coherent. The
+            // legacy useSession path is the fallback while the flag is off.
+            if (config('subscriptions.v2_consumption_enabled')) {
+                $student = User::find($studentId);
+                if ($student instanceof User) {
+                    $consumptionType = AttendanceConsumptionMapper::consumptionTypeFor(
+                        $attendance->status ?? null,
+                        countsForSubscription: true,
+                    ) ?? SessionConsumption::TYPE_ATTENDED;
+
+                    app(SubscriptionConsumption::class)->record(
+                        $session,
+                        $student,
+                        $subscription,
+                        source: SessionConsumption::SOURCE_ADMIN_MANUAL,
+                        sourceUser: auth()->user(),
+                        consumptionType: $consumptionType,
+                    );
+                }
+            } else {
+                $subscription->useSession($cycleAnchor);
+            }
+
             $attendance->update(['subscription_counted_at' => now()]);
 
             if (! $session->subscription_counted) {
@@ -160,7 +189,36 @@ class SessionCountingService
             // Reverse on the same cycle the attendance was charged against.
             $cycleAnchor = $attendance->subscription_cycle_id
                 ?? ($session->subscription_cycle_id ?? null);
-            $subscription->returnSession($cycleAnchor);
+
+            if (config('subscriptions.v2_consumption_enabled')) {
+                $existing = SessionConsumption::query()
+                    ->where('session_id', $session->getKey())
+                    ->where('session_type', $session->getMorphClass())
+                    ->where('subscription_id', $subscription->getKey())
+                    ->where('subscription_type', $subscription->getMorphClass())
+                    ->where('cycle_id', $cycleAnchor)
+                    ->whereNull('reversed_at')
+                    ->first();
+
+                if ($existing instanceof SessionConsumption) {
+                    $reverser = auth()->user();
+                    if ($reverser instanceof User) {
+                        app(SubscriptionConsumption::class)->reverse(
+                            $existing,
+                            'admin_manual_override',
+                            $reverser,
+                        );
+                    } else {
+                        // CLI / cron path — no auth context. Fall back to
+                        // legacy returnSession so a row still gets reversed;
+                        // a proper actor is required for the audited v2 path.
+                        $subscription->returnSession($cycleAnchor);
+                    }
+                }
+            } else {
+                $subscription->returnSession($cycleAnchor);
+            }
+
             $attendance->update(['subscription_counted_at' => null]);
 
             if ($session->subscription_counted) {

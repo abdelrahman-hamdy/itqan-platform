@@ -295,6 +295,44 @@ Schedule::command('subscriptions:audit-cycle-counts')
     ->runInBackground()
     ->description('Daily dry-run audit of cycle session-count drift; repair is operator-triggered');
 
+// Phase A.4 — daily invariant sweep across every subscription thread. Writes
+// a structured JSON report at storage/app/subscriptions/invariant-{date}.json
+// and, on any non-empty violations, logs `subscription_invariant_violations`
+// to the `subscriptions` channel (the LiveKit-VPS tail-and-forward script
+// pages Telegram via the existing itqan-alert pipeline). Read-only.
+//
+// withoutOverlapping(30) — explicit 30-minute mutex TTL per
+// MEMORY.md → feedback_schedule_mutex_short_ttl. Bare withoutOverlapping()
+// defaults to a 24h lock that would freeze the next 23 runs if a job crashed
+// mid-execution.
+Schedule::command('subscriptions:invariant-check --all')
+    ->name('subscription-invariant-check')
+    ->dailyAt('04:00')
+    ->timezone('Asia/Riyadh')
+    ->withoutOverlapping(30)
+    ->runInBackground()
+    ->onFailure($pageOnFail('subscriptions:invariant-check'))
+    ->description('Phase A.4: read-only invariant sweep across all subscriptions');
+
+// Phase C — daily summary of subscription_audit_log activity. Read-only;
+// groups rows by action and surfaces invariant violations. With --telegram,
+// writes a structured warning to the `subscriptions` log channel; the
+// LiveKit-VPS tail-and-forward script reuses the itqan-alert pipeline
+// (MEMORY.md → telegram_alert_pipeline) to page Telegram on new violations.
+//
+// withoutOverlapping(60) — explicit 60-minute mutex TTL per
+// MEMORY.md → feedback_schedule_mutex_short_ttl. Bare withoutOverlapping()
+// defaults to a 24h lock that freezes the next 23 runs if a job crashes
+// mid-execution; 60 minutes is the longest acceptable cap for this
+// once-daily report.
+Schedule::command('subscriptions:audit-daily-report --telegram')
+    ->name('subscription-audit-daily-report')
+    ->dailyAt('05:00')
+    ->timezone('Asia/Riyadh')
+    ->withoutOverlapping(60)
+    ->runInBackground()
+    ->description('Daily summary of subscription_audit_log; Telegram page on new invariant violations');
+
 // Recalculate denormalized teacher profile counters (total_students, total_sessions)
 // Required because total_students/total_sessions are excluded from $fillable for security
 // and no observer/listener currently maintains them. Runs as safety net every 15 minutes.

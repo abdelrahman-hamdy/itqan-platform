@@ -6,6 +6,7 @@ use App\Enums\AttendanceStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -223,7 +224,7 @@ class ReportController extends Controller
             'subscription' => [
                 'id' => $subscription->id,
                 'type' => $type,
-                'name' => $type === 'quran'
+                'name' => $type === SubscriptionType::QURAN->value
                     ? ($subscription->individualCircle?->name ?? $subscription->circle?->name ?? 'اشتراك قرآني')
                     : ($subscription->subject?->name ?? $subscription->subject_name ?? 'اشتراك أكاديمي'),
                 'status' => $subscription->status,
@@ -234,7 +235,7 @@ class ReportController extends Controller
                 'id' => $subscription->student?->id,
                 'name' => $subscription->student?->name ?? $subscription->student?->full_name,
             ],
-            'teacher' => $type === 'quran'
+            'teacher' => $type === SubscriptionType::QURAN->value
                 ? ($subscription->quranTeacher?->user ? [
                     'id' => $subscription->quranTeacher->user->id,
                     'name' => $subscription->quranTeacher->user->name,
@@ -362,7 +363,7 @@ class ReportController extends Controller
         $studentId = $subscription->student_id;
         $sessionIds = $completedSessions->pluck('id');
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $reports = StudentSessionReport::whereIn('session_id', $sessionIds)
                 ->where('student_id', $studentId)
                 ->get();
@@ -456,7 +457,7 @@ class ReportController extends Controller
      */
     protected function getSessionAttendance(string $type, int $studentUserId, Carbon $startDate, Carbon $endDate): array
     {
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $sessions = QuranSession::where('student_id', $studentUserId)
                 ->whereBetween('scheduled_at', [$startDate, $endDate])
                 ->countable()
@@ -466,7 +467,7 @@ class ReportController extends Controller
             $reports = $sessions->flatMap(function ($session) use ($studentUserId) {
                 return $session->reports->where('student_id', $studentUserId);
             });
-        } elseif ($type === 'academic') {
+        } elseif ($type === SubscriptionType::ACADEMIC->value) {
             $sessions = AcademicSession::where('student_id', $studentUserId)
                 ->whereBetween('scheduled_at', [$startDate, $endDate])
                 ->countable()

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\QuranTeacherProfileResource\Widgets;
 
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\QuranTeacherProfile;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -30,7 +31,7 @@ class QuranTeachersStatsWidget extends BaseWidget
 
         $withoutCircles = QuranTeacherProfile::whereHas('user', fn ($q) => $q->where('active_status', true))
             ->whereDoesntHave('quranCircles', fn ($q) => $q->where('status', true))
-            ->whereDoesntHave('subscriptions', fn ($q) => $q->where('status', 'active'))
+            ->whereDoesntHave('subscriptions', fn ($q) => $q->where('status', SessionSubscriptionStatus::ACTIVE->value))
             ->count();
 
         return [

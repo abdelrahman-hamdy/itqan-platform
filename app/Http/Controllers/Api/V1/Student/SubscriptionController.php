@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
-use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSubscription;
@@ -77,12 +77,13 @@ class SubscriptionController extends Controller
 
         $subscriptions = [];
 
-        if (! $type || $type === 'quran' || $type === 'quran_group') {
+        if (! $type || $type === SubscriptionType::QURAN->value || $type === 'quran_group') {
             $query = QuranSubscription::where('student_id', $user->id)
                 ->with(['quranTeacher', 'package', 'individualCircle', 'quranCircle']);
 
-            // Filter by individual or group if specific type requested
-            if ($type === 'quran') {
+            // Filter by individual or group if specific type requested.
+            // NOTE: 'quran_group' is a UI-only sub-type tag, not a SubscriptionType enum case.
+            if ($type === SubscriptionType::QURAN->value) {
                 $query->where('subscription_type', 'individual');
             } elseif ($type === 'quran_group') {
                 $query->whereIn('subscription_type', ['group', 'circle']);
@@ -100,7 +101,7 @@ class SubscriptionController extends Controller
             }
         }
 
-        if (! $type || $type === 'academic') {
+        if (! $type || $type === SubscriptionType::ACADEMIC->value) {
             $query = AcademicSubscription::where('student_id', $user->id)
                 ->with(['teacher', 'subject', 'gradeLevel', 'lesson']);
 
@@ -115,7 +116,7 @@ class SubscriptionController extends Controller
             }
         }
 
-        if (! $type || $type === 'course') {
+        if (! $type || $type === SubscriptionType::COURSE->value) {
             $query = CourseSubscription::where('student_id', $user->id)
                 ->with(['interactiveCourse.assignedTeacher', 'recordedCourse']);
 
@@ -365,74 +366,20 @@ class SubscriptionController extends Controller
 
     /**
      * Cancel a subscription.
+     *
+     * Phase A.7 / P3 / INV-G1: student-initiated cancellation is removed.
+     * The route is preserved so older mobile-app builds don't crash, but
+     * it now returns 403 with a localized error explaining cancellation
+     * is admin-only. The mobile app removes the Cancel button in the next
+     * release (see docs/subscription-mobile-app-migration.md).
      */
     public function cancel(Request $request, string $type, string $id): JsonResponse
     {
-        // Validate type parameter
-        if (! in_array($type, ['quran', 'quran_group', 'academic', 'course'])) {
-            return $this->error(
-                __('Invalid subscription type. Valid types are: quran, quran_group, academic, course'),
-                400,
-                'INVALID_SUBSCRIPTION_TYPE'
-            );
-        }
-
-        $user = $request->user();
-        $subscription = null;
-
-        switch ($type) {
-            case 'quran':
-            case 'quran_group':
-                $subscription = QuranSubscription::where('id', $id)
-                    ->where('student_id', $user->id)
-                    ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
-                    ->first();
-                break;
-
-            case 'academic':
-                $subscription = AcademicSubscription::where('id', $id)
-                    ->where('student_id', $user->id)
-                    ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
-                    ->first();
-                break;
-
-            case 'course':
-                // Try by subscription ID first, then fall back to course ID
-                $subscription = CourseSubscription::where('id', $id)
-                    ->where('student_id', $user->id)
-                    ->whereIn('status', [EnrollmentStatus::ENROLLED->value, EnrollmentStatus::PENDING->value])
-                    ->first();
-
-                if (! $subscription) {
-                    $subscription = CourseSubscription::where('student_id', $user->id)
-                        ->where(function ($q) use ($id) {
-                            $q->where('interactive_course_id', $id)
-                                ->orWhere('recorded_course_id', $id);
-                        })
-                        ->whereIn('status', [EnrollmentStatus::ENROLLED->value, EnrollmentStatus::PENDING->value])
-                        ->first();
-                }
-                break;
-        }
-
-        if (! $subscription) {
-            return $this->notFound(__('Subscription not found or cannot be cancelled.'));
-        }
-
-        // Students can only cancel PENDING (unpaid) subscriptions
-        if ($subscription->payment_status === \App\Enums\SubscriptionPaymentStatus::PAID) {
-            return $this->error(__('subscriptions.errors.cannot_cancel_paid'), 403);
-        }
-
-        $subscription->update([
-            'status' => SessionSubscriptionStatus::CANCELLED->value,
-            'cancelled_at' => now(),
-            'cancellation_reason' => $request->get('reason') ? substr($request->get('reason'), 0, 1000) : null,
-        ]);
-
-        return $this->success([
-            'cancelled' => true,
-        ], __('Subscription cancelled successfully.'));
+        return $this->error(
+            __('subscriptions.errors.student_cancel_forbidden'),
+            403,
+            'STUDENT_CANCEL_FORBIDDEN'
+        );
     }
 
     /**
@@ -459,7 +406,7 @@ class SubscriptionController extends Controller
             ];
         }
 
-        if ($type === 'quran' || $type === 'quran_group') {
+        if ($type === SubscriptionType::QURAN->value || $type === 'quran_group') {
             $subscription = QuranSubscription::where('id', $id)
                 ->where('student_id', $user->id)
                 ->with(['individualCircle', 'quranCircle'])
@@ -616,9 +563,26 @@ class SubscriptionController extends Controller
         $renewalService = app(\App\Services\Subscription\SubscriptionRenewalService::class);
         $mode = $request->input('mode', 'renew');
 
+        // Phase A.7 / P7 / INV-H1: student-driven renewal must land on an
+        // active package. Block when the picked package isn't active, or
+        // when none was picked AND the previous package is retired.
+        $availableOptions = $renewalService->getRenewalOptions($subscription);
+        $validPackageIds = collect($availableOptions['packages'])->pluck('id')->all();
+        $packageId = $request->package_id;
+        $previousPackageId = $availableOptions['current']['package_id'] ?? null;
+        $previousIsActive = $previousPackageId !== null && in_array($previousPackageId, $validPackageIds, true);
+
+        if ($packageId) {
+            if (! in_array($packageId, $validPackageIds, true)) {
+                return $this->error(__('subscriptions.errors.invalid_package'), 422);
+            }
+        } elseif (! $previousIsActive) {
+            return $this->error(__('subscriptions.errors.previous_package_retired'), 422);
+        }
+
         try {
             $options = array_filter([
-                'package_id' => $request->package_id,
+                'package_id' => $packageId,
                 'billing_cycle' => $request->billing_cycle,
                 'payment_mode' => 'unpaid',
             ]);
@@ -649,7 +613,7 @@ class SubscriptionController extends Controller
         $academy = $subscription->academy;
         $subdomain = $academy?->subdomain;
 
-        $routeName = ($type === 'academic')
+        $routeName = ($type === SubscriptionType::ACADEMIC->value)
             ? 'academic.subscription.payment'
             : 'quran.subscription.payment';
 
@@ -693,7 +657,7 @@ class SubscriptionController extends Controller
     {
         // For course subscriptions, resolve the actual course model (interactive or recorded)
         $courseModel = null;
-        if ($type === 'course') {
+        if ($type === SubscriptionType::COURSE->value) {
             $courseModel = $subscription->interactiveCourse ?? $subscription->recordedCourse;
         }
 
@@ -807,7 +771,7 @@ class SubscriptionController extends Controller
         ];
 
         // Add type-specific details
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $base['quran_details'] = [
                 'subscription_type' => $subscription->subscription_type,
                 'memorization_level' => $subscription->memorization_level,
@@ -815,7 +779,7 @@ class SubscriptionController extends Controller
             ];
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             $base['academic_details'] = [
                 'subject' => $subscription->subject?->name,
                 'grade_level' => $subscription->gradeLevel?->name,
@@ -824,7 +788,7 @@ class SubscriptionController extends Controller
             ];
         }
 
-        if ($type === 'course') {
+        if ($type === SubscriptionType::COURSE->value) {
             $courseModel = $subscription->interactiveCourse ?? $subscription->recordedCourse;
             $base['course_details'] = [
                 'course_id' => $subscription->interactive_course_id ?? $subscription->recorded_course_id,
@@ -859,7 +823,7 @@ class SubscriptionController extends Controller
      */
     protected function getSessionStats($subscription, string $type): array
     {
-        if ($type === 'quran' || $type === 'quran_group') {
+        if ($type === SubscriptionType::QURAN->value || $type === 'quran_group') {
             return [
                 'total' => $subscription->total_sessions ?? 0,
                 'used' => $subscription->sessions_used ?? 0,
@@ -867,7 +831,7 @@ class SubscriptionController extends Controller
             ];
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             $scheduled = $subscription->total_sessions_scheduled ?? 0;
             $completed = $subscription->total_sessions_completed ?? 0;
 
@@ -878,7 +842,7 @@ class SubscriptionController extends Controller
             ];
         }
 
-        if ($type === 'course') {
+        if ($type === SubscriptionType::COURSE->value) {
             $courseModel = $subscription->interactiveCourse ?? $subscription->recordedCourse;
             $completed = 0;
             if ($courseModel && method_exists($courseModel, 'sessions')) {

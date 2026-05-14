@@ -1,0 +1,49 @@
+{
+  "description": "Paused-extended bug — extend() previously mutated ends_at (instead of writing grace_period_ends_at). Fixture captures a cycle whose ends_at moved past its original boundary AND a `metadata.extensions[]` entry that records the original ends_at value, surfacing the discrepancy. Invariant: INV-F2 (extend MUST NOT mutate ends_at). The checker's audit-log read can also flag this when a `subscription_audit_log` row for action='extend' shows ends_at_before != ends_at_after.",
+  "subscription": {
+    "status": "active",
+    "payment_status": "paid",
+    "sessions_used": 4,
+    "total_sessions": 8,
+    "sessions_remaining": 4,
+    "starts_at_offset_days": -35,
+    "ends_at_offset_days": 7,
+    "last_payment_date_offset_days": -30
+  },
+  "cycle": {
+    "cycle_state": "active",
+    "payment_status": "paid",
+    "cycle_number": 1,
+    "starts_at_offset_days": -35,
+    "ends_at_offset_days": 7,
+    "sessions_used": 4,
+    "total_sessions": 8,
+    "pricing_source": "package",
+    "final_price": 200,
+    "grace_period_ends_at_offset_days": null,
+    "metadata": {
+      "extensions": [
+        {
+          "type": "grace_period",
+          "grace_days": 7,
+          "reason": "goodwill",
+          "ends_at_at_time": "ORIGINAL_ENDS_AT_BEFORE_MUTATION",
+          "extended_at": "ISO_TIMESTAMP"
+        }
+      ]
+    }
+  },
+  "audit_log_entry": {
+    "action": "extend",
+    "source": "admin",
+    "before_state": {
+      "ends_at": "ORIGINAL_ENDS_AT"
+    },
+    "after_state": {
+      "ends_at": "MUTATED_ENDS_AT"
+    }
+  },
+  "expected_violation_codes": ["INV-F2"],
+  "recovery_action": null,
+  "notes": "Recovery requires resetting the cycle's ends_at to the value captured in metadata.extensions[].ends_at_at_time AND populating grace_period_ends_at with the originally-intended grace value. Not auto-recoverable — left to operator triage."
+}

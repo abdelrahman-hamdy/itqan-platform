@@ -156,8 +156,8 @@ class AcademicSubscriptionPaymentController extends Controller
             Payment::where('payable_type', AcademicSubscription::class)
                 ->where('payable_id', $subscription->id)
                 ->where('payment_type', 'subscription')
-                ->where('status', 'pending')
-                ->update(['status' => 'cancelled', 'payment_status' => 'cancelled']);
+                ->where('status', PaymentStatus::PENDING->value)
+                ->update(['status' => PaymentStatus::CANCELLED->value, 'payment_status' => 'cancelled']);
 
             // Create new payment record
             $payment = Payment::create([
@@ -250,8 +250,14 @@ class AcademicSubscriptionPaymentController extends Controller
             return null;
         }
 
-        return ($sub->acceptsRetryPayment() || $sub->isCurrentCyclePaymentPending())
-            ? $sub
-            : null;
+        // G6: consume the canonical SubscriptionViewState instead of
+        // re-deriving payability from the two legacy predicates. Phase E
+        // will delete both helpers; gating on the enum's allowsPaymentRetry()
+        // keeps this controller out of the deletion's blast radius.
+        return app(\App\Services\Subscription\SubscriptionPresentation::class)
+            ->viewStateFor($sub)
+            ->allowsPaymentRetry()
+                ? $sub
+                : null;
     }
 }

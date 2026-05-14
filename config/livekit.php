@@ -85,6 +85,11 @@ return [
         'recording_frequency' => (int) env('LIVEKIT_AUDIO_RECORDING_FREQUENCY', 48000),
     ],
 
+    // Route audio-only recordings to StartTrackCompositeEgress (declared CPU
+    // cost 0.1 vs RoomComposite 0.5). No Chrome compositor. Same .mp4/AAC
+    // output. Toggle on per environment after canary verification.
+    'use_track_egress_for_audio_only' => (bool) env('LIVEKIT_USE_TRACK_EGRESS_AUDIO_ONLY', false),
+
     'recordings' => [
         // Base URL where recordings are accessible (served by nginx on LiveKit server)
         // SECURITY: No default URL - must be explicitly configured per environment

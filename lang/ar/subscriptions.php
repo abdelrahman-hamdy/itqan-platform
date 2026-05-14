@@ -159,6 +159,27 @@ return [
         'delete_subscription_warning' => 'سيتم حذف الاشتراك وجميع البيانات المرتبطة به (الجلسات، الحلقة، الدروس، المدفوعات، التقارير) بشكل نهائي. لا يمكن التراجع عن هذا الإجراء.',
         'delete_subscription_confirm' => 'نعم، حذف نهائياً',
         'delete_subscription_success' => 'تم حذف الاشتراك وجميع البيانات المرتبطة بنجاح.',
+        // Phase A.7 — student-initiated cancellation is removed (P3 / INV-G1).
+        // Old mobile-app builds still hit the cancel endpoint; the API now
+        // returns 403 with this localized message so the client can surface it.
+        'student_cancel_forbidden' => 'إلغاء الاشتراك يتم عبر إدارة الأكاديمية. تواصل مع المشرف لإنهاء هذا الاشتراك.',
+        // Phase A.7 / P7 / INV-H1 — retired-package guards on student-driven
+        // renewal screens. Admin/supervisor renewals bypass these (INV-H2).
+        'previous_package_retired' => 'الباقة السابقة لم تعد متاحة. يرجى اختيار باقة فعّالة للاستمرار.',
+        'no_active_packages' => 'لا توجد باقات فعّالة حالياً. يرجى التواصل مع إدارة الأكاديمية.',
+    ],
+
+    // Phase A.7 — short user-facing labels for the canonical primary actions
+    // surfaced by `SubscriptionPresentation::primaryActionFor()`. Every
+    // subscription surface (student blade, supervisor table, Filament badge,
+    // mobile-app card) consumes these so labels stay consistent across roles.
+    'primary_actions' => [
+        'pay' => 'ادفع الآن',
+        'renew' => 'تجديد',
+        'resume' => 'استئناف',
+        'confirm_cash' => 'تأكيد الدفع النقدي',
+        'cancel' => 'إلغاء',
+        'create_new' => 'اشتراك جديد',
     ],
 
     // Type labels
@@ -283,4 +304,52 @@ return [
     // Expiry-with-leftover banner (subscription expired but paid sessions remain)
     'expired_with_leftover_title' => 'انتهى الاشتراك',
     'expired_with_leftover_body' => '{1} انتهت مدة الاشتراك ويتبقى حصة واحدة غير مستهلكة. سيتم تحويلها إلى الدورة الجديدة فور التجديد.|[2,*] انتهت مدة الاشتراك ويتبقى :count حصص غير مستهلكة. سيتم تحويل الحصص المتبقية إلى الدورة الجديدة فور التجديد.',
+
+    // Phase A.2 — bootstrap of session_consumption rows from legacy flags
+    'bootstrap_consumption' => [
+        'dry_run_notice' => 'وضع المعاينة فقط — لن يتم إدراج صفوف. أزل --dry-run للتطبيق.',
+        'apply_notice' => 'بدء إدراج صفوف session_consumption من الأعلام القديمة...',
+        'metric_header' => 'المقياس',
+        'count_header' => 'العدد',
+    ],
+
+    // Phase A.5 — SubscriptionViewState (docs/subscription-invariants.md §1)
+    // The 8 exhaustive cases that every subscription surface (mobile card,
+    // student blade, supervisor table, Filament badge) renders identically.
+    // `helper` placeholders: :count (sessions_remaining), :date (ends_at),
+    // :grace_date (grace_period_ends_at).
+    'view_state' => [
+        'pending_first_payment' => [
+            'label' => 'بانتظار الدفع',
+            'helper' => 'بانتظار الدفع لتفعيل الاشتراك',
+        ],
+        'active_paid' => [
+            'label' => 'نشط',
+            'helper' => 'اشتراك نشط — متبقي :count حصص حتى تاريخ :date',
+        ],
+        'active_payment_due' => [
+            'label' => 'مستحق الدفع',
+            'helper' => 'اشتراك نشط لكن الدفع متأخر — يرجى السداد',
+        ],
+        'grace_admin' => [
+            'label' => 'فترة سماح',
+            'helper' => 'في فترة سماح — جدّد قبل :grace_date',
+        ],
+        'paused_admin' => [
+            'label' => 'موقوف',
+            'helper' => 'الاشتراك موقوف مؤقتاً',
+        ],
+        'paused_end_of_period' => [
+            'label' => 'انتهت الحصص',
+            'helper' => 'انتهت الحصص — جدّد لاستكمال الاشتراك',
+        ],
+        'expired' => [
+            'label' => 'منتهي',
+            'helper' => 'انتهى الاشتراك — جدّد للاستمرار',
+        ],
+        'cancelled' => [
+            'label' => 'ملغى',
+            'helper' => 'تم إلغاء الاشتراك',
+        ],
+    ],
 ];

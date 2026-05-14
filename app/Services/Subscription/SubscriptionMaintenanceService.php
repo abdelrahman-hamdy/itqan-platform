@@ -3,6 +3,7 @@
 namespace App\Services\Subscription;
 
 use App\Enums\BillingCycle;
+use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
@@ -113,9 +114,9 @@ class SubscriptionMaintenanceService
 
                         // Cancel associated pending payments
                         $subscription->payments()
-                            ->where('status', 'pending')
+                            ->where('status', PaymentStatus::PENDING->value)
                             ->update([
-                                'status' => 'cancelled',
+                                'status' => PaymentStatus::CANCELLED->value,
                             ]);
 
                         $result['by_type'][$type]++;

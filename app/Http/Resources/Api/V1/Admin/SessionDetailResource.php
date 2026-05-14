@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Admin;
 
+use App\Enums\SubscriptionType;
 use App\Http\Helpers\ImageHelper;
 use App\Models\AcademicSession;
 use App\Models\BaseSession;
@@ -50,11 +51,11 @@ class SessionDetailResource extends JsonResource
         ];
 
         // Add type-specific data
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $data['quran_data'] = $this->getQuranData();
             $data['student'] = $this->getStudentData();
             $data['circle'] = $this->getCircleData();
-        } elseif ($type === 'academic') {
+        } elseif ($type === SubscriptionType::ACADEMIC->value) {
             $data['academic_data'] = $this->getAcademicData();
             $data['student'] = $this->getStudentData();
             $data['lesson'] = $this->getLessonData();

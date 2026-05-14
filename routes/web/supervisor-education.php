@@ -154,6 +154,16 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/subscriptions/{type}/{subscription}/resubscribe', [SupervisorSubscriptionsController::class, 'resubscribe'])->name('subscriptions.resubscribe')->whereIn('type', ['quran', 'academic']);
         Route::delete('/subscriptions/{type}/{subscription}', [SupervisorSubscriptionsController::class, 'destroy'])->name('subscriptions.destroy')->whereIn('type', ['quran', 'academic']);
 
+        // Cycle data-fix tool (F2 — inspector + editor + per-row ops + session delete/cancel).
+        // Inspector is GET (read-only diagnostics); editor + row actions are POST/DELETE.
+        Route::get('/subscriptions/{type}/{subscription}/cycles/{cycle}/inspect', [SupervisorSubscriptionsController::class, 'inspectCycle'])->name('subscriptions.cycles.inspect')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/cycles/{cycle}/edit', [SupervisorSubscriptionsController::class, 'editCycle'])->name('subscriptions.cycles.edit')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/cycles/{cycle}/consumption/{consumption}/reverse', [SupervisorSubscriptionsController::class, 'reverseConsumption'])->name('subscriptions.cycles.consumption.reverse')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/cycles/{cycle}/consumption/{consumption}/promote', [SupervisorSubscriptionsController::class, 'promoteConsumption'])->name('subscriptions.cycles.consumption.promote')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/cycles/{cycle}/sessions/{session}/record-consumption', [SupervisorSubscriptionsController::class, 'recordConsumptionForSession'])->name('subscriptions.cycles.sessions.record-consumption')->whereIn('type', ['quran', 'academic']);
+        Route::delete('/subscriptions/{type}/{subscription}/cycles/{cycle}/sessions/{session}', [SupervisorSubscriptionsController::class, 'deleteSession'])->name('subscriptions.cycles.sessions.destroy')->whereIn('type', ['quran', 'academic']);
+        Route::post('/subscriptions/{type}/{subscription}/cycles/{cycle}/sessions/{session}/cancel', [SupervisorSubscriptionsController::class, 'cancelSession'])->name('subscriptions.cycles.sessions.cancel')->whereIn('type', ['quran', 'academic']);
+
         // Payments (admin-only)
         Route::get('/payments', [SupervisorPaymentsController::class, 'index'])->name('payments.index');
         Route::get('/payments/{payment}', [SupervisorPaymentsController::class, 'show'])->name('payments.show');

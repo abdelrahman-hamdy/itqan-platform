@@ -6,13 +6,18 @@ use App\Enums\AttendanceStatus;
 use App\Events\AttendanceUpdated;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
+use App\Models\BaseSubscription;
 use App\Models\InteractiveCourseSession;
 use App\Models\InteractiveSessionReport;
 use App\Models\MeetingAttendance;
 use App\Models\MeetingAttendanceEvent;
 use App\Models\QuranSession;
+use App\Models\SessionConsumption;
 use App\Models\StudentSessionReport;
+use App\Models\User;
+use App\Services\Subscription\SubscriptionConsumption;
 use App\Services\Traits\AttendanceCalculatorTrait;
+use App\Support\Subscriptions\AttendanceConsumptionMapper;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -300,10 +305,14 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                 'matrix_enabled' => $matrixEnabled,
             ]);
 
-            // Always call updateSubscriptionUsage — it consults the per-student
-            // counts_for_subscription flag internally, so the "both absent"
-            // case (counts_for_teacher=false but student still pays) works.
-            if (method_exists($session, 'updateSubscriptionUsage')) {
+            // Tier 3 / G2 — gated cutover. When the v2 flag is on we route
+            // through SubscriptionConsumption::record so the lock + audit +
+            // reconciler invariants stay aligned. When off, the legacy
+            // updateSubscriptionUsage walks per-student counts_for_subscription
+            // flags as it always has.
+            if (config('subscriptions.v2_consumption_enabled')) {
+                $this->recordV2Consumption($session);
+            } elseif (method_exists($session, 'updateSubscriptionUsage')) {
                 try {
                     $session->updateSubscriptionUsage();
                 } catch (Exception $e) {
@@ -321,6 +330,97 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Tier 3 v2 path — for each student MeetingAttendance row on this
+     * session whose `counts_for_subscription` is not explicitly false, route
+     * the consumption write through SubscriptionConsumption::record so
+     * INV-B3 / INV-B4 / the SubscriptionAuditLog all stay coherent.
+     *
+     * The legacy `subscription_counted` flag is still stamped to keep
+     * downstream callers (Filament UI, reconcile crons) backwards-compatible
+     * during the cutover window.
+     */
+    private function recordV2Consumption($session): void
+    {
+        if (! method_exists($session, 'meetingAttendances')) {
+            return;
+        }
+
+        if (($session->subscription_counted ?? false) === true) {
+            return;
+        }
+
+        $studentAttendances = $session->meetingAttendances()
+            ->where('user_type', 'student')
+            ->where(function ($q) {
+                $q->where('counts_for_subscription', true)
+                    ->orWhereNull('counts_for_subscription');
+            })
+            ->get();
+
+        if ($studentAttendances->isEmpty()) {
+            return;
+        }
+
+        // Eager-load every student User up front so a 10-student group circle
+        // doesn't fire 10 SELECTs from User::find. Group circles in particular
+        // share one teacher + one subscription per row so the N+1 was the
+        // dominant cost of the v2 path.
+        $studentIds = $studentAttendances->pluck('user_id')->filter()->unique()->all();
+        $students = User::whereIn('id', $studentIds)->get()->keyBy('id');
+
+        $service = app(SubscriptionConsumption::class);
+        $resolverFallbackSubscription = $session->subscription ?? null;
+
+        foreach ($studentAttendances as $attendance) {
+            try {
+                $student = $students->get($attendance->user_id);
+                if ($student === null) {
+                    continue;
+                }
+
+                $subscription = method_exists($session, 'getSubscriptionForCounting')
+                    ? $session->getSubscriptionForCounting($student)
+                    : $resolverFallbackSubscription;
+
+                if (! $subscription instanceof BaseSubscription) {
+                    continue;
+                }
+
+                $consumptionType = AttendanceConsumptionMapper::consumptionTypeFor(
+                    $attendance->status ?? $session->attendance_status,
+                    countsForSubscription: $attendance->counts_for_subscription !== false,
+                );
+                if ($consumptionType === null) {
+                    continue;
+                }
+
+                $service->record(
+                    $session,
+                    $student,
+                    $subscription,
+                    source: SessionConsumption::SOURCE_AUTO_ATTENDANCE,
+                    sourceUser: null,
+                    consumptionType: $consumptionType,
+                );
+            } catch (Throwable $e) {
+                Log::error('CalculateSessionForAttendance: v2 consumption record failed', [
+                    'session_id' => $session->id,
+                    'attendance_id' => $attendance->id ?? null,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // Stamp subscription_counted so the legacy reconcile cron + Filament
+        // UI continue to see the session as accounted-for.
+        try {
+            $session->update(['subscription_counted' => true]);
+        } catch (Throwable) {
+            // Best-effort — the v2 audit log is canonical.
         }
     }
 

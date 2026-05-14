@@ -148,4 +148,71 @@ return [
         'bug_16_resubscribe_starts_at_reset' => env('BUG_16_ENABLED', true),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | v2 Refactor — feature flags + safety limits
+    |--------------------------------------------------------------------------
+    |
+    | Phase A.3 of the subscription v2 refactor. See:
+    |   - docs/subscription-recovery-plan.md  (phases + exit criteria)
+    |   - docs/subscription-invariants.md     (numbered invariants)
+    |
+    | All values are safe defaults; operators flip the env vars below to
+    | progress through phases.
+    |
+    */
+
+    // Master kill-switch for the v2 mutators (SubscriptionLifecycle,
+    // SubscriptionConsumption, SubscriptionPayment, SubscriptionPricing).
+    // Phase A keeps this false; flipped on in Phase D as part of
+    // controlled-production observation.
+    'v2_enabled' => env('SUBSCRIPTIONS_V2_ENABLED', false),
+
+    // Tier 2 dual-execution: when true, every webhook + supervisor-cash
+    // payment runs the v2 SubscriptionLifecycle / SubscriptionPayment path
+    // IN ADDITION to the legacy activateFromPayment path. v2 writes a
+    // SubscriptionAuditLog row + a divergence summary; any exception from
+    // the v2 path is swallowed and audit-logged so it can NEVER break the
+    // legacy/canonical write. Flip on in staging for a week of zero
+    // divergence before turning on the canonical flag below.
+    'v2_payment_dual' => env('SUBSCRIPTIONS_V2_PAYMENT_DUAL', false),
+
+    // Once dual execution has proven zero divergence, flip this to true to
+    // make v2 the canonical writer (legacy then runs as the shadow). Until
+    // then, legacy stays canonical. Phase A.5 default: false.
+    'v2_payment_canonical' => env('SUBSCRIPTIONS_V2_PAYMENT_CANONICAL', false),
+
+    // Tier 3 attendance cutover: when true, auto-attendance + manual
+    // counting paths funnel through SubscriptionConsumption::record /
+    // ::reverse instead of legacy updateSubscriptionUsage / returnSession.
+    // Direct cutover (no shadow) — legacy is untouched when false.
+    'v2_consumption_enabled' => env('SUBSCRIPTIONS_V2_CONSUMPTION_ENABLED', false),
+
+    // When true, SubscriptionRowGuard throws UnreconciledSubscriptionWrite
+    // on any direct write to derived subscription columns (payment_status,
+    // sessions_used, sessions_remaining, total_sessions, starts_at,
+    // ends_at) outside SubscriptionReconciler::sync.
+    // When false (Phase A default), the guard only logs warnings so the
+    // migration to v2 mutators can proceed without breaking legacy code.
+    'row_guard_enforce' => env('SUBSCRIPTIONS_ROW_GUARD_ENFORCE', false),
+
+    // Upper bound on $graceDays passed to Subscription::extend(). Anything
+    // higher requires an admin-override actor + audit entry. Default 14.
+    // See INV-F2 and decision table 3.4.
+    'max_grace_days' => env('SUBSCRIPTIONS_MAX_GRACE_DAYS', 14),
+
+    // Maximum pause window before cron auto-expires the subscription per
+    // decision table 3.5. Default 30.
+    'max_pause_days' => env('SUBSCRIPTIONS_MAX_PAUSE_DAYS', 30),
+
+    // How long an interactive (web/API) mutator blocks waiting for the
+    // per-subscription advisory lock before raising
+    // SubscriptionLockTimeout. INV-C1.
+    'lock_wait_seconds' => env('SUBSCRIPTIONS_LOCK_WAIT_SECONDS', 5),
+
+    // How long a cron-path mutator blocks waiting for the per-subscription
+    // lock before skipping the sub and audit-logging cron_skipped_locked.
+    // INV-C3 caps this at ≤ 2 seconds.
+    'cron_lock_wait_seconds' => env('SUBSCRIPTIONS_CRON_LOCK_WAIT_SECONDS', 2),
+
 ];

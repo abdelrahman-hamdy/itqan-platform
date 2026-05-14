@@ -172,6 +172,21 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Subscription v2 (Phase C) — dedicated stream for every Log::*()
+        // call originating from subscription writers, the reconciler, the
+        // audit-log model's swallow-on-error path, and the daily report
+        // command. Daily file at storage/logs/subscriptions/audit-{date}.log
+        // so a server-side script can tail it and forward new invariant
+        // violations to the LiveKit-VPS `itqan-alert` Telegram pipeline.
+        'subscriptions' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/subscriptions/audit.log'),
+            'level' => 'info',
+            'days' => 14,
+            'replace_placeholders' => true,
+            'permission' => 0664,
+        ],
+
     ],
 
     /*

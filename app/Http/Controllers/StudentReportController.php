@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SubscriptionType;
 use App\Http\Requests\StoreStudentReportRequest;
 use App\Http\Requests\UpdateStudentReportRequest;
 use App\Http\Traits\Api\ApiResponses;
@@ -64,10 +65,10 @@ class StudentReportController extends Controller
             ];
 
             // Add type-specific fields
-            if ($type === 'quran') {
+            if ($type === SubscriptionType::QURAN->value) {
                 $reportData['new_memorization_degree'] = $validated['new_memorization_degree'] ?? null;
                 $reportData['reservation_degree'] = $validated['reservation_degree'] ?? null;
-            } elseif ($type === 'academic') {
+            } elseif ($type === SubscriptionType::ACADEMIC->value) {
                 // Academic: simplified to homework_degree only
                 $reportData['homework_degree'] = $validated['homework_degree'] ?? null;
             } elseif ($type === 'interactive') {
@@ -145,10 +146,10 @@ class StudentReportController extends Controller
             ];
 
             // Add type-specific fields
-            if ($type === 'quran') {
+            if ($type === SubscriptionType::QURAN->value) {
                 $updateData['new_memorization_degree'] = $validated['new_memorization_degree'] ?? $report->new_memorization_degree;
                 $updateData['reservation_degree'] = $validated['reservation_degree'] ?? $report->reservation_degree;
-            } elseif ($type === 'academic') {
+            } elseif ($type === SubscriptionType::ACADEMIC->value) {
                 // Academic: simplified to homework_degree only
                 $updateData['homework_degree'] = $validated['homework_degree'] ?? $report->homework_degree;
             } elseif ($type === 'interactive') {
@@ -204,7 +205,7 @@ class StudentReportController extends Controller
      */
     private function getSession(string $type, int $sessionId)
     {
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             return QuranSession::findOrFail($sessionId);
         } elseif ($type === 'interactive') {
             return InteractiveCourseSession::findOrFail($sessionId);

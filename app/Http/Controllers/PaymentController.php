@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Constants\DefaultAcademy;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Http\Requests\ProcessCourseEnrollmentPaymentRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
@@ -43,7 +44,7 @@ class PaymentController extends Controller
         // Check if course enrollment exists and is pending payment
         $enrollment = CourseSubscription::where('student_id', $user->id)
             ->where('recorded_course_id', $course->id)
-            ->where('payment_status', 'pending')
+            ->where('payment_status', SubscriptionPaymentStatus::PENDING->value)
             ->first();
 
         if (! $enrollment) {
@@ -80,7 +81,7 @@ class PaymentController extends Controller
         // Get enrollment
         $enrollment = CourseSubscription::where('student_id', $user->id)
             ->where('recorded_course_id', $course->id)
-            ->where('payment_status', 'pending')
+            ->where('payment_status', SubscriptionPaymentStatus::PENDING->value)
             ->first();
 
         if (! $enrollment) {

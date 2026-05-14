@@ -4,6 +4,7 @@ namespace App\Http\Resources\Api\V1\Subscription;
 
 use App\Http\Resources\Api\V1\Student\StudentListResource;
 use App\Models\BaseSubscription;
+use App\Services\Subscription\SubscriptionPresentation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,6 +15,14 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * - QuranSubscription
  * - AcademicSubscription
  * - CourseSubscription
+ *
+ * Phase A.7 / INV-J2: surfaces `view_state`, `primary_action`, and
+ * `helper_line` from {@see SubscriptionPresentation::formatForApi()} so the
+ * mobile app consumes a canonical state object instead of re-deriving state
+ * from a tangle of `status` + `payment_status` flags. The legacy boolean
+ * derivations (in_grace_period, needs_renewal, expired_with_leftover_sessions)
+ * remain during the migration window — older mobile builds still read them —
+ * and are scheduled for removal once the new client ships (Phase E).
  *
  * @mixin BaseSubscription
  */
@@ -26,7 +35,17 @@ class SubscriptionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $presentation = resolve(SubscriptionPresentation::class)->formatForApi($this->resource);
+
         return [
+            // Phase A.7 canonical view-state surface (INV-J2). The mobile-app
+            // subscription card binds directly to `view_state` +
+            // `primary_action` + `helper_line`; do not re-derive in the
+            // client. Mirrored `sessions_remaining`, `ends_at`, and
+            // `grace_period_ends_at` are present below for legacy fields.
+            'view_state' => $presentation['view_state'],
+            'primary_action' => $presentation['primary_action'],
+            'helper_line' => $presentation['helper_line'],
             'id' => $this->id,
             'type' => $this->getMorphClass(),
             'subscription_code' => $this->subscription_code,

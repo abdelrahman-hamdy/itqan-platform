@@ -363,4 +363,16 @@ return [
         'title' => 'انتهى اشتراكك',
         'body' => 'انتهى اشتراكك في :name. يمكنك تجديده للاستمرار في التعلم.',
     ],
+
+    // Subscription expired with unpaid current cycle (P8 hybrid path)
+    'subscription_expired_unpaid' => [
+        'title' => 'انتهى اشتراكك بدون دفع الدورة الحالية',
+        'body' => 'انتهى اشتراكك في :name والدورة الحالية لم يتم دفعها بعد. الرجاء سداد المتبقي ثم إعادة الاشتراك.',
+    ],
+
+    // Session cancelled because the subscription was paused / cancelled
+    'session_cancelled_by_subscription_pause' => [
+        'title' => 'تم إلغاء حصتك القادمة',
+        'body' => 'تم إلغاء حصتك المقررة بتاريخ :scheduled_at نظرًا لإيقاف أو إلغاء الاشتراك المرتبط بها.',
+    ],
 ];

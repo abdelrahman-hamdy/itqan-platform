@@ -68,17 +68,41 @@
     :clear-filter-route="route('teacher.academic.lessons.index', ['subdomain' => $subdomain])"
     :clear-filter-text="__('teacher.academic_lessons.view_all_subscriptions')"
 >
+    @php
+        // Phase A.7 / INV-J1 / P10: teacher session list surfaces the student's
+        // subscription using the SAME canonical state model the student and
+        // supervisor screens use, so a teacher cannot accidentally see a sub
+        // as "active" when the canonical state says expired/paused.
+        $presentation = app(\App\Services\Subscription\SubscriptionPresentation::class);
+        $viewStateBadgeClasses = [
+            'success' => 'bg-green-100 text-green-800',
+            'warning' => 'bg-yellow-100 text-yellow-800',
+            'danger' => 'bg-red-100 text-red-800',
+            'info' => 'bg-blue-100 text-blue-800',
+            'primary' => 'bg-indigo-100 text-indigo-800',
+            'gray' => 'bg-gray-100 text-gray-800',
+        ];
+    @endphp
     @foreach($subscriptions as $subscription)
         @php
-            // Handle both enum and string status
+            // Phase A.7 / INV-J1: ONE canonical badge per subscription.
+            $viewState = ($subscription instanceof \App\Models\BaseSubscription)
+                ? $presentation->viewStateFor($subscription)
+                : null;
+            $statusConfig = $viewState
+                ? [
+                    'class' => $viewStateBadgeClasses[$viewState->badgeColor()] ?? $viewStateBadgeClasses['gray'],
+                    'text' => $viewState->label(),
+                ]
+                : ['class' => 'bg-gray-100 text-gray-800', 'text' => __('common.not_specified')];
+
+            // P10 / INV-I2: teachers can schedule for active / payment_due /
+            // grace states; everything else hides the schedule affordance.
+            $teacherCanSchedule = $viewState?->allowsScheduling() ?? false;
+
+            // Legacy status value kept for downstream business-logic checks
+            // (e.g. chat visibility) that haven't migrated to view-state yet.
             $statusValue = is_object($subscription->status) ? $subscription->status->value : $subscription->status;
-            $statusConfig = match($statusValue) {
-                SessionSubscriptionStatus::ACTIVE->value => ['class' => 'bg-green-100 text-green-800', 'text' => __('teacher.academic_lessons.active')],
-                SessionSubscriptionStatus::PENDING->value => ['class' => 'bg-yellow-100 text-yellow-800', 'text' => __('teacher.academic_lessons.pending_payment')],
-                SessionSubscriptionStatus::PAUSED->value => ['class' => 'bg-blue-100 text-blue-800', 'text' => __('enums.session_subscription_status.paused')],
-                SessionSubscriptionStatus::CANCELLED->value => ['class' => 'bg-gray-100 text-gray-800', 'text' => __('teacher.academic_lessons.cancelled')],
-                default => ['class' => 'bg-gray-100 text-gray-800', 'text' => $statusValue ?? __('common.not_specified')]
-            };
 
             $metadata = [];
             if ($subscription->subject) {

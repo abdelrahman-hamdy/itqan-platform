@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -89,7 +90,7 @@ class MeetingController extends Controller
         // API-003: Add explicit academy_id verification for defense in depth
         $userAcademyId = $user->academy_id;
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             if (! $user->quranTeacherProfile) {
                 return null;
             }
@@ -102,7 +103,7 @@ class MeetingController extends Controller
                 ->first();
         }
 
-        if ($type === 'academic') {
+        if ($type === SubscriptionType::ACADEMIC->value) {
             $academicTeacherId = $user->academicTeacherProfile?->id;
 
             if (! $academicTeacherId) {

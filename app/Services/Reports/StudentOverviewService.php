@@ -3,6 +3,7 @@
 namespace App\Services\Reports;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\SubscriptionType;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSessionReport;
 use App\Models\InteractiveCourse;
@@ -63,7 +64,7 @@ class StudentOverviewService
         }
 
         if (! empty($academicProfileIds)) {
-            if (! $type || $type === 'academic') {
+            if (! $type || $type === SubscriptionType::ACADEMIC->value) {
                 $rows = $rows->merge($this->getAcademicRows($academicProfileIds, $entityId, $studentSearch, $routePrefix));
             }
             if (! $type || $type === 'interactive') {

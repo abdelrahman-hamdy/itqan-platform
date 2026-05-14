@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Traits\HasParentChildren;
 use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Models\AcademicSubscription;
@@ -123,13 +124,13 @@ class ParentSubscriptionController extends Controller
         $parent = $user->parentProfile;
         $children = $this->verificationService->getChildrenWithUsers($parent);
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $subscription = QuranSubscription::with(['quranTeacher.user', 'package', 'student'])
                 ->findOrFail($subscriptionId);
-        } elseif ($type === 'academic') {
+        } elseif ($type === SubscriptionType::ACADEMIC->value) {
             $subscription = AcademicSubscription::with(['academicTeacher.user', 'academicPackage', 'student'])
                 ->findOrFail($subscriptionId);
-        } elseif ($type === 'course') {
+        } elseif ($type === SubscriptionType::COURSE->value) {
             $subscription = CourseSubscription::with(['course', 'student'])
                 ->findOrFail($subscriptionId);
         } else {

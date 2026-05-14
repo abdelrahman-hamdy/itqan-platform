@@ -83,6 +83,7 @@ use App\Observers\QuranTrialRequestObserver;
 use App\Observers\SessionRecordingObserver;
 use App\Observers\StudentProfileObserver;
 use App\Observers\StudentSessionReportObserver;
+use App\Observers\SubscriptionRowGuard;
 use App\Observers\SupervisorResponsibilityObserver;
 use App\Observers\UserObserver;
 use App\Policies\AcademyPolicy;
@@ -207,6 +208,13 @@ class AppServiceProvider extends ServiceProvider
         // completed group session.
         $this->app->singleton(SessionSettingsService::class);
 
+        // SubscriptionConsumption is the sole writer of session_consumption rows
+        // (Phase A.2 — kills R2). Singleton-scoped so call sites that resolve it
+        // via app(...) or constructor injection share the same instance per
+        // request — no per-call instantiation overhead, and tests can swap the
+        // binding once via app()->instance(...).
+        $this->app->singleton(\App\Services\Subscription\SubscriptionConsumption::class);
+
         // Override Filament's RedirectToTenantController to fix Livewire redirect return type issue
         $this->app->bind(
             RedirectToTenantController::class,
@@ -323,6 +331,16 @@ class AppServiceProvider extends ServiceProvider
         QuranSubscription::observe(BaseSubscriptionObserver::class);
         AcademicSubscription::observe(BaseSubscriptionObserver::class);
         CourseSubscription::observe(BaseSubscriptionObserver::class);
+
+        // Phase A.3 — SubscriptionRowGuard enforces INV-A1: the derived
+        // fields (payment_status, sessions_used, sessions_remaining,
+        // total_sessions, starts_at, ends_at) may only be written by
+        // SubscriptionReconciler. Report-only by default; flip
+        // SUBSCRIPTIONS_ROW_GUARD_ENFORCE=true once Phase B confirms
+        // every writer is on the new path.
+        QuranSubscription::observe(SubscriptionRowGuard::class);
+        AcademicSubscription::observe(SubscriptionRowGuard::class);
+        CourseSubscription::observe(SubscriptionRowGuard::class);
 
         // Register User Observer for admin-created users auto-verification
         // and admin-academy sync

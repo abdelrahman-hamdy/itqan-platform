@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Http\Traits\Api\PaginatesResults;
@@ -155,7 +156,7 @@ abstract class BaseStudentSessionController extends Controller
             'performance_level' => $report->performance_level,
         ];
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $performance['memorization_degree'] = $report->new_memorization_degree;
             $performance['revision_degree'] = $report->reservation_degree;
         } else {

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\HomeworkServiceInterface;
+use App\Enums\SubscriptionType;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\InteractiveCourseHomework;
@@ -177,7 +178,7 @@ class HomeworkService implements HomeworkServiceInterface
     ): array {
         $homework = [];
 
-        if (! $type || $type === 'academic') {
+        if (! $type || $type === SubscriptionType::ACADEMIC->value) {
             $academicSubmissions = AcademicHomeworkSubmission::getForStudent($studentId, $academyId, $status);
             foreach ($academicSubmissions as $submission) {
                 $homework[] = [

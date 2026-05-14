@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Supervisor;
 
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\DifficultyLevel;
+use App\Enums\SubscriptionType;
 use App\Enums\WeekDays;
 use App\Filament\Shared\Resources\BaseQuranCircleResource;
 use App\Models\QuranCircle;
@@ -287,12 +288,12 @@ class SupervisorGroupCirclesController extends BaseSupervisorWebController
 
     private function getTeachersForFilter(string $type): array
     {
-        $ids = $type === 'quran' ? $this->getAssignedQuranTeacherIds() : $this->getAssignedAcademicTeacherIds();
+        $ids = $type === SubscriptionType::QURAN->value ? $this->getAssignedQuranTeacherIds() : $this->getAssignedAcademicTeacherIds();
 
         return User::whereIn('id', $ids)->get()->map(fn ($u) => [
             'id' => $u->id,
             'name' => $u->name,
-            'type_label' => $type === 'quran' ? __('supervisor.teachers.teacher_type_quran') : __('supervisor.teachers.teacher_type_academic'),
+            'type_label' => $type === SubscriptionType::QURAN->value ? __('supervisor.teachers.teacher_type_quran') : __('supervisor.teachers.teacher_type_academic'),
         ])->toArray();
     }
 

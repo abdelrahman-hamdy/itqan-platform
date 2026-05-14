@@ -134,7 +134,7 @@ class LiveKitMeeting {
             onTrackMuted: (publication, participant) => this.handleTrackMuted(publication, participant),
             onTrackUnmuted: (publication, participant) => this.handleTrackUnmuted(publication, participant),
             onActiveSpeakersChanged: (speakers) => this.handleActiveSpeakersChanged(speakers),
-            onDataReceived: (payload, participant) => this.handleDataReceived(payload, participant)
+            onDataReceived: (payload, participant, topic) => this.handleDataReceived(payload, participant, topic)
         });
 
         // 2. Initialize tracks module
@@ -1374,8 +1374,29 @@ class LiveKitMeeting {
      * Handle data received
      * @param {Uint8Array} payload - Data payload
      * @param {LiveKit.Participant} participant - Sender participant
+     * @param {string|undefined} topic - LiveKit DataPacket topic (used to
+     *   route feature traffic to whiteboard/mushaf modules). Legacy
+     *   chat/hand-raise publishes without a topic and lands on the
+     *   existing controls.handleDataReceived path.
      */
-    handleDataReceived(payload, participant) {
+    handleDataReceived(payload, participant, topic) {
+        // Topic-aware routing — feature modules (whiteboard, mushaf) own
+        // their parse/validate path. We hand them the raw payload so they
+        // can decode + drop malformed packets without disturbing the
+        // chat/hand-raise codepath below.
+        if (topic === 'whiteboard') {
+            if (window.whiteboard && typeof window.whiteboard.onPacket === 'function') {
+                try { window.whiteboard.onPacket(payload, participant); } catch (_) {}
+            }
+            return;
+        }
+        if (topic === 'mushaf') {
+            if (window.mushaf && typeof window.mushaf.onPacket === 'function') {
+                try { window.mushaf.onPacket(payload, participant); } catch (_) {}
+            }
+            return;
+        }
+
         try {
 
             // Enhanced local participant context

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Supervisor;
 
+use App\Enums\SubscriptionType;
 use App\Enums\UserType;
 use App\Models\AcademicTeacherProfile;
 use App\Models\CourseReview;
@@ -96,7 +97,7 @@ class NeedsAttention extends Component
             return;
         }
 
-        if ($type === 'course') {
+        if ($type === SubscriptionType::COURSE->value) {
             $review = CourseReview::where('academy_id', $academyId)->find($id);
         } else {
             $review = TeacherReview::where('academy_id', $academyId)->find($id);
@@ -117,7 +118,7 @@ class NeedsAttention extends Component
             return;
         }
 
-        if ($type === 'course') {
+        if ($type === SubscriptionType::COURSE->value) {
             $review = CourseReview::where('academy_id', $academyId)->find($id);
         } else {
             $review = TeacherReview::where('academy_id', $academyId)->find($id);

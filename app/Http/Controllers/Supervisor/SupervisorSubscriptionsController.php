@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Supervisor;
 
+use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionType;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
 use App\Models\User;
@@ -238,14 +240,20 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
         // Get teacher user for avatar
         $teacherUser = null;
-        if ($type === 'quran' && $subscription->quran_teacher_id) {
+        if ($type === SubscriptionType::QURAN->value && $subscription->quran_teacher_id) {
             $teacherUser = \App\Models\User::find($subscription->quran_teacher_id);
-        } elseif ($type === 'academic' && $subscription->teacher) {
+        } elseif ($type === SubscriptionType::ACADEMIC->value && $subscription->teacher) {
             $teacherUser = $subscription->teacher?->user;
         }
 
         // Renewal chain
         $renewedBy = $subscription->renewedBySubscription;
+
+        // Renewal modal needs the active-package set so the supervisor can
+        // pick a different package on renew (INV-H2 — admins are not bound
+        // by the previous-package-active rule that constrains students).
+        $renewalOptions = app(\App\Services\Subscription\SubscriptionRenewalService::class)
+            ->getRenewalOptions($subscription);
 
         return view('supervisor.subscriptions.show', [
             'subscription' => $subscription,
@@ -258,6 +266,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'teacherUser' => $teacherUser,
             'renewedBy' => $renewedBy,
             'canManage' => $this->canManageSubscriptions(),
+            'renewalOptions' => $renewalOptions,
         ]);
     }
 
@@ -390,7 +399,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             if ($sub->isPending()) {
                 // Pending: cancel subscription + associated pending payments
                 $sub->cancelAsDuplicateOrExpired(config('subscriptions.cancellation_reasons.admin'));
-                $sub->payments()->where('status', 'pending')->update(['status' => 'cancelled']);
+                $sub->payments()->where('status', PaymentStatus::PENDING->value)->update(['status' => PaymentStatus::CANCELLED->value]);
             } else {
                 // Active/Paused: cancel + suspend future sessions
                 $sub->update([
@@ -434,7 +443,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             return;
         }
 
-        if ($type === 'quran') {
+        if ($type === SubscriptionType::QURAN->value) {
             $ids = $this->getAssignedQuranTeacherIds();
             if (! in_array($subscription->quran_teacher_id, $ids)) {
                 abort(403);
@@ -478,6 +487,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $validator = Validator::make($request->all(), [
             'billing_cycle' => 'required|in:monthly,quarterly,yearly',
             'payment_mode' => 'sometimes|in:paid,unpaid',
+            'package_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -486,10 +496,26 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
 
         try {
             $service = app(\App\Services\Subscription\SubscriptionRenewalService::class);
-            $options = [
+
+            // Supervisor renew with package change: validate the picked package
+            // is an active package on THIS academy (INV-H2 — admin/supervisor
+            // path bypasses the "previous package must be active" student
+            // gate, but the chosen package itself still has to be active +
+            // tenant-scoped to avoid cross-academy data bleed).
+            $packageId = $request->filled('package_id') ? (int) $request->package_id : null;
+            if ($packageId !== null) {
+                $available = $service->getRenewalOptions($sub);
+                $validPackageIds = collect($available['packages'])->pluck('id')->all();
+                if (! in_array($packageId, $validPackageIds, true)) {
+                    return redirect()->back()->with('error', __('subscriptions.errors.invalid_package'));
+                }
+            }
+
+            $options = array_filter([
                 'billing_cycle' => $request->billing_cycle,
                 'payment_mode' => $request->input('payment_mode', 'paid'),
-            ];
+                'package_id' => $packageId,
+            ], fn ($v) => $v !== null);
 
             $new = $mode === 'resubscribe'
                 ? $service->resubscribe($sub, $options)
@@ -581,6 +607,406 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             report($e);
 
             return redirect()->back()->with('error', __('subscriptions.generic_error'));
+        }
+    }
+
+    // ========================================================================
+    // Cycle data-fix tool (F2)
+    // ========================================================================
+
+    /**
+     * Cycle inspector — read-only diagnostic view for a single cycle.
+     *
+     * Shows the cycle row, the live `session_consumption` truth-source for
+     * INV-B3, the invariant violations scoped to this cycle, the sessions
+     * anchored here, payments, and the queued-sibling anchor check (INV-A5).
+     * Operators land here before touching anything via the editor.
+     */
+    public function inspectCycle(Request $request, $subdomain, string $type, int $subscription, int $cycle): View
+    {
+        if (! $this->canAccessSubscriptions()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscription);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        /** @var \App\Models\SubscriptionCycle $cycleRow */
+        $cycleRow = \App\Models\SubscriptionCycle::query()
+            ->where('subscribable_type', $sub->getMorphClass())
+            ->where('subscribable_id', $sub->id)
+            ->where('id', $cycle)
+            ->firstOrFail();
+
+        // Sessions anchored to this cycle (subscription_cycle_id stamp).
+        $cycleSessions = $sub->sessions()
+            ->where('subscription_cycle_id', $cycleRow->id)
+            ->orderBy('scheduled_at')
+            ->get();
+
+        // Active + reversed consumption rows for this cycle, ordered by recency.
+        $consumptionRows = \App\Models\SessionConsumption::query()
+            ->where('cycle_id', $cycleRow->id)
+            ->orderByDesc('consumed_at')
+            ->get();
+
+        // Precompute the session_id → has-consumption-row map from the already-
+        // loaded $consumptionRows. The blade uses an in_array() lookup against
+        // this list to render the "clean / has data" tag without per-row queries.
+        $consumedSessionIds = $consumptionRows->pluck('session_id')->unique()->all();
+
+        // Payments tied to this cycle.
+        $cyclePayments = \App\Models\Payment::query()
+            ->where('subscription_cycle_id', $cycleRow->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        // Live truth-source count for INV-B3 — what the reconciler would
+        // derive `cycle.sessions_used` to. Operator compares this to the
+        // stored column to spot pre-reconcile drift.
+        $derivedSessionsUsed = $consumptionRows->whereNull('reversed_at')->count();
+
+        // Invariant violations scoped to this cycle. Filter on the
+        // `context.cycle_id` payload from the checker's violation rows.
+        $allViolations = app(\App\Services\Subscription\SubscriptionInvariantChecker::class)->check($sub);
+        $cycleViolations = array_values(array_filter(
+            $allViolations,
+            fn ($v) => ($v['context']['cycle_id'] ?? null) === $cycleRow->id,
+        ));
+
+        // Queued-sibling anchor info for INV-A5 visualisation.
+        $activeCycle = $sub->currentCycle;
+        $queuedCycle = $sub->queuedCycle()->first();
+
+        return view('supervisor.subscriptions.cycle-inspect', [
+            'subscription' => $sub,
+            'cycle' => $cycleRow,
+            'type' => $type,
+            'subdomain' => $subdomain,
+            'cycleSessions' => $cycleSessions,
+            'consumptionRows' => $consumptionRows,
+            'consumedSessionIds' => $consumedSessionIds,
+            'cyclePayments' => $cyclePayments,
+            'derivedSessionsUsed' => $derivedSessionsUsed,
+            'cycleViolations' => $cycleViolations,
+            'allViolations' => $allViolations,
+            'activeCycle' => $activeCycle,
+            'queuedCycle' => $queuedCycle,
+            'canManage' => $this->canManageSubscriptions(),
+        ]);
+    }
+
+    /**
+     * Apply a validated patch to a SubscriptionCycle row.
+     *
+     * Flow:
+     *   1. `EditCycleRequest` strips forbidden fields (sessions_used etc.).
+     *   2. `CycleEditValidator` detects block-on-conflict cases — sessions
+     *      that would be orphaned, queue overlap, sessions_used > new total.
+     *   3. On conflicts: flash a structured error payload + redirect back to
+     *      the inspector. NO db writes happen.
+     *   4. On no conflicts: delegate to `SubscriptionLifecycle::adminEditCycle`
+     *      which wraps in lock + audit + reconciler.
+     */
+    public function editCycle(
+        \App\Http\Requests\Supervisor\EditCycleRequest $request,
+        $subdomain,
+        string $type,
+        int $subscription,
+        int $cycle,
+    ): RedirectResponse {
+        if (! $this->canManageSubscriptions()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscription);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        /** @var \App\Models\SubscriptionCycle $cycleRow */
+        $cycleRow = \App\Models\SubscriptionCycle::query()
+            ->where('subscribable_type', $sub->getMorphClass())
+            ->where('subscribable_id', $sub->id)
+            ->where('id', $cycle)
+            ->firstOrFail();
+
+        $patch = $request->validated();
+
+        $conflicts = app(\App\Support\Subscriptions\CycleEditValidator::class)
+            ->validate($sub, $cycleRow, $patch);
+
+        if (! empty($conflicts)) {
+            return redirect()->back()
+                ->with('error', __('supervisor.subscriptions.cycle_edit_conflicts'))
+                ->with('cycle_edit_conflicts', $conflicts)
+                ->withInput();
+        }
+
+        try {
+            app(\App\Services\Subscription\SubscriptionLifecycle::class)
+                ->adminEditCycle($sub, $cycleRow, $patch, auth()->user());
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->back()->with('error', $e->getMessage() ?: __('subscriptions.generic_error'));
+        }
+
+        return redirect()->route('manage.subscriptions.cycles.inspect', [
+            'subdomain' => $subdomain,
+            'type' => $type,
+            'subscription' => $sub->id,
+            'cycle' => $cycleRow->id,
+        ])->with('success', __('supervisor.subscriptions.cycle_edit_success'));
+    }
+
+    /**
+     * Reverse an active consumption row. Delegates straight to
+     * `SubscriptionConsumption::reverse` which already wraps in
+     * lock + audit + reconciler per §6.
+     */
+    public function reverseConsumption(Request $request, $subdomain, string $type, int $subscription, int $cycle, int $consumption): RedirectResponse
+    {
+        if (! $this->canManageSubscriptions()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscription);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        $row = $this->resolveOwnedConsumptionRow($sub, $cycle, $consumption);
+
+        try {
+            app(\App\Services\Subscription\SubscriptionConsumption::class)
+                ->reverse($row, 'admin_data_fix', auth()->user());
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->back()->with('error', __('subscriptions.generic_error'));
+        }
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.consumption_reversed_success'));
+    }
+
+    /**
+     * Promote an existing consumption row to admin_manual (or re-record a
+     * previously-reversed row as admin_manual).
+     *
+     * P5 cascade: admin_manual is the top precedence so this is always a
+     * no-resistance write. Keeps the existing consumption_type to avoid
+     * accidental data loss.
+     */
+    public function promoteConsumption(Request $request, $subdomain, string $type, int $subscription, int $cycle, int $consumption): RedirectResponse
+    {
+        if (! $this->canManageSubscriptions()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscription);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        $row = $this->resolveOwnedConsumptionRow($sub, $cycle, $consumption);
+
+        // Resolve the session row the consumption belongs to so we can route
+        // through `record()` (the precedence-aware writer). `record()` keys on
+        // (session, subscription) and updates in place when an existing row
+        // is found, so this both promotes-source AND re-records-after-reverse.
+        $session = $row->session;
+        $student = $row->studentUser;
+
+        if ($session === null || $student === null) {
+            return redirect()->back()->with('error', __('supervisor.subscriptions.consumption_missing_session_or_student'));
+        }
+
+        try {
+            app(\App\Services\Subscription\SubscriptionConsumption::class)
+                ->record(
+                    $session,
+                    $student,
+                    $sub,
+                    \App\Models\SessionConsumption::SOURCE_ADMIN_MANUAL,
+                    auth()->user(),
+                    $row->consumption_type,
+                );
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->back()->with('error', $e->getMessage() ?: __('subscriptions.generic_error'));
+        }
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.consumption_promoted_success'));
+    }
+
+    /**
+     * Record a fresh consumption row for a session that has none — used when
+     * auto-attendance missed firing but admin can confirm the outcome.
+     */
+    public function recordConsumptionForSession(Request $request, $subdomain, string $type, int $subscription, int $cycle, int $session): RedirectResponse
+    {
+        if (! $this->canManageSubscriptions()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscription);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        $validated = $request->validate([
+            'consumption_type' => 'required|in:attended,late,left,absent_counted',
+        ]);
+
+        $sessionRow = $this->resolveOwnedSession($sub, $cycle, $session);
+        $student = $sub->student;
+
+        if ($student === null) {
+            return redirect()->back()->with('error', __('supervisor.subscriptions.session_missing_student'));
+        }
+
+        try {
+            app(\App\Services\Subscription\SubscriptionConsumption::class)
+                ->record(
+                    $sessionRow,
+                    $student,
+                    $sub,
+                    \App\Models\SessionConsumption::SOURCE_ADMIN_MANUAL,
+                    auth()->user(),
+                    $validated['consumption_type'],
+                );
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->back()->with('error', $e->getMessage() ?: __('subscriptions.generic_error'));
+        }
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.consumption_recorded_success'));
+    }
+
+    /**
+     * Hard-delete a clean future session row. Refuses if any
+     * attendance/reports/consumption/earnings exist — operator must cancel
+     * those dependencies first via the per-row actions on the inspector.
+     */
+    public function deleteSession(Request $request, $subdomain, string $type, int $subscription, int $cycle, int $session): RedirectResponse
+    {
+        if (! $this->canManageSubscriptions()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscription);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        $sessionRow = $this->resolveOwnedSession($sub, $cycle, $session);
+
+        try {
+            $this->assertSessionCleanForDelete($sessionRow);
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        try {
+            app(\App\Services\Subscription\SubscriptionLifecycle::class)
+                ->adminDeleteSession($sub, $sessionRow, auth()->user());
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->back()->with('error', __('subscriptions.generic_error'));
+        }
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.session_deleted_success'));
+    }
+
+    /**
+     * Soft-cancel a scheduled session (sets status=CANCELLED, leaves the row).
+     */
+    public function cancelSession(Request $request, $subdomain, string $type, int $subscription, int $cycle, int $session): RedirectResponse
+    {
+        if (! $this->canManageSubscriptions()) {
+            abort(403);
+        }
+
+        $sub = $this->resolveSubscription($type, $subscription);
+        $this->ensureSubscriptionInScope($sub, $type);
+
+        $sessionRow = $this->resolveOwnedSession($sub, $cycle, $session);
+
+        try {
+            app(\App\Services\Subscription\SubscriptionLifecycle::class)
+                ->adminCancelSession($sub, $sessionRow, auth()->user());
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->back()->with('error', __('subscriptions.generic_error'));
+        }
+
+        return redirect()->back()->with('success', __('supervisor.subscriptions.session_cancelled_success'));
+    }
+
+    /**
+     * Find a consumption row that belongs to (sub, cycle). 404 if any of the
+     * key constraints don't line up — defends against id-rewriting attacks
+     * where an operator with one sub's inspector open submits a consumption
+     * id from a different cycle.
+     */
+    private function resolveOwnedConsumptionRow($sub, int $cycleId, int $consumptionId): \App\Models\SessionConsumption
+    {
+        return \App\Models\SessionConsumption::query()
+            ->where('id', $consumptionId)
+            ->where('cycle_id', $cycleId)
+            ->where('subscription_id', $sub->id)
+            ->where('subscription_type', $sub->getMorphClass())
+            ->firstOrFail();
+    }
+
+    /**
+     * Find a session anchored to (sub, cycle). 404 if mismatched.
+     */
+    private function resolveOwnedSession($sub, int $cycleId, int $sessionId): \App\Models\BaseSession
+    {
+        $session = $sub->sessions()
+            ->where('id', $sessionId)
+            ->where('subscription_cycle_id', $cycleId)
+            ->first();
+
+        if ($session === null) {
+            abort(404);
+        }
+
+        return $session;
+    }
+
+    /**
+     * Refuse to hard-delete a session that already has user-facing data.
+     * "Clean" = scheduled, no attendance rows, no session reports, no
+     * consumption rows, no teacher earnings.
+     */
+    private function assertSessionCleanForDelete(\App\Models\BaseSession $session): void
+    {
+        $statusValue = $session->status?->value ?? (string) $session->status;
+        if ($statusValue !== \App\Enums\SessionStatus::SCHEDULED->value) {
+            throw new \RuntimeException(__('supervisor.subscriptions.session_delete_blocked_status'));
+        }
+
+        if (method_exists($session, 'attendances') && $session->attendances()->exists()) {
+            throw new \RuntimeException(__('supervisor.subscriptions.session_delete_blocked_attendance'));
+        }
+
+        if (method_exists($session, 'reports') && $session->reports()->exists()) {
+            throw new \RuntimeException(__('supervisor.subscriptions.session_delete_blocked_reports'));
+        }
+
+        $hasConsumption = \App\Models\SessionConsumption::query()
+            ->where('session_id', $session->id)
+            ->where('session_type', $session->getMorphClass())
+            ->exists();
+
+        if ($hasConsumption) {
+            throw new \RuntimeException(__('supervisor.subscriptions.session_delete_blocked_consumption'));
+        }
+
+        $hasEarnings = \App\Models\TeacherEarning::query()
+            ->where('session_id', $session->id)
+            ->where('session_type', $session->getMorphClass())
+            ->exists();
+
+        if ($hasEarnings) {
+            throw new \RuntimeException(__('supervisor.subscriptions.session_delete_blocked_earnings'));
         }
     }
 }
