@@ -109,32 +109,78 @@ class CircleController extends Controller
 
         $circle = QuranCircle::where('id', $id)
             ->where('academy_id', $academy->id)
-            ->with(['quranTeacherProfile.user'])
+            ->with(['quranTeacherProfile.user', 'schedule'])
             ->first();
 
         if (! $circle) {
             return $this->notFound(__('Circle not found.'));
         }
 
+        $teacherProfile = $circle->quranTeacherProfile;
+        $teacherUser = $teacherProfile?->user;
+        $schedule = $circle->schedule;
+        $defaultDuration = $schedule?->default_duration_minutes ?? 60;
+
+        // Web parity: the info-sidebar Blade component reads
+        // weekly_schedule (array of { day, time, duration }) off the schedule
+        // relation. Surface it here so the mobile client can render the same
+        // unique-time list with per-slot durations.
+        $weeklySchedule = is_array($schedule?->weekly_schedule)
+            ? array_values(array_map(static function ($slot) use ($defaultDuration) {
+                return [
+                    'day' => $slot['day'] ?? null,
+                    'time' => $slot['time'] ?? null,
+                    'duration' => (int) ($slot['duration'] ?? $defaultDuration),
+                ];
+            }, $schedule->weekly_schedule))
+            : [];
+
         return $this->success([
             'circle' => [
                 'id' => $circle->id,
                 'name' => $circle->name,
                 'description' => $circle->description,
-                'teacher_id' => $circle->quranTeacherProfile?->id,
-                'teacher_name' => $circle->quranTeacherProfile?->user?->name ?? $circle->quranTeacherProfile?->full_name,
-                'teacher_avatar' => $circle->quranTeacherProfile?->user?->avatar
-                    ? asset('storage/'.$circle->quranTeacherProfile->user->avatar)
+
+                // Teacher
+                'teacher_id' => $teacherProfile?->id,
+                'teacher_name' => $teacherUser?->name ?? $teacherProfile?->full_name,
+                'teacher_avatar' => $teacherUser?->avatar
+                    ? asset('storage/'.$teacherUser->avatar)
                     : null,
-                'teacher_bio' => $circle->quranTeacherProfile?->bio_arabic,
+                'teacher_bio' => $teacherProfile?->bio_arabic,
+                'teacher_experience_years' => $teacherProfile?->teaching_experience_years,
+                'teacher_gender' => $teacherUser?->gender ?? $teacherProfile?->gender,
+
+                // Classification enums — values match the web Blade switches
+                // (memorization | recitation | interpretation | arabic_language | complete)
+                'specialization' => $circle->specialization,
+                // (beginner | elementary | intermediate | advanced | expert)
+                'memorization_level' => $circle->memorization_level,
+                // (children | youth | adults | all_ages)
+                'age_group' => $circle->age_group,
+                // (male | female | mixed | …) — anything other than male/female
+                // is rendered as "mixed" by the Blade default branch.
+                'gender_type' => $circle->gender_type,
+
+                // Back-compat aliases retained so older clients keep working.
+                'level' => $circle->memorization_level,
                 'target_gender' => $circle->target_gender,
-                'level' => $circle->level,
+
+                // Capacity
                 'current_students' => $circle->current_students_count ?? 0,
                 'max_students' => $circle->max_students,
+
+                // Schedule (group circles)
                 'schedule_days' => $circle->schedule_days ?? [],
+                'schedule_days_text' => $circle->schedule_days_text,
                 'start_time' => $circle->start_time,
                 'end_time' => $circle->end_time,
-                'session_duration_minutes' => $circle->schedule?->default_duration_minutes ?? 60,
+                'session_duration_minutes' => $defaultDuration,
+                'schedule' => [
+                    'default_duration_minutes' => $defaultDuration,
+                    'weekly_schedule' => $weeklySchedule,
+                ],
+
                 'monthly_price' => $circle->monthly_price,
                 'is_active' => (bool) $circle->status,
                 'accepts_new_students' => $circle->enrollment_status === CircleEnrollmentStatus::OPEN,

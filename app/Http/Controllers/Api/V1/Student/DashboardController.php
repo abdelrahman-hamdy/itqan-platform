@@ -10,10 +10,10 @@ use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\QuizAssignment;
-use App\Models\QuizAttempt;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSubscription;
+use App\Services\AcademyContextService;
 use App\Services\Unified\UnifiedSessionFetchingService;
 use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use Illuminate\Http\JsonResponse;
@@ -61,9 +61,11 @@ class DashboardController extends Controller
         // Get actual active subscriptions for dashboard display
         $activeSubscriptions = $this->getActiveSubscriptions($user->id, $academyId);
 
-        // Get recent homework/quizzes count
-        $pendingHomework = $this->getPendingHomeworkCount($user->id);
+        // Get recent homework/quizzes lists (counts are derived from these)
+        $pendingHomeworkItems = $this->getPendingHomeworkItems($user->id);
+        $pendingHomework = count($pendingHomeworkItems);
         $pendingQuizzes = $this->getPendingQuizzesCount($user->id);
+        $todayQuizzes = $this->getTodayQuizzes($studentProfile->id);
 
         // Get unread notifications count
         $unreadNotifications = $user->unreadNotifications()->count();
@@ -96,6 +98,8 @@ class DashboardController extends Controller
             'active_subscriptions' => $activeSubscriptions,
             'individual_circles' => $individualCircles,
             'group_circles' => $groupCircles,
+            'today_quizzes' => $todayQuizzes,
+            'pending_homework_items' => $pendingHomeworkItems,
         ];
 
         return $this->success(
@@ -106,29 +110,95 @@ class DashboardController extends Controller
 
     /**
      * Get pending homework count.
-     * Simplified: counts sessions with homework that don't have submissions.
+     *
+     * Derived from {@see getPendingHomeworkItems()} so the count and list
+     * never drift.
      */
     protected function getPendingHomeworkCount(int $userId): int
     {
-        // Get sessions with homework assigned
+        return count($this->getPendingHomeworkItems($userId));
+    }
+
+    /**
+     * Get up to 10 pending homework items for the Today card.
+     *
+     * Returns lightweight rows: { id, session_id, title, due_at, overdue }.
+     * `overdue` compares `due_at` against academy-local "now" so the boundary
+     * matches the rest of the student UX.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function getPendingHomeworkItems(int $userId): array
+    {
+        // Find sessions for the student that have homework assigned.
         $sessionsWithHomework = AcademicSession::where('student_id', $userId)
             ->whereNotNull('homework_description')
             ->where('homework_description', '!=', '')
             ->pluck('id');
 
         if ($sessionsWithHomework->isEmpty()) {
-            return 0;
+            return [];
         }
 
-        // Count sessions that have submissions
+        // Sessions for which the student already submitted.
         $sessionsWithSubmissions = AcademicHomework::whereIn('academic_session_id', $sessionsWithHomework)
             ->whereHas('submissions', function ($q) use ($userId) {
                 $q->where('academic_homework_submissions.student_id', $userId);
             })
-            ->pluck('academic_session_id');
+            ->pluck('academic_session_id')
+            ->all();
 
-        // Return count of sessions without submissions
-        return $sessionsWithHomework->diff($sessionsWithSubmissions)->count();
+        $pendingSessionIds = $sessionsWithHomework->diff($sessionsWithSubmissions);
+
+        if ($pendingSessionIds->isEmpty()) {
+            return [];
+        }
+
+        $now = AcademyContextService::nowInAcademyTimezone();
+
+        // Prefer AcademicHomework rows (have a title + due_date). If a pending
+        // session has no AcademicHomework row, fall back to a minimal entry
+        // sourced from the session's homework_description.
+        $homeworkRows = AcademicHomework::whereIn('academic_session_id', $pendingSessionIds)
+            ->orderBy('due_date', 'asc')
+            ->limit(10)
+            ->get(['id', 'academic_session_id', 'title', 'due_date']);
+
+        $items = [];
+        $coveredSessions = [];
+
+        foreach ($homeworkRows as $hw) {
+            $dueAt = $hw->due_date;
+            $items[] = [
+                'id' => (int) $hw->id,
+                'session_id' => (int) $hw->academic_session_id,
+                'title' => $hw->title ?: __('Homework'),
+                'due_at' => $dueAt?->toISOString(),
+                'overdue' => $dueAt ? $dueAt->lt($now) : false,
+            ];
+            $coveredSessions[] = (int) $hw->academic_session_id;
+        }
+
+        // Fill remaining slots with sessions that have homework_description
+        // but no AcademicHomework row.
+        $remaining = 10 - count($items);
+        if ($remaining > 0) {
+            $fallbackSessions = AcademicSession::whereIn('id', $pendingSessionIds->diff($coveredSessions))
+                ->limit($remaining)
+                ->get(['id']);
+
+            foreach ($fallbackSessions as $session) {
+                $items[] = [
+                    'id' => (int) $session->id,
+                    'session_id' => (int) $session->id,
+                    'title' => __('Homework'),
+                    'due_at' => null,
+                    'overdue' => false,
+                ];
+            }
+        }
+
+        return $items;
     }
 
     /**
@@ -153,62 +223,7 @@ class DashboardController extends Controller
         }
 
         $studentProfileId = $studentProfile->id;
-
-        // Build the map of assignable_type → [ids] the student belongs to,
-        // mirroring QuizController::getStudentAssignableIds().
-        $assignableIds = [];
-
-        // Quran subscriptions (education_unit_type / education_unit_id)
-        // quran_subscriptions.student_id references User.id
-        $quranSubs = $user->quranSubscriptions()
-            ->whereNotNull('education_unit_type')
-            ->whereNotNull('education_unit_id')
-            ->select('education_unit_type', 'education_unit_id')
-            ->get();
-
-        foreach ($quranSubs as $sub) {
-            $type = $sub->education_unit_type;
-            $id = $sub->education_unit_id;
-            if (! isset($assignableIds[$type])) {
-                $assignableIds[$type] = [];
-            }
-            if (! in_array($id, $assignableIds[$type])) {
-                $assignableIds[$type][] = $id;
-            }
-        }
-
-        // Quran individual circles (student_id → User.id)
-        $quranIndividualCircleIds = QuranIndividualCircle::where('student_id', $userId)
-            ->pluck('id')
-            ->toArray();
-        if (! empty($quranIndividualCircleIds)) {
-            $assignableIds['App\\Models\\QuranIndividualCircle'] = $quranIndividualCircleIds;
-        }
-
-        // Academic individual lessons (student_id → User.id)
-        $academicLessonIds = AcademicIndividualLesson::where('student_id', $userId)
-            ->pluck('id')
-            ->toArray();
-        if (! empty($academicLessonIds)) {
-            $assignableIds['App\\Models\\AcademicIndividualLesson'] = $academicLessonIds;
-        }
-
-        // Interactive course enrollments (student_id → StudentProfile.id)
-        $interactiveCourseIds = InteractiveCourseEnrollment::where('student_id', $studentProfileId)
-            ->pluck('course_id')
-            ->toArray();
-        if (! empty($interactiveCourseIds)) {
-            $assignableIds['App\\Models\\InteractiveCourse'] = $interactiveCourseIds;
-        }
-
-        // Recorded courses from course subscriptions (student_id → User.id)
-        $recordedCourseIds = $user->courseSubscriptions()
-            ->whereNotNull('recorded_course_id')
-            ->pluck('recorded_course_id')
-            ->toArray();
-        if (! empty($recordedCourseIds)) {
-            $assignableIds['App\\Models\\RecordedCourse'] = $recordedCourseIds;
-        }
+        $assignableIds = $this->getStudentAssignableIds($user, $studentProfileId);
 
         if (empty($assignableIds)) {
             return 0;
@@ -233,6 +248,158 @@ class DashboardController extends Controller
                     ->whereNotNull('submitted_at');
             })
             ->count();
+    }
+
+    /**
+     * Build the map of assignable_type → [ids] the student belongs to,
+     * mirroring QuizController::getStudentAssignableIds().
+     *
+     * @return array<string, array<int, int|string>>
+     */
+    protected function getStudentAssignableIds(\App\Models\User $user, int $studentProfileId): array
+    {
+        $assignableIds = [];
+
+        // Quran subscriptions (education_unit_type / education_unit_id)
+        // quran_subscriptions.student_id references User.id
+        $quranSubs = $user->quranSubscriptions()
+            ->whereNotNull('education_unit_type')
+            ->whereNotNull('education_unit_id')
+            ->select('education_unit_type', 'education_unit_id')
+            ->get();
+
+        foreach ($quranSubs as $sub) {
+            $type = $sub->education_unit_type;
+            $id = $sub->education_unit_id;
+            if (! isset($assignableIds[$type])) {
+                $assignableIds[$type] = [];
+            }
+            if (! in_array($id, $assignableIds[$type])) {
+                $assignableIds[$type][] = $id;
+            }
+        }
+
+        // Quran individual circles (student_id → User.id)
+        $quranIndividualCircleIds = QuranIndividualCircle::where('student_id', $user->id)
+            ->pluck('id')
+            ->toArray();
+        if (! empty($quranIndividualCircleIds)) {
+            $assignableIds['App\\Models\\QuranIndividualCircle'] = $quranIndividualCircleIds;
+        }
+
+        // Academic individual lessons (student_id → User.id)
+        $academicLessonIds = AcademicIndividualLesson::where('student_id', $user->id)
+            ->pluck('id')
+            ->toArray();
+        if (! empty($academicLessonIds)) {
+            $assignableIds['App\\Models\\AcademicIndividualLesson'] = $academicLessonIds;
+        }
+
+        // Interactive course enrollments (student_id → StudentProfile.id)
+        $interactiveCourseIds = InteractiveCourseEnrollment::where('student_id', $studentProfileId)
+            ->pluck('course_id')
+            ->toArray();
+        if (! empty($interactiveCourseIds)) {
+            $assignableIds['App\\Models\\InteractiveCourse'] = $interactiveCourseIds;
+        }
+
+        // Recorded courses from course subscriptions (student_id → User.id)
+        $recordedCourseIds = $user->courseSubscriptions()
+            ->whereNotNull('recorded_course_id')
+            ->pluck('recorded_course_id')
+            ->toArray();
+        if (! empty($recordedCourseIds)) {
+            $assignableIds['App\\Models\\RecordedCourse'] = $recordedCourseIds;
+        }
+
+        return $assignableIds;
+    }
+
+    /**
+     * Get up to 10 quizzes the student should see today.
+     *
+     * A quiz qualifies when the student has no completed attempt AND either:
+     * - the assignment's `available_until` is today (in academy timezone), or
+     * - the assignment has no `available_until` bound (always-due).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function getTodayQuizzes(int $studentProfileId): array
+    {
+        $studentProfile = \App\Models\StudentProfile::find($studentProfileId);
+        if (! $studentProfile) {
+            return [];
+        }
+
+        $user = $studentProfile->user;
+        if (! $user) {
+            return [];
+        }
+
+        $assignableIds = $this->getStudentAssignableIds($user, $studentProfileId);
+        if (empty($assignableIds)) {
+            return [];
+        }
+
+        $now = AcademyContextService::nowInAcademyTimezone();
+        $endOfToday = $now->copy()->endOfDay();
+
+        $assignments = QuizAssignment::with(['quiz', 'assignable'])
+            ->where(function ($q) use ($assignableIds) {
+                foreach ($assignableIds as $type => $ids) {
+                    $q->orWhere(function ($subQ) use ($type, $ids) {
+                        $subQ->where('assignable_type', $type)
+                            ->whereIn('assignable_id', $ids);
+                    });
+                }
+            })
+            ->whereHas('quiz', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->whereDoesntHave('attempts', function ($q) use ($studentProfileId) {
+                $q->where('student_id', $studentProfileId)
+                    ->whereNotNull('submitted_at');
+            })
+            ->where(function ($q) use ($endOfToday) {
+                $q->whereNull('available_until')
+                    ->orWhere('available_until', '<=', $endOfToday);
+            })
+            ->orderByRaw('available_until IS NULL, available_until ASC')
+            ->limit(10)
+            ->get();
+
+        return $assignments->map(function (QuizAssignment $assignment) {
+            $quiz = $assignment->quiz;
+            $assignable = $assignment->assignable;
+
+            return [
+                'id' => $assignment->id,
+                'quiz_id' => $quiz?->id,
+                'title' => $quiz?->title ?? __('Quiz'),
+                'entity_label' => $this->labelForAssignable($assignable),
+                'available_until' => $assignment->available_until?->toISOString(),
+                'route_hint' => 'quiz_list',
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Best-effort human label for the entity a quiz is assigned to.
+     */
+    protected function labelForAssignable(mixed $assignable): ?string
+    {
+        if ($assignable === null) {
+            return null;
+        }
+
+        foreach (['name', 'title'] as $field) {
+            $value = $assignable->{$field} ?? null;
+            if (is_string($value) && $value !== '') {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     /**
