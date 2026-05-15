@@ -37,7 +37,8 @@ class PatternALegacyBackfill extends Command
                             {--limit= : Cap the number of CYCLES processed}
                             {--academy= : Restrict to one academy id}
                             {--cycle= : Process only one specific cycle id (debug)}
-                            {--strict=true : Skip cycles that contain any session whose report disagrees with the legacy flag (default: strict). Pass --strict=false to include disputed cycles.}';
+                            {--strict=true : Skip cycles that contain any session whose report disagrees with the legacy flag (default: strict). Pass --strict=false to include disputed cycles.}
+                            {--cap-to-aggregate : When the legacy flag is set on more sessions than the cycle aggregate, synthesize only the chronologically-earliest sessions_used rows. Off by default.}';
 
     protected $description = 'Pattern A — synthesize session_consumption rows from legacy subscription_counted flag.';
 
@@ -51,6 +52,7 @@ class PatternALegacyBackfill extends Command
         if ($strict === null) {
             $strict = true;
         }
+        $capToAggregate = (bool) $this->option('cap-to-aggregate');
 
         $query = SubscriptionCycle::query()
             ->where('v2_consumption_complete', false)
@@ -120,13 +122,13 @@ class PatternALegacyBackfill extends Command
         $bar = $this->output->createProgressBar(min($total, $limit ?? $total));
         $bar->start();
 
-        $query->orderBy('id')->chunkById(50, function ($chunk) use ($apply, $limit, &$cyclesTouched, &$cyclesSkipped, &$rowsWritten, &$rowsSkipped, &$errors, $bar) {
+        $query->orderBy('id')->chunkById(50, function ($chunk) use ($apply, $capToAggregate, $limit, &$cyclesTouched, &$cyclesSkipped, &$rowsWritten, &$rowsSkipped, &$errors, $bar) {
             foreach ($chunk as $cycle) {
                 if ($limit !== null && $cyclesTouched + $cyclesSkipped >= $limit) {
                     return false;
                 }
 
-                $result = $this->processCycle($cycle, $apply);
+                $result = $this->processCycle($cycle, $apply, $capToAggregate);
 
                 if ($result['error'] !== null) {
                     $errors++;
@@ -169,7 +171,7 @@ class PatternALegacyBackfill extends Command
     /**
      * @return array{error: ?string, skipped: bool, rows_written: int, rows_skipped: int}
      */
-    private function processCycle(SubscriptionCycle $cycle, bool $apply): array
+    private function processCycle(SubscriptionCycle $cycle, bool $apply, bool $capToAggregate): array
     {
         $result = ['error' => null, 'skipped' => false, 'rows_written' => 0, 'rows_skipped' => 0];
 
@@ -182,6 +184,19 @@ class PatternALegacyBackfill extends Command
             $result['error'] = 'no candidate sessions despite scope predicate — re-survey';
 
             return $result;
+        }
+
+        // --cap-to-aggregate: when more sessions carry the legacy flag than
+        // cycle.sessions_used reports, only count the chronologically-first
+        // N sessions (where N = sessions_used). This trusts the aggregate
+        // (which drives billing) over the flag set (which can drift via
+        // hand-cycle edits in the old admin UI).
+        if ($capToAggregate) {
+            $expected = (int) $cycle->sessions_used;
+            if (count($candidates) > $expected) {
+                usort($candidates, fn (array $a, array $b) => strcmp($a['consumed_at'], $b['consumed_at']));
+                $candidates = array_slice($candidates, 0, $expected);
+            }
         }
 
         if (! $apply) {
