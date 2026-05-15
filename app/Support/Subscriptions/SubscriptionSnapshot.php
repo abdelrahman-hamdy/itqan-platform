@@ -393,10 +393,20 @@ final class SubscriptionSnapshot
 
         $hasRecording = false;
         if (Schema::hasTable('session_recordings')) {
-            $hasRecording = DB::table('session_recordings')
-                ->where('session_type', $sessionMorph)
-                ->where('session_id', $sessionId)
-                ->exists();
+            // session_recordings uses recordable_type / recordable_id
+            // (polymorphic via the recordable() morph), not the session_*
+            // naming the other meeting tables use.
+            if (Schema::hasColumn('session_recordings', 'recordable_type')) {
+                $hasRecording = DB::table('session_recordings')
+                    ->where('recordable_type', $sessionMorph)
+                    ->where('recordable_id', $sessionId)
+                    ->exists();
+            } elseif (Schema::hasColumn('session_recordings', 'session_type')) {
+                $hasRecording = DB::table('session_recordings')
+                    ->where('session_type', $sessionMorph)
+                    ->where('session_id', $sessionId)
+                    ->exists();
+            }
         }
 
         return [
