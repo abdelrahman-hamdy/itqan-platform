@@ -101,10 +101,9 @@ class SubscriptionReconciler
         if ($cycle instanceof SubscriptionCycle && ! $this->isLegacyConsumptionCycle($cycle)) {
             // INV-B3: cycle.sessions_used is itself a derived field — it must
             // equal the COUNT of active SessionConsumption rows anchored to
-            // that cycle. Recompute that count here, BEFORE we mirror the
-            // cycle's counter onto the subscription row, so any drift between
-            // the cycle's stored aggregate and the consumption-row truth is
-            // healed by the reconciler instead of perpetuated.
+            // that cycle, PLUS any documented offset for sessions consumed
+            // outside the v2 path (admin-preset pre-platform usage, or the
+            // cleanup's --allow-aggregate-shortfall metadata).
             //
             // E1 GATE: pre-v2-flip cycles never had session_consumption rows
             // written for them (legacy code only updated cycle.sessions_used
@@ -112,13 +111,29 @@ class SubscriptionReconciler
             // zero out the legitimate legacy aggregate. Skipped via
             // isLegacyConsumptionCycle() until per-cycle backfill flips
             // v2_consumption_complete=true.
+            //
+            // CONSUMPTION OFFSET (post-cleanup): two metadata keys describe
+            // sessions that count toward sessions_used but have NO matching
+            // session_consumption row:
+            //   - `unaccounted_sessions_used` (int, written by cleanup
+            //     Pattern A --allow-aggregate-shortfall): legacy-aggregate
+            //     drift that we accepted at cleanup time.
+            //   - `pre_platform_consumption_preserved` (bool) + `preserved_value`
+            //     (int, written by Pattern C): admin-preset pre-platform usage
+            //     where no session rows ever existed.
+            // The reconciler must add this offset back when recomputing
+            // sessions_used; otherwise the admin-preset values get silently
+            // wiped on the next mutator that triggers sync (sub-556 incident).
             $activeConsumption = SessionConsumption::query()
                 ->where('cycle_id', $cycle->getKey())
                 ->whereNull('reversed_at')
                 ->count();
 
-            if ((int) $cycle->sessions_used !== $activeConsumption) {
-                $cycle->sessions_used = $activeConsumption;
+            $offset = $this->consumptionOffset($cycle);
+            $expected = $activeConsumption + $offset;
+
+            if ((int) $cycle->sessions_used !== $expected) {
+                $cycle->sessions_used = $expected;
                 $cycle->save();
             }
         }
@@ -146,6 +161,40 @@ class SubscriptionReconciler
         } finally {
             $sub->reconciling = false;
         }
+    }
+
+    /**
+     * Per-cycle consumption offset — sessions that count toward
+     * cycle.sessions_used but have no matching session_consumption row.
+     *
+     * Sources:
+     *   - `metadata.unaccounted_sessions_used` (Pattern A shortfall path —
+     *     legacy aggregate drift we accepted at cleanup time)
+     *   - `metadata.pre_platform_consumption_preserved=true` + `preserved_value`
+     *     (Pattern C — admin-preset pre-platform consumption with no
+     *     session rows backing it)
+     *
+     * Defaults to 0 (no offset; pure recount from consumption rows).
+     */
+    private function consumptionOffset(SubscriptionCycle $cycle): int
+    {
+        $metadata = $cycle->metadata ?? [];
+        if (! is_array($metadata)) {
+            return 0;
+        }
+
+        $offset = 0;
+
+        if (isset($metadata['unaccounted_sessions_used'])) {
+            $offset += (int) $metadata['unaccounted_sessions_used'];
+        }
+
+        if (! empty($metadata['pre_platform_consumption_preserved'])
+            && isset($metadata['preserved_value'])) {
+            $offset += (int) $metadata['preserved_value'];
+        }
+
+        return max(0, $offset);
     }
 
     /**
