@@ -540,7 +540,21 @@
 
             const inner = document.createElement('div');
             inner.className = 'w-full h-full flex flex-col items-stretch justify-evenly px-2 py-1 leading-snug text-gray-900';
-            inner.style.fontSize = 'clamp(10px, 2.6cqi, 48px)';
+
+            // Compute font size from the tile's actual rendered height so
+            // ~15 lines fit comfortably. We measure on the next frame; the
+            // initial render uses a safe default that will then be
+            // overwritten.
+            inner.style.fontSize = '18px';
+            requestAnimationFrame(() => {
+                const rect = host.getBoundingClientRect();
+                if (rect.height > 0) {
+                    const lines = Math.max(1, data.lines.length);
+                    // Reserve a little headroom for line-height.
+                    const target = Math.max(10, Math.min(64, (rect.height / lines) * 0.75));
+                    inner.style.fontSize = target.toFixed(1) + 'px';
+                }
+            });
 
             for (const line of data.lines) {
                 const row = document.createElement('div');
