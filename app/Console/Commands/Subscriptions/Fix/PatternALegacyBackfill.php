@@ -36,7 +36,8 @@ class PatternALegacyBackfill extends Command
                             {--apply : Actually perform the writes (default is dry-run)}
                             {--limit= : Cap the number of CYCLES processed}
                             {--academy= : Restrict to one academy id}
-                            {--cycle= : Process only one specific cycle id (debug)}';
+                            {--cycle= : Process only one specific cycle id (debug)}
+                            {--strict=true : Skip cycles that contain any session whose report disagrees with the legacy flag (default: strict). Pass --strict=false to include disputed cycles.}';
 
     protected $description = 'Pattern A — synthesize session_consumption rows from legacy subscription_counted flag.';
 
@@ -46,6 +47,10 @@ class PatternALegacyBackfill extends Command
         $limit = $this->option('limit') !== null ? (int) $this->option('limit') : null;
         $academy = $this->option('academy') !== null ? (int) $this->option('academy') : null;
         $cycleId = $this->option('cycle') !== null ? (int) $this->option('cycle') : null;
+        $strict = filter_var($this->option('strict'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($strict === null) {
+            $strict = true;
+        }
 
         $query = SubscriptionCycle::query()
             ->where('v2_consumption_complete', false)
@@ -67,6 +72,28 @@ class PatternALegacyBackfill extends Command
                 )');
             });
 
+        if ($strict) {
+            // Strict mode: exclude cycles containing any session where the
+            // legacy flag (subscription_counted=true) disagrees with a
+            // student_session_report (attendance_status='absent'). These
+            // are Pattern B candidates and need admin signoff on the
+            // tiebreaker policy.
+            $query->whereRaw('NOT EXISTS (
+                SELECT 1 FROM quran_sessions qs
+                INNER JOIN student_session_reports r ON r.session_id = qs.id
+                WHERE qs.subscription_cycle_id = subscription_cycles.id
+                  AND qs.subscription_counted = 1
+                  AND r.attendance_status = ?
+            )', ['absent']);
+            $query->whereRaw('NOT EXISTS (
+                SELECT 1 FROM academic_sessions a
+                INNER JOIN academic_session_reports ar ON ar.session_id = a.id
+                WHERE a.subscription_cycle_id = subscription_cycles.id
+                  AND a.subscription_counted = 1
+                  AND ar.attendance_status = ?
+            )', ['absent']);
+        }
+
         if ($cycleId !== null) {
             $query->where('id', $cycleId);
         }
@@ -75,7 +102,11 @@ class PatternALegacyBackfill extends Command
         }
 
         $total = (clone $query)->count();
-        $this->info(sprintf('Pattern A candidates: %d cycle(s)', $total));
+        $this->info(sprintf(
+            'Pattern A candidates: %d cycle(s) [strict=%s]',
+            $total,
+            $strict ? 'true (skipping report-disagrees cycles)' : 'false',
+        ));
 
         if ($total === 0) {
             return self::SUCCESS;
