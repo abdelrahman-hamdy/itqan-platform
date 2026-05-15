@@ -71,6 +71,7 @@ class SubscriptionCycle extends Model
         'pricing_source',
         'pricing_override_reason',
         'pricing_override_actor_id',
+        'v2_consumption_complete',
     ];
 
     protected $casts = [
@@ -89,6 +90,7 @@ class SubscriptionCycle extends Model
         'final_price' => 'decimal:2',
         'package_snapshot' => 'array',
         'metadata' => 'array',
+        'v2_consumption_complete' => 'boolean',
     ];
 
     /**

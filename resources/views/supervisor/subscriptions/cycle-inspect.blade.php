@@ -368,68 +368,65 @@
         @endif
     </div>
 
-    {{-- ═══ CYCLE EDITOR MODAL (F2.2 / F2.4) ═══ --}}
+    {{-- ═══ CYCLE INSPECTOR MODAL (Phase 3: read-only) ═══
+
+         The raw cycle editor was replaced by the semantic actions on the
+         subscription page:
+           - Grant N sessions      (top up total_sessions)
+           - Override price        (set final_price via SubscriptionPricing)
+           - Extend                (grace_period_ends_at)
+         Window dates (starts_at / ends_at) are no longer hand-editable in
+         this UI; the corresponding admin endpoints remain available for the
+         specific incident-recovery flow the supervisor team uses.
+    --}}
     @if($canManage ?? false)
         <div id="cycle-edit-modal" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
             <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
                 <div class="relative bg-white w-full md:max-w-xl rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
                     <div class="p-6">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">{{ __('supervisor.subscriptions.edit_cycle_modal_title', ['number' => $cycle->cycle_number]) }}</h3>
+                        <h3 class="text-lg font-bold text-gray-900 mb-1">{{ __('supervisor.subscriptions.cycle_inspector_modal_title', ['number' => $cycle->cycle_number]) }}</h3>
+                        <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-4">{{ __('supervisor.subscriptions.cycle_inspector_readonly_notice') }}</p>
 
-                        <form method="POST" action="{{ route('manage.subscriptions.cycles.edit', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id, 'cycle' => $cycle->id]) }}" id="cycle-edit-form" class="space-y-4">
-                            @csrf
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                {{-- Coordinated-field edits (block-on-conflict). --}}
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.subscriptions.starts_at') }}</label>
-                                    <input type="datetime-local" name="starts_at"
-                                           value="{{ old('starts_at', $cycle->starts_at?->format('Y-m-d\TH:i')) }}"
-                                           class="w-full rounded-lg border-gray-300 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.subscriptions.ends_at') }}</label>
-                                    <input type="datetime-local" name="ends_at"
-                                           value="{{ old('ends_at', $cycle->ends_at?->format('Y-m-d\TH:i')) }}"
-                                           class="w-full rounded-lg border-gray-300 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">
-                                        {{ __('supervisor.subscriptions.total_sessions') }}
-                                    </label>
-                                    <input type="number" name="total_sessions" min="0" max="1000"
-                                           value="{{ old('total_sessions', $cycle->total_sessions) }}"
-                                           class="w-full rounded-lg border-gray-300 text-sm">
-                                </div>
-
-                                {{-- Safe-field edits (F2.2). --}}
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.subscriptions.grace_period_ends_at') }}</label>
-                                    <input type="datetime-local" name="grace_period_ends_at"
-                                           value="{{ old('grace_period_ends_at', $cycle->grace_period_ends_at?->format('Y-m-d\TH:i')) }}"
-                                           class="w-full rounded-lg border-gray-300 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('supervisor.subscriptions.archived_at') }}</label>
-                                    <input type="datetime-local" name="archived_at"
-                                           value="{{ old('archived_at', $cycle->archived_at?->format('Y-m-d\TH:i')) }}"
-                                           class="w-full rounded-lg border-gray-300 text-sm">
-                                </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <div class="text-xs font-medium text-gray-500 mb-1">{{ __('supervisor.subscriptions.starts_at') }}</div>
+                                <div class="font-mono text-sm text-gray-900">{{ $cycle->starts_at?->format('Y-m-d H:i') ?? '—' }}</div>
                             </div>
-
-                            {{-- Forbidden field reminder. --}}
-                            <div class="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600">
-                                <strong>{{ __('supervisor.subscriptions.forbidden_fields') }}:</strong>
-                                <code class="font-mono">sessions_used, sessions_completed, sessions_missed, cycle_state, package_id, payment_status</code>.
-                                {{ __('supervisor.subscriptions.forbidden_fields_hint') }}
+                            <div>
+                                <div class="text-xs font-medium text-gray-500 mb-1">{{ __('supervisor.subscriptions.ends_at') }}</div>
+                                <div class="font-mono text-sm text-gray-900">{{ $cycle->ends_at?->format('Y-m-d H:i') ?? '—' }}</div>
                             </div>
-                        </form>
+                            <div>
+                                <div class="text-xs font-medium text-gray-500 mb-1">{{ __('supervisor.subscriptions.total_sessions') }}</div>
+                                <div class="font-mono text-sm text-gray-900">{{ $cycle->total_sessions ?? '—' }}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs font-medium text-gray-500 mb-1">{{ __('supervisor.subscriptions.grace_period_ends_at') }}</div>
+                                <div class="font-mono text-sm text-gray-900">{{ $cycle->grace_period_ends_at?->format('Y-m-d H:i') ?? '—' }}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs font-medium text-gray-500 mb-1">{{ __('supervisor.subscriptions.archived_at') }}</div>
+                                <div class="font-mono text-sm text-gray-900">{{ $cycle->archived_at?->format('Y-m-d H:i') ?? '—' }}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs font-medium text-gray-500 mb-1">{{ __('supervisor.subscriptions.final_price') }}</div>
+                                <div class="font-mono text-sm text-gray-900">{{ $cycle->final_price ?? '—' }} {{ $cycle->currency ?? '' }}</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700">
+                            <strong>{{ __('supervisor.subscriptions.use_semantic_actions') }}:</strong>
+                            <ul class="list-disc pr-5 mt-2 space-y-1">
+                                <li>{{ __('supervisor.subscriptions.semantic_grant_sessions') }}</li>
+                                <li>{{ __('supervisor.subscriptions.semantic_override_price') }}</li>
+                                <li>{{ __('supervisor.subscriptions.semantic_extend') }}</li>
+                            </ul>
+                        </div>
                     </div>
 
                     <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
-                        <button type="button" onclick="document.getElementById('cycle-edit-modal').classList.add('hidden')" class="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl">{{ __('common.cancel') }}</button>
-                        <button type="button" onclick="document.getElementById('cycle-edit-form').submit()" class="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md">{{ __('supervisor.subscriptions.save_changes') }}</button>
+                        <button type="button" onclick="document.getElementById('cycle-edit-modal').classList.add('hidden')" class="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl">{{ __('common.close') }}</button>
                     </div>
                 </div>
             </div>

@@ -11,6 +11,7 @@ use App\Models\CourseSubscription;
 use App\Models\SessionConsumption;
 use App\Models\SubscriptionAuditLog;
 use App\Models\SubscriptionCycle;
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -359,7 +360,10 @@ class SubscriptionInvariantChecker
                 ->whereNull('reversed_at')
                 ->count();
 
-            // INV-B3
+            // INV-B3 — softened to severity=warning for pre-v2-flip cycles
+            // that haven't been backfilled into session_consumption yet. The
+            // legacy attendance writer never produced consumption rows for
+            // them, so a mismatch is the EXPECTED data shape until backfill.
             if ((int) $cycle->sessions_used !== $actualActive) {
                 $violations[] = $this->violation(
                     'INV-B3',
@@ -369,7 +373,9 @@ class SubscriptionInvariantChecker
                         'cycle_id' => $cycle->getKey(),
                         'cycle_sessions_used' => (int) $cycle->sessions_used,
                         'active_consumption_count' => $actualActive,
+                        'legacy_cycle' => $this->isLegacyConsumptionCycle($cycle),
                     ],
+                    severity: $this->isLegacyConsumptionCycle($cycle) ? 'warning' : 'error',
                 );
             }
 
@@ -655,6 +661,13 @@ class SubscriptionInvariantChecker
             // is expected behaviour per the doc (historical cycles keep their
             // old final_price), so we only flag when the package_id is null
             // for a 'package'-sourced cycle (means we lost the snapshot link).
+            //
+            // Softened to severity=warning for legacy cycles: the
+            // 2026_05_14 pricing_trust migration defaulted pricing_source
+            // to 'package' across the historical population without
+            // backfilling package_id. Until 2026_05_15_000002 backfill runs,
+            // these are EXPECTED to NULL out — flagging error would drown
+            // the inspector in noise.
             if ($pricingSource === 'package' && $cycle->package_id === null) {
                 $violations[] = $this->violation(
                     'INV-D4',
@@ -662,7 +675,9 @@ class SubscriptionInvariantChecker
                     [
                         'subscription_id' => $sub->getKey(),
                         'cycle_id' => $cycle->getKey(),
+                        'legacy_cycle' => $this->isLegacyConsumptionCycle($cycle),
                     ],
+                    severity: $this->isLegacyConsumptionCycle($cycle) ? 'warning' : 'error',
                 );
             }
         }
@@ -997,12 +1012,44 @@ class SubscriptionInvariantChecker
         array $context = [],
         string $severity = 'error',
     ): array {
+        // Issue #2: every invariant violation surfaces in the supervisor cycle
+        // inspector. The hardcoded English `$message` becomes the fallback,
+        // but a localized lookup is attempted first under the conventional
+        // `supervisor.subscriptions.invariants.<CODE>` key. Translation
+        // placeholders mirror the violation context.
+        $key = 'supervisor.subscriptions.invariants.'.$code;
+        $localized = __($key, $this->translatableContext($context));
+        if (is_string($localized) && $localized !== $key) {
+            $message = $localized;
+        }
+
         return [
             'code' => $code,
             'severity' => $severity,
             'message' => $message,
             'context' => $context,
         ];
+    }
+
+    /**
+     * Pull the scalar context entries safe for use as :placeholder
+     * substitutions. Carbon, enums and nested arrays are excluded — the
+     * translation layer can't render them and they are always available in
+     * the structured `context` payload anyway.
+     *
+     * @param  array<string, mixed>  $context
+     * @return array<string, scalar>
+     */
+    private function translatableContext(array $context): array
+    {
+        $out = [];
+        foreach ($context as $key => $value) {
+            if (is_scalar($value)) {
+                $out[$key] = $value;
+            }
+        }
+
+        return $out;
     }
 
     private function loadCurrentCycle(BaseSubscription $sub): ?SubscriptionCycle
@@ -1093,6 +1140,38 @@ class SubscriptionInvariantChecker
         }
 
         return $status;
+    }
+
+    /**
+     * Mirrors {@see SubscriptionReconciler::isLegacyConsumptionCycle}: a cycle
+     * is "legacy" if it predates the v2 flip cutoff AND has not yet had its
+     * legacy attendance backfilled into session_consumption. We use this here
+     * to soften INV-B3 + INV-D4 from `error` to `warning` so the supervisor
+     * inspector doesn't drown in expected-shape noise on pre-flip cycles.
+     */
+    private function isLegacyConsumptionCycle(SubscriptionCycle $cycle): bool
+    {
+        if ($cycle->v2_consumption_complete) {
+            return false;
+        }
+
+        $cutoffRaw = config('subscriptions.v2_flip_cutoff');
+        if (! is_string($cutoffRaw) || $cutoffRaw === '') {
+            return false;
+        }
+
+        try {
+            $cutoff = Carbon::parse($cutoffRaw);
+        } catch (Throwable) {
+            return false;
+        }
+
+        $createdAt = $cycle->created_at;
+        if (! $createdAt instanceof CarbonInterface) {
+            return false;
+        }
+
+        return $createdAt->lt($cutoff);
     }
 
     private function isInPendingState(BaseSubscription $sub): bool

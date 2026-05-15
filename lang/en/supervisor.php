@@ -1469,12 +1469,21 @@ return [
         // New subscription actions
         'action_create' => 'Create Subscription',
         'action_renew' => 'Renew',
-        'action_resubscribe' => 'Resubscribe',
+        'action_subscribe_again' => 'Subscribe again',
+        'action_grant_sessions' => 'Grant sessions',
+        'action_override_price' => 'Override price',
         'action_confirm_payment' => 'Confirm Payment',
         'renew_title' => 'Renew Subscription',
         'renew_message' => 'Renew subscription for student :name with a new billing cycle.',
-        'resubscribe_title' => 'Resubscribe',
-        'resubscribe_message' => 'Create a new subscription for student :name.',
+        'subscribe_again_title' => 'Subscribe again',
+        'subscribe_again_message' => 'Create a fresh subscription for student :name with the same teacher and package.',
+        'cycle_inspector_modal_title' => 'Cycle #:number — read-only inspector',
+        'cycle_inspector_readonly_notice' => 'The raw cycle editor is read-only. Use the semantic actions on the subscription page to make changes.',
+        'use_semantic_actions' => 'Use semantic actions instead',
+        'semantic_grant_sessions' => 'Grant sessions — top up the current cycle quota.',
+        'semantic_override_price' => 'Override price — change the final price with a recorded reason.',
+        'semantic_extend' => 'Extend — push the grace period out.',
+        'final_price' => 'Final price',
         'confirm_payment_title' => 'Confirm Payment',
         'confirm_payment_message' => 'Confirm payment received for student :name and activate the subscription.',
         'billing_cycle_label' => 'Billing Cycle',
@@ -1609,6 +1618,50 @@ return [
         'view_circle' => 'View Circle',
         'view_lesson' => 'View Lesson',
         'no_circle_linked' => 'No circle linked',
+
+        // Issue #2 — diff-aware cycle editor conflict messages.
+        // Placeholders: :count for affected-row counts, :used / :reverse / :future
+        // for total-sessions calculations.
+        'cycle_edit_errors' => [
+            'starts_forward' => 'Moving starts_at forward would orphan :count session(s) scheduled before the new date.',
+            'starts_overlap' => 'Moving starts_at backward would overlap with a prior cycle on this subscription (INV-A4).',
+            'ends_backward' => 'Moving ends_at backward would strand :count session(s) scheduled after the new date.',
+            'ends_forward_queued' => 'Moving ends_at forward would overlap :count session(s) already booked into the queued cycle.',
+            'ends_premature_promote' => 'Setting ends_at to the past while a queued cycle exists would cause subscriptions:advance-cycles to promote it on the next run.',
+            'total_lt_used' => 'Cannot drop total_sessions below sessions_used (:used). Reverse :reverse consumption row(s) first.',
+            'total_lt_committed' => 'total_sessions would drop below committed work (:used used + :future future scheduled).',
+        ],
+
+        // Issue #2 — invariant violation messages keyed by invariant code.
+        // The supervisor inspector renders these verbatim from the violation
+        // payload. Placeholders mirror the structured `context` produced by
+        // SubscriptionInvariantChecker.
+        'invariants' => [
+            'INV-A1' => 'Subscription field does not mirror currentCycle.',
+            'INV-A2' => 'Lie state: subscription claims PAID but currentCycle is PENDING.',
+            'INV-A3' => 'More than one cycle is in cycle_state=active (:active_cycle_count).',
+            'INV-A4' => 'More than one cycle is in cycle_state=queued (:queued_cycle_count).',
+            'INV-A5' => 'Queued cycle starts_at does not equal currentCycle ends_at (cycle discontinuity).',
+            'INV-A6' => 'Subscription has been activated but starts_at/ends_at is NULL.',
+            'INV-B1' => 'Multiple session_consumption rows exist for the same (session, subscription) pair.',
+            'INV-B2' => 'Sessions flagged subscription_counted=true with no active session_consumption row.',
+            'INV-B3' => 'cycle.sessions_used (:cycle_sessions_used) does not equal active session_consumption count (:active_consumption_count).',
+            'INV-B4' => 'cycle.sessions_used (:sessions_used) exceeds total_sessions (:total_sessions).',
+            'INV-B5' => 'session_consumption row has partial reversal fields (must be all-or-nothing).',
+            'INV-B6' => 'Cycle has consumption history but sessions_used is 0 — possible counter reset on promotion.',
+            'INV-C2' => 'Subscription mutator in last 24h committed despite invariant violations.',
+            'INV-D1' => 'cycle.pricing_source is null or not in allowed enum.',
+            'INV-D2' => 'cycle final_price disagrees with the recorded pricing source.',
+            'INV-D3' => 'cycle.final_price is negative or currency does not match academy currency.',
+            'INV-D4' => 'cycle has pricing_source=package but package_id snapshot is NULL.',
+            'INV-E1' => 'Future scheduled session duration_minutes does not match anchor cycle package.session_duration_minutes.',
+            'INV-F2' => 'extend() audit-log entry shows ends_at was mutated (extend should ONLY write grace_period_ends_at).',
+            'INV-F5' => 'Subscription is PAUSED but future scheduled/ready sessions exist inside the paused window.',
+            'INV-F6' => 'Subscription is past ends_at (no grace) but status is PAUSED — should be EXPIRED.',
+            'INV-G1' => 'Cancel action attributed to the student themselves — student-initiated cancellation is forbidden.',
+            'INV-G2' => 'Cancelled subscription missing cancelled_at or cancellation_reason.',
+            'INV-G4' => 'Hybrid cycle past ends_at with payment_status=pending was not transitioned to FAILED+ARCHIVED+EXPIRED.',
+        ],
     ],
 
     'payments' => [

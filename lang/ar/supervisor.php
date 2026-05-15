@@ -1469,12 +1469,21 @@ return [
         // New subscription actions
         'action_create' => 'إنشاء اشتراك',
         'action_renew' => 'تجديد',
-        'action_resubscribe' => 'إعادة اشتراك',
+        'action_subscribe_again' => 'اشترك مرة أخرى',
+        'action_grant_sessions' => 'منح جلسات',
+        'action_override_price' => 'تعديل السعر',
         'action_confirm_payment' => 'تأكيد الدفع',
         'renew_title' => 'تجديد الاشتراك',
         'renew_message' => 'تجديد اشتراك الطالب :name بدورة فوترة جديدة.',
-        'resubscribe_title' => 'إعادة الاشتراك',
-        'resubscribe_message' => 'إعادة اشتراك الطالب :name باشتراك جديد.',
+        'subscribe_again_title' => 'اشترك مرة أخرى',
+        'subscribe_again_message' => 'إنشاء اشتراك جديد للطالب :name بنفس المعلم والباقة.',
+        'cycle_inspector_modal_title' => 'الدورة #:number — العرض فقط',
+        'cycle_inspector_readonly_notice' => 'محرر الدورة الخام للعرض فقط. استخدم الإجراءات الدلالية على صفحة الاشتراك لإجراء التعديلات.',
+        'use_semantic_actions' => 'استخدم الإجراءات الدلالية بدلاً من ذلك',
+        'semantic_grant_sessions' => 'منح جلسات — إضافة جلسات إلى حصة الدورة الحالية.',
+        'semantic_override_price' => 'تعديل السعر — تغيير السعر النهائي مع تسجيل السبب.',
+        'semantic_extend' => 'تمديد — إطالة فترة السماح.',
+        'final_price' => 'السعر النهائي',
         'confirm_payment_title' => 'تأكيد الدفع',
         'confirm_payment_message' => 'تأكيد استلام الدفع لاشتراك الطالب :name وتفعيل الاشتراك.',
         'billing_cycle_label' => 'دورة الفوترة',
@@ -1609,6 +1618,50 @@ return [
         'view_circle' => 'عرض الحلقة',
         'view_lesson' => 'عرض الدرس',
         'no_circle_linked' => 'لا توجد حلقة مرتبطة',
+
+        // Issue #2 — diff-aware cycle editor conflict messages.
+        // Placeholders: :count for affected-row counts, :used / :reverse / :future
+        // for total-sessions calculations.
+        'cycle_edit_errors' => [
+            'starts_forward' => 'تعديل تاريخ البداية للأمام سيُسقط :count حصة مجدولة قبل التاريخ الجديد.',
+            'starts_overlap' => 'تعديل تاريخ البداية للخلف سيتداخل مع دورة سابقة على هذا الاشتراك.',
+            'ends_backward' => 'تعديل تاريخ النهاية للخلف سيترك :count حصة مجدولة بعد التاريخ الجديد بلا غطاء.',
+            'ends_forward_queued' => 'تعديل تاريخ النهاية للأمام سيتداخل مع :count حصة محجوزة مسبقاً في الدورة التالية.',
+            'ends_premature_promote' => 'تعيين تاريخ النهاية في الماضي مع وجود دورة في الانتظار سيؤدي إلى ترقيتها تلقائياً في التشغيل التالي.',
+            'total_lt_used' => 'لا يمكن خفض إجمالي الحصص أقل من المستهلك (:used). اعكس :reverse سجل استهلاك أولاً.',
+            'total_lt_committed' => 'إجمالي الحصص لا يكفي للالتزامات الحالية (:used مستهلكة + :future مجدولة).',
+        ],
+
+        // Issue #2 — invariant violation messages keyed by invariant code.
+        // The supervisor inspector renders these verbatim from the violation
+        // payload — keep the wording precise, the placeholders mirror the
+        // structured `context` produced by SubscriptionInvariantChecker.
+        'invariants' => [
+            'INV-A1' => 'حقل الاشتراك لا يطابق الدورة الحالية.',
+            'INV-A2' => 'حالة كاذبة: الاشتراك يدّعي أنه مدفوع بينما الدورة الحالية لا تزال في انتظار الدفع.',
+            'INV-A3' => 'يوجد أكثر من دورة في حالة "نشطة" (:active_cycle_count).',
+            'INV-A4' => 'يوجد أكثر من دورة في حالة "في الانتظار" (:queued_cycle_count).',
+            'INV-A5' => 'بداية الدورة المنتظرة لا تساوي نهاية الدورة الحالية (انقطاع في تسلسل الدورات).',
+            'INV-A6' => 'الاشتراك مفعّل لكن تاريخ البداية أو النهاية فارغ.',
+            'INV-B1' => 'يوجد أكثر من سجل استهلاك لنفس (الحصة، الاشتراك).',
+            'INV-B2' => 'حصص مُعلَّمة بـ subscription_counted=true لكن بدون سجل استهلاك نشط.',
+            'INV-B3' => 'حقل cycle.sessions_used (:cycle_sessions_used) لا يساوي عدد سجلات الاستهلاك النشطة (:active_consumption_count).',
+            'INV-B4' => 'sessions_used للدورة (:sessions_used) أكبر من إجمالي الحصص (:total_sessions).',
+            'INV-B5' => 'سجل استهلاك بحقول عكس جزئية — يجب أن تكون كلها أو لا شيء.',
+            'INV-B6' => 'الدورة لها سجل استهلاك سابق لكن sessions_used = 0 — احتمال إعادة تصفير العداد عند الترقية.',
+            'INV-C2' => 'مُعدِّل اشتراك في آخر 24 ساعة طبَّق التغيير رغم وجود انتهاكات لقواعد البيانات.',
+            'INV-D1' => 'حقل cycle.pricing_source فارغ أو خارج القائمة المسموح بها.',
+            'INV-D2' => 'سعر الدورة لا يتطابق مع مصدر التسعير المعلن.',
+            'INV-D3' => 'سعر الدورة سالب أو عملته لا تطابق عملة الأكاديمية.',
+            'INV-D4' => 'الدورة بمصدر تسعير "package" لكن snapshot الباقة (package_id) فارغ.',
+            'INV-E1' => 'مدة الحصة المستقبلية لا تطابق مدة الحصة في باقة الدورة المرجعية.',
+            'INV-F2' => 'سجل تمديد (extend) في السجل عدّل تاريخ النهاية بدلاً من فترة السماح فقط.',
+            'INV-F5' => 'الاشتراك موقوف لكن توجد حصص مستقبلية مجدولة داخل فترة الإيقاف.',
+            'INV-F6' => 'الاشتراك تجاوز تاريخ النهاية (بلا فترة سماح) لكن حالته "موقوف" — يجب أن تكون "منتهٍ".',
+            'INV-G1' => 'إجراء إلغاء منسوب للطالب نفسه — إلغاء الطالب لاشتراكه ممنوع.',
+            'INV-G2' => 'اشتراك ملغى بدون تاريخ إلغاء أو سبب.',
+            'INV-G4' => 'دورة هجينة تجاوزت تاريخ النهاية في انتظار الدفع لم يتم نقلها إلى FAILED+ARCHIVED+EXPIRED.',
+        ],
     ],
 
     'payments' => [

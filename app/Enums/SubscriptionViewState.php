@@ -99,6 +99,23 @@ enum SubscriptionViewState: string
     }
 
     /**
+     * Tailwind utility classes for the badge — the student blade + supervisor
+     * inspector both render the canonical badge directly from this method so
+     * the per-state palette can't drift across surfaces (INV-J1).
+     */
+    public function badgeClasses(): string
+    {
+        return match ($this->badgeColor()) {
+            'success' => 'bg-green-100 text-green-800',
+            'warning' => 'bg-yellow-100 text-yellow-800',
+            'danger' => 'bg-red-100 text-red-800',
+            'info' => 'bg-blue-100 text-blue-800',
+            'primary' => 'bg-indigo-100 text-indigo-800',
+            default => 'bg-gray-100 text-gray-800',
+        };
+    }
+
+    /**
      * Convenience: terminal states never accept actions other than "create a
      * brand-new subscription record". UI hides per-state primary actions
      * accordingly.

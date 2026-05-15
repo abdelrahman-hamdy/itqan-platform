@@ -428,25 +428,7 @@
                             @if($canManage)
                                 <div x-show="expanded" x-collapse>
                                     <div class="flex flex-wrap items-center gap-2 mt-2">
-                                        @if($sub['status'] === \App\Enums\SessionSubscriptionStatus::EXPIRED)
-                                            <form id="activate-form-{{ $sub['id'] }}" method="POST"
-                                                  action="{{ route('manage.subscriptions.activate', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}">
-                                                @csrf
-                                            </form>
-                                            <button type="button"
-                                                onclick="window.confirmAction({
-                                                    title: @js(__('supervisor.subscriptions.action_activate')),
-                                                    message: @js(__('supervisor.subscriptions.confirm_activate')),
-                                                    confirmText: @js(__('supervisor.subscriptions.action_activate')),
-                                                    isDangerous: false,
-                                                    icon: 'ri-checkbox-circle-line',
-                                                    onConfirm: () => document.getElementById('activate-form-{{ $sub['id'] }}').submit()
-                                                })"
-                                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors">
-                                                <i class="ri-checkbox-circle-line"></i>
-                                                {{ __('supervisor.subscriptions.action_activate') }}
-                                            </button>
-                                        @endif
+                                        {{-- Phase 3: legacy Activate-EXPIRED removed. EXPIRED state shows Subscribe-again below. --}}
 
                                         @if($sub['status'] === \App\Enums\SessionSubscriptionStatus::PAUSED)
                                             <form id="resume-form-{{ $sub['id'] }}" method="POST"
@@ -566,7 +548,7 @@
                                             <button type="button"
                                                 onclick="document.getElementById('resubscribe-modal-{{ $sub['id'] }}').classList.remove('hidden')"
                                                 class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-medium rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors">
-                                                <i class="ri-arrow-go-back-line"></i>{{ __('supervisor.subscriptions.action_resubscribe') }}
+                                                <i class="ri-arrow-go-back-line"></i>{{ __('supervisor.subscriptions.action_subscribe_again') }}
                                             </button>
                                         @endif
 
@@ -703,7 +685,7 @@
                                         <div class="mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-teal-100 mb-4">
                                             <i class="ri-arrow-go-back-line text-2xl text-teal-600"></i>
                                         </div>
-                                        <h3 class="text-lg font-bold text-center text-gray-900 mb-2">{{ __('supervisor.subscriptions.resubscribe_title') }}</h3>
+                                        <h3 class="text-lg font-bold text-center text-gray-900 mb-2">{{ __('supervisor.subscriptions.subscribe_again_title') }}</h3>
                                         <form method="POST" action="{{ route('manage.subscriptions.resubscribe', ['subdomain' => $subdomain, 'type' => $sub['type'], 'subscription' => $sub['id']]) }}" id="resubscribe-form-{{ $sub['id'] }}">
                                             @csrf
                                             <div class="mb-3">
@@ -719,7 +701,7 @@
                                     </div>
                                     <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
                                         <button type="button" onclick="this.closest('[id^=resubscribe-modal]').classList.add('hidden')" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl">{{ __('common.cancel') }}</button>
-                                        <button type="button" onclick="document.getElementById('resubscribe-form-{{ $sub['id'] }}').submit()" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-md">{{ __('supervisor.subscriptions.action_resubscribe') }}</button>
+                                        <button type="button" onclick="document.getElementById('resubscribe-form-{{ $sub['id'] }}').submit()" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-md">{{ __('supervisor.subscriptions.action_subscribe_again') }}</button>
                                     </div>
                                 </div>
                             </div>

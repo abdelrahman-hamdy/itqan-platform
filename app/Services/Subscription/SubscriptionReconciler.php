@@ -8,6 +8,9 @@ use App\Exceptions\Subscription\SubscriptionInvariantViolation;
 use App\Models\BaseSubscription;
 use App\Models\SessionConsumption;
 use App\Models\SubscriptionCycle;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
+use Throwable;
 
 /**
  * SubscriptionReconciler — the SOLE writer of derived subscription-row
@@ -88,13 +91,20 @@ class SubscriptionReconciler
             ? $sub->currentCycle
             : $sub->currentCycle()->first();
 
-        if ($cycle instanceof SubscriptionCycle) {
+        if ($cycle instanceof SubscriptionCycle && ! $this->isLegacyConsumptionCycle($cycle)) {
             // INV-B3: cycle.sessions_used is itself a derived field — it must
             // equal the COUNT of active SessionConsumption rows anchored to
             // that cycle. Recompute that count here, BEFORE we mirror the
             // cycle's counter onto the subscription row, so any drift between
             // the cycle's stored aggregate and the consumption-row truth is
             // healed by the reconciler instead of perpetuated.
+            //
+            // E1 GATE: pre-v2-flip cycles never had session_consumption rows
+            // written for them (legacy code only updated cycle.sessions_used
+            // directly). Recounting from the empty consumption table would
+            // zero out the legitimate legacy aggregate. Skipped via
+            // isLegacyConsumptionCycle() until per-cycle backfill flips
+            // v2_consumption_complete=true.
             $activeConsumption = SessionConsumption::query()
                 ->where('cycle_id', $cycle->getKey())
                 ->whereNull('reversed_at')
@@ -129,6 +139,46 @@ class SubscriptionReconciler
         } finally {
             $sub->reconciling = false;
         }
+    }
+
+    /**
+     * E1 gate — true if the cycle predates the v2 flip cutoff AND has not yet
+     * had its consumption rows backfilled. The reconciler MUST NOT recount
+     * sessions_used from session_consumption for these cycles, because the
+     * legacy attendance writer never wrote consumption rows: a recount would
+     * zero out the legitimate stored aggregate.
+     *
+     * The cutoff is operator-driven via SUBSCRIPTIONS_V2_FLIP_CUTOFF (ISO
+     * timestamp). Missing cutoff → never gate (developer / test contexts
+     * where every cycle is post-v2 by construction).
+     *
+     * The per-cycle `v2_consumption_complete` column is the long-term shape;
+     * a backfill job will flip it true once a cycle's legacy attendance has
+     * been replayed into session_consumption.
+     */
+    private function isLegacyConsumptionCycle(SubscriptionCycle $cycle): bool
+    {
+        if ($cycle->v2_consumption_complete) {
+            return false;
+        }
+
+        $cutoffRaw = config('subscriptions.v2_flip_cutoff');
+        if (! is_string($cutoffRaw) || $cutoffRaw === '') {
+            return false;
+        }
+
+        try {
+            $cutoff = Carbon::parse($cutoffRaw);
+        } catch (Throwable) {
+            return false;
+        }
+
+        $createdAt = $cycle->created_at;
+        if (! $createdAt instanceof CarbonInterface) {
+            return false;
+        }
+
+        return $createdAt->lt($cutoff);
     }
 
     /**

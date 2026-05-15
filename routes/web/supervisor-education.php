@@ -143,7 +143,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/subscriptions', [SupervisorSubscriptionsController::class, 'index'])->name('subscriptions.index');
         Route::get('/subscriptions/create', \App\Livewire\Supervisor\CreateFullSubscription::class)->name('subscriptions.create');
         Route::get('/subscriptions/{type}/{subscription}', [SupervisorSubscriptionsController::class, 'show'])->name('subscriptions.show')->whereIn('type', ['quran', 'academic']);
-        Route::post('/subscriptions/{type}/{subscription}/activate', [SupervisorSubscriptionsController::class, 'activate'])->name('subscriptions.activate')->whereIn('type', ['quran', 'academic']);
+        // Phase 3 verb consolidation — legacy `activate` route removed; terminal-state subs go through `resubscribe` (UI label: Subscribe again). Editing a cycle's window is now routed through cycles.edit only; raw aggregate fields are gated server-side.
         Route::post('/subscriptions/{type}/{subscription}/pause', [SupervisorSubscriptionsController::class, 'pause'])->name('subscriptions.pause')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/resume', [SupervisorSubscriptionsController::class, 'resume'])->name('subscriptions.resume')->whereIn('type', ['quran', 'academic']);
         Route::post('/subscriptions/{type}/{subscription}/extend', [SupervisorSubscriptionsController::class, 'extend'])->name('subscriptions.extend')->whereIn('type', ['quran', 'academic']);

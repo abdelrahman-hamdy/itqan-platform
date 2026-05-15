@@ -4,19 +4,22 @@ namespace App\Filament\Shared\Traits;
 
 use App\Constants\PauseReason;
 use App\Enums\EnrollmentStatus;
-use App\Enums\PaymentStatus;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Enums\SubscriptionViewState;
 use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSubscription;
+use App\Models\SubscriptionCycle;
+use App\Services\Subscription\SubscriptionLifecycle;
+use App\Services\Subscription\SubscriptionPresentation;
+use App\Services\Subscription\SubscriptionPricing;
 use Carbon\Carbon;
 use Filament\Actions\Action;
-use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
@@ -26,7 +29,6 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -51,6 +53,18 @@ trait HasSubscriptionActions
         $modelClass = static::getModel();
 
         return $modelClass !== CourseSubscription::class;
+    }
+
+    /**
+     * Per-view-state visibility helper. The canonical post-cleanup matrix is
+     * documented in docs/subscription-recovery-plan.md — every action below
+     * delegates to this so adding/removing a state is a one-line change.
+     */
+    protected static function isInViewState(BaseSubscription $record, SubscriptionViewState ...$states): bool
+    {
+        $current = app(SubscriptionPresentation::class)->viewStateFor($record);
+
+        return in_array($current, $states, true);
     }
 
     /**
@@ -225,43 +239,6 @@ trait HasSubscriptionActions
             })
             ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::PAUSED
                 && $record->pause_reason !== PauseReason::END_OF_PERIOD);
-    }
-
-    /**
-     * Reactivate action — brings a cancelled subscription back to active.
-     * Resets cancellation fields, updates dates, and activates linked circles.
-     */
-    protected static function getReactivateAction(): Action
-    {
-        return Action::make('reactivate')
-            ->label(__('subscriptions.reactivate_label'))
-            ->icon('heroicon-o-arrow-path')
-            ->color('success')
-            ->requiresConfirmation()
-            ->modalHeading(__('subscriptions.reactivate_modal_heading'))
-            ->modalDescription(__('subscriptions.reactivate_modal_description'))
-            ->modalSubmitActionLabel(__('subscriptions.reactivate_confirm_button'))
-            ->action(function (BaseSubscription $record) {
-                // Tenant ownership guard
-                $academyId = auth()->user()?->academy_id;
-                if ($academyId !== null && $record->academy_id !== $academyId) {
-                    \Filament\Notifications\Notification::make()
-                        ->danger()
-                        ->title(__('common.unauthorized'))
-                        ->send();
-
-                    return;
-                }
-                app(\App\Services\Subscription\SubscriptionLifecycle::class)
-                    ->reactivate($record, auth()->user());
-
-                Notification::make()
-                    ->success()
-                    ->title(__('subscriptions.reactivate_success'))
-                    ->body(__('subscriptions.reactivate_success_body'))
-                    ->send();
-            })
-            ->visible(fn (BaseSubscription $record) => $record->status === SessionSubscriptionStatus::CANCELLED);
     }
 
     /**
@@ -572,92 +549,6 @@ trait HasSubscriptionActions
     }
 
     // ========================================
-    // CANCEL PENDING ACTIONS (kept from original)
-    // ========================================
-
-    /**
-     * Get the "Cancel Pending" action for single subscriptions.
-     */
-    protected static function getCancelPendingAction(): Action
-    {
-        return Action::make('cancelPending')
-            ->label(__('subscriptions.cancel_pending_label'))
-            ->icon('heroicon-o-x-circle')
-            ->color('danger')
-            ->requiresConfirmation()
-            ->modalHeading(__('subscriptions.cancel_pending_modal_heading'))
-            ->modalDescription(__('subscriptions.cancel_pending_modal_description'))
-            ->modalSubmitActionLabel(__('subscriptions.cancel_pending_confirm_button'))
-            ->action(function (BaseSubscription $record) {
-                // Tenant ownership guard
-                $academyId = auth()->user()?->academy_id;
-                if ($academyId !== null && $record->academy_id !== $academyId) {
-                    \Filament\Notifications\Notification::make()
-                        ->danger()
-                        ->title(__('common.unauthorized'))
-                        ->send();
-
-                    return;
-                }
-                $reason = config('subscriptions.cancellation_reasons.admin');
-
-                $record->cancelAsDuplicateOrExpired($reason);
-
-                // Cancel associated pending payments
-                $record->payments()
-                    ->where('status', PaymentStatus::PENDING)
-                    ->update(['status' => PaymentStatus::CANCELLED]);
-
-                Notification::make()
-                    ->success()
-                    ->title(__('subscriptions.cancel_pending_success'))
-                    ->body(__('subscriptions.cancel_pending_success_body'))
-                    ->send();
-            })
-            ->visible(fn (BaseSubscription $record) => $record->isPending()
-                && $record->payment_status === SubscriptionPaymentStatus::PENDING);
-    }
-
-    /**
-     * Get the bulk cancel action for pending subscriptions.
-     */
-    protected static function getBulkCancelPendingAction(): BulkAction
-    {
-        return BulkAction::make('bulkCancelPending')
-            ->label(__('subscriptions.bulk_cancel_pending_label'))
-            ->icon('heroicon-o-x-circle')
-            ->color('danger')
-            ->requiresConfirmation()
-            ->modalHeading(__('subscriptions.bulk_cancel_pending_modal_heading'))
-            ->modalDescription(__('subscriptions.bulk_cancel_pending_modal_description'))
-            ->modalSubmitActionLabel(__('subscriptions.bulk_cancel_pending_confirm_button'))
-            ->action(function (Collection $records) {
-                $cancelledCount = 0;
-                $pendingStatus = static::getPendingStatus();
-
-                foreach ($records as $record) {
-                    if ($record->status === $pendingStatus
-                        && $record->payment_status === SubscriptionPaymentStatus::PENDING) {
-                        $record->cancelAsDuplicateOrExpired(config('subscriptions.cancellation_reasons.admin'));
-
-                        $record->payments()
-                            ->where('status', PaymentStatus::PENDING)
-                            ->update(['status' => PaymentStatus::CANCELLED]);
-
-                        $cancelledCount++;
-                    }
-                }
-
-                Notification::make()
-                    ->success()
-                    ->title(__('subscriptions.bulk_cancel_pending_success'))
-                    ->body(__('subscriptions.bulk_cancel_pending_success_body', ['count' => $cancelledCount]))
-                    ->send();
-            })
-            ->deselectRecordsAfterCompletion();
-    }
-
-    // ========================================
     // DELETE SUBSCRIPTION ACTION (admin only)
     // ========================================
 
@@ -820,17 +711,20 @@ trait HasSubscriptionActions
     }
 
     /**
-     * Resubscribe action — creates a new subscription from a cancelled/expired one.
-     * Checks teacher availability and uses current pricing.
+     * Subscribe-again action — creates a new subscription from a terminal
+     * (EXPIRED or CANCELLED) one. Same backing service as the legacy
+     * resubscribe verb; the consolidated verb set hides reactivate +
+     * resubscribe behind one clearer name.
      */
-    protected static function getResubscribeAction(): Action
+    protected static function getSubscribeAgainAction(): Action
     {
-        return Action::make('resubscribe')
-            ->label(__('subscriptions.resubscribe'))
+        return Action::make('subscribeAgain')
+            ->label(__('subscriptions.subscribe_again'))
             ->icon('heroicon-o-arrow-uturn-left')
             ->color('success')
             ->requiresConfirmation()
-            ->modalHeading(__('subscriptions.resubscribe'))
+            ->modalHeading(__('subscriptions.subscribe_again'))
+            ->modalDescription(__('subscriptions.subscribe_again_modal_description'))
             ->schema(static::getRenewalFormSchema())
             ->action(function (BaseSubscription $record, array $data) {
                 $academyId = auth()->user()?->academy_id;
@@ -851,15 +745,173 @@ trait HasSubscriptionActions
 
                     Notification::make()
                         ->success()
-                        ->title(__('subscriptions.resubscribe_success'))
-                        ->body(__('subscriptions.resubscribe_success')." (#{$new->subscription_code})")
+                        ->title(__('subscriptions.subscribe_again_success'))
+                        ->body(__('subscriptions.subscribe_again_success_body', ['code' => $new->subscription_code]))
                         ->send();
                 } catch (\Exception $e) {
                     report($e);
                     Notification::make()->danger()->title(__('subscriptions.payment_confirmation_failed'))->body(__('subscriptions.generic_error'))->send();
                 }
             })
-            ->visible(fn (BaseSubscription $record) => app(\App\Services\Subscription\SubscriptionRenewalService::class)->canResubscribe($record));
+            ->visible(fn (BaseSubscription $record) => static::isInViewState(
+                $record,
+                SubscriptionViewState::EXPIRED,
+                SubscriptionViewState::CANCELLED,
+            ));
+    }
+
+    /**
+     * Grant N sessions — top up the current cycle's quota without changing
+     * dates or pricing. Backed by SubscriptionLifecycle::adminEditCycle so
+     * every mutation lands in subscription_audit_log.
+     *
+     * Replaces the old "edit cycle total_sessions" field-surgery flow.
+     */
+    protected static function getGrantSessionsAction(): Action
+    {
+        return Action::make('grantSessions')
+            ->label(__('subscriptions.grant_sessions'))
+            ->icon('heroicon-o-plus-circle')
+            ->color('primary')
+            ->modalHeading(__('subscriptions.grant_sessions_modal_heading'))
+            ->modalDescription(__('subscriptions.grant_sessions_modal_description'))
+            ->schema([
+                TextInput::make('sessions_delta')
+                    ->label(__('subscriptions.grant_sessions_delta_label'))
+                    ->numeric()
+                    ->required()
+                    ->minValue(1)
+                    ->maxValue(100)
+                    ->default(1)
+                    ->helperText(__('subscriptions.grant_sessions_delta_helper')),
+                Textarea::make('reason')
+                    ->label(__('subscriptions.grant_sessions_reason_label'))
+                    ->required()
+                    ->minLength(3)
+                    ->maxLength(500),
+            ])
+            ->action(function (BaseSubscription $record, array $data) {
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    Notification::make()->danger()->title(__('common.unauthorized'))->send();
+
+                    return;
+                }
+
+                $cycle = $record->currentCycle;
+                if (! $cycle instanceof SubscriptionCycle) {
+                    Notification::make()->danger()
+                        ->title(__('subscriptions.grant_sessions_no_active_cycle'))
+                        ->send();
+
+                    return;
+                }
+
+                $delta = (int) $data['sessions_delta'];
+                $newTotal = (int) $cycle->total_sessions + $delta;
+
+                try {
+                    app(SubscriptionLifecycle::class)->adminEditCycle(
+                        $record,
+                        $cycle,
+                        [
+                            'total_sessions' => $newTotal,
+                            'metadata' => array_merge(
+                                $cycle->metadata ?? [],
+                                ['grant_sessions_reason' => $data['reason']],
+                            ),
+                        ],
+                        auth()->user(),
+                    );
+
+                    Notification::make()
+                        ->success()
+                        ->title(__('subscriptions.grant_sessions_success'))
+                        ->body(__('subscriptions.grant_sessions_success_body', ['n' => $delta]))
+                        ->send();
+                } catch (\Throwable $e) {
+                    report($e);
+                    Notification::make()->danger()
+                        ->title(__('subscriptions.generic_error'))
+                        ->body($e->getMessage())
+                        ->send();
+                }
+            })
+            ->visible(fn (BaseSubscription $record) => static::isInViewState(
+                $record,
+                SubscriptionViewState::ACTIVE_PAID,
+                SubscriptionViewState::ACTIVE_PAYMENT_DUE,
+            ));
+    }
+
+    /**
+     * Override price — set the current cycle's `final_price` outside the
+     * package-derived path. Source becomes `manual_override`; a non-empty
+     * reason is mandatory (INV-D2).
+     */
+    protected static function getOverridePriceAction(): Action
+    {
+        return Action::make('overridePrice')
+            ->label(__('subscriptions.override_price'))
+            ->icon('heroicon-o-banknotes')
+            ->color('warning')
+            ->modalHeading(__('subscriptions.override_price_modal_heading'))
+            ->modalDescription(__('subscriptions.override_price_modal_description'))
+            ->schema([
+                TextInput::make('new_price')
+                    ->label(__('subscriptions.override_price_new_label'))
+                    ->numeric()
+                    ->required()
+                    ->minValue(0)
+                    ->suffix(fn (BaseSubscription $record) => $record->currentCycle?->currency ?? '—'),
+                Textarea::make('reason')
+                    ->label(__('subscriptions.override_price_reason_label'))
+                    ->required()
+                    ->minLength(3)
+                    ->maxLength(500),
+            ])
+            ->action(function (BaseSubscription $record, array $data) {
+                $academyId = auth()->user()?->academy_id;
+                if ($academyId !== null && $record->academy_id !== $academyId) {
+                    Notification::make()->danger()->title(__('common.unauthorized'))->send();
+
+                    return;
+                }
+
+                $cycle = $record->currentCycle;
+                if (! $cycle instanceof SubscriptionCycle) {
+                    Notification::make()->danger()
+                        ->title(__('subscriptions.override_price_no_active_cycle'))
+                        ->send();
+
+                    return;
+                }
+
+                try {
+                    app(SubscriptionPricing::class)->applyOverride(
+                        $cycle,
+                        (float) $data['new_price'],
+                        auth()->user(),
+                        (string) $data['reason'],
+                    );
+
+                    Notification::make()
+                        ->success()
+                        ->title(__('subscriptions.override_price_success'))
+                        ->send();
+                } catch (\Throwable $e) {
+                    report($e);
+                    Notification::make()->danger()
+                        ->title(__('subscriptions.generic_error'))
+                        ->body($e->getMessage())
+                        ->send();
+                }
+            })
+            ->visible(fn (BaseSubscription $record) => static::isInViewState(
+                $record,
+                SubscriptionViewState::ACTIVE_PAID,
+                SubscriptionViewState::ACTIVE_PAYMENT_DUE,
+            ));
     }
 
     // ========================================
@@ -867,43 +919,36 @@ trait HasSubscriptionActions
     // ========================================
 
     /**
-     * Get all subscription-related table actions.
+     * Canonical post-cleanup action set. Per-view-state visibility lives on
+     * each action's ->visible() predicate; this method just exposes the
+     * full menu (Filament filters out the hidden ones at render time).
+     *
+     * See docs/subscription-recovery-plan.md Phase 3 for the verb matrix.
      */
     protected static function getSubscriptionTableActions(): array
     {
         return [
             static::getConfirmPaymentAction(),
             static::getRenewAction(),
-            static::getResubscribeAction(),
-            static::getReactivateAction(),
+            static::getSubscribeAgainAction(),
             static::getPauseAction(),
             static::getResumeAction(),
             static::getExtendSubscriptionAction(),
+            static::getGrantSessionsAction(),
+            static::getOverridePriceAction(),
             static::getCancelAction(),
-            static::getCancelPendingAction(),
             static::getDeleteSubscriptionAction(),
         ];
     }
 
     /**
-     * Get all subscription-related actions for view page headers.
+     * Get all subscription-related actions for view page headers. Same set
+     * as the table actions, plus the Quran-only Create Circle helper.
      */
     public static function getSubscriptionViewActions(): array
     {
-        $actions = [
-            static::getConfirmPaymentAction(),
-            static::getRenewAction(),
-            static::getResubscribeAction(),
-            static::getReactivateAction(),
-            static::getPauseAction(),
-            static::getResumeAction(),
-            static::getExtendSubscriptionAction(),
-            static::getCancelAction(),
-            static::getCancelPendingAction(),
-            static::getDeleteSubscriptionAction(),
-        ];
+        $actions = static::getSubscriptionTableActions();
 
-        // Add Create Circle for Quran subscriptions
         if (static::getModel() === QuranSubscription::class) {
             $actions[] = static::getCreateCircleAction();
         }
@@ -912,13 +957,13 @@ trait HasSubscriptionActions
     }
 
     /**
-     * Get all subscription-related bulk actions.
+     * Bulk actions left intentionally empty — bulk cancel-pending was the
+     * only bulk verb and it's been folded into the single Cancel action's
+     * per-row flow as part of the verb consolidation.
      */
     protected static function getSubscriptionBulkActions(): array
     {
-        return [
-            static::getBulkCancelPendingAction(),
-        ];
+        return [];
     }
 
     // ========================================

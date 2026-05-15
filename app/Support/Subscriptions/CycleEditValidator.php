@@ -97,7 +97,9 @@ final class CycleEditValidator
                 $conflicts[] = [
                     'code' => 'CYCLE-EDIT-STARTS-FORWARD',
                     'field' => 'starts_at',
-                    'message' => "Moving starts_at forward would orphan {$orphaned} session(s) scheduled before the new date.",
+                    'message' => __('supervisor.subscriptions.cycle_edit_errors.starts_forward', [
+                        'count' => $orphaned,
+                    ]),
                     'context' => [
                         'cycle_id' => $cycle->id,
                         'orphaned_sessions' => $orphaned,
@@ -121,7 +123,7 @@ final class CycleEditValidator
                 $conflicts[] = [
                     'code' => 'CYCLE-EDIT-STARTS-OVERLAP',
                     'field' => 'starts_at',
-                    'message' => 'Moving starts_at backward would overlap with a prior cycle on this subscription (INV-A4).',
+                    'message' => __('supervisor.subscriptions.cycle_edit_errors.starts_overlap'),
                     'context' => [
                         'cycle_id' => $cycle->id,
                         'new_starts_at' => $newStartsAt->toIso8601String(),
@@ -201,7 +203,9 @@ final class CycleEditValidator
             $conflicts[] = [
                 'code' => 'CYCLE-EDIT-ENDS-BACKWARD',
                 'field' => 'ends_at',
-                'message' => "Moving ends_at backward would strand {$strandedFuture} session(s) scheduled after the new date.",
+                'message' => __('supervisor.subscriptions.cycle_edit_errors.ends_backward', [
+                    'count' => $strandedFuture,
+                ]),
                 'context' => [
                     'cycle_id' => $cycle->id,
                     'stranded_sessions' => $strandedFuture,
@@ -216,7 +220,9 @@ final class CycleEditValidator
                 $conflicts[] = [
                     'code' => 'CYCLE-EDIT-ENDS-FORWARD-QUEUED',
                     'field' => 'ends_at',
-                    'message' => "Moving ends_at forward would overlap {$queuedSessionsInOverlap} session(s) already booked into the queued cycle.",
+                    'message' => __('supervisor.subscriptions.cycle_edit_errors.ends_forward_queued', [
+                        'count' => $queuedSessionsInOverlap,
+                    ]),
                     'context' => [
                         'cycle_id' => $cycle->id,
                         'queued_cycle_id' => $queuedAnchor->id,
@@ -231,7 +237,7 @@ final class CycleEditValidator
                 $conflicts[] = [
                     'code' => 'CYCLE-EDIT-ENDS-PREMATURE-PROMOTE',
                     'field' => 'ends_at',
-                    'message' => 'Setting ends_at to the past while a queued cycle exists would cause subscriptions:advance-cycles to promote it on the next run.',
+                    'message' => __('supervisor.subscriptions.cycle_edit_errors.ends_premature_promote'),
                     'context' => [
                         'cycle_id' => $cycle->id,
                         'queued_cycle_id' => $queuedAnchor->id,
@@ -265,9 +271,10 @@ final class CycleEditValidator
             $conflicts[] = [
                 'code' => 'CYCLE-EDIT-TOTAL-LT-USED',
                 'field' => 'total_sessions',
-                'message' => "Cannot drop total_sessions below sessions_used ({$activeConsumed}). Reverse "
-                    .($activeConsumed - $newTotal)
-                    .' consumption row(s) first.',
+                'message' => __('supervisor.subscriptions.cycle_edit_errors.total_lt_used', [
+                    'used' => $activeConsumed,
+                    'reverse' => $activeConsumed - $newTotal,
+                ]),
                 'context' => [
                     'cycle_id' => $cycle->id,
                     'requested_total' => $newTotal,
@@ -286,7 +293,10 @@ final class CycleEditValidator
             $conflicts[] = [
                 'code' => 'CYCLE-EDIT-TOTAL-LT-COMMITTED',
                 'field' => 'total_sessions',
-                'message' => "total_sessions would drop below committed work ({$activeConsumed} used + {$futureScheduled} future scheduled).",
+                'message' => __('supervisor.subscriptions.cycle_edit_errors.total_lt_committed', [
+                    'used' => $activeConsumed,
+                    'future' => $futureScheduled,
+                ]),
                 'context' => [
                     'cycle_id' => $cycle->id,
                     'requested_total' => $newTotal,

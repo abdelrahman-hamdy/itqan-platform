@@ -128,10 +128,7 @@
                     <form id="show-resume-form" method="POST" action="{{ route('manage.subscriptions.resume', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">@csrf</form>
                     <button onclick="window.confirmAction({title:@js(__('supervisor.subscriptions.action_resume')),message:@js(__('supervisor.subscriptions.confirm_resume')),confirmText:@js(__('supervisor.subscriptions.action_resume')),isDangerous:false,icon:'ri-play-circle-line',onConfirm:()=>document.getElementById('show-resume-form').submit()})" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 cursor-pointer"><i class="ri-play-circle-line"></i>{{ __('supervisor.subscriptions.action_resume') }}</button>
                 @endif
-                @if(in_array($subscription->status, [\App\Enums\SessionSubscriptionStatus::CANCELLED, \App\Enums\SessionSubscriptionStatus::EXPIRED]))
-                    <form id="show-activate-form" method="POST" action="{{ route('manage.subscriptions.activate', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">@csrf</form>
-                    <button onclick="window.confirmAction({title:@js(__('supervisor.subscriptions.action_activate')),message:@js(__('supervisor.subscriptions.confirm_activate')),confirmText:@js(__('supervisor.subscriptions.action_activate')),isDangerous:false,icon:'ri-checkbox-circle-line',onConfirm:()=>document.getElementById('show-activate-form').submit()})" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 cursor-pointer"><i class="ri-checkbox-circle-line"></i>{{ __('supervisor.subscriptions.action_activate') }}</button>
-                @endif
+                {{-- Phase 3 verb consolidation: the legacy "Activate cancelled" path is folded into Subscribe-again below (creates a fresh sub instead of resurrecting a terminal row). --}}
                 {{-- Confirm Payment.
                      Phase A.7 / INV-J1 / P4: visibility driven by
                      SubscriptionPresentation::primaryActionFor(...,
@@ -147,7 +144,7 @@
                     <button onclick="document.getElementById('show-renew-modal').classList.remove('hidden')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 cursor-pointer"><i class="ri-refresh-line"></i>{{ __('supervisor.subscriptions.action_renew') }}</button>
                 @endif
                 @if(in_array($subscription->status, [\App\Enums\SessionSubscriptionStatus::CANCELLED, \App\Enums\SessionSubscriptionStatus::EXPIRED]))
-                    <button onclick="document.getElementById('show-resubscribe-modal').classList.remove('hidden')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700 cursor-pointer"><i class="ri-arrow-go-back-line"></i>{{ __('supervisor.subscriptions.action_resubscribe') }}</button>
+                    <button onclick="document.getElementById('show-resubscribe-modal').classList.remove('hidden')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700 cursor-pointer"><i class="ri-arrow-go-back-line"></i>{{ __('supervisor.subscriptions.action_subscribe_again') }}</button>
                 @endif
                 @if($subscription->isInGracePeriod())
                     <form id="show-cancel-extension-form" method="POST" action="{{ route('manage.subscriptions.cancel-extension', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}">@csrf</form>
@@ -556,14 +553,14 @@
         </div>
     </div>
 
-    {{-- Resubscribe Modal --}}
+    {{-- Subscribe-again modal (formerly Resubscribe) --}}
     <div id="show-resubscribe-modal" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
         <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
             <div class="relative bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
                 <div class="p-6 pt-8 md:pt-6">
                     <div class="mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-teal-100 mb-4"><i class="ri-arrow-go-back-line text-2xl text-teal-600"></i></div>
-                    <h3 class="text-lg font-bold text-center text-gray-900 mb-2">{{ __('supervisor.subscriptions.resubscribe_title') }}</h3>
+                    <h3 class="text-lg font-bold text-center text-gray-900 mb-2">{{ __('supervisor.subscriptions.subscribe_again_title') }}</h3>
                     <form method="POST" action="{{ route('manage.subscriptions.resubscribe', ['subdomain' => $subdomain, 'type' => $type, 'subscription' => $subscription->id]) }}" id="show-resubscribe-form">
                         @csrf
                         <div class="mb-3"><label class="block text-sm font-medium text-gray-700 mb-2">{{ __('supervisor.subscriptions.billing_cycle_label') }}</label><div class="flex gap-2">@foreach(['monthly'=>__('enums.billing_cycle.monthly'),'quarterly'=>__('enums.billing_cycle.quarterly'),'yearly'=>__('enums.billing_cycle.yearly')] as $v=>$l)<label class="flex-1 cursor-pointer"><input type="radio" name="billing_cycle" value="{{ $v }}" {{ $subscription->billing_cycle?->value===$v?'checked':'' }} class="peer sr-only"><div class="text-center py-2 px-2 rounded-lg border border-gray-300 text-xs peer-checked:border-teal-600 peer-checked:bg-teal-50 peer-checked:text-teal-700">{{ $l }}</div></label>@endforeach</div></div>
@@ -572,7 +569,7 @@
                 </div>
                 <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-end">
                     <button onclick="document.getElementById('show-resubscribe-modal').classList.add('hidden')" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl">{{ __('common.cancel') }}</button>
-                    <button onclick="document.getElementById('show-resubscribe-form').submit()" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-md">{{ __('supervisor.subscriptions.action_resubscribe') }}</button>
+                    <button onclick="document.getElementById('show-resubscribe-form').submit()" class="cursor-pointer inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-md">{{ __('supervisor.subscriptions.action_subscribe_again') }}</button>
                 </div>
             </div>
         </div>

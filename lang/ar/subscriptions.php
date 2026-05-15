@@ -72,6 +72,28 @@ return [
     'create_as_pending' => 'إنشاء كمعلق (يتطلب دفع)',
     'sessions_carryover' => ':count جلسة متبقية سيتم ترحيلها',
 
+    // Phase 3 — أفعال موحّدة
+    'subscribe_again' => 'اشترك مرة أخرى',
+    'subscribe_again_modal_description' => 'يتم إنشاء اشتراك جديد بنفس الطالب والمعلم والباقة. يحتفظ الاشتراك الحالي المنتهي بسجله للتاريخ.',
+    'subscribe_again_success' => 'تم إنشاء الاشتراك',
+    'subscribe_again_success_body' => 'تم إنشاء اشتراك جديد رقم #:code من الاشتراك المنتهي.',
+    'grant_sessions' => 'منح جلسات',
+    'grant_sessions_modal_heading' => 'منح جلسات إضافية',
+    'grant_sessions_modal_description' => 'يضيف N جلسة إلى حصة الدورة الحالية دون تغيير التواريخ أو السعر. يتم تسجيل العملية.',
+    'grant_sessions_delta_label' => 'عدد الجلسات الممنوحة',
+    'grant_sessions_delta_helper' => 'تُضاف إلى total_sessions الخاص بالدورة الحالية.',
+    'grant_sessions_reason_label' => 'السبب (إلزامي للتدقيق)',
+    'grant_sessions_no_active_cycle' => 'لا توجد دورة نشطة على هذا الاشتراك — لا شيء يُمنح.',
+    'grant_sessions_success' => 'تم منح الجلسات',
+    'grant_sessions_success_body' => 'تمت إضافة :n جلسة إلى الدورة الحالية.',
+    'override_price' => 'تعديل السعر',
+    'override_price_modal_heading' => 'تعديل سعر الدورة',
+    'override_price_modal_description' => 'تعيين السعر النهائي للدورة الحالية خارج المسار المشتق من الباقة. السبب مطلوب.',
+    'override_price_new_label' => 'السعر الجديد',
+    'override_price_reason_label' => 'السبب (إلزامي)',
+    'override_price_no_active_cycle' => 'لا توجد دورة نشطة على هذا الاشتراك — لا شيء يُعدّل.',
+    'override_price_success' => 'تم تعديل السعر',
+
     // Admin wizard
     'create_full_subscription' => 'إنشاء اشتراك كامل',
     'create_full_subscription_success' => 'تم إنشاء الاشتراك بنجاح مع جميع البيانات المرتبطة.',

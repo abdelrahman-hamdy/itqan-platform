@@ -274,19 +274,11 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
     // Quick Actions (all POST, manage permission required)
     // ========================================================================
 
-    public function activate(Request $request, $subdomain, string $type, $id): RedirectResponse
-    {
-        if (! $this->canManageSubscriptions()) {
-            abort(403);
-        }
-
-        $subscription = $this->resolveSubscription($type, $id);
-        $this->ensureSubscriptionInScope($subscription, $type);
-
-        $subscription->activate();
-
-        return redirect()->back()->with('success', __('supervisor.subscriptions.status_updated'));
-    }
+    // Phase 3 verb consolidation: the legacy `activate` handler (re-anchored
+    // CANCELLED/EXPIRED rows back to ACTIVE) was removed. Terminal-state
+    // subscriptions now flow through `resubscribe` (UI label: Subscribe
+    // again) — that path creates a fresh subscription instead of resurrect-
+    // ing a terminated one, which keeps the audit trail honest.
 
     public function pause(Request $request, $subdomain, string $type, $id): RedirectResponse
     {
@@ -729,7 +721,21 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             ->where('id', $cycle)
             ->firstOrFail();
 
-        $patch = $request->validated();
+        // Issue #1: the edit modal pre-fills every field, so the browser POSTs
+        // every input back unchanged. Build a true diff vs. the stored cycle
+        // before handing off to the validator — otherwise the coordinated-field
+        // checks (starts_at / ends_at / total_sessions) fire on every submit
+        // even when the admin only meant to extend grace_period_ends_at.
+        $patch = $this->diffCyclePatch($cycleRow, $request->validated());
+
+        if ($patch === []) {
+            return redirect()->route('manage.subscriptions.cycles.inspect', [
+                'subdomain' => $subdomain,
+                'type' => $type,
+                'subscription' => $sub->id,
+                'cycle' => $cycleRow->id,
+            ])->with('success', __('supervisor.subscriptions.cycle_edit_success'));
+        }
 
         $conflicts = app(\App\Support\Subscriptions\CycleEditValidator::class)
             ->validate($sub, $cycleRow, $patch);
@@ -756,6 +762,75 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'subscription' => $sub->id,
             'cycle' => $cycleRow->id,
         ])->with('success', __('supervisor.subscriptions.cycle_edit_success'));
+    }
+
+    /**
+     * Compare the validated cycle-edit patch against the stored cycle row and
+     * keep only the keys whose value actually changed. Datetime fields are
+     * compared at minute precision because the edit modal renders them with
+     * `Y-m-d\TH:i` (no seconds) — without this normalization a no-change
+     * submit round-trips as a 0–59 second backward shift and triggers a
+     * spurious CYCLE-EDIT-STARTS-FORWARD / CYCLE-EDIT-ENDS-BACKWARD conflict.
+     *
+     * @param  array<string, mixed>  $patch
+     * @return array<string, mixed>
+     */
+    private function diffCyclePatch(\App\Models\SubscriptionCycle $cycle, array $patch): array
+    {
+        $diff = [];
+
+        $dateFields = ['starts_at', 'ends_at', 'grace_period_ends_at', 'archived_at'];
+
+        foreach ($patch as $key => $value) {
+            $stored = $cycle->getAttribute($key);
+
+            if (in_array($key, $dateFields, true)) {
+                $newCarbon = $value === null || $value === ''
+                    ? null
+                    : Carbon::parse($value);
+                $oldCarbon = $stored instanceof \Carbon\CarbonInterface ? $stored : null;
+                if ($oldCarbon === null && $stored !== null && $stored !== '') {
+                    $oldCarbon = Carbon::parse((string) $stored);
+                }
+
+                if ($newCarbon === null && $oldCarbon === null) {
+                    continue;
+                }
+                if ($newCarbon !== null && $oldCarbon !== null
+                    && $newCarbon->format('Y-m-d H:i') === $oldCarbon->format('Y-m-d H:i')) {
+                    continue;
+                }
+                $diff[$key] = $value;
+
+                continue;
+            }
+
+            if ($key === 'total_sessions') {
+                if ((int) $value === (int) $stored) {
+                    continue;
+                }
+                $diff[$key] = $value;
+
+                continue;
+            }
+
+            if ($key === 'metadata') {
+                $storedArr = is_array($stored) ? $stored : [];
+                $newArr = is_array($value) ? $value : [];
+                if ($storedArr === $newArr) {
+                    continue;
+                }
+                $diff[$key] = $value;
+
+                continue;
+            }
+
+            if ($value != $stored) { // intentional loose compare for null-vs-'' edge cases
+                $diff[$key] = $value;
+            }
+        }
+
+        return $diff;
     }
 
     /**

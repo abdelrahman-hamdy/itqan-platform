@@ -66,6 +66,28 @@ return [
     'create_as_pending' => 'Create as Pending (requires payment)',
     'sessions_carryover' => ':count remaining sessions will carry over',
 
+    // Phase 3 consolidated verbs
+    'subscribe_again' => 'Subscribe again',
+    'subscribe_again_modal_description' => 'Creates a fresh subscription with the same student, teacher, and package. The current terminated subscription is kept for history.',
+    'subscribe_again_success' => 'Subscription created',
+    'subscribe_again_success_body' => 'New subscription #:code created from the terminated row.',
+    'grant_sessions' => 'Grant sessions',
+    'grant_sessions_modal_heading' => 'Grant additional sessions',
+    'grant_sessions_modal_description' => 'Adds N sessions to the current cycle quota without changing dates or pricing. The change is audit-logged.',
+    'grant_sessions_delta_label' => 'How many sessions to grant',
+    'grant_sessions_delta_helper' => 'Added to the current cycle\'s total_sessions.',
+    'grant_sessions_reason_label' => 'Reason (required for audit)',
+    'grant_sessions_no_active_cycle' => 'No active cycle on this subscription — nothing to grant.',
+    'grant_sessions_success' => 'Sessions granted',
+    'grant_sessions_success_body' => 'Added :n session(s) to the current cycle.',
+    'override_price' => 'Override price',
+    'override_price_modal_heading' => 'Override cycle price',
+    'override_price_modal_description' => 'Sets the current cycle\'s final price outside the package-derived path. A non-empty reason is required.',
+    'override_price_new_label' => 'New price',
+    'override_price_reason_label' => 'Reason (required)',
+    'override_price_no_active_cycle' => 'No active cycle on this subscription — nothing to override.',
+    'override_price_success' => 'Price overridden',
+
     // Admin wizard
     'create_full_subscription' => 'Create Full Subscription',
     'create_full_subscription_success' => 'Subscription created successfully with all related data.',
