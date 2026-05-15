@@ -551,6 +551,7 @@
             next_page: @json(__('mushaf.next_page')),
             prev_page: @json(__('mushaf.prev_page')),
             juz: @json(__('mushaf.juz')),
+            go: @json(__('mushaf.go')),
         },
     };
 

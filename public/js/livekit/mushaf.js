@@ -77,6 +77,7 @@
             this._fontLru = [];
             this._fontPromises = new Map();
             this._pageDataCache = new Map(); // page → { surah, ayah_from, ayah_to, ... }
+            this._renderGen = 0; // bumped on every nav; stale renders bail
 
             this._encoder = new TextEncoder();
             this._decoder = new TextDecoder();
@@ -127,12 +128,15 @@
         }
 
         goToPage(page) {
+            // Students cannot navigate locally — the mushaf is read-only
+            // for them. They only follow the teacher's published pages.
+            if (!this._canShare) return;
             const p = clampPage(page);
             if (p === this._page) return;
             this._page = p;
             this._highlight = null;
             this._renderTile();
-            if (this._canShare && this._isShared) {
+            if (this._isShared) {
                 this._publish({
                     type: 'm_nav', v: PROTO_VERSION,
                     id: this._instanceId, seq: this._nextSeq(),
@@ -414,9 +418,17 @@
         }
 
         _onFocusEnter(focusedTile) {
-            // Re-render the focused clone (so the font scales to the larger area).
-            this._renderPageInto(focusedTile.querySelector('.' + TILE_CONTENT_CLASS));
+            // Re-paint the focused clone using already-cached page data so
+            // the font scales to the larger area. Toolbar is rendered
+            // after so its height can be reserved by _reflowAllPages().
+            const host = focusedTile.querySelector('.' + TILE_CONTENT_CLASS);
+            const cached = this._pageDataCache.get(this._page) || null;
+            this._renderPageIntoSync(host, cached);
+            this._renderHighlight();
             this._showToolbar(focusedTile);
+            // Kick a full async re-render to fill in anything missing
+            // (font, data) — _renderTile is idempotent against gen.
+            this._renderTile();
         }
 
         _onFocusExit() {
@@ -429,73 +441,230 @@
             this._hideToolbar();
             const bar = document.createElement('div');
             bar.id = 'mushaf-toolbar';
-            bar.className = 'absolute z-[70] left-1/2 -translate-x-1/2 bottom-3 bg-white rounded-full px-3 py-2 shadow-2xl flex items-center gap-2 border border-gray-200';
+            bar.className = 'absolute z-[70] left-1/2 -translate-x-1/2 bottom-3 flex items-center gap-2';
             bar.style.pointerEvents = 'auto';
             bar.addEventListener('click', (e) => e.stopPropagation());
-            const sharing = this._canShare && this._isShared;
-            bar.innerHTML = `
-                <button data-mushaf-act="prev" aria-label="${tt('mushaf.prev_page', 'Previous')}" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 flex items-center justify-center transition"><i class="ri-arrow-right-s-line text-lg"></i></button>
-                <div class="px-2 text-sm font-mono text-gray-700">
-                    <span data-mushaf-page-num>${this._page}</span> / ${MAX_PAGE}
-                </div>
-                <button data-mushaf-act="next" aria-label="${tt('mushaf.next_page', 'Next')}" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 flex items-center justify-center transition"><i class="ri-arrow-left-s-line text-lg"></i></button>
-                ${this._canShare ? `
-                <span class="w-px h-6 bg-gray-300"></span>
-                <button data-mushaf-act="share" aria-label="${tt('mushaf.share', 'Share')}" class="px-3 h-9 rounded-full ${sharing ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'} flex items-center gap-1.5 text-sm font-medium transition">
-                    <i class="ri-share-line"></i>
-                    <span>${sharing ? tt('mushaf.unshare', 'Stop sharing') : tt('mushaf.share', 'Share')}</span>
-                </button>
-                ` : ''}
-            `;
+
+            if (this._canShare) {
+                // Teacher controls — full nav + surah picker + share toggle.
+                const sharing = this._isShared;
+                const meta = this._surahMetaForPage(this._page);
+                const surahLabel = meta.surahNameAr || tt('mushaf.surah_picker', 'Surah');
+                bar.innerHTML = `
+                    <div class="bg-white rounded-full px-2 py-1.5 shadow-2xl flex items-center gap-1 border border-gray-200">
+                        <button data-mushaf-act="prev" aria-label="${tt('mushaf.prev_page', 'Previous')}" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 flex items-center justify-center transition" title="${tt('mushaf.prev_page', 'Previous')}"><i class="ri-arrow-right-s-line text-lg"></i></button>
+                        <button data-mushaf-act="page-picker" class="px-2 h-9 rounded-md hover:bg-gray-100 text-gray-800 text-sm font-mono flex items-center gap-1" title="${tt('mushaf.page_label', 'Page')}">
+                            <span data-mushaf-page-num>${this._page}</span><span class="text-gray-400">/${MAX_PAGE}</span>
+                        </button>
+                        <button data-mushaf-act="next" aria-label="${tt('mushaf.next_page', 'Next')}" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 flex items-center justify-center transition" title="${tt('mushaf.next_page', 'Next')}"><i class="ri-arrow-left-s-line text-lg"></i></button>
+                        <span class="w-px h-6 bg-gray-300 mx-1"></span>
+                        <button data-mushaf-act="surah-picker" class="px-3 h-9 rounded-md hover:bg-gray-100 text-gray-800 text-sm flex items-center gap-1.5" title="${tt('mushaf.surah_picker', 'Pick a Surah')}">
+                            <i class="ri-book-2-line"></i>
+                            <span style="font-family: 'Cairo','Tajawal',sans-serif;">${surahLabel}</span>
+                        </button>
+                        <span class="w-px h-6 bg-gray-300 mx-1"></span>
+                        <button data-mushaf-act="share" aria-label="${tt('mushaf.share', 'Share')}" class="px-3 h-9 rounded-full ${sharing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'} flex items-center gap-1.5 text-sm font-medium transition">
+                            <i class="ri-${sharing ? 'stop-circle-line' : 'share-line'}"></i>
+                            <span>${sharing ? tt('mushaf.unshare', 'Stop sharing') : tt('mushaf.share', 'Share')}</span>
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Student view — page indicator only, no nav controls.
+                // Students follow whatever page the teacher publishes.
+                bar.innerHTML = `
+                    <div class="bg-white/90 backdrop-blur rounded-full px-3 py-1.5 shadow flex items-center gap-1.5 text-sm text-gray-700 border border-gray-200">
+                        <i class="ri-book-open-line text-gray-500"></i>
+                        <span>${tt('mushaf.page_label', 'Page')}</span>
+                        <span data-mushaf-page-num class="font-mono">${this._page}</span>
+                        <span class="text-gray-400">/${MAX_PAGE}</span>
+                    </div>
+                `;
+            }
             focusedTile.appendChild(bar);
 
             bar.addEventListener('click', (e) => {
-                const btn = e.target.closest('button');
+                const btn = e.target.closest('button[data-mushaf-act]');
                 if (!btn) return;
+                if (!this._canShare) return; // read-only for students
                 const act = btn.dataset.mushafAct;
-                // prev = earlier in mushaf (smaller page number, page-1)
-                // next = later  (larger page number, page+1)
-                // The RTL chevron icons match: ri-arrow-right (visually
-                // right, "back" in RTL) → prev; ri-arrow-left → next.
                 if (act === 'prev') this.goToPage(this._page - 1);
                 else if (act === 'next') this.goToPage(this._page + 1);
+                else if (act === 'page-picker') this._togglePagePicker(focusedTile);
+                else if (act === 'surah-picker') this._toggleSurahPicker(focusedTile);
                 else if (act === 'share') {
                     if (this._isShared) this._stopSharing();
                     else this._startSharing();
                     this._showToolbar(focusedTile); // re-render share-state styling
+                    this._reflowAllPages();
                 }
             });
+
+            // Reserve space for the toolbar in the page layout so it
+            // doesn't overlap the verses (issue 1). The layoutPage
+            // closure on each .mushaf-page reads `_mushafToolbarH` off the
+            // focused tile when reflowing.
+            focusedTile._mushafToolbarH = bar.getBoundingClientRect().height + 18;
+            this._reflowAllPages();
         }
 
         _hideToolbar() {
             const bar = document.getElementById('mushaf-toolbar');
             if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
+            const pp = document.getElementById('mushaf-page-picker');
+            if (pp && pp.parentNode) pp.parentNode.removeChild(pp);
+            const sp = document.getElementById('mushaf-surah-picker');
+            if (sp && sp.parentNode) sp.parentNode.removeChild(sp);
+        }
+
+        _reflowAllPages() {
+            document.querySelectorAll('.' + TILE_CONTENT_CLASS).forEach((el) => {
+                if (typeof el._mushafRelayout === 'function') el._mushafRelayout();
+            });
+        }
+
+        // Teacher-only: "Go to page N" inline input.
+        _togglePagePicker(focusedTile) {
+            const existing = focusedTile.querySelector('#mushaf-page-picker');
+            if (existing) { existing.remove(); return; }
+            // Close surah picker if open
+            const sp = focusedTile.querySelector('#mushaf-surah-picker');
+            if (sp) sp.remove();
+            const panel = document.createElement('div');
+            panel.id = 'mushaf-page-picker';
+            panel.className = 'absolute z-[71] left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-2xl border border-gray-200 p-3';
+            panel.style.bottom = ((focusedTile._mushafToolbarH || 70) + 10) + 'px';
+            panel.style.pointerEvents = 'auto';
+            panel.addEventListener('click', (e) => e.stopPropagation());
+            panel.innerHTML = `
+                <label class="block text-xs text-gray-600 mb-2">${tt('mushaf.page_label', 'Page')} (1 - ${MAX_PAGE})</label>
+                <div class="flex items-center gap-2">
+                    <input type="number" min="1" max="${MAX_PAGE}" value="${this._page}" class="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm" id="mushaf-page-input" autocomplete="off" />
+                    <button id="mushaf-page-go" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium">${tt('mushaf.go', 'Go')}</button>
+                </div>
+            `;
+            focusedTile.appendChild(panel);
+            const input = panel.querySelector('#mushaf-page-input');
+            const go = panel.querySelector('#mushaf-page-go');
+            const submit = () => {
+                const v = parseInt(input.value, 10);
+                if (v >= 1 && v <= MAX_PAGE) {
+                    this.goToPage(v);
+                    panel.remove();
+                }
+            };
+            go.addEventListener('click', submit);
+            input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+            input.focus(); input.select();
+        }
+
+        // Teacher-only: scrollable 114-surah picker.
+        _toggleSurahPicker(focusedTile) {
+            const existing = focusedTile.querySelector('#mushaf-surah-picker');
+            if (existing) { existing.remove(); return; }
+            const pp = focusedTile.querySelector('#mushaf-page-picker');
+            if (pp) pp.remove();
+            const surahs = (window.QuranData && window.QuranData.SURAHS) || [];
+            const startPagesMap = (window.QuranData && window.QuranData.PAGE_TO_START_SURAH) || [];
+            // Build surahNumber → first page where it starts.
+            const startPageBySurah = {};
+            for (let p = 1; p < startPagesMap.length; p++) {
+                const s = startPagesMap[p];
+                if (s && !startPageBySurah[s]) startPageBySurah[s] = p;
+            }
+            const currentSurah = this._surahMetaForPage(this._page).surahNumber || 0;
+
+            const panel = document.createElement('div');
+            panel.id = 'mushaf-surah-picker';
+            panel.className = 'absolute z-[71] left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-2xl border border-gray-200 w-72 max-h-80 overflow-hidden flex flex-col';
+            panel.style.bottom = ((focusedTile._mushafToolbarH || 70) + 10) + 'px';
+            panel.style.pointerEvents = 'auto';
+            panel.addEventListener('click', (e) => e.stopPropagation());
+            panel.style.fontFamily = "'Cairo','Tajawal',sans-serif";
+            panel.dir = 'rtl';
+            let html = `
+                <div class="shrink-0 px-3 py-2 border-b border-gray-200 flex items-center justify-between">
+                    <span class="text-sm font-bold text-gray-700">${tt('mushaf.surah_picker', 'Pick a Surah')}</span>
+                    <button id="mushaf-surah-picker-close" class="w-7 h-7 rounded-full hover:bg-gray-100 text-gray-500 flex items-center justify-center" aria-label="Close"><i class="ri-close-line"></i></button>
+                </div>
+                <div class="overflow-y-auto flex-1">`;
+            for (let i = 0; i < surahs.length; i++) {
+                const s = i + 1;
+                const name = surahs[i][0];
+                const page = startPageBySurah[s] || 1;
+                const isCurrent = s === currentSurah;
+                html += `<button data-surah-num="${s}" data-surah-page="${page}" class="w-full grid grid-cols-[2rem_1fr_3rem] items-center gap-2 px-3 py-2 text-right ${isCurrent ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'} transition border-b border-gray-100 last:border-b-0">
+                    <span class="text-xs ${isCurrent ? 'text-blue-700 font-bold' : 'text-gray-400'} font-mono justify-self-start">${s}</span>
+                    <span class="text-sm ${isCurrent ? 'text-blue-900 font-semibold' : 'text-gray-800'} text-right">${name}</span>
+                    <span class="text-xs text-gray-400 font-mono justify-self-end">${page}</span>
+                </button>`;
+            }
+            html += '</div>';
+            panel.innerHTML = html;
+            focusedTile.appendChild(panel);
+
+            panel.querySelector('#mushaf-surah-picker-close')?.addEventListener('click', () => panel.remove());
+            panel.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-surah-num]');
+                if (!btn) return;
+                const page = parseInt(btn.dataset.surahPage, 10);
+                if (page > 0) {
+                    this.goToPage(page);
+                    panel.remove();
+                }
+            });
+            // Scroll current surah into view.
+            const cur = panel.querySelector(`button[data-surah-num="${currentSurah}"]`);
+            if (cur) setTimeout(() => cur.scrollIntoView({ block: 'center' }), 0);
         }
 
         // ───── Render ─────
 
-        _renderTile() {
-            // Update the label pill page number first
+        async _renderTile() {
+            // Bump the requested-page generation so any in-flight render
+            // for an earlier page knows it's been superseded.
+            const myGen = ++this._renderGen;
+
+            // Update the label pill page number first (synchronous).
             document.querySelectorAll('[data-mushaf-page-label]').forEach(el => { el.textContent = this._page; });
             document.querySelectorAll('[data-mushaf-page-num]').forEach(el => { el.textContent = this._page; });
 
-            // Paint into all .mushaf-page elements (tile + focused clone).
+            // Wait for the page font AND the per-page JSON before mutating
+            // any glyph DOM. This kills the "render → tofu flash → swap"
+            // UX (issue 3): the old page content stays visible until the
+            // new resources are ready, then we swap atomically.
+            const dataP = this._fetchPageData(this._page);
+            const fontP = this._loadPageFont(this._page);
+            this._loadCompanionFonts().catch(() => null);
+            let data = null;
+            try {
+                const [d] = await Promise.all([dataP, fontP.catch(() => null)]);
+                data = d;
+            } catch (_) {}
+
+            // If another navigation happened while we were waiting, bail.
+            if (myGen !== this._renderGen) return;
+
             document.querySelectorAll('.' + TILE_CONTENT_CLASS).forEach((el) => {
-                this._renderPageInto(el);
+                this._renderPageIntoSync(el, data);
             });
             this._renderHighlight();
+            this._reflowAllPages();
+
+            // Background prefetch — keeps prev/next nav snappy. We also
+            // prefetch the per-page JSON so the next page's await resolves
+            // immediately from cache.
+            const prefetch = (p) => {
+                if (p < MIN_PAGE || p > MAX_PAGE) return;
+                this._loadPageFont(p).catch(() => null);
+                this._fetchPageData(p).catch(() => null);
+            };
+            prefetch(this._page - 1);
+            prefetch(this._page + 1);
         }
 
-        async _renderPageInto(host) {
+        _renderPageIntoSync(host, data) {
             if (!host) return;
-            // Kick off font + data loads in parallel. Font loads are awaited
-            // only loosely — the page may render glyphs against the loading
-            // font (browser shows fallback briefly until QPC swaps in).
-            const dataP = this._fetchPageData(this._page);
-            this._loadPageFont(this._page).catch(() => null);
-            this._loadCompanionFonts().catch(() => null);
-            const data = await dataP.catch(() => null);
-
             host.innerHTML = '';
             host.style.direction = 'rtl';
 
@@ -504,7 +673,8 @@
                 return;
             }
 
-            // Final fallback: surah catalog metadata only (no payload bundled).
+            // Fallback when the per-page JSON isn't available — surah
+            // catalog metadata only.
             const meta = this._surahMetaForPage(this._page);
             host.style.fontFamily = "'Cairo', 'Tajawal', sans-serif";
             const fallback = document.createElement('div');
@@ -574,9 +744,19 @@
                 const rect = host.getBoundingClientRect();
                 if (rect.width <= 0 || rect.height <= 0) return;
                 const MUSHAF_ASPECT = 0.57; // width / height
-                // Reserve a small inner margin (~3% each side).
+                // Subtract toolbar height (set by _showToolbar) so the
+                // floating bar at the bottom doesn't overlap the page.
+                // The toolbar height is parked on the focused tile element
+                // (the ancestor with id starting with `focused-`); for the
+                // non-focused tile it's 0.
+                let toolbarReserve = 0;
+                const focused = host.closest('[id^="focused-"]');
+                if (focused && focused._mushafToolbarH) {
+                    toolbarReserve = focused._mushafToolbarH;
+                }
                 const availW = rect.width * 0.94;
-                const availH = rect.height * 0.94;
+                const availH = (rect.height * 0.94) - toolbarReserve;
+                if (availH <= 0) return;
                 let pageW, pageH;
                 if (availW / availH > MUSHAF_ASPECT) {
                     pageH = availH;
@@ -587,6 +767,11 @@
                 }
                 page.style.width = pageW + 'px';
                 page.style.height = pageH + 'px';
+                // Top-align the page inside the host when the toolbar
+                // is reserved at the bottom, so the page doesn't drift
+                // down into the toolbar zone as text wraps.
+                page.style.marginTop = toolbarReserve > 0 ? '0' : 'auto';
+                page.style.marginBottom = toolbarReserve > 0 ? (toolbarReserve + 'px') : 'auto';
                 // QPC v4 design: fontSize 23.1 at 392 design width.
                 const fontSize = Math.max(8, Math.min(64, pageW * (23.1 / 392)));
                 page.style.fontSize = fontSize.toFixed(2) + 'px';
@@ -599,6 +784,9 @@
                 const rowH = (pageH - padY * 2) / lineCount;
                 page.style.setProperty('--mushaf-row-h', rowH.toFixed(2) + 'px');
             };
+            // Expose the layout closure on the host so _reflowAllPages can
+            // re-run it when the toolbar appears or disappears.
+            host._mushafRelayout = layoutPage;
             // Initial sizing on next frame after host is in the DOM.
             requestAnimationFrame(layoutPage);
             // Re-flow on host resize (focus mode enters/exits change the
@@ -702,13 +890,13 @@
         /** Lazy-load the surahName + bismillah companion fonts (once per session). */
         _loadCompanionFonts() {
             if (this._companionFontsP) return this._companionFontsP;
-            const surah = new FontFace('mushaf-surah', `url(/mushaf/fonts/surah-name.woff2) format('woff2')`);
-            const bism = new FontFace('mushaf-bismillah', `url(/mushaf/fonts/bismillah.woff2) format('woff2')`);
+            const surah = new FontFace('mushaf-surah', `url(/mushaf/fonts/surah-name.woff2) format('woff2')`, { display: 'block' });
+            const bism = new FontFace('mushaf-bismillah', `url(/mushaf/fonts/bismillah.woff2) format('woff2')`, { display: 'block' });
             this._companionFontsP = Promise.all([
                 surah.load().then(() => document.fonts.add(surah)),
                 bism.load().then(() => document.fonts.add(bism)),
             ]);
-            this._companionFontsP.catch(() => {}); // swallow — fallback renders without them
+            this._companionFontsP.catch(() => {});
             return this._companionFontsP;
         }
 
@@ -757,12 +945,17 @@
                 return this._fontPromises.get(page);
             }
             const url = `/mushaf/fonts/${page}.woff2`;
-            const ff = new FontFace(`QPC-${page}`, `url(${url}) format('woff2')`);
+            // `display: 'block'` makes the browser wait (up to 3s) for the
+            // font before rendering any text in this family — otherwise
+            // the QPC private-use codepoints get drawn with a fallback
+            // font and look like Tofu boxes. We also await the promise
+            // before _renderTile mutates the DOM, so this is belt-and-
+            // suspenders against any code path that bypasses the await.
+            const ff = new FontFace(`QPC-${page}`, `url(${url}) format('woff2')`, { display: 'block' });
             const promise = ff.load().then(() => {
                 document.fonts.add(ff);
                 this._touchLru(page);
             });
-            // Don't bubble missing-font errors — fallbacks above handle it.
             promise.catch(() => {});
             this._fontPromises.set(page, promise);
             return promise;

@@ -12,4 +12,5 @@ return [
     'next_page' => 'Next page',
     'prev_page' => 'Previous page',
     'juz' => 'Juz',
+    'go' => 'Go',
 ];
