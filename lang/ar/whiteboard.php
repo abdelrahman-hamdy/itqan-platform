@@ -21,4 +21,5 @@ return [
     'color_yellow' => 'أصفر',
     'color_orange' => 'برتقالي',
     'color_purple' => 'بنفسجي',
+    'student_pan_zoom_hint' => 'اضغط بإصبعين أو استخدم العجلة للتكبير · اسحب للتحريك · انقر مرتين للإعادة',
 ];

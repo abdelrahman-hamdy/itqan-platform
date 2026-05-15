@@ -538,6 +538,7 @@
             color_yellow: @json(__('whiteboard.color_yellow')),
             color_orange: @json(__('whiteboard.color_orange')),
             color_purple: @json(__('whiteboard.color_purple')),
+            student_pan_zoom_hint: @json(__('whiteboard.student_pan_zoom_hint')),
         },
         mushaf: {
             mushaf: @json(__('mushaf.mushaf')),

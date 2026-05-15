@@ -168,8 +168,17 @@
             this._snapReplyTimer = null;
             this._snapshotRequesters = new Set();
             this._renderRaf = 0;
-            this._pointerCanvas = null; // canvas with active pointer
-            this._pointerId = null;
+            // Gesture state (focus-mode canvas only)
+            this._pointers = new Map(); // pointerId → {x, y, canvas}
+            this._gestureMode = 'idle';  // 'idle' | 'draw' | 'pan' | 'pinch'
+            this._panStart = null;       // {tx, ty, x, y}
+            this._pinchStart = null;     // {dist, cx, cy, scale, tx, ty}
+            this._drawingPointerId = null;
+            // Pan/zoom transform for the focused canvas. Never broadcast —
+            // local presentation only (mobile parity: view matrix is per
+            // peer). Teacher can zoom out and draw off the [0..1] home rect;
+            // students need their own pan/zoom to see those strokes.
+            this._focusView = { tx: 0, ty: 0, scale: 1 };
             this._encoder = new TextEncoder();
             this._decoder = new TextDecoder();
             this._focusObserver = null;
@@ -596,19 +605,58 @@
         }
 
         _onFocusEnter(focusedTile) {
-            // Make sure pointer events go through the canvas (cloneNode keeps
-            // styles but the inner pill has pointer-events:none already).
+            // Reset pan/zoom so each focus entry starts at the home view.
+            this._resetView();
+            // Cursor: teacher draws with a crosshair, students get a grab
+            // cursor since their gesture is pan.
             const canvas = focusedTile.querySelector('canvas.' + CANVAS_CLASS);
             if (canvas) {
-                canvas.style.cursor = this._canWrite ? 'crosshair' : 'default';
+                canvas.style.cursor = this._canWrite ? 'crosshair' : 'grab';
+                canvas.style.touchAction = 'none'; // prevent browser pinch-zoom hijack
             }
             if (this._canWrite) this._showToolbar(focusedTile);
-            // Force a paint so the cloned canvas isn't blank.
+            else this._showStudentHint(focusedTile);
             this._requestRender();
         }
 
         _onFocusExit() {
             this._hideToolbar();
+            this._hideStudentHint();
+            // Clean up any in-flight gesture state when leaving focus mode.
+            this._pointers.clear();
+            this._gestureMode = 'idle';
+            this._drawingPointerId = null;
+            this._panStart = null;
+            this._pinchStart = null;
+            this._draftStroke = null;
+            this._resetView();
+        }
+
+        /**
+         * Small auto-fading hint that teaches students about pan/zoom on
+         * first focus. Disappears after ~3 s and doesn't re-appear within
+         * the same session.
+         */
+        _showStudentHint(focusedTile) {
+            if (this._studentHintShown) return;
+            this._studentHintShown = true;
+            const hint = document.createElement('div');
+            hint.id = 'wb-student-hint';
+            hint.className = 'absolute z-[70] left-1/2 -translate-x-1/2 top-3 bg-black bg-opacity-70 text-white text-xs px-3 py-2 rounded-lg shadow pointer-events-none';
+            hint.textContent = tt('whiteboard.student_pan_zoom_hint', 'Pinch or scroll to zoom · drag to pan · double-tap to reset');
+            focusedTile.appendChild(hint);
+            setTimeout(() => {
+                if (hint.parentNode) {
+                    hint.style.transition = 'opacity 0.5s';
+                    hint.style.opacity = '0';
+                    setTimeout(() => hint.remove(), 600);
+                }
+            }, 3500);
+        }
+
+        _hideStudentHint() {
+            const h = document.getElementById('wb-student-hint');
+            if (h && h.parentNode) h.parentNode.removeChild(h);
         }
 
         // ───── Toolbar (only in focus mode, teacher only) ─────
@@ -635,6 +683,7 @@
                 <span class="w-px h-6 bg-gray-600"></span>
                 <button data-wb-act="undo" aria-label="${tt('whiteboard.undo', 'Undo')}" class="wb-tb w-9 h-9 rounded-full bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition"><i class="ri-arrow-go-back-line"></i></button>
                 <button data-wb-act="redo" aria-label="${tt('whiteboard.redo', 'Redo')}" class="wb-tb w-9 h-9 rounded-full bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition"><i class="ri-arrow-go-forward-line"></i></button>
+                <button data-wb-act="fit" aria-label="${tt('whiteboard.fit', 'Fit view')}" class="wb-tb w-9 h-9 rounded-full bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center transition"><i class="ri-focus-3-line"></i></button>
                 <button data-wb-act="clear" aria-label="${tt('whiteboard.clear', 'Clear')}" class="wb-tb w-9 h-9 rounded-full bg-red-700 hover:bg-red-600 text-white flex items-center justify-center transition"><i class="ri-delete-bin-line"></i></button>
             `;
             focusedTile.appendChild(bar);
@@ -646,6 +695,7 @@
                 else if (btn.dataset.wbAct === 'eraser') this.setTool(TOOL_ERASER);
                 else if (btn.dataset.wbAct === 'undo') this.undo();
                 else if (btn.dataset.wbAct === 'redo') this.redo();
+                else if (btn.dataset.wbAct === 'fit') this._resetView();
                 else if (btn.dataset.wbAct === 'clear') {
                     const msg = tt('whiteboard.clear_confirm', 'Clear the whiteboard for everyone?');
                     if (window.confirm(msg)) this.clear();
@@ -681,71 +731,237 @@
         // ───── Pointer events (delegated, only on focused canvas) ─────
 
         _installDelegatedPointer() {
-            // Listen at document level so we catch pointer events on any
-            // canvas regardless of when it was added.
+            // Listen at document level so we catch pointer events against
+            // canvases that come and go (cloned focus tile, etc.).
             const wantsCanvas = (target) => {
                 if (!target || !target.classList) return null;
                 const canvas = target.classList.contains(CANVAS_CLASS) ? target : null;
                 if (!canvas) return null;
-                // Only the FOCUSED canvas (inside the focused container) gets
-                // draw events. The tile-sized canvas is preview-only.
                 const inFocused = !!canvas.closest('#' + FOCUS_CONTAINER_ID);
                 if (!inFocused) return null;
                 return canvas;
             };
+
+            // Gesture model (mobile parity):
+            //   teacher + 1 pointer  → draw
+            //   student + 1 pointer  → pan
+            //   any peer + 2 pointers → pinch-zoom + pan around centroid
+            //   wheel (desktop)      → zoom around cursor
+            //
+            // When a second pointer lands while drawing, we abort the
+            // draft stroke and switch to pinch — same UX the mobile
+            // CustomPainter version exposes.
             document.addEventListener('pointerdown', (e) => {
-                if (!this._canWrite || !this._isActive) return;
+                if (!this._isActive) return;
                 const canvas = wantsCanvas(e.target);
                 if (!canvas) return;
                 e.preventDefault();
-                canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
-                this._pointerCanvas = canvas;
-                this._pointerId = e.pointerId;
-                const p = this._toNormalized(canvas, e.clientX, e.clientY);
-                this._draftStroke = {
-                    strokeId: (this._localIdentity || 'local') + '-' + (++this._strokeCounter),
-                    tool: this._activeTool, color: this._color, width: this._width,
-                    points: [p],
-                };
+                try { canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId); } catch (_) {}
+                this._pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, canvas });
+
+                if (this._pointers.size >= 2) {
+                    // Switch to pinch — abort any in-progress draft.
+                    this._abortDraftStroke();
+                    this._beginPinch(canvas);
+                    return;
+                }
+
+                // First pointer: teacher draws, student pans.
+                if (this._canWrite) {
+                    this._gestureMode = 'draw';
+                    this._drawingPointerId = e.pointerId;
+                    const p = this._toNormalized(canvas, e.clientX, e.clientY);
+                    this._draftStroke = {
+                        strokeId: (this._localIdentity || 'local') + '-' + (++this._strokeCounter),
+                        tool: this._activeTool, color: this._color, width: this._width,
+                        points: [p],
+                    };
+                } else {
+                    this._gestureMode = 'pan';
+                    this._panStart = {
+                        tx: this._focusView.tx,
+                        ty: this._focusView.ty,
+                        x: e.clientX,
+                        y: e.clientY,
+                    };
+                }
                 this._requestRender();
             }, true);
+
             document.addEventListener('pointermove', (e) => {
-                if (!this._draftStroke || e.pointerId !== this._pointerId || !this._pointerCanvas) return;
-                const p = this._toNormalized(this._pointerCanvas, e.clientX, e.clientY);
-                const pts = this._draftStroke.points;
-                const last = pts[pts.length - 1];
-                if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 0.0008) {
-                    pts.push(p);
+                const ent = this._pointers.get(e.pointerId);
+                if (!ent) return;
+                ent.x = e.clientX;
+                ent.y = e.clientY;
+
+                if (this._gestureMode === 'draw' && this._drawingPointerId === e.pointerId && this._draftStroke) {
+                    const p = this._toNormalized(ent.canvas, e.clientX, e.clientY);
+                    const pts = this._draftStroke.points;
+                    const last = pts[pts.length - 1];
+                    if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 0.0008) {
+                        pts.push(p);
+                        this._requestRender();
+                    }
+                } else if (this._gestureMode === 'pan' && this._panStart) {
+                    this._focusView.tx = this._panStart.tx + (e.clientX - this._panStart.x);
+                    this._focusView.ty = this._panStart.ty + (e.clientY - this._panStart.y);
                     this._requestRender();
+                } else if (this._gestureMode === 'pinch' && this._pinchStart && this._pointers.size >= 2) {
+                    this._updatePinch();
                 }
             }, true);
-            const endStroke = (e) => {
-                if (!this._draftStroke || e.pointerId !== this._pointerId) return;
-                const s = this._draftStroke;
-                this._draftStroke = null;
-                this._pointerCanvas = null;
-                this._pointerId = null;
-                if (s.points.length >= 1) {
-                    this._strokes.set(s.strokeId, s);
-                    this._undoStack.push(s.strokeId);
-                    this._redoStack.length = 0;
-                    this._broadcastStroke(s);
+
+            const endPointer = (e) => {
+                this._pointers.delete(e.pointerId);
+                if (this._gestureMode === 'draw' && this._drawingPointerId === e.pointerId) {
+                    this._commitDraftStroke();
+                    this._gestureMode = 'idle';
+                    this._drawingPointerId = null;
+                } else if (this._gestureMode === 'pinch' && this._pointers.size < 2) {
+                    // Drop back to pan with the remaining finger, if any.
+                    this._pinchStart = null;
+                    if (this._pointers.size === 1) {
+                        const remaining = this._pointers.values().next().value;
+                        this._gestureMode = 'pan';
+                        this._panStart = {
+                            tx: this._focusView.tx,
+                            ty: this._focusView.ty,
+                            x: remaining.x,
+                            y: remaining.y,
+                        };
+                    } else {
+                        this._gestureMode = 'idle';
+                    }
+                } else if (this._gestureMode === 'pan' && this._pointers.size === 0) {
+                    this._gestureMode = 'idle';
+                    this._panStart = null;
                 }
                 this._requestRender();
             };
-            document.addEventListener('pointerup', endStroke, true);
-            document.addEventListener('pointercancel', endStroke, true);
+            document.addEventListener('pointerup', endPointer, true);
+            document.addEventListener('pointercancel', endPointer, true);
+
+            // Wheel = zoom around cursor (desktop). Trackpad pinch also
+            // arrives as wheel events with ctrlKey set, but we treat all
+            // wheel as zoom — the canvas doesn't scroll, so plain wheel
+            // is unambiguous.
+            document.addEventListener('wheel', (e) => {
+                if (!this._isActive) return;
+                const canvas = wantsCanvas(e.target);
+                if (!canvas) return;
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const cx = e.clientX - rect.left;
+                const cy = e.clientY - rect.top;
+                // Negative deltaY = scroll up = zoom in.
+                const factor = Math.exp(-e.deltaY * 0.0015);
+                this._zoomAroundPoint(cx, cy, factor);
+            }, { passive: false, capture: true });
+
+            // Double-click on canvas resets the view (handy "fit to home").
+            document.addEventListener('dblclick', (e) => {
+                if (!this._isActive) return;
+                const canvas = wantsCanvas(e.target);
+                if (!canvas) return;
+                e.preventDefault();
+                this._resetView();
+            }, true);
         }
 
-        // Canvas-pixel → normalized 0..1 against canvas's home rect.
+        _abortDraftStroke() {
+            this._draftStroke = null;
+            this._drawingPointerId = null;
+        }
+
+        _commitDraftStroke() {
+            const s = this._draftStroke;
+            this._draftStroke = null;
+            if (s && s.points.length >= 1) {
+                this._strokes.set(s.strokeId, s);
+                this._undoStack.push(s.strokeId);
+                this._redoStack.length = 0;
+                this._broadcastStroke(s);
+            }
+        }
+
+        _beginPinch(canvas) {
+            const arr = Array.from(this._pointers.values());
+            if (arr.length < 2) return;
+            const rect = canvas.getBoundingClientRect();
+            const cx = ((arr[0].x + arr[1].x) / 2) - rect.left;
+            const cy = ((arr[0].y + arr[1].y) / 2) - rect.top;
+            const dist = Math.hypot(arr[0].x - arr[1].x, arr[0].y - arr[1].y) || 1;
+            this._gestureMode = 'pinch';
+            this._pinchStart = {
+                dist, cx, cy,
+                scale: this._focusView.scale,
+                tx: this._focusView.tx,
+                ty: this._focusView.ty,
+            };
+        }
+
+        _updatePinch() {
+            const arr = Array.from(this._pointers.values());
+            if (arr.length < 2 || !this._pinchStart) return;
+            const canvas = arr[0].canvas;
+            const rect = canvas.getBoundingClientRect();
+            const newCx = ((arr[0].x + arr[1].x) / 2) - rect.left;
+            const newCy = ((arr[0].y + arr[1].y) / 2) - rect.top;
+            const newDist = Math.hypot(arr[0].x - arr[1].x, arr[0].y - arr[1].y) || 1;
+            // Pan component: centroid drift translates the view.
+            const dx = newCx - this._pinchStart.cx;
+            const dy = newCy - this._pinchStart.cy;
+            // Zoom component: dist ratio scales around the ORIGINAL pinch
+            // centroid (mobile feel — locked to your first two finger
+            // positions instead of chasing the moving centroid).
+            const rawScale = this._pinchStart.scale * (newDist / this._pinchStart.dist);
+            const scale = Math.max(0.25, Math.min(5, rawScale));
+            // Hold the original logical point under the start centroid.
+            const logicalX = (this._pinchStart.cx - this._pinchStart.tx) / this._pinchStart.scale;
+            const logicalY = (this._pinchStart.cy - this._pinchStart.ty) / this._pinchStart.scale;
+            this._focusView.scale = scale;
+            this._focusView.tx = this._pinchStart.cx - logicalX * scale + dx;
+            this._focusView.ty = this._pinchStart.cy - logicalY * scale + dy;
+            this._requestRender();
+        }
+
+        _zoomAroundPoint(cx, cy, factor) {
+            const old = this._focusView;
+            const rawScale = old.scale * factor;
+            const scale = Math.max(0.25, Math.min(5, rawScale));
+            if (scale === old.scale) return;
+            // Logical coord under cursor at old scale.
+            const lx = (cx - old.tx) / old.scale;
+            const ly = (cy - old.ty) / old.scale;
+            this._focusView.scale = scale;
+            this._focusView.tx = cx - lx * scale;
+            this._focusView.ty = cy - ly * scale;
+            this._requestRender();
+        }
+
+        _resetView() {
+            this._focusView = { tx: 0, ty: 0, scale: 1 };
+            this._requestRender();
+        }
+
+        // Canvas-pixel → normalized 0..1 against canvas's home rect,
+        // inverting the focus-view transform if this canvas is in focus.
         _toNormalized(canvas, clientX, clientY) {
             const rect = canvas.getBoundingClientRect();
             const px = clientX - rect.left;
             const py = clientY - rect.top;
+            // If focused canvas, undo view transform first.
+            const inFocused = !!canvas.closest('#' + FOCUS_CONTAINER_ID);
+            let ux = px, uy = py;
+            if (inFocused) {
+                const v = this._focusView;
+                ux = (px - v.tx) / v.scale;
+                uy = (py - v.ty) / v.scale;
+            }
             const home = this._homeRectFor(rect);
             return {
-                x: (px - home.x) / home.w,
-                y: (py - home.y) / home.h,
+                x: (ux - home.x) / home.w,
+                y: (uy - home.y) / home.h,
             };
         }
 
@@ -790,17 +1006,26 @@
             if (!ctx) return;
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // CSS-pixel space
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
             const rect = { width: cssRect.width, height: cssRect.height };
             const home = this._homeRectFor(rect);
+            const inFocused = !!canvas.closest('#' + FOCUS_CONTAINER_ID);
+            const view = inFocused ? this._focusView : { tx: 0, ty: 0, scale: 1 };
+
+            // CSS-pixel space + focus pan/zoom transform. Composed matrix:
+            //   final = DPR · TRANSLATE(view.tx, view.ty) · SCALE(view.scale)
+            // — so logical CSS coords transform straight into device pixels.
+            ctx.setTransform(
+                dpr * view.scale, 0,
+                0, dpr * view.scale,
+                dpr * view.tx, dpr * view.ty
+            );
 
             // Paper background
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(home.x, home.y, home.w, home.h);
             ctx.strokeStyle = '#E5E7EB';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 1 / view.scale;
             ctx.strokeRect(home.x, home.y, home.w, home.h);
 
             const sx = home.w, sy = home.h;
@@ -810,9 +1035,11 @@
                 const widthPx = WIDTH_PALETTE[s.width] || 4;
                 const isEraser = s.tool === TOOL_ERASER;
                 ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-                // Scale width by tile size relative to logical canvas height.
+                // Stroke width is in logical px (relative to home rect).
+                // Divide by view.scale so visual stroke thickness stays
+                // constant as the user zooms — mobile parity.
                 const scale = home.h / CANVAS_H;
-                ctx.lineWidth = (isEraser ? widthPx * 2 : widthPx) * scale;
+                ctx.lineWidth = ((isEraser ? widthPx * 2 : widthPx) * scale) / view.scale;
                 ctx.strokeStyle = COLOR_PALETTE[s.color] || '#000';
                 ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
                 ctx.beginPath();
@@ -833,8 +1060,11 @@
             if (this._draftStroke) drawStroke(this._draftStroke);
             ctx.globalCompositeOperation = 'source-over';
 
-            // Show waiting hint on student tiles when board empty.
+            // Show waiting hint on student tiles when board empty. Reset
+            // to identity transform first so the text size stays constant
+            // regardless of zoom level.
             if (!this._canWrite && this._isWaitingForSnapshot && this._strokes.size === 0) {
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
                 ctx.fillStyle = 'rgba(107, 114, 128, 0.85)';
                 ctx.font = `${Math.max(11, home.h * 0.04)}px system-ui, sans-serif`;
                 ctx.textAlign = 'center';

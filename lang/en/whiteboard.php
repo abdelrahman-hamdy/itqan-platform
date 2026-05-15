@@ -21,4 +21,5 @@ return [
     'color_yellow' => 'Yellow',
     'color_orange' => 'Orange',
     'color_purple' => 'Purple',
+    'student_pan_zoom_hint' => 'Pinch or scroll to zoom · drag to pan · double-tap to reset',
 ];
