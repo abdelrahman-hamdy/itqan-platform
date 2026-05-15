@@ -66,6 +66,7 @@ class SessionConsumption extends Model
      * @var array<string, int>
      */
     public const SOURCE_PRECEDENCE = [
+        'legacy_backfill' => 0,
         'auto_attendance' => 1,
         'teacher_report' => 2,
         'admin_manual' => 3,
@@ -76,6 +77,13 @@ class SessionConsumption extends Model
     public const SOURCE_TEACHER_REPORT = 'teacher_report';
 
     public const SOURCE_AUTO_ATTENDANCE = 'auto_attendance';
+
+    /**
+     * Used by the post-v2-flip cleanup (`subscriptions:fix-pattern-a-*`)
+     * to synthesize consumption rows from the legacy `subscription_counted`
+     * flag. Precedence 0 — any future canonical write overrides.
+     */
+    public const SOURCE_LEGACY_BACKFILL = 'legacy_backfill';
 
     public const TYPE_ATTENDED = 'attended';
 
