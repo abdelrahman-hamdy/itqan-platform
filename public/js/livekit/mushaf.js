@@ -532,89 +532,166 @@
          * span — not the whole line.
          */
         _renderQpcPage(host, data) {
-            // Use Tailwind-only classes; layout is a fixed-height column
-            // that distributes the 15-ish lines evenly across the tile so
-            // the page looks balanced at any tile size.
+            // A real Madinah-mushaf page is roughly 0.57 wide:tall (392 × 693
+            // at the source font size of 23.1 with line-height 2.0 over 15
+            // lines). We letterbox an inner "page" of that aspect inside the
+            // tile so the page looks like a single cohesive mushaf page —
+            // not a stretched 16:9 strip.
+            //
+            // Font size is then derived from the page WIDTH (not height) so
+            // the QPC v4 per-page font hits its design width and the lines
+            // justify naturally — same approach the mobile package uses in
+            // PageFontSizeHelper (fontSize ≈ width × 23.1 / 392).
             host.style.fontFamily = '';
-            host.style.background = '#fefdf8'; // pale ivory like a real mushaf page
+            host.style.background = ''; // backdrop transparent; the page surface paints itself
+            host.style.padding = '0';
+            host.style.overflow = 'hidden';
+            host.style.display = 'flex';
+            host.style.alignItems = 'center';
+            host.style.justifyContent = 'center';
 
-            const inner = document.createElement('div');
-            inner.className = 'w-full h-full flex flex-col items-stretch justify-evenly px-2 py-1 leading-snug text-gray-900';
+            // Build the inner page container.
+            const page = document.createElement('div');
+            page.className = 'mushaf-page-inner';
+            page.style.background = '#fefdf8';
+            page.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+            page.style.borderRadius = '8px';
+            page.style.color = '#0b1220';
+            page.style.position = 'relative';
+            page.style.direction = 'rtl';
+            page.style.display = 'flex';
+            page.style.flexDirection = 'column';
+            page.style.justifyContent = 'space-between';
+            page.style.alignItems = 'stretch';
+            page.style.overflow = 'hidden';
+            page.style.boxSizing = 'border-box';
 
-            // Compute font size from the tile's actual rendered height so
-            // ~15 lines fit comfortably. We measure on the next frame; the
-            // initial render uses a safe default that will then be
-            // overwritten.
-            inner.style.fontSize = '18px';
-            requestAnimationFrame(() => {
+            // Sizing is computed dynamically against the host tile. We re-run
+            // on every ResizeObserver tick so focus-mode resize updates the
+            // page without re-rendering content.
+            const lineCount = Math.max(1, data.lines.length);
+            const layoutPage = () => {
                 const rect = host.getBoundingClientRect();
-                if (rect.height > 0) {
-                    const lines = Math.max(1, data.lines.length);
-                    // Reserve a little headroom for line-height.
-                    const target = Math.max(10, Math.min(64, (rect.height / lines) * 0.75));
-                    inner.style.fontSize = target.toFixed(1) + 'px';
+                if (rect.width <= 0 || rect.height <= 0) return;
+                const MUSHAF_ASPECT = 0.57; // width / height
+                // Reserve a small inner margin (~3% each side).
+                const availW = rect.width * 0.94;
+                const availH = rect.height * 0.94;
+                let pageW, pageH;
+                if (availW / availH > MUSHAF_ASPECT) {
+                    pageH = availH;
+                    pageW = pageH * MUSHAF_ASPECT;
+                } else {
+                    pageW = availW;
+                    pageH = pageW / MUSHAF_ASPECT;
                 }
-            });
+                page.style.width = pageW + 'px';
+                page.style.height = pageH + 'px';
+                // QPC v4 design: fontSize 23.1 at 392 design width.
+                const fontSize = Math.max(8, Math.min(64, pageW * (23.1 / 392)));
+                page.style.fontSize = fontSize.toFixed(2) + 'px';
+                // Inner padding mirrors mobile's vertical margin.
+                const padY = pageH * 0.02, padX = pageW * 0.03;
+                page.style.padding = padY + 'px ' + padX + 'px';
+                // Apportion equal vertical space to every line; each row's
+                // own `min-height` is set as a CSS var so they don't have
+                // to be re-rendered.
+                const rowH = (pageH - padY * 2) / lineCount;
+                page.style.setProperty('--mushaf-row-h', rowH.toFixed(2) + 'px');
+            };
+            // Initial sizing on next frame after host is in the DOM.
+            requestAnimationFrame(layoutPage);
+            // Re-flow on host resize (focus mode enters/exits change the
+            // container size sharply).
+            if (window.ResizeObserver) {
+                try {
+                    const ro = new ResizeObserver(layoutPage);
+                    ro.observe(host);
+                    // Park the observer on the page element so it gets GC'd
+                    // when the host is removed from the DOM.
+                    page._mushafResizeObserver = ro;
+                } catch (_) {}
+            }
+
+            const inner = page; // alias to keep the rest of this fn readable
 
             for (const line of data.lines) {
                 const row = document.createElement('div');
-                row.className = 'mushaf-row w-full flex items-center';
+                // Each row occupies a fixed share of the page height
+                // (set via `--mushaf-row-h` on the parent). Content is
+                // vertically centered inside that row so surah-name and
+                // basmallah banners don't push the page out of alignment.
+                row.className = 'mushaf-row';
+                row.style.display = 'flex';
+                row.style.alignItems = 'center';
+                row.style.width = '100%';
+                row.style.height = 'var(--mushaf-row-h)';
+                row.style.lineHeight = '1';
+                row.style.overflow = 'hidden';
                 row.dataset.lineN = String(line.n || '');
                 row.dataset.lineType = line.type;
                 if (line.type === 'surah_name') {
-                    row.classList.add('justify-center');
+                    row.style.justifyContent = 'center';
                     const name = document.createElement('span');
-                    name.className = 'mushaf-surah-banner inline-block px-3';
+                    name.className = 'mushaf-surah-banner';
                     // surahName font ligatures convert the surah number text
                     // into a decorative banner. Same trick the mobile package
                     // uses (see surah_header_widget.dart line 51).
                     name.style.fontFamily = "'mushaf-surah', serif";
-                    name.style.fontSize = '1.4em';
-                    name.style.lineHeight = '1.2';
+                    name.style.fontSize = '1em';
+                    name.style.lineHeight = '1';
                     name.style.color = '#111827';
+                    name.style.display = 'inline-block';
                     name.textContent = String(line.surah || '');
                     row.appendChild(name);
                 } else if (line.type === 'basmallah') {
-                    row.classList.add('justify-center');
+                    row.style.justifyContent = 'center';
                     const span = document.createElement('span');
-                    span.className = 'mushaf-basmallah inline-block';
+                    span.className = 'mushaf-basmallah';
                     span.style.fontFamily = "'mushaf-bismillah', serif";
-                    span.style.fontSize = '1.4em';
-                    span.style.lineHeight = '1.5';
+                    span.style.fontSize = '0.95em';
+                    span.style.lineHeight = '1';
                     span.style.color = '#111827';
+                    span.style.display = 'inline-block';
                     // Surah-specific glyph variant (mirrors bsmallah_widget.dart).
                     const surah = Number(line.surah) || 0;
-                    let glyph = 'ﲪﲫﲮﲴ'; // default ﲪﲫﲮﲴ
-                    if (surah === 2)                  glyph = 'ﲚﲛﲞﲤ'; // ﲚﲛﲞﲤ
-                    else if (surah === 95 || surah === 97) glyph = 'ﭗﲫﲮﲴ'; // ﭗﲫﲮﲴ
+                    let glyph = 'ﲪﲫﲮﲴ';
+                    if (surah === 2)                       glyph = 'ﲚﲛﲞﲤ';
+                    else if (surah === 95 || surah === 97) glyph = 'ﭗﲫﲮﲴ';
                     span.textContent = glyph;
                     row.appendChild(span);
                 } else {
-                    // ayah line
-                    row.classList.add(line.centered ? 'justify-center' : 'justify-between');
-                    const text = document.createElement('span');
-                    text.className = 'mushaf-ayah inline-block w-full';
-                    text.style.fontFamily = `'QPC-${this._page}', 'Amiri', serif`;
-                    text.style.color = '#0b1220';
-                    if (line.centered) {
-                        text.style.textAlign = 'center';
-                    } else {
-                        // Justify by spreading words across the line —
-                        // QPC v4 lines are designed for this.
-                        text.style.textAlign = 'justify';
-                        text.style.textAlignLast = 'justify';
-                    }
-                    // Per-segment spans so highlight + ayah marker can be
-                    // injected per (surah, ayah).
+                    // Ayah line. We render every WORD as its own flex
+                    // child so the row can spread words evenly across the
+                    // page width — CSS `text-align: justify` won't work
+                    // because the wire format uses U+202F (narrow no-break
+                    // space) which the justify algorithm doesn't expand.
+                    //
+                    // Words are tagged with `data-surah` / `data-ayah` for
+                    // highlight, and grouped visually by being adjacent.
+                    // `line.centered === 1` in the source means the QPC
+                    // line was hand-balanced to fall short of full width
+                    // (e.g. end of a surah) — we mirror that by clustering
+                    // the words at the center instead of spreading them.
+                    row.style.fontFamily = `'QPC-${this._page}', 'Amiri', serif`;
+                    row.style.direction = 'rtl';
+                    row.style.justifyContent = line.centered ? 'center' : 'space-between';
+                    row.style.gap = line.centered ? '0.18em' : '0';
+                    // Split on any whitespace (the wire format uses U+202F
+                    // NARROW NO-BREAK SPACE between words within an ayah).
                     for (const seg of (line.segments || [])) {
-                        const segSpan = document.createElement('span');
-                        segSpan.className = 'mushaf-line';
-                        segSpan.dataset.surah = String(seg.surah);
-                        segSpan.dataset.ayah = String(seg.ayah);
-                        segSpan.textContent = seg.text;
-                        text.appendChild(segSpan);
+                        const words = String(seg.text || '').split(/\s+/).filter(w => w.length > 0);
+                        for (const w of words) {
+                            const word = document.createElement('span');
+                            word.className = 'mushaf-word';
+                            word.dataset.surah = String(seg.surah);
+                            word.dataset.ayah = String(seg.ayah);
+                            word.style.display = 'inline-block';
+                            word.style.color = '#0b1220';
+                            word.textContent = w;
+                            row.appendChild(word);
+                        }
                     }
-                    row.appendChild(text);
                 }
                 inner.appendChild(row);
             }
@@ -636,13 +713,14 @@
         }
 
         _renderHighlight() {
-            // Mark highlighted ayah lines across all rendered tiles.
-            document.querySelectorAll('.' + TILE_CONTENT_CLASS + ' .mushaf-line').forEach((el) => {
+            // Highlight every word span tagged with the active (surah, ayah)
+            // across all rendered tiles (tile + focused clone).
+            document.querySelectorAll('.' + TILE_CONTENT_CLASS + ' .mushaf-word').forEach((el) => {
                 const s = Number(el.dataset.surah);
                 const a = Number(el.dataset.ayah);
                 const on = this._highlight && this._highlight.s === s && this._highlight.a === a;
-                el.style.backgroundColor = on ? 'rgba(251, 191, 36, 0.35)' : '';
-                el.style.borderRadius = on ? '4px' : '';
+                el.style.backgroundColor = on ? 'rgba(251, 191, 36, 0.45)' : '';
+                el.style.borderRadius = on ? '3px' : '';
             });
         }
 
