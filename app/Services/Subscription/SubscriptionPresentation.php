@@ -283,7 +283,14 @@ class SubscriptionPresentation
             return $sub->status;
         }
 
-        return SessionSubscriptionStatus::tryFrom((string) $sub->status)
+        // CourseSubscription casts `status` to EnrollmentStatus, which is a
+        // different BackedEnum. Coerce via the underlying value so the view-
+        // state lookup still works for all three sub types.
+        $raw = $sub->status instanceof \BackedEnum
+            ? (string) $sub->status->value
+            : (string) ($sub->status ?? '');
+
+        return SessionSubscriptionStatus::tryFrom($raw)
             ?? SessionSubscriptionStatus::PENDING;
     }
 
