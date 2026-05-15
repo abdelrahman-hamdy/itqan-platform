@@ -161,10 +161,19 @@ trait PreventsDuplicatePendingSubscriptions
      */
     public function cancelAsDuplicateOrExpired(?string $reason = null): void
     {
+        $now = now();
+        // Collapse ends_at to the cancel time. Otherwise the UI's
+        // "ends in X days" countdown ticks against the original 30-day
+        // projection — wrong for a cancelled sub.
+        $endsAt = $this->ends_at !== null && $this->ends_at->lt($now)
+            ? $this->ends_at
+            : $now;
+
         $this->update([
             'status' => $this->getCancelledStatus(),
             'payment_status' => SubscriptionPaymentStatus::FAILED,
-            'cancelled_at' => now(),
+            'cancelled_at' => $now,
+            'ends_at' => $endsAt,
             'cancellation_reason' => $reason ?? config('subscriptions.cancellation_reasons.expired'),
             'auto_renew' => false,
         ]);
@@ -175,10 +184,16 @@ trait PreventsDuplicatePendingSubscriptions
      */
     public function cancelDueToPaymentFailure(): void
     {
+        $now = now();
+        $endsAt = $this->ends_at !== null && $this->ends_at->lt($now)
+            ? $this->ends_at
+            : $now;
+
         $this->update([
             'status' => $this->getCancelledStatus(),
             'payment_status' => SubscriptionPaymentStatus::FAILED,
-            'cancelled_at' => now(),
+            'cancelled_at' => $now,
+            'ends_at' => $endsAt,
             'cancellation_reason' => config('subscriptions.cancellation_reasons.payment_failed'),
             'auto_renew' => false,
         ]);
