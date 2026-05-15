@@ -94,8 +94,52 @@
             this._initialized = true;
 
             this._observeFocusMode();
+            this._installHighlightHandler();
 
             if (!this._canShare) this._scheduleSnapReq();
+        }
+
+        /**
+         * Teacher-only: tap on any ayah word in the FOCUSED mushaf view
+         * to toggle a verse highlight. Same UX role as mobile's
+         * onAyahLongPress → MushafReaderCubit.setHighlight. We use single
+         * click here because mobile uses long-press only to disambiguate
+         * from scroll — on web the page doesn't scroll under the finger.
+         *
+         * Clicking an already-highlighted ayah CLEARS the highlight
+         * (mobile would do this via a separate gesture, but toggle is the
+         * standard web pattern). Inbound m_hl from any other path is
+         * unaffected.
+         *
+         * Delegated at document level so it works against the cloned
+         * focus-mode tile without per-word listeners — same trick the
+         * whiteboard uses for its pointer events.
+         */
+        _installHighlightHandler() {
+            if (!this._canShare) return;
+            document.addEventListener('click', (e) => {
+                if (!this._canShare || !this._isOpen) return;
+                const target = e.target;
+                if (!target || !target.closest) return;
+                const word = target.closest('.mushaf-word');
+                if (!word) return;
+                // Only the focused-mode clone registers highlight taps.
+                // The thumbnail tile is too small for precise targeting
+                // and we want highlight UX to live in the same view that
+                // shows the toolbar.
+                if (!word.closest('#' + FOCUS_CONTAINER_ID)) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const s = Number(word.dataset.surah);
+                const a = Number(word.dataset.ayah);
+                if (!s || !a) return;
+                // Toggle: re-tap clears.
+                if (this._highlight && this._highlight.s === s && this._highlight.a === a) {
+                    this.setHighlight(null, null);
+                } else {
+                    this.setHighlight(s, a);
+                }
+            }, true);
         }
 
         destroy() {
@@ -867,6 +911,11 @@
                     row.style.gap = line.centered ? '0.18em' : '0';
                     // Split on any whitespace (the wire format uses U+202F
                     // NARROW NO-BREAK SPACE between words within an ayah).
+                    // For teachers, words inside the focused-mode tile get
+                    // `cursor: pointer` so it's discoverable they can be
+                    // tapped to highlight (see _installHighlightHandler).
+                    const inFocused = !!host.closest('#' + FOCUS_CONTAINER_ID);
+                    const interactive = this._canShare && inFocused;
                     for (const seg of (line.segments || [])) {
                         const words = String(seg.text || '').split(/\s+/).filter(w => w.length > 0);
                         for (const w of words) {
@@ -876,6 +925,10 @@
                             word.dataset.ayah = String(seg.ayah);
                             word.style.display = 'inline-block';
                             word.style.color = '#0b1220';
+                            if (interactive) {
+                                word.style.cursor = 'pointer';
+                                word.style.transition = 'background-color 0.12s';
+                            }
                             word.textContent = w;
                             row.appendChild(word);
                         }
