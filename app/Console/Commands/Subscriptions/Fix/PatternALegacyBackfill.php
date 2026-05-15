@@ -256,7 +256,7 @@ class PatternALegacyBackfill extends Command
         $quran = DB::table('quran_sessions')
             ->where('subscription_cycle_id', $cycle->id)
             ->where('subscription_counted', true)
-            ->select('id', 'student_id', 'quran_subscription_id', 'completed_at', 'scheduled_at')
+            ->select('id', 'student_id', 'quran_subscription_id', 'ended_at', 'scheduled_at')
             ->get();
 
         foreach ($quran as $r) {
@@ -266,14 +266,14 @@ class PatternALegacyBackfill extends Command
                 'student_user_id' => (int) $r->student_id,
                 'subscription_id' => (int) $r->quran_subscription_id,
                 'subscription_type' => 'quran_subscription',
-                'consumed_at' => (string) ($r->completed_at ?? $r->scheduled_at ?? Carbon::now()->toDateTimeString()),
+                'consumed_at' => (string) ($r->ended_at ?? $r->scheduled_at ?? Carbon::now()->toDateTimeString()),
             ];
         }
 
         $academic = DB::table('academic_sessions')
             ->where('subscription_cycle_id', $cycle->id)
             ->where('subscription_counted', true)
-            ->select('id', 'student_id', 'academic_subscription_id', 'completed_at', 'scheduled_at')
+            ->select('id', 'student_id', 'academic_subscription_id', 'ended_at', 'scheduled_at')
             ->get();
 
         foreach ($academic as $r) {
@@ -283,7 +283,7 @@ class PatternALegacyBackfill extends Command
                 'student_user_id' => (int) $r->student_id,
                 'subscription_id' => (int) $r->academic_subscription_id,
                 'subscription_type' => 'academic_subscription',
-                'consumed_at' => (string) ($r->completed_at ?? $r->scheduled_at ?? Carbon::now()->toDateTimeString()),
+                'consumed_at' => (string) ($r->ended_at ?? $r->scheduled_at ?? Carbon::now()->toDateTimeString()),
             ];
         }
 
