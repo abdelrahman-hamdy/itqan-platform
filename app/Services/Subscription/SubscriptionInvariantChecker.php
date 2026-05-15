@@ -304,17 +304,24 @@ class SubscriptionInvariantChecker
         // INV-B2: orphan `subscription_counted` flags — sessions marked counted
         // on the legacy boolean but with NO active session_consumption row.
         // Best-effort: only run when the legacy column exists (migration window).
+        //
+        // Softening: orphans on cycles already marked v2_consumption_complete
+        // are EXPECTED (the cleanup scripts deliberately accepted the gap via
+        // --cap-to-aggregate; see docs/cleanup/final-summary-2026-05-15.md).
+        // Real orphans (cycle is still v2-pending) keep severity=error.
         $sessionsRel = method_exists($sub, 'sessions') ? $sub->sessions() : null;
         if ($sessionsRel !== null) {
             $sessionsTable = $sessionsRel->getRelated()->getTable();
             if (Schema::hasColumn($sessionsTable, 'subscription_counted')) {
                 try {
                     $sessionMorph = $sessionsRel->getRelated()->getMorphClass();
-                    $flaggedIds = $sessionsRel
+                    $flaggedRows = $sessionsRel
                         ->getQuery()
                         ->where('subscription_counted', true)
-                        ->pluck('id');
-                    if ($flaggedIds->isNotEmpty()) {
+                        ->select('id', 'subscription_cycle_id')
+                        ->get();
+                    if ($flaggedRows->isNotEmpty()) {
+                        $flaggedIds = $flaggedRows->pluck('id');
                         $countedIds = SessionConsumption::query()
                             ->where('subscription_id', $subscriptionId)
                             ->where('subscription_type', $subscriptionType)
@@ -324,16 +331,52 @@ class SubscriptionInvariantChecker
                             ->pluck('session_id');
                         $missing = $flaggedIds->diff($countedIds);
                         if ($missing->isNotEmpty()) {
-                            $violations[] = $this->violation(
-                                'INV-B2',
-                                'Sessions flagged subscription_counted=true with no active session_consumption row.',
-                                [
-                                    'subscription_id' => $subscriptionId,
-                                    'session_type' => $sessionMorph,
-                                    'orphan_session_ids' => array_values(array_slice($missing->all(), 0, 25)),
-                                    'orphan_count' => $missing->count(),
-                                ],
-                            );
+                            $missingCycleIds = $flaggedRows
+                                ->whereIn('id', $missing->all())
+                                ->pluck('subscription_cycle_id')
+                                ->unique()
+                                ->filter()
+                                ->values()
+                                ->all();
+
+                            $v2CompleteCycleIds = SubscriptionCycle::query()
+                                ->whereIn('id', $missingCycleIds)
+                                ->where('v2_consumption_complete', true)
+                                ->pluck('id')
+                                ->all();
+
+                            $unexpectedOrphans = $flaggedRows
+                                ->whereIn('id', $missing->all())
+                                ->filter(fn ($row) => ! in_array((int) $row->subscription_cycle_id, $v2CompleteCycleIds, true))
+                                ->pluck('id')
+                                ->values();
+
+                            $expectedOrphans = $missing->count() - $unexpectedOrphans->count();
+
+                            if ($unexpectedOrphans->isNotEmpty()) {
+                                $violations[] = $this->violation(
+                                    'INV-B2',
+                                    'Sessions flagged subscription_counted=true with no active session_consumption row (cycle not yet v2-finalised).',
+                                    [
+                                        'subscription_id' => $subscriptionId,
+                                        'session_type' => $sessionMorph,
+                                        'orphan_session_ids' => array_values(array_slice($unexpectedOrphans->all(), 0, 25)),
+                                        'orphan_count' => $unexpectedOrphans->count(),
+                                    ],
+                                );
+                            }
+                            if ($expectedOrphans > 0) {
+                                $violations[] = $this->violation(
+                                    'INV-B2',
+                                    'Orphan subscription_counted=true flags on v2-finalised cycles — expected (cap-to-aggregate path).',
+                                    [
+                                        'subscription_id' => $subscriptionId,
+                                        'session_type' => $sessionMorph,
+                                        'expected_orphan_count' => $expectedOrphans,
+                                    ],
+                                    severity: 'info',
+                                );
+                            }
                         }
                     }
                 } catch (Throwable $e) {
@@ -360,22 +403,42 @@ class SubscriptionInvariantChecker
                 ->whereNull('reversed_at')
                 ->count();
 
-            // INV-B3 — softened to severity=warning for pre-v2-flip cycles
-            // that haven't been backfilled into session_consumption yet. The
-            // legacy attendance writer never produced consumption rows for
-            // them, so a mismatch is the EXPECTED data shape until backfill.
+            // INV-B3 — softened in two cases:
+            //   1. legacy cycle (pre-v2-flip, never backfilled) → warning
+            //   2. cycle v2_consumption_complete=true AND metadata records
+            //      either an unaccounted-aggregate shortfall or a cap-to-
+            //      aggregate decision → info (deliberate, documented gap)
+            //   Everything else → error (real drift).
             if ((int) $cycle->sessions_used !== $actualActive) {
+                $isLegacy = $this->isLegacyConsumptionCycle($cycle);
+                $metadata = $cycle->metadata ?? [];
+                $hasDocumentedGap = $cycle->v2_consumption_complete
+                    && (
+                        ! empty($metadata['unaccounted_sessions_used'])
+                        || ! empty($metadata['pre_platform_consumption_preserved'])
+                    );
+
+                $severity = match (true) {
+                    $hasDocumentedGap => 'info',
+                    $isLegacy => 'warning',
+                    default => 'error',
+                };
+
                 $violations[] = $this->violation(
                     'INV-B3',
-                    'cycle.sessions_used does not equal COUNT(session_consumption WHERE cycle_id=? AND reversed_at IS NULL).',
+                    $hasDocumentedGap
+                        ? 'cycle.sessions_used vs. session_consumption drift is expected (v2-finalised with documented metadata gap).'
+                        : 'cycle.sessions_used does not equal COUNT(session_consumption WHERE cycle_id=? AND reversed_at IS NULL).',
                     [
                         'subscription_id' => $subscriptionId,
                         'cycle_id' => $cycle->getKey(),
                         'cycle_sessions_used' => (int) $cycle->sessions_used,
                         'active_consumption_count' => $actualActive,
-                        'legacy_cycle' => $this->isLegacyConsumptionCycle($cycle),
+                        'legacy_cycle' => $isLegacy,
+                        'v2_consumption_complete' => (bool) $cycle->v2_consumption_complete,
+                        'documented_gap' => $hasDocumentedGap,
                     ],
-                    severity: $this->isLegacyConsumptionCycle($cycle) ? 'warning' : 'error',
+                    severity: $severity,
                 );
             }
 
