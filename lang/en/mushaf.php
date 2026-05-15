@@ -11,4 +11,5 @@ return [
     'page_label' => 'Page',
     'next_page' => 'Next page',
     'prev_page' => 'Previous page',
+    'juz' => 'Juz',
 ];

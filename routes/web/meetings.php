@@ -153,3 +153,7 @@ Route::middleware(['auth'])->prefix('api/recordings')->group(function () {
 Route::get('/mushaf/fonts/{page}.woff2', [MushafFontController::class, 'show'])
     ->where('page', '[1-9]|[1-9][0-9]|[1-5][0-9][0-9]|60[0-4]')
     ->name('mushaf.fonts');
+
+Route::get('/mushaf/page/{page}.json', [MushafFontController::class, 'page'])
+    ->where('page', '[1-9]|[1-9][0-9]|[1-5][0-9][0-9]|60[0-4]')
+    ->name('mushaf.page');

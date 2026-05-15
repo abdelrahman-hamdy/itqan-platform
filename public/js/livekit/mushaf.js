@@ -1,20 +1,26 @@
 /**
- * LiveKit Mushaf Module — web parity with mobile MushafReaderCubit +
- * MushafShareController.
+ * LiveKit Mushaf Module — virtual-participant tile model (mobile parity).
  *
- * Wire protocol: topic `mushaf`, JSON UTF-8, reliable. Source of truth is
- * `itqan-mobile/lib/features/mushaf/sync/mushaf_sync_message.dart`. Every
- * packet carries `type`, `v: 1`, `id` (instanceId), `seq`. `m_snap_req`
- * is the only student → teacher packet.
+ * The mushaf renders as a tile inside the existing #videoGrid (like a
+ * regular participant). Clicking the tile triggers the meeting's focus
+ * mode — the same UX as clicking any other participant. Floating page-nav
+ * controls appear next to the focused tile for the teacher.
  *
- * Page rendering: each Madinah-mushaf page is rendered with the
- * corresponding KFGQPC QPC v4 page font (`/mushaf/fonts/{page}.woff2`,
- * loaded lazily via FontFace API). Per-ayah glyph strings + line layout
- * come from the pre-baked `quran-data.js`. If that file isn't present
- * yet, the renderer falls back to a textual "page N" placeholder so the
- * sync protocol can still be exercised end-to-end.
+ * Wire protocol (frozen, byte-parity with mobile):
+ *   topic 'mushaf', JSON UTF-8, reliable
+ *   Source of truth: itqan-mobile/lib/features/mushaf/sync/mushaf_sync_message.dart
  *
- * State is fully ephemeral — closing the sheet wipes everything.
+ * Page rendering: each tile/focused-tile renders the same DOM (HTML text,
+ * Amiri-font Arabic). Unlike the whiteboard the focus-mode `cloneNode(true)`
+ * works perfectly here because there's no canvas to copy — the cloned
+ * subtree paints identically to the original via CSS.
+ *
+ * Content fallbacks: ideal rendering is the KFGQPC QPC v4 page font with
+ * per-page glyph strings. If that data isn't bundled (see
+ * resources/js/mushaf/quran-data.js + storage/app/public/mushaf/fonts/),
+ * we fall back to: server-side `/mushaf/page/{n}.json` if available, then
+ * to a `surahs[]` lookup that at least shows "Page N — Surah X (verses
+ * Y..Z)". State is fully ephemeral.
  */
 (function () {
     'use strict';
@@ -26,10 +32,23 @@
     const FONT_LRU_SIZE = 10;
     const MIN_PAGE = 1;
     const MAX_PAGE = 604;
+    const TILE_ID = 'participant-mushaf';
+    const TILE_CONTENT_CLASS = 'mushaf-page';
+    const FOCUS_CONTAINER_ID = 'focusedVideoContainer';
 
     function uuid() {
         if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
         return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    }
+    function tt(key, fallback) {
+        if (typeof window.t === 'function') {
+            const v = window.t(key);
+            if (v && v !== key) return v;
+        }
+        return fallback;
+    }
+    function clampPage(p) {
+        return Math.max(MIN_PAGE, Math.min(MAX_PAGE, Number(p) || 1));
     }
 
     class Mushaf {
@@ -40,33 +59,31 @@
             this._initialized = false;
             this._destroyed = false;
 
-            // Local viewer state
             this._isOpen = false;
             this._page = 1;
-            this._highlight = null; // {s, a} | null
+            this._highlight = null;
 
-            // Share-controller state (teacher = isWriter)
             this._instanceId = null;
             this._seq = 0;
             this._isShared = false;
-            this._isFollowing = false; // student-only — true while teacher is sharing
+            this._isFollowing = false;
             this._lastSeqByInstance = new Map();
 
-            // Timers
             this._snapReqTimers = [];
             this._heartbeatTimer = null;
             this._snapReplyTimer = null;
             this._snapshotRequesters = new Set();
 
-            // Font caching (LRU)
-            this._fontLru = [];        // page numbers, MRU first
-            this._fontPromises = new Map(); // page → Promise<void>
+            this._fontLru = [];
+            this._fontPromises = new Map();
+            this._pageDataCache = new Map(); // page → { surah, ayah_from, ayah_to, ... }
 
             this._encoder = new TextEncoder();
             this._decoder = new TextDecoder();
+            this._focusObserver = null;
         }
 
-        // -------- Public API --------
+        // ───── Public API ─────
 
         init(room, canShare, opts) {
             if (this._initialized) return;
@@ -75,14 +92,9 @@
             this._localIdentity = (opts && opts.localIdentity) || (room && room.localParticipant && room.localParticipant.identity) || null;
             this._initialized = true;
 
-            this._installPanel();
-            this._installButtons();
+            this._observeFocusMode();
 
-            // Students send snap_req on init so they catch the teacher's
-            // active mushaf state (if any). Teachers don't.
-            if (!this._canShare) {
-                this._scheduleSnapReq();
-            }
+            if (!this._canShare) this._scheduleSnapReq();
         }
 
         destroy() {
@@ -91,6 +103,8 @@
             this._clearSnapReqTimers();
             if (this._heartbeatTimer) { clearInterval(this._heartbeatTimer); this._heartbeatTimer = null; }
             if (this._snapReplyTimer) { clearTimeout(this._snapReplyTimer); this._snapReplyTimer = null; }
+            if (this._focusObserver) { this._focusObserver.disconnect(); this._focusObserver = null; }
+            this._removeTile();
             this._snapshotRequesters.clear();
         }
 
@@ -101,67 +115,52 @@
 
         open() {
             this._isOpen = true;
-            this._showOverlay();
-            if (this._canShare) {
-                this._startSharing();
-            }
-            this._renderPage();
+            this._ensureTile();
+            if (this._canShare) this._startSharing();
+            this._renderTile();
         }
 
         close() {
             this._isOpen = false;
-            if (this._canShare && this._isShared) {
-                this._stopSharing();
-            }
-            this._hideOverlay();
+            if (this._canShare && this._isShared) this._stopSharing();
+            this._removeTile();
         }
 
         goToPage(page) {
-            const p = Math.max(MIN_PAGE, Math.min(MAX_PAGE, Number(page) || 1));
+            const p = clampPage(page);
             if (p === this._page) return;
             this._page = p;
             this._highlight = null;
-            this._renderPage();
+            this._renderTile();
             if (this._canShare && this._isShared) {
                 this._publish({
-                    type: 'm_nav',
-                    v: PROTO_VERSION,
-                    id: this._instanceId,
-                    seq: this._nextSeq(),
+                    type: 'm_nav', v: PROTO_VERSION,
+                    id: this._instanceId, seq: this._nextSeq(),
                     p: this._page,
                 });
             }
         }
 
         setHighlight(surah, ayah) {
-            if (surah == null || ayah == null) {
-                this._highlight = null;
-            } else {
-                this._highlight = { s: Number(surah), a: Number(ayah) };
-            }
+            if (surah == null || ayah == null) this._highlight = null;
+            else this._highlight = { s: Number(surah), a: Number(ayah) };
             this._renderHighlight();
             if (this._canShare && this._isShared) {
                 const packet = {
-                    type: 'm_hl',
-                    v: PROTO_VERSION,
-                    id: this._instanceId,
-                    seq: this._nextSeq(),
+                    type: 'm_hl', v: PROTO_VERSION,
+                    id: this._instanceId, seq: this._nextSeq(),
                 };
                 if (this._highlight) packet.h = this._highlight;
                 this._publish(packet);
             }
         }
 
-        // -------- Inbound packet routing --------
+        // ───── Inbound packet routing ─────
 
         onPacket(payload, participant) {
             if (!payload || !payload.length) return;
-            let data;
-            try {
-                data = JSON.parse(this._decoder.decode(payload));
-            } catch (_) { return; }
+            let data; try { data = JSON.parse(this._decoder.decode(payload)); } catch (_) { return; }
             if (!data || data.v !== PROTO_VERSION) return;
-
             const senderId = participant && participant.identity;
             switch (data.type) {
                 case 'm_open':     this._onOpen(data); break;
@@ -174,9 +173,6 @@
         }
 
         _onOpen(data) {
-            // Teacher's heartbeat / open. Students adopt instanceId and
-            // page state idempotently — heartbeats are no-ops if state is
-            // already in sync.
             if (this._canShare) return;
             const isNewInstance = this._instanceId !== data.id;
             this._instanceId = data.id;
@@ -185,12 +181,11 @@
             const prevSeq = this._lastSeqByInstance.get(data.id) || 0;
             if (data.seq < prevSeq) return;
             this._lastSeqByInstance.set(data.id, data.seq);
-
+            this._isOpen = true;
+            this._ensureTile();
             if (isNewInstance || this._page !== data.p) {
                 this._page = data.p;
-                if (!this._isOpen) this._isOpen = true;
-                this._showOverlay();
-                this._renderPage();
+                this._renderTile();
             }
             this._highlight = data.h || null;
             this._renderHighlight();
@@ -202,8 +197,8 @@
             this._isFollowing = false;
             this._instanceId = null;
             this._highlight = null;
-            this._renderHighlight();
-            // Don't force-close the student's viewer — they can keep browsing.
+            this._isOpen = false;
+            this._removeTile();
         }
 
         _onNav(data) {
@@ -212,8 +207,8 @@
             if (this._isSeqStale(data)) return;
             this._page = data.p;
             this._highlight = null;
-            if (!this._isOpen) { this._isOpen = true; this._showOverlay(); }
-            this._renderPage();
+            this._ensureTile();
+            this._renderTile();
         }
 
         _onHl(data) {
@@ -242,8 +237,9 @@
             this._lastSeqByInstance.set(data.id, data.seq);
             this._page = data.p;
             this._highlight = data.h || null;
-            if (!this._isOpen) { this._isOpen = true; this._showOverlay(); }
-            this._renderPage();
+            this._isOpen = true;
+            this._ensureTile();
+            this._renderTile();
         }
 
         _isSeqStale(data) {
@@ -253,7 +249,7 @@
             return false;
         }
 
-        // -------- Sharing (teacher) --------
+        // ───── Sharing (teacher) ─────
 
         _startSharing() {
             if (this._isShared) return;
@@ -261,7 +257,6 @@
             this._seq = 0;
             this._isShared = true;
             this._publish(this._currentOpenPacket());
-            // Heartbeat for late joiners — same packet shape, idempotent.
             if (this._heartbeatTimer) clearInterval(this._heartbeatTimer);
             this._heartbeatTimer = setInterval(() => {
                 if (!this._isShared) return;
@@ -272,10 +267,8 @@
         _stopSharing() {
             if (!this._isShared) return;
             this._publish({
-                type: 'm_close',
-                v: PROTO_VERSION,
-                id: this._instanceId,
-                seq: this._nextSeq(),
+                type: 'm_close', v: PROTO_VERSION,
+                id: this._instanceId, seq: this._nextSeq(),
             });
             this._isShared = false;
             if (this._heartbeatTimer) { clearInterval(this._heartbeatTimer); this._heartbeatTimer = null; }
@@ -283,10 +276,8 @@
 
         _currentOpenPacket() {
             const p = {
-                type: 'm_open',
-                v: PROTO_VERSION,
-                id: this._instanceId,
-                seq: this._nextSeq(),
+                type: 'm_open', v: PROTO_VERSION,
+                id: this._instanceId, seq: this._nextSeq(),
                 p: this._page,
             };
             if (this._highlight) p.h = this._highlight;
@@ -298,17 +289,15 @@
             this._snapshotRequesters.clear();
             if (!to.length || !this._isShared) return;
             const packet = {
-                type: 'm_snap',
-                v: PROTO_VERSION,
-                id: this._instanceId,
-                seq: this._nextSeq(),
+                type: 'm_snap', v: PROTO_VERSION,
+                id: this._instanceId, seq: this._nextSeq(),
                 p: this._page,
             };
             if (this._highlight) packet.h = this._highlight;
             this._publish(packet, { to });
         }
 
-        // -------- Wire I/O --------
+        // ───── Wire I/O ─────
 
         _publish(obj, opts) {
             if (!this._room || !this._room.localParticipant) return;
@@ -318,7 +307,7 @@
             try {
                 this._room.localParticipant.publishData(bytes, options);
             } catch (e) {
-                if (window.MT && window.MT.warn) window.MT.warn('mushaf', 'publish_failed', { err: String(e) });
+                if (window.MT?.warn) window.MT.warn('mushaf', 'publish_failed', { err: String(e) });
             }
         }
 
@@ -327,117 +316,284 @@
         _scheduleSnapReq() {
             this._clearSnapReqTimers();
             for (const delay of SNAP_RETRY_DELAYS_MS) {
-                const t = setTimeout(() => {
+                const tm = setTimeout(() => {
                     if (this._destroyed) return;
                     if (this._isFollowing) return;
                     this._publish({ type: 'm_snap_req', v: PROTO_VERSION });
                 }, delay);
-                this._snapReqTimers.push(t);
+                this._snapReqTimers.push(tm);
             }
         }
-
         _clearSnapReqTimers() {
             for (const t of this._snapReqTimers) clearTimeout(t);
             this._snapReqTimers.length = 0;
         }
 
-        // -------- DOM --------
+        // ───── Tile lifecycle ─────
 
-        _installPanel() {
-            this._overlay = document.getElementById('mushafOverlay');
-            this._pageContainer = document.getElementById('mushafPage');
-            this._pageLabel = document.getElementById('mushafPageLabel');
-            this._highlightLayer = document.getElementById('mushafHighlightLayer');
+        _ensureTile() {
+            if (document.getElementById(TILE_ID)) return;
+            const grid = document.getElementById('videoGrid');
+            if (!grid) return;
+
+            const tile = document.createElement('div');
+            tile.id = TILE_ID;
+            tile.className = 'participant-video relative bg-stone-50 rounded-lg overflow-hidden aspect-video w-full h-full group';
+            tile.dataset.participantId = 'mushaf';
+            tile.dataset.isVirtual = 'true';
+            tile.style.direction = 'rtl';
+
+            // Page content host. Cloned into focus mode unchanged.
+            const page = document.createElement('div');
+            page.className = TILE_CONTENT_CLASS + ' absolute inset-0 flex items-center justify-center text-center px-4 py-2 overflow-hidden';
+            page.style.fontFamily = "'Amiri', serif";
+            tile.appendChild(page);
+
+            // Bottom-left label pill
+            const label = document.createElement('div');
+            label.className = 'absolute bottom-2 left-2 z-20 pointer-events-none';
+            label.innerHTML = `
+                <div class="flex items-center gap-2 bg-black bg-opacity-60 rounded-lg px-3 py-1.5 text-white text-sm shadow">
+                    <i class="ri-book-open-line"></i>
+                    <span>${tt('mushaf.mushaf', 'Mushaf')}</span>
+                    <span class="opacity-75 mushaf-page-label" data-mushaf-page-label>${this._page}</span>
+                </div>
+            `;
+            tile.appendChild(label);
+
+            // Click → toggle focus mode
+            tile.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this._handleTileClick(tile);
+            });
+
+            grid.appendChild(tile);
+            try { window.meeting?.layout?.applyGrid(grid.children.length); } catch (_) {}
         }
 
-        _installButtons() {
-            const bind = (id, fn) => {
-                const el = document.getElementById(id);
-                if (el) el.addEventListener('click', fn);
-            };
-            bind('mushafClose', () => this.close());
-            bind('mushafPrev', () => this.goToPage(this._page + 1)); // Mushaf reading order: next page = +1
-            bind('mushafNext', () => this.goToPage(this._page - 1)); // RTL swipe semantics
-            if (this._canShare) {
-                bind('mushafShareToggle', () => {
+        _removeTile() {
+            const tile = document.getElementById(TILE_ID);
+            const layout = window.meeting?.layout;
+            try {
+                if (layout?.isFocusModeActive && layout.focusedParticipant === 'mushaf') {
+                    layout.exitFocusMode();
+                }
+            } catch (_) {}
+            if (tile && tile.parentNode) tile.parentNode.removeChild(tile);
+            this._hideToolbar();
+            const grid = document.getElementById('videoGrid');
+            try {
+                if (grid) window.meeting?.layout?.applyGrid(grid.children.length);
+            } catch (_) {}
+        }
+
+        _handleTileClick(tile) {
+            const layout = window.meeting?.layout;
+            if (!layout) return;
+            const state = layout.getLayoutState?.();
+            if (state?.isFocusModeActive && state?.focusedParticipant === 'mushaf') {
+                layout.exitFocusMode();
+            } else {
+                layout.applyFocusMode('mushaf', tile);
+            }
+        }
+
+        _observeFocusMode() {
+            const container = document.getElementById(FOCUS_CONTAINER_ID);
+            if (!container) {
+                setTimeout(() => this._observeFocusMode(), 250);
+                return;
+            }
+            this._focusObserver = new MutationObserver(() => {
+                const focused = container.querySelector('#focused-mushaf');
+                if (focused) this._onFocusEnter(focused);
+                else this._onFocusExit();
+            });
+            this._focusObserver.observe(container, { childList: true, subtree: false });
+        }
+
+        _onFocusEnter(focusedTile) {
+            // Re-render the focused clone (so the font scales to the larger area).
+            this._renderPageInto(focusedTile.querySelector('.' + TILE_CONTENT_CLASS));
+            this._showToolbar(focusedTile);
+        }
+
+        _onFocusExit() {
+            this._hideToolbar();
+        }
+
+        // ───── Toolbar ─────
+
+        _showToolbar(focusedTile) {
+            this._hideToolbar();
+            const bar = document.createElement('div');
+            bar.id = 'mushaf-toolbar';
+            bar.className = 'absolute z-[70] left-1/2 -translate-x-1/2 bottom-3 bg-white rounded-full px-3 py-2 shadow-2xl flex items-center gap-2 border border-gray-200';
+            bar.style.pointerEvents = 'auto';
+            bar.addEventListener('click', (e) => e.stopPropagation());
+            const sharing = this._canShare && this._isShared;
+            bar.innerHTML = `
+                <button data-mushaf-act="prev" aria-label="${tt('mushaf.prev_page', 'Previous')}" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 flex items-center justify-center transition"><i class="ri-arrow-right-s-line text-lg"></i></button>
+                <div class="px-2 text-sm font-mono text-gray-700">
+                    <span data-mushaf-page-num>${this._page}</span> / ${MAX_PAGE}
+                </div>
+                <button data-mushaf-act="next" aria-label="${tt('mushaf.next_page', 'Next')}" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 flex items-center justify-center transition"><i class="ri-arrow-left-s-line text-lg"></i></button>
+                ${this._canShare ? `
+                <span class="w-px h-6 bg-gray-300"></span>
+                <button data-mushaf-act="share" aria-label="${tt('mushaf.share', 'Share')}" class="px-3 h-9 rounded-full ${sharing ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'} flex items-center gap-1.5 text-sm font-medium transition">
+                    <i class="ri-share-line"></i>
+                    <span>${sharing ? tt('mushaf.unshare', 'Stop sharing') : tt('mushaf.share', 'Share')}</span>
+                </button>
+                ` : ''}
+            `;
+            focusedTile.appendChild(bar);
+
+            bar.addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                const act = btn.dataset.mushafAct;
+                if (act === 'prev') this.goToPage(this._page + 1);   // RTL: prev = next page number
+                else if (act === 'next') this.goToPage(this._page - 1); // RTL: next = previous page number
+                else if (act === 'share') {
                     if (this._isShared) this._stopSharing();
                     else this._startSharing();
-                    this._refreshShareButton();
-                });
-            } else {
-                const shareBtn = document.getElementById('mushafShareToggle');
-                if (shareBtn) shareBtn.style.display = 'none';
-            }
-            this._refreshShareButton();
-        }
-
-        _refreshShareButton() {
-            const shareBtn = document.getElementById('mushafShareToggle');
-            if (!shareBtn) return;
-            shareBtn.classList.toggle('bg-green-600', this._isShared);
-            shareBtn.classList.toggle('bg-gray-700', !this._isShared);
-        }
-
-        _showOverlay() {
-            if (this._overlay) this._overlay.classList.remove('hidden');
-        }
-
-        _hideOverlay() {
-            if (this._overlay) this._overlay.classList.add('hidden');
-        }
-
-        async _renderPage() {
-            if (!this._pageContainer) return;
-            const page = this._page;
-            if (this._pageLabel) this._pageLabel.textContent = String(page);
-
-            await this._loadPageFont(page).catch(() => null);
-
-            // Use the data file's per-ayah glyph string if available; otherwise
-            // a textual placeholder so sync still works in dev/test envs.
-            const data = (window.QuranData && window.QuranData.pageGlyphs) ? window.QuranData.pageGlyphs(page) : null;
-            this._pageContainer.style.fontFamily = `'QPC-${page}', 'Amiri', serif`;
-            this._pageContainer.style.direction = 'rtl';
-            this._pageContainer.innerHTML = '';
-            if (data && data.lines && data.lines.length) {
-                for (const line of data.lines) {
-                    const div = document.createElement('div');
-                    div.className = 'mushaf-line';
-                    div.dataset.surah = String(line.surah || '');
-                    div.dataset.ayah = String(line.ayah || '');
-                    div.textContent = line.text;
-                    this._pageContainer.appendChild(div);
+                    this._showToolbar(focusedTile); // re-render share-state styling
                 }
-            } else {
-                const fallback = document.createElement('div');
-                fallback.className = 'text-center text-gray-500 py-12';
-                fallback.textContent = (typeof t === 'function')
-                    ? t('mushaf.page_label') + ' ' + page
-                    : 'صفحة ' + page;
-                this._pageContainer.appendChild(fallback);
-            }
+            });
+        }
+
+        _hideToolbar() {
+            const bar = document.getElementById('mushaf-toolbar');
+            if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
+        }
+
+        // ───── Render ─────
+
+        _renderTile() {
+            // Update the label pill page number first
+            document.querySelectorAll('[data-mushaf-page-label]').forEach(el => { el.textContent = this._page; });
+            document.querySelectorAll('[data-mushaf-page-num]').forEach(el => { el.textContent = this._page; });
+
+            // Paint into all .mushaf-page elements (tile + focused clone).
+            document.querySelectorAll('.' + TILE_CONTENT_CLASS).forEach((el) => {
+                this._renderPageInto(el);
+            });
             this._renderHighlight();
         }
 
+        async _renderPageInto(host) {
+            if (!host) return;
+            // Try server-side per-page data first; fall back to surah catalog.
+            const data = await this._fetchPageData(this._page).catch(() => null);
+            await this._loadPageFont(this._page).catch(() => null);
+
+            host.innerHTML = '';
+            host.style.direction = 'rtl';
+            host.style.fontFamily = `'QPC-${this._page}', 'Amiri', serif`;
+
+            if (data && data.glyphs) {
+                // KFGQPC glyph payload (per-page font) — pixel-accurate render.
+                host.style.fontFamily = `'QPC-${this._page}', 'Amiri', serif`;
+                const inner = document.createElement('div');
+                inner.className = 'w-full h-full flex flex-col justify-evenly items-center text-[clamp(14px,2.6vw,42px)] leading-loose text-gray-900';
+                for (const line of (data.glyphs.lines || [])) {
+                    const div = document.createElement('div');
+                    div.className = 'mushaf-line w-full text-center';
+                    div.dataset.surah = String(line.surah || '');
+                    div.dataset.ayah = String(line.ayah || '');
+                    div.textContent = line.text;
+                    inner.appendChild(div);
+                }
+                host.appendChild(inner);
+                return;
+            }
+
+            if (data && data.verses) {
+                // Verse-text fallback (Amiri font, no KFGQPC). Renders Arabic
+                // text directly — not pixel-identical to mobile but legible
+                // and accurate for memorization use.
+                host.style.fontFamily = "'Amiri', serif";
+                const inner = document.createElement('div');
+                inner.className = 'w-full h-full overflow-hidden flex flex-col items-stretch justify-start text-[clamp(13px,2.2vw,30px)] leading-[2.2] text-gray-900 px-4 py-3';
+                // Header: surah name + page number
+                const header = document.createElement('div');
+                header.className = 'shrink-0 text-center pb-2 mb-2 border-b border-gray-200 text-[clamp(11px,1.4vw,18px)] text-gray-600 font-bold';
+                header.style.fontFamily = "'Cairo', 'Tajawal', sans-serif";
+                header.textContent = (data.surah_name_ar || '') + ' — ' + tt('mushaf.page_label', 'Page') + ' ' + this._page;
+                inner.appendChild(header);
+                const body = document.createElement('div');
+                body.className = 'flex-1 overflow-hidden mushaf-verses';
+                for (const v of data.verses) {
+                    const span = document.createElement('span');
+                    span.className = 'mushaf-line';
+                    span.dataset.surah = String(v.surah);
+                    span.dataset.ayah = String(v.ayah);
+                    span.textContent = v.text + ' ۝';
+                    // Ayah number marker in tashkeel style
+                    const marker = document.createElement('span');
+                    marker.className = 'inline-block mx-1 px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[0.6em] align-middle';
+                    marker.style.fontFamily = "'Cairo', 'Tajawal', sans-serif";
+                    marker.textContent = String(v.ayah);
+                    span.appendChild(marker);
+                    span.appendChild(document.createTextNode(' '));
+                    body.appendChild(span);
+                }
+                inner.appendChild(body);
+                host.appendChild(inner);
+                return;
+            }
+
+            // Final fallback: surah catalog metadata only.
+            const meta = this._surahMetaForPage(this._page);
+            host.style.fontFamily = "'Cairo', 'Tajawal', sans-serif";
+            const fallback = document.createElement('div');
+            fallback.className = 'flex flex-col items-center gap-2 text-gray-700';
+            fallback.innerHTML = `
+                <div class="text-[clamp(14px,2vw,28px)] font-bold">${meta.surahNameAr || ''}</div>
+                <div class="text-[clamp(11px,1.4vw,18px)] opacity-75">${tt('mushaf.page_label', 'Page')} <span class="font-mono">${this._page}</span> / ${MAX_PAGE}</div>
+                ${meta.juz ? `<div class="text-[clamp(10px,1.2vw,15px)] opacity-60">${tt('mushaf.juz', 'Juz')} ${meta.juz}</div>` : ''}
+            `;
+            host.appendChild(fallback);
+        }
+
         _renderHighlight() {
-            if (!this._highlightLayer) return;
-            this._highlightLayer.innerHTML = '';
-            if (!this._highlight || !this._pageContainer) return;
-            const { s, a } = this._highlight;
-            const lines = this._pageContainer.querySelectorAll('.mushaf-line');
-            const containerRect = this._pageContainer.getBoundingClientRect();
-            lines.forEach((line) => {
-                if (Number(line.dataset.surah) !== s || Number(line.dataset.ayah) !== a) return;
-                const r = line.getBoundingClientRect();
-                const overlay = document.createElement('div');
-                overlay.className = 'absolute bg-amber-200/40 rounded';
-                overlay.style.left = (r.left - containerRect.left) + 'px';
-                overlay.style.top = (r.top - containerRect.top) + 'px';
-                overlay.style.width = r.width + 'px';
-                overlay.style.height = r.height + 'px';
-                this._highlightLayer.appendChild(overlay);
+            // Mark highlighted ayah lines across all rendered tiles.
+            document.querySelectorAll('.' + TILE_CONTENT_CLASS + ' .mushaf-line').forEach((el) => {
+                const s = Number(el.dataset.surah);
+                const a = Number(el.dataset.ayah);
+                const on = this._highlight && this._highlight.s === s && this._highlight.a === a;
+                el.style.backgroundColor = on ? 'rgba(251, 191, 36, 0.35)' : '';
+                el.style.borderRadius = on ? '4px' : '';
             });
         }
+
+        // ───── Data sources ─────
+
+        async _fetchPageData(page) {
+            if (this._pageDataCache.has(page)) return this._pageDataCache.get(page);
+            // Hit the per-page JSON endpoint. Server may return 404 (no data
+            // shipped) — we cache the null so we don't retry every render.
+            try {
+                const res = await fetch(`/mushaf/page/${page}.json`, { credentials: 'same-origin' });
+                if (!res.ok) throw new Error('no data');
+                const json = await res.json();
+                this._pageDataCache.set(page, json);
+                return json;
+            } catch (_) {
+                this._pageDataCache.set(page, null);
+                return null;
+            }
+        }
+
+        _surahMetaForPage(page) {
+            if (window.QuranData && typeof window.QuranData.surahForPage === 'function') {
+                return window.QuranData.surahForPage(page) || {};
+            }
+            return {};
+        }
+
+        // ───── Per-page QPC font (best-effort) ─────
 
         _loadPageFont(page) {
             if (this._fontPromises.has(page)) {
@@ -450,6 +606,8 @@
                 document.fonts.add(ff);
                 this._touchLru(page);
             });
+            // Don't bubble missing-font errors — fallbacks above handle it.
+            promise.catch(() => {});
             this._fontPromises.set(page, promise);
             return promise;
         }
@@ -461,10 +619,6 @@
             while (this._fontLru.length > FONT_LRU_SIZE) {
                 const evicted = this._fontLru.pop();
                 this._fontPromises.delete(evicted);
-                // Note: we don't actively unload the FontFace from document.fonts
-                // — once `document.fonts.add(ff)` is called the browser owns the
-                // lifecycle. Dropping our Promise entry is enough to let GC
-                // reclaim our reference.
             }
         }
     }

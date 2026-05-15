@@ -2,26 +2,37 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Streams KFGQPC QPC v4 per-page mushaf fonts to the browser for the
- * interactive Mushaf overlay.
+ * Serves Mushaf assets to the in-meeting interactive viewer:
  *
- * Files live under storage/app/public/mushaf/fonts/{page}.woff2 (one-time
- * deploy artifact — 604 files, ~75 MB total). Cache headers are aggressive
- * because page-font content never changes within a release.
+ *   1. `show(page)` — streams KFGQPC QPC v4 per-page WOFF2 fonts from
+ *      `storage/app/public/mushaf/fonts/{page}.woff2`. Aggressive cache
+ *      headers because per-page font content is immutable within a
+ *      release. In production these can be served directly by nginx.
  *
- * In nginx environments these files can be served directly without ever
- * hitting PHP; this controller is the fallback / canonical handler.
+ *   2. `page(page)` — returns per-page JSON containing either the KFGQPC
+ *      glyph payload (preferred, pixel-identical to mobile) OR a
+ *      verse-text fallback if only `pages/{page}.json` is present. If
+ *      neither is bundled, returns 404 and the JS module falls back to
+ *      the client-side surah catalog.
+ *
+ * No assets need to be present for the meeting to work — the JS gracefully
+ * downgrades through several fallback layers.
  */
 class MushafFontController extends Controller
 {
+    private const MIN_PAGE = 1;
+
+    private const MAX_PAGE = 604;
+
     public function show(int $page): Response|BinaryFileResponse
     {
-        if ($page < 1 || $page > 604) {
+        if ($page < self::MIN_PAGE || $page > self::MAX_PAGE) {
             abort(404);
         }
 
@@ -32,12 +43,35 @@ class MushafFontController extends Controller
             abort(404);
         }
 
-        $absolute = $disk->path($relativePath);
-
-        return response()->file($absolute, [
+        return response()->file($disk->path($relativePath), [
             'Content-Type' => 'font/woff2',
             'Cache-Control' => 'public, max-age=31536000, immutable',
             'Access-Control-Allow-Origin' => '*',
         ]);
+    }
+
+    public function page(int $page): JsonResponse
+    {
+        if ($page < self::MIN_PAGE || $page > self::MAX_PAGE) {
+            abort(404);
+        }
+
+        $disk = Storage::disk('public');
+        $relativePath = "mushaf/pages/{$page}.json";
+
+        if (! $disk->exists($relativePath)) {
+            abort(404);
+        }
+
+        $body = $disk->get($relativePath);
+        $decoded = json_decode($body ?? '', true);
+
+        if (! is_array($decoded)) {
+            abort(404);
+        }
+
+        return response()
+            ->json($decoded)
+            ->header('Cache-Control', 'public, max-age=31536000, immutable');
     }
 }

@@ -517,6 +517,41 @@
             ended_by_teacher: @json(__('meetings.session.ended_by_teacher')),
             kicked_from_session: @json(__('meetings.session.kicked_from_session')),
         },
+        // Whiteboard + Mushaf — used by public/js/livekit/whiteboard.js and mushaf.js
+        whiteboard: {
+            whiteboard: @json(__('whiteboard.whiteboard')),
+            pen: @json(__('whiteboard.pen')),
+            eraser: @json(__('whiteboard.eraser')),
+            undo: @json(__('whiteboard.undo')),
+            redo: @json(__('whiteboard.redo')),
+            fit: @json(__('whiteboard.fit')),
+            clear: @json(__('whiteboard.clear')),
+            clear_confirm: @json(__('whiteboard.clear_confirm')),
+            close: @json(__('whiteboard.close')),
+            opened_by_teacher: @json(__('whiteboard.opened_by_teacher')),
+            waiting_for_teacher: @json(__('whiteboard.waiting_for_teacher')),
+            width_label: @json(__('whiteboard.width_label')),
+            color_black: @json(__('whiteboard.color_black')),
+            color_red: @json(__('whiteboard.color_red')),
+            color_blue: @json(__('whiteboard.color_blue')),
+            color_green: @json(__('whiteboard.color_green')),
+            color_yellow: @json(__('whiteboard.color_yellow')),
+            color_orange: @json(__('whiteboard.color_orange')),
+            color_purple: @json(__('whiteboard.color_purple')),
+        },
+        mushaf: {
+            mushaf: @json(__('mushaf.mushaf')),
+            share: @json(__('mushaf.share')),
+            unshare: @json(__('mushaf.unshare')),
+            close: @json(__('mushaf.close')),
+            search: @json(__('mushaf.search')),
+            surah_picker: @json(__('mushaf.surah_picker')),
+            waiting_for_teacher: @json(__('mushaf.waiting_for_teacher')),
+            page_label: @json(__('mushaf.page_label')),
+            next_page: @json(__('mushaf.next_page')),
+            prev_page: @json(__('mushaf.prev_page')),
+            juz: @json(__('mushaf.juz')),
+        },
     };
 
     /**
@@ -698,6 +733,9 @@
             return Promise.all([
                 loadScript('{{ asset("js/livekit/whiteboard.js") }}?v={{ filemtime(public_path("js/livekit/whiteboard.js")) }}', 'whiteboard'),
                 loadScript('{{ asset("js/livekit/mushaf.js") }}?v={{ filemtime(public_path("js/livekit/mushaf.js")) }}', 'mushaf'),
+                @if(file_exists(public_path('js/mushaf/quran-data.js')))
+                loadScript('{{ asset("js/mushaf/quran-data.js") }}?v={{ filemtime(public_path("js/mushaf/quran-data.js")) }}', 'quranData'),
+                @endif
             ]);
         })
         .then(() => {
@@ -1679,13 +1717,9 @@ function completeSession(sessionId) {
             <!-- Sidebar moved outside overflow-hidden container to prevent clipping -->
             <x-meetings.sidebar-panels :userType="$userType" />
 
-            {{-- Whiteboard + Mushaf overlays — fixed-positioned, hidden by
-                 default. Mounted next to the sidebar so they sit above the
-                 video grid but inside the meeting container. --}}
-            <x-meetings.whiteboard-panel :canControl="in_array($userType, ['quran_teacher', 'academic_teacher'])" />
-            @if($isQuranSession ?? false)
-            <x-meetings.mushaf-panel :canShare="in_array($userType, ['quran_teacher'])" />
-            @endif
+            {{-- Whiteboard + Mushaf are NOT mounted as overlays — the JS
+                 modules inject virtual participant tiles into #videoGrid
+                 on demand (see whiteboard.js / mushaf.js _ensureTile). --}}
 
             <x-meetings.control-bar :userType="$userType" />
         </div>
@@ -1788,33 +1822,55 @@ function completeSession(sessionId) {
                         // Initialize meeting with new modular system
                         window.meeting = await initializeLiveKitMeeting(meetingConfig);
 
-                        // Feature modules — whiteboard + mushaf. Both are
-                        // teacher-driven; students get a read-only/follow
-                        // view via the snapshot protocol. Mushaf only
-                        // mounts on Quran sessions (per CLAUDE.md session
-                        // model split).
-                        try {
-                            const _canControl = {{ in_array($userType, ['quran_teacher', 'academic_teacher']) ? 'true' : 'false' }};
-                            const _room = window.meeting?.connection?.getRoom?.();
-                            const _localId = _room?.localParticipant?.identity || null;
-                            if (window.whiteboard && _room) {
-                                window.whiteboard.init(_room, _canControl, { localIdentity: _localId });
-                                const wbBtn = document.getElementById('toggleWhiteboard');
-                                if (wbBtn) wbBtn.addEventListener('click', () => window.whiteboard.toggle());
-                            }
-                            @if($isQuranSession ?? false)
-                            if (window.mushaf && _room) {
-                                window.mushaf.init(_room, _canControl, { localIdentity: _localId });
-                                const muBtn = document.getElementById('toggleMushaf');
-                                if (muBtn) {
-                                    muBtn.style.display = '';
-                                    muBtn.addEventListener('click', () => window.mushaf.toggle());
+                        // Feature modules — whiteboard + mushaf. The JS
+                        // modules render virtual participant tiles inside
+                        // #videoGrid (no separate overlay panel). Teachers
+                        // toggle them via the control-bar; students see them
+                        // appear automatically when the teacher publishes
+                        // the respective `*_open` packet.
+                        //
+                        // The module scripts load in parallel with the core
+                        // modules, so they may not be on `window` yet at
+                        // this point if the user clicked Join very fast.
+                        // Poll up to 5s for window.whiteboard / window.mushaf.
+                        const _canControl = {{ in_array($userType, ['quran_teacher', 'academic_teacher']) ? 'true' : 'false' }};
+                        const _isQuranSession = {{ ($isQuranSession ?? false) ? 'true' : 'false' }};
+                        (function bootstrapFeatureModules(attempt) {
+                            try {
+                                const _room = window.meeting?.connection?.getRoom?.();
+                                const _localId = _room?.localParticipant?.identity || null;
+                                if (!_room) {
+                                    if (attempt < 25) return setTimeout(() => bootstrapFeatureModules(attempt + 1), 200);
+                                    return;
                                 }
+                                if (window.whiteboard && !window.whiteboard._initialized) {
+                                    window.whiteboard.init(_room, _canControl, { localIdentity: _localId });
+                                    const wbBtn = document.getElementById('toggleWhiteboard');
+                                    if (wbBtn && !wbBtn.dataset.wbBound) {
+                                        wbBtn.addEventListener('click', () => window.whiteboard.toggle());
+                                        wbBtn.dataset.wbBound = '1';
+                                    }
+                                }
+                                if (_isQuranSession && window.mushaf && !window.mushaf._initialized) {
+                                    window.mushaf.init(_room, _canControl, { localIdentity: _localId });
+                                    const muBtn = document.getElementById('toggleMushaf');
+                                    if (muBtn) {
+                                        muBtn.style.display = '';
+                                        if (!muBtn.dataset.muBound) {
+                                            muBtn.addEventListener('click', () => window.mushaf.toggle());
+                                            muBtn.dataset.muBound = '1';
+                                        }
+                                    }
+                                }
+                                const needWb = !window.whiteboard;
+                                const needMushaf = _isQuranSession && !window.mushaf;
+                                if ((needWb || needMushaf) && attempt < 25) {
+                                    setTimeout(() => bootstrapFeatureModules(attempt + 1), 200);
+                                }
+                            } catch (e) {
+                                console.warn('Feature module init failed', e);
                             }
-                            @endif
-                        } catch (e) {
-                            console.warn('Feature module init failed', e);
-                        }
+                        })(0);
 
                         // `?hud=1` URL flag: show a live performance overlay
                         // top-right. Captures real-time signals that telemetry
