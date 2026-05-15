@@ -38,7 +38,8 @@ class PatternALegacyBackfill extends Command
                             {--academy= : Restrict to one academy id}
                             {--cycle= : Process only one specific cycle id (debug)}
                             {--strict=true : Skip cycles that contain any session whose report disagrees with the legacy flag (default: strict). Pass --strict=false to include disputed cycles.}
-                            {--cap-to-aggregate : When the legacy flag is set on more sessions than the cycle aggregate, synthesize only the chronologically-earliest sessions_used rows. Off by default.}';
+                            {--cap-to-aggregate : When the legacy flag is set on more sessions than the cycle aggregate, synthesize only the chronologically-earliest sessions_used rows. Off by default.}
+                            {--allow-aggregate-shortfall : When the legacy flag covers fewer sessions than cycle.sessions_used, synthesize the rows we have and record the gap in cycle.metadata.unaccounted_sessions_used. Off by default.}';
 
     protected $description = 'Pattern A — synthesize session_consumption rows from legacy subscription_counted flag.';
 
@@ -53,6 +54,7 @@ class PatternALegacyBackfill extends Command
             $strict = true;
         }
         $capToAggregate = (bool) $this->option('cap-to-aggregate');
+        $allowShortfall = (bool) $this->option('allow-aggregate-shortfall');
 
         $query = SubscriptionCycle::query()
             ->where('v2_consumption_complete', false)
@@ -122,13 +124,13 @@ class PatternALegacyBackfill extends Command
         $bar = $this->output->createProgressBar(min($total, $limit ?? $total));
         $bar->start();
 
-        $query->orderBy('id')->chunkById(50, function ($chunk) use ($apply, $capToAggregate, $limit, &$cyclesTouched, &$cyclesSkipped, &$rowsWritten, &$rowsSkipped, &$errors, $bar) {
+        $query->orderBy('id')->chunkById(50, function ($chunk) use ($apply, $capToAggregate, $allowShortfall, $limit, &$cyclesTouched, &$cyclesSkipped, &$rowsWritten, &$rowsSkipped, &$errors, $bar) {
             foreach ($chunk as $cycle) {
                 if ($limit !== null && $cyclesTouched + $cyclesSkipped >= $limit) {
                     return false;
                 }
 
-                $result = $this->processCycle($cycle, $apply, $capToAggregate);
+                $result = $this->processCycle($cycle, $apply, $capToAggregate, $allowShortfall);
 
                 if ($result['error'] !== null) {
                     $errors++;
@@ -171,7 +173,7 @@ class PatternALegacyBackfill extends Command
     /**
      * @return array{error: ?string, skipped: bool, rows_written: int, rows_skipped: int}
      */
-    private function processCycle(SubscriptionCycle $cycle, bool $apply, bool $capToAggregate): array
+    private function processCycle(SubscriptionCycle $cycle, bool $apply, bool $capToAggregate, bool $allowShortfall): array
     {
         $result = ['error' => null, 'skipped' => false, 'rows_written' => 0, 'rows_skipped' => 0];
 
@@ -206,7 +208,7 @@ class PatternALegacyBackfill extends Command
         }
 
         try {
-            DB::transaction(function () use ($cycle, $candidates, &$result) {
+            DB::transaction(function () use ($cycle, $candidates, $allowShortfall, &$result) {
                 foreach ($candidates as $cand) {
                     // Idempotent: skip if a non-reversed row already exists
                     // for this (session_type, session_id, student_user_id).
@@ -260,28 +262,45 @@ class PatternALegacyBackfill extends Command
                     ->whereNull('reversed_at')
                     ->count();
                 $expected = (int) $cycle->sessions_used;
+
+                $cycleUpdate = ['v2_consumption_complete' => true];
+                $metadataPatch = null;
+
                 if ($consumptionCount !== $expected) {
-                    throw new \RuntimeException(sprintf(
-                        'assertion failed: consumption_count=%d != cycle.sessions_used=%d',
-                        $consumptionCount,
-                        $expected,
-                    ));
+                    if ($allowShortfall && $consumptionCount < $expected) {
+                        $gap = $expected - $consumptionCount;
+                        $existingMetadata = $cycle->metadata ?? [];
+                        $newMetadata = array_merge($existingMetadata, [
+                            'unaccounted_sessions_used' => $gap,
+                            'unaccounted_recorded_at' => Carbon::now()->toAtomString(),
+                            'unaccounted_recorded_by_command' => 'subscriptions:fix-pattern-a-legacy-backfill',
+                        ]);
+                        $cycleUpdate['metadata'] = json_encode($newMetadata);
+                        $metadataPatch = $newMetadata;
+                    } else {
+                        throw new \RuntimeException(sprintf(
+                            'assertion failed: consumption_count=%d != cycle.sessions_used=%d',
+                            $consumptionCount,
+                            $expected,
+                        ));
+                    }
                 }
 
-                // Flip the gate.
                 BackfillLog::create([
                     'bug_id' => 'cleanup-pattern-a',
                     'table_name' => 'subscription_cycles',
                     'row_id' => $cycle->id,
-                    'column_name' => 'v2_consumption_complete',
+                    'column_name' => $metadataPatch === null ? 'v2_consumption_complete' : 'v2_consumption_complete+metadata',
                     'original_value' => 'false',
-                    'new_value' => 'true',
+                    'new_value' => $metadataPatch === null
+                        ? 'true'
+                        : json_encode(['v2_consumption_complete' => true, 'metadata' => $metadataPatch]),
                     'backfill_command' => 'subscriptions:fix-pattern-a-legacy-backfill',
                     'ran_at' => Carbon::now(),
                 ]);
                 DB::table('subscription_cycles')
                     ->where('id', $cycle->id)
-                    ->update(['v2_consumption_complete' => true]);
+                    ->update($cycleUpdate);
             });
         } catch (\Throwable $e) {
             $result['error'] = $e->getMessage();
