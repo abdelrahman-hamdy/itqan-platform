@@ -131,6 +131,19 @@ class SubscriptionCreationService
                 return $reused;
             }
 
+            // Diagnostic: retry-window probe missed. Log enough context to
+            // understand why (population on disk vs. predicate). This is
+            // the signal we'd use to identify why students like #552 / #828
+            // end up with 6-13 cancelled-empty rows instead of having the
+            // window reuse them.
+            Log::info('subscription.retry_window_miss', [
+                'type' => $type,
+                'academy_id' => $data['academy_id'] ?? null,
+                'student_id' => $data['student_id'] ?? null,
+                'duplicate_key_values' => $duplicateKeyValues,
+                'window_minutes' => (int) config('subscriptions.duplicates.retry_window_minutes', 60),
+            ]);
+
             // Cancel any existing pending subscriptions for this combination
             $this->cancelDuplicatePending(
                 $type,

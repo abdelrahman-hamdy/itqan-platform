@@ -342,6 +342,12 @@ class AppServiceProvider extends ServiceProvider
         AcademicSubscription::observe(SubscriptionRowGuard::class);
         CourseSubscription::observe(SubscriptionRowGuard::class);
 
+        // INV-B4 defensive guard — block writes where cycle.sessions_used
+        // would exceed cycle.total_sessions. Repaired 10 historical cycles
+        // in this state during the 2026-05-15 cleanup; this prevents the
+        // same shape from recurring.
+        \App\Models\SubscriptionCycle::observe(\App\Observers\SubscriptionCycleGuard::class);
+
         // Register User Observer for admin-created users auto-verification
         // and admin-academy sync
         User::observe(UserObserver::class);

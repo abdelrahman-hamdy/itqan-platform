@@ -177,6 +177,8 @@ trait PreventsDuplicatePendingSubscriptions
             'cancellation_reason' => $reason ?? config('subscriptions.cancellation_reasons.expired'),
             'auto_renew' => false,
         ]);
+
+        $this->assertCancelInvariants(__METHOD__);
     }
 
     /**
@@ -197,6 +199,54 @@ trait PreventsDuplicatePendingSubscriptions
             'cancellation_reason' => config('subscriptions.cancellation_reasons.payment_failed'),
             'auto_renew' => false,
         ]);
+
+        $this->assertCancelInvariants(__METHOD__);
+    }
+
+    /**
+     * Defensive post-cancel guard: the cancel paths above should never leave
+     * a row where `cancelled_at` is set but `ends_at`, `cancellation_reason`,
+     * or `payment_status` are NULL/inconsistent. Future regressions get
+     * caught here instead of surfacing weeks later via the "ends in 7 days"
+     * supervisor complaint.
+     *
+     * Logs the violation to the `subscriptions` channel so the issue is
+     * traceable in production observability. Throws so the calling code
+     * fails fast.
+     */
+    protected function assertCancelInvariants(string $caller): void
+    {
+        $this->refresh();
+
+        $violations = [];
+        if ($this->cancelled_at === null) {
+            $violations[] = 'cancelled_at is null';
+        }
+        if ($this->ends_at === null) {
+            $violations[] = 'ends_at is null';
+        }
+        if (empty($this->cancellation_reason)) {
+            $violations[] = 'cancellation_reason is empty';
+        }
+
+        if ($violations === []) {
+            return;
+        }
+
+        \Illuminate\Support\Facades\Log::warning('subscription.cancel_invariant_failed', [
+            'subscription_id' => $this->getKey(),
+            'subscription_type' => $this->getMorphClass(),
+            'caller' => $caller,
+            'violations' => $violations,
+        ]);
+
+        throw new \RuntimeException(sprintf(
+            'cancel invariant failed on %s#%d after %s: %s',
+            $this->getMorphClass(),
+            $this->getKey(),
+            $caller,
+            implode(', ', $violations),
+        ));
     }
 
     /**
