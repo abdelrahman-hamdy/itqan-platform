@@ -1,3 +1,4 @@
+@inject('subscriptionPresentation', \App\Services\Subscription\SubscriptionPresentation::class)
 <x-layouts.student :title="__('student.profile.page_title')">
 
   <div>
@@ -33,38 +34,19 @@
             'hideDots' => true,
             'collapsible' => true,
             'startCollapsed' => $quranPrivateSessions->isEmpty(),
-            'items' => $quranPrivateSessions->map(function($subscription) {
+            'items' => $quranPrivateSessions->map(function($subscription) use ($subscriptionPresentation) {
               $nextSession = $subscription->sessions->where('scheduled_at', '>', now())->first();
 
-              // Compute descriptive status based on subscription status + payment status
-              $status = $subscription->status;
-              $paymentStatus = $subscription->payment_status ?? null;
-
-              // Override status display for better UX
-              if ($status === \App\Enums\SessionSubscriptionStatus::PENDING) {
-                if ($paymentStatus === \App\Enums\SubscriptionPaymentStatus::PENDING ||
-                    $paymentStatus === \App\Enums\SubscriptionPaymentStatus::UNPAID) {
-                  // Show custom status for pending payment
-                  $statusDisplay = (object)[
-                    'label' => __('components.circle.header.awaiting_payment'),
-                    'badgeClasses' => 'bg-yellow-100 text-yellow-800'
-                  ];
-                } elseif ($paymentStatus === \App\Enums\SubscriptionPaymentStatus::FAILED) {
-                  $statusDisplay = (object)[
-                    'label' => __('components.circle.header.payment_failed'),
-                    'badgeClasses' => 'bg-red-100 text-red-800'
-                  ];
-                } else {
-                  $statusDisplay = $status; // Use enum default
-                }
-              } elseif ($subscription->is_sessions_exhausted) {
-                $statusDisplay = (object)[
-                  'label' => __('student.subscriptions.sessions_exhausted'),
-                  'badgeClasses' => 'bg-amber-100 text-amber-800'
-                ];
-              } else {
-                $statusDisplay = $status; // Use enum for other statuses
-              }
+              // Issue #3: route every subscription badge through the canonical
+              // SubscriptionPresentation::viewStateFor() so the home page and
+              // the subscriptions page render the same label for the same
+              // (status, payment_status) tuple. Reproducing the if/else
+              // ladder here is INV-J1 / INV-J2 regression.
+              $viewState = $subscriptionPresentation->viewStateFor($subscription);
+              $statusDisplay = (object)[
+                'label' => $viewState->label(),
+                'badgeClasses' => $viewState->badgeClasses(),
+              ];
 
               // Calculate actual progress from subscription data
               $progress = 0;

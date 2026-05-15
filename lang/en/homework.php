@@ -2,6 +2,8 @@
 
 return [
     'default_title' => 'Homework',
+    'quran_homework' => 'Quran Homework',
+    'quran_subject' => 'Holy Quran',
 
     'types' => [
         'academic_session' => 'Academic Session',

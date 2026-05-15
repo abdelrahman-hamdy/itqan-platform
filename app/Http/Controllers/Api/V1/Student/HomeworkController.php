@@ -5,352 +5,184 @@ namespace App\Http\Controllers\Api\V1\Student;
 use App\Enums\HomeworkSubmissionStatus;
 use App\Enums\SubscriptionType;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\Homework\AcademicHomeworkDetailResource;
+use App\Http\Resources\Api\V1\Homework\HomeworkSummaryResource;
+use App\Http\Resources\Api\V1\Homework\InteractiveHomeworkDetailResource;
+use App\Http\Resources\Api\V1\Homework\QuranHomeworkDetailResource;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Models\QuranSession;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * Student homework API.
+ *
+ * The list endpoint paginates a heterogeneous union of three homework sources
+ * (academic / quran / interactive) at the database level. Each item is shaped
+ * by HomeworkSummaryResource using the `homework_type` discriminator set
+ * before resource construction. The detail endpoint dispatches to one of
+ * three Resource classes per type.
+ */
 class HomeworkController extends Controller
 {
     use ApiResponses;
 
+    private const TAB_UPCOMING = 'upcoming';
+
+    private const TAB_PAST = 'past';
+
+    private const TAB_ALL = 'all';
+
     /**
-     * Get all homework assignments for the student.
+     * GET /api/v1/student/homework
+     *
+     * Query params:
+     * - type=academic|quran|interactive (optional single-type filter)
+     * - status=upcoming|past|all|<HomeworkSubmissionStatus value> (default: all)
+     * - page, per_page (per_page clamped to [1, 50], default 15)
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $status = $request->get('status'); // pending, submitted, graded, overdue
-        $typeFilter = $request->get('type'); // quran, academic, interactive
-        $homework = collect();
+        $studentProfileId = $user->studentProfile?->id;
+        $typeFilter = $request->query('type');
+        $statusFilter = (string) $request->query('status', self::TAB_ALL);
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = min(50, max(1, (int) $request->query('per_page', 15)));
 
-        // Academic homework
-        if (! $typeFilter || $typeFilter === 'academic') {
-            $academicSessions = AcademicSession::where('student_id', $user->id)
-                ->whereNotNull('homework_description')
-                ->where('homework_description', '!=', '')
-                ->with(['academicTeacher.user', 'academicSubscription', 'homeworkSubmissions' => function ($q) use ($user) {
-                    $q->where('student_id', $user->id);
-                }])
-                ->orderBy('scheduled_at', 'desc')
-                ->limit(100)
-                ->get();
+        $unionQuery = $this->unionIndexQuery($user->id, $studentProfileId, $typeFilter);
 
-            foreach ($academicSessions as $session) {
-                $submission = $session->homeworkSubmissions->first();
-                $currentStatus = $this->resolveSubmissionStatus($submission);
-
-                if ($status && $currentStatus !== $status) {
-                    continue;
-                }
-
-                $homework->push([
-                    'id' => $session->id,
-                    'type' => 'academic',
-                    'session_id' => $session->id,
-                    'title' => $session->title ?? __('homework.default_title'),
-                    'subject' => $session->academicSubscription?->subject_name,
-                    'description' => $session->homework_description,
-                    'file' => $session->homework_file,
-                    'is_assigned' => (bool) $session->homework_assigned,
-                    'status' => $currentStatus,
-                    'can_submit' => true,
-                    'teacher' => $session->academicTeacher?->user ? [
-                        'id' => $session->academicTeacher->user->id,
-                        'name' => $session->academicTeacher->user->name,
-                    ] : null,
-                    'submission' => $submission ? [
-                        'id' => $submission->id,
-                        'submitted_at' => $submission->created_at?->toISOString(),
-                        'grade' => $submission->grade,
-                        'feedback' => $submission->feedback,
-                        'status' => $submission->status,
-                    ] : null,
-                    'session_date' => $session->scheduled_at?->toISOString(),
-                ]);
-            }
+        if ($unionQuery === null) {
+            return $this->success([
+                'homework' => [],
+                'pagination' => $this->paginationPayload(0, $page, $perPage),
+                'stats' => ['upcoming' => 0, 'past' => 0, 'total' => 0],
+            ], __('api.success'));
         }
 
-        // Quran homework (view-only for students — no submission)
-        if (! $typeFilter || $typeFilter === 'quran') {
-            $quranSessions = QuranSession::where('student_id', $user->id)
-                ->whereHas('sessionHomework')
-                ->with(['quranTeacher', 'sessionHomework'])
-                ->orderBy('scheduled_at', 'desc')
-                ->limit(100)
-                ->get();
+        $stats = $this->computeStats($user->id, $studentProfileId, $typeFilter);
 
-            foreach ($quranSessions as $session) {
-                $hw = $session->sessionHomework;
-                if (! $hw) {
-                    continue;
-                }
+        $tabFilter = $this->normaliseTabFilter($statusFilter);
+        $rowsCount = $this->countForTab($user->id, $studentProfileId, $typeFilter, $tabFilter, $statusFilter);
 
-                // Quran homework doesn't have submission status
-                if ($status && $status !== 'pending') {
-                    continue;
-                }
+        $rows = $this->fetchPage($user->id, $studentProfileId, $typeFilter, $tabFilter, $statusFilter, $perPage, $page);
+        $items = $this->hydrateRows($rows, $user->id);
 
-                $homework->push([
-                    'id' => $hw->id,
-                    'type' => 'quran',
-                    'session_id' => $session->id,
-                    'title' => $session->title ?? __('homework.quran_homework'),
-                    'subject' => __('القرآن الكريم'),
-                    'description' => $hw->additional_instructions,
-                    'is_assigned' => true,
-                    'status' => 'pending',
-                    'can_submit' => false,
-                    'teacher' => $session->quranTeacher ? [
-                        'id' => $session->quranTeacher->id,
-                        'name' => $session->quranTeacher->name,
-                    ] : null,
-                    'submission' => null,
-                    'session_date' => $session->scheduled_at?->toISOString(),
-                    'quran_details' => [
-                        'has_new_memorization' => $hw->has_new_memorization,
-                        'new_memorization_surah' => $hw->new_memorization_surah,
-                        'new_memorization_from_verse' => $hw->new_memorization_from_verse,
-                        'new_memorization_to_verse' => $hw->new_memorization_to_verse,
-                        'new_memorization_pages' => $hw->new_memorization_pages,
-                        'has_review' => $hw->has_review,
-                        'review_surah' => $hw->review_surah,
-                        'review_from_verse' => $hw->review_from_verse,
-                        'review_to_verse' => $hw->review_to_verse,
-                        'review_pages' => $hw->review_pages,
-                        'due_date' => $hw->due_date?->toDateString(),
-                    ],
-                ]);
-            }
-        }
-
-        // Interactive course homework
-        if (! $typeFilter || $typeFilter === 'interactive') {
-            $studentProfileId = $user->studentProfile?->id;
-
-            if ($studentProfileId) {
-                $interactiveHomework = InteractiveCourseHomework::whereHas('session.course.enrollments', function ($q) use ($studentProfileId) {
-                    $q->where('student_id', $studentProfileId);
-                })
-                    ->with(['session.course.assignedTeacher.user', 'submissions' => function ($q) use ($user) {
-                        $q->where('student_id', $user->id);
-                    }])
-                    ->where('is_active', true)
-                    ->orderBy('due_date', 'asc')
-                    ->limit(100)
-                    ->get();
-
-                foreach ($interactiveHomework as $hw) {
-                    $submission = $hw->submissions->first();
-                    $currentStatus = $this->resolveSubmissionStatus($submission);
-
-                    if ($status && $currentStatus !== $status) {
-                        continue;
-                    }
-
-                    $teacher = $hw->session?->course?->assignedTeacher?->user;
-                    $homework->push([
-                        'id' => $hw->id,
-                        'type' => 'interactive',
-                        'session_id' => $hw->interactive_course_session_id,
-                        'title' => $hw->title ?? __('homework.default_title'),
-                        'subject' => $hw->session?->course?->title,
-                        'description' => $hw->description,
-                        'instructions' => $hw->instructions,
-                        'file' => null,
-                        'teacher_files' => $hw->teacher_files,
-                        'is_assigned' => true,
-                        'status' => $currentStatus,
-                        'can_submit' => true,
-                        'due_date' => $hw->due_date?->toISOString(),
-                        'max_score' => $hw->max_score,
-                        'teacher' => $teacher ? [
-                            'id' => $teacher->id,
-                            'name' => $teacher->name,
-                        ] : null,
-                        'submission' => $submission ? [
-                            'id' => $submission->id,
-                            'submitted_at' => $submission->created_at?->toISOString(),
-                            'grade' => $submission->grade,
-                            'feedback' => $submission->feedback,
-                            'status' => $submission->submission_status,
-                        ] : null,
-                        'session_date' => $hw->session?->scheduled_at?->toISOString(),
-                    ]);
-                }
-            }
-        }
-
-        // Sort by session date descending
-        $sorted = $homework->sortByDesc('session_date')->values();
-
-        // Paginate
-        $page = (int) $request->get('page', 1);
-        $perPage = min((int) $request->get('per_page', 15), 50);
-        $total = $sorted->count();
-        $items = $sorted->slice(($page - 1) * $perPage, $perPage)->values();
+        $resources = $items->map(fn ($item) => (new HomeworkSummaryResource($item))->resolve($request));
 
         return $this->success([
-            'homework' => $items->toArray(),
-            'pagination' => [
-                'current_page' => $page,
-                'last_page' => max(1, (int) ceil($total / $perPage)),
-                'per_page' => $perPage,
-                'total' => $total,
-                'has_more' => ($page * $perPage) < $total,
-            ],
-            'stats' => [
-                'pending' => $sorted->where('status', 'pending')->count(),
-                'submitted' => $sorted->where('status', 'submitted')->count(),
-                'graded' => $sorted->where('status', 'graded')->count(),
-            ],
-        ], __('Homework retrieved successfully'));
+            'homework' => $resources->values()->all(),
+            'pagination' => $this->paginationPayload($rowsCount, $page, $perPage),
+            'stats' => $stats,
+        ], __('api.success'));
     }
 
     /**
-     * Resolve homework submission status.
-     */
-    private function resolveSubmissionStatus($submission): string
-    {
-        if (! $submission) {
-            return 'pending';
-        }
-
-        if ($submission->grade !== null) {
-            return 'graded';
-        }
-
-        return 'submitted';
-    }
-
-    /**
-     * Get a specific homework assignment.
+     * GET /api/v1/student/homework/{type}/{id}
      */
     public function show(Request $request, string $type, string $id): JsonResponse
     {
         $user = $request->user();
 
         return match ($type) {
-            'academic' => $this->showAcademicHomework($user, $id),
-            'quran' => $this->showQuranHomework($user, $id),
-            'interactive' => $this->showInteractiveHomework($user, $id),
+            'academic' => $this->showAcademic($request, $user, $id),
+            'quran' => $this->showQuran($request, $user, $id),
+            'interactive' => $this->showInteractive($request, $user, $id),
             default => $this->error(__('Invalid homework type.'), 400, 'INVALID_TYPE'),
         };
     }
 
-    private function showAcademicHomework($user, string $id): JsonResponse
+    private function showAcademic(Request $request, $user, string $id): JsonResponse
     {
-        $session = AcademicSession::where('id', $id)
+        $session = AcademicSession::query()
+            ->where('id', $id)
             ->where('student_id', $user->id)
             ->whereNotNull('homework_description')
-            ->with([
-                'academicTeacher.user',
-                'academicSubscription',
-                'homeworkSubmissions' => function ($q) use ($user) {
-                    $q->where('student_id', $user->id);
-                },
-            ])
+            ->where('homework_description', '!=', '')
+            ->with(['academicTeacher.user', 'academicSubscription'])
             ->first();
 
         if (! $session) {
             return $this->notFound(__('Homework not found.'));
         }
 
-        $submission = $session->homeworkSubmissions->first();
+        $this->attachAcademicSubmissions(collect([$session]), $user->id);
 
         return $this->success([
-            'homework' => [
-                'id' => $session->id,
-                'type' => 'academic',
-                'session_id' => $session->id,
-                'title' => $session->title ?? __('homework.default_title'),
-                'subject' => $session->academicSubscription?->subject_name,
-                'description' => $session->homework_description,
-                'file' => $session->homework_file,
-                'is_assigned' => (bool) $session->homework_assigned,
-                'status' => $this->resolveSubmissionStatus($submission),
-                'can_submit' => $submission === null,
-                'teacher' => $session->academicTeacher?->user ? [
-                    'id' => $session->academicTeacher->user->id,
-                    'name' => $session->academicTeacher->user->name,
-                    'avatar' => $session->academicTeacher->user->avatar
-                        ? asset('storage/'.$session->academicTeacher->user->avatar)
-                        : null,
-                ] : null,
-                'submission' => $submission ? [
-                    'id' => $submission->id,
-                    'content' => $submission->content,
-                    'attachments' => $submission->attachments ?? [],
-                    'submitted_at' => $submission->created_at?->toISOString(),
-                    'grade' => $submission->grade,
-                    'max_grade' => 100,
-                    'feedback' => $submission->feedback,
-                    'status' => $submission->status,
-                ] : null,
-                'session_date' => $session->scheduled_at?->toISOString(),
-            ],
-        ], __('Homework retrieved successfully'));
+            'homework' => (new AcademicHomeworkDetailResource($session))->resolve($request),
+        ], __('api.success'));
     }
 
-    private function showQuranHomework($user, string $id): JsonResponse
+    /**
+     * Eager-load student submissions for a set of AcademicSessions by direct
+     * query (bypasses the hasManyThrough → ScopedToAcademy ambiguity on
+     * `academy_id`) and attaches them as the `homeworkSubmissions` relation
+     * so resources keep their existing access pattern.
+     */
+    private function attachAcademicSubmissions($sessions, int $userId): void
     {
-        $session = QuranSession::where('id', $id)
-            ->where('student_id', $user->id)
+        if ($sessions->isEmpty()) {
+            return;
+        }
+
+        $sessionIds = $sessions->pluck('id')->all();
+
+        $submissionsBySession = AcademicHomeworkSubmission::query()
+            ->whereIn('academic_session_id', $sessionIds)
+            ->where('student_id', $userId)
+            ->get()
+            ->groupBy('academic_session_id');
+
+        foreach ($sessions as $session) {
+            $session->setRelation(
+                'homeworkSubmissions',
+                $submissionsBySession->get($session->id, collect())
+            );
+        }
+    }
+
+    private function showQuran(Request $request, $user, string $id): JsonResponse
+    {
+        // Identify the session via either the QuranSession id or its sessionHomework id —
+        // mobile passes the homework id (the list returns hw.id when available, falling
+        // back to session id), so accept both.
+        $session = QuranSession::query()
+            ->where(function (Builder $q) use ($id) {
+                $q->where('id', $id)
+                    ->orWhereHas('sessionHomework', fn ($qh) => $qh->where('id', $id));
+            })
+            ->where(function (Builder $q) use ($user) {
+                $q->where('student_id', $user->id)
+                    ->orWhereHas('studentReports', fn ($qr) => $qr->where('student_id', $user->id));
+            })
             ->whereHas('sessionHomework')
-            ->with(['quranTeacher', 'sessionHomework'])
+            ->with([
+                'quranTeacher',
+                'sessionHomework',
+                'studentReports' => fn ($q) => $q->where('student_id', $user->id),
+            ])
             ->first();
 
         if (! $session || ! $session->sessionHomework) {
             return $this->notFound(__('Homework not found.'));
         }
 
-        $hw = $session->sessionHomework;
-
         return $this->success([
-            'homework' => [
-                'id' => $hw->id,
-                'type' => 'quran',
-                'session_id' => $session->id,
-                'title' => $session->title ?? __('homework.quran_homework'),
-                'subject' => __('القرآن الكريم'),
-                'description' => $hw->additional_instructions,
-                'is_assigned' => true,
-                'status' => 'pending',
-                'can_submit' => false,
-                'teacher' => $session->quranTeacher ? [
-                    'id' => $session->quranTeacher->id,
-                    'name' => $session->quranTeacher->name,
-                    'avatar' => $session->quranTeacher->avatar
-                        ? asset('storage/'.$session->quranTeacher->avatar)
-                        : null,
-                ] : null,
-                'submission' => null,
-                'session_date' => $session->scheduled_at?->toISOString(),
-                'quran_details' => [
-                    'has_new_memorization' => $hw->has_new_memorization,
-                    'new_memorization_surah' => $hw->new_memorization_surah,
-                    'new_memorization_from_verse' => $hw->new_memorization_from_verse,
-                    'new_memorization_to_verse' => $hw->new_memorization_to_verse,
-                    'new_memorization_pages' => $hw->new_memorization_pages,
-                    'has_review' => $hw->has_review,
-                    'review_surah' => $hw->review_surah,
-                    'review_from_verse' => $hw->review_from_verse,
-                    'review_to_verse' => $hw->review_to_verse,
-                    'review_pages' => $hw->review_pages,
-                    'has_comprehensive_review' => $hw->has_comprehensive_review,
-                    'comprehensive_review_surahs' => $hw->comprehensive_review_surahs,
-                    'due_date' => $hw->due_date?->toDateString(),
-                    'difficulty_level' => $hw->difficulty_level,
-                ],
-            ],
-        ], __('Homework retrieved successfully'));
+            'homework' => (new QuranHomeworkDetailResource($session))->resolve($request),
+        ], __('api.success'));
     }
 
-    private function showInteractiveHomework($user, string $id): JsonResponse
+    private function showInteractive(Request $request, $user, string $id): JsonResponse
     {
         $studentProfileId = $user->studentProfile?->id;
 
@@ -358,61 +190,404 @@ class HomeworkController extends Controller
             return $this->notFound(__('Homework not found.'));
         }
 
-        $hw = InteractiveCourseHomework::where('id', $id)
-            ->whereHas('session.course.enrollments', function ($q) use ($studentProfileId) {
-                $q->where('student_id', $studentProfileId);
-            })
-            ->with(['session.course.assignedTeacher.user', 'submissions' => function ($q) use ($user) {
-                $q->where('student_id', $user->id);
-            }])
+        $hw = InteractiveCourseHomework::query()
+            ->where('id', $id)
+            ->whereHas('session.course.enrollments', fn ($q) => $q->where('student_id', $studentProfileId))
+            ->with([
+                'session.course.assignedTeacher.user',
+                'submissions' => fn ($q) => $q->where('student_id', $user->id),
+            ])
             ->first();
 
         if (! $hw) {
             return $this->notFound(__('Homework not found.'));
         }
 
-        $submission = $hw->submissions->first();
-        $teacher = $hw->session?->course?->assignedTeacher?->user;
-
         return $this->success([
-            'homework' => [
-                'id' => $hw->id,
-                'type' => 'interactive',
-                'session_id' => $hw->interactive_course_session_id,
-                'title' => $hw->title ?? __('homework.default_title'),
-                'subject' => $hw->session?->course?->title,
-                'description' => $hw->description,
-                'instructions' => $hw->instructions,
-                'teacher_files' => $hw->teacher_files,
-                'is_assigned' => true,
-                'status' => $this->resolveSubmissionStatus($submission),
-                'can_submit' => $submission === null,
-                'due_date' => $hw->due_date?->toISOString(),
-                'max_score' => $hw->max_score,
-                'allow_late_submissions' => $hw->allow_late_submissions,
-                'teacher' => $teacher ? [
-                    'id' => $teacher->id,
-                    'name' => $teacher->name,
-                    'avatar' => $teacher->avatar ? asset('storage/'.$teacher->avatar) : null,
-                ] : null,
-                'submission' => $submission ? [
-                    'id' => $submission->id,
-                    'content' => $submission->content,
-                    'attachments' => $submission->student_files ?? [],
-                    'submitted_at' => $submission->created_at?->toISOString(),
-                    'grade' => $submission->grade,
-                    'max_grade' => $hw->max_score,
-                    'feedback' => $submission->feedback,
-                    'status' => $submission->submission_status,
-                ] : null,
-                'session_date' => $hw->session?->scheduled_at?->toISOString(),
-            ],
-        ], __('Homework retrieved successfully'));
+            'homework' => (new InteractiveHomeworkDetailResource($hw))->resolve($request),
+        ], __('api.success'));
+    }
+
+    // ----------------------------------------------------------------------
+    // Union-query helpers for index()
+    // ----------------------------------------------------------------------
+
+    /**
+     * Build a union query of all three homework sources, projected to
+     * (type, source_id, session_date). Returns null when no source applies
+     * (e.g. interactive-only filter but the user has no student profile).
+     *
+     * Built on the underlying Query\Builder so global scopes (multi-tenancy,
+     * soft deletes) survive the union — Eloquent unions silently drop
+     * scopes applied via Eloquent::Builder beyond the first part.
+     */
+    private function unionIndexQuery(int $userId, ?int $studentProfileId, ?string $typeFilter): ?QueryBuilder
+    {
+        $parts = [];
+
+        if (! $typeFilter || $typeFilter === 'academic') {
+            $parts[] = $this->academicProjection($userId)->toBase();
+        }
+
+        if (! $typeFilter || $typeFilter === 'quran') {
+            $parts[] = $this->quranProjection($userId)->toBase();
+        }
+
+        if ((! $typeFilter || $typeFilter === 'interactive') && $studentProfileId) {
+            $parts[] = $this->interactiveProjection($studentProfileId)->toBase();
+        }
+
+        if (empty($parts)) {
+            return null;
+        }
+
+        $base = array_shift($parts);
+        foreach ($parts as $part) {
+            $base->unionAll($part);
+        }
+
+        return $base;
+    }
+
+    private function academicProjection(int $userId): Builder
+    {
+        return AcademicSession::query()
+            ->where('student_id', $userId)
+            ->whereNotNull('homework_description')
+            ->where('homework_description', '!=', '')
+            ->select([
+                new Expression("'academic' as homework_type"),
+                'id as source_id',
+                'scheduled_at as session_date',
+            ]);
+    }
+
+    private function quranProjection(int $userId): Builder
+    {
+        return QuranSession::query()
+            ->where(function (Builder $q) use ($userId) {
+                $q->where('student_id', $userId)
+                    ->orWhereHas('studentReports', fn ($qr) => $qr->where('student_id', $userId));
+            })
+            ->whereHas('sessionHomework')
+            ->select([
+                new Expression("'quran' as homework_type"),
+                'id as source_id',
+                'scheduled_at as session_date',
+            ]);
+    }
+
+    private function interactiveProjection(int $studentProfileId): Builder
+    {
+        return InteractiveCourseHomework::query()
+            ->whereHas('session.course.enrollments', fn ($q) => $q->where('student_id', $studentProfileId))
+            ->where('is_active', true)
+            ->join(
+                'interactive_course_sessions',
+                'interactive_course_homework.interactive_course_session_id',
+                '=',
+                'interactive_course_sessions.id'
+            )
+            ->select([
+                new Expression("'interactive' as homework_type"),
+                'interactive_course_homework.id as source_id',
+                'interactive_course_sessions.scheduled_at as session_date',
+            ]);
     }
 
     /**
-     * Submit homework.
+     * Translate the `status` query param into a high-level tab when it maps
+     * cleanly onto upcoming/past/all. Granular submission-status values
+     * (`draft`, `submitted`, …) are passed through unchanged and handled by
+     * fetchPage() / countForTab() via a post-hydration filter.
      */
+    private function normaliseTabFilter(string $status): string
+    {
+        if (in_array($status, [self::TAB_UPCOMING, self::TAB_PAST, self::TAB_ALL], true)) {
+            return $status;
+        }
+
+        return self::TAB_ALL;
+    }
+
+    private function countForTab(int $userId, ?int $studentProfileId, ?string $typeFilter, string $tab, string $rawStatus): int
+    {
+        if ($tab === self::TAB_ALL && $rawStatus === self::TAB_ALL) {
+            $union = $this->unionIndexQuery($userId, $studentProfileId, $typeFilter);
+
+            return $union === null ? 0 : DB::query()->fromSub($union, 'h')->count();
+        }
+
+        // For granular status filters or upcoming/past tabs, materialise the
+        // full set and filter in PHP — accurate but only after fetching the
+        // (type, id) pairs. We then count the filtered result.
+        $rows = $this->loadAllRows($userId, $studentProfileId, $typeFilter);
+        $filtered = $this->applyRowFilter($rows, $userId, $tab, $rawStatus);
+
+        return $filtered->count();
+    }
+
+    private function fetchPage(
+        int $userId,
+        ?int $studentProfileId,
+        ?string $typeFilter,
+        string $tab,
+        string $rawStatus,
+        int $perPage,
+        int $page,
+    ): Collection {
+        if ($tab === self::TAB_ALL && $rawStatus === self::TAB_ALL) {
+            $union = $this->unionIndexQuery($userId, $studentProfileId, $typeFilter);
+
+            if ($union === null) {
+                return collect();
+            }
+
+            return DB::query()
+                ->fromSub($union, 'h')
+                ->orderByDesc('session_date')
+                ->orderByDesc('source_id')
+                ->limit($perPage)
+                ->offset(($page - 1) * $perPage)
+                ->get();
+        }
+
+        $rows = $this->loadAllRows($userId, $studentProfileId, $typeFilter);
+        $filtered = $this->applyRowFilter($rows, $userId, $tab, $rawStatus)->values();
+
+        return $filtered->slice(($page - 1) * $perPage, $perPage)->values();
+    }
+
+    private function loadAllRows(int $userId, ?int $studentProfileId, ?string $typeFilter): Collection
+    {
+        $union = $this->unionIndexQuery($userId, $studentProfileId, $typeFilter);
+
+        if ($union === null) {
+            return collect();
+        }
+
+        return DB::query()
+            ->fromSub($union, 'h')
+            ->orderByDesc('session_date')
+            ->orderByDesc('source_id')
+            ->get();
+    }
+
+    private function applyRowFilter(Collection $rows, int $userId, string $tab, string $rawStatus): Collection
+    {
+        if ($rows->isEmpty()) {
+            return $rows;
+        }
+
+        $items = $this->hydrateRows($rows, $userId);
+
+        return $items->filter(function ($item) use ($tab, $rawStatus) {
+            $isUpcoming = $this->classifyTab($item) === self::TAB_UPCOMING;
+
+            if ($tab === self::TAB_UPCOMING) {
+                return $isUpcoming;
+            }
+
+            if ($tab === self::TAB_PAST) {
+                return ! $isUpcoming;
+            }
+
+            // Granular status filter: match raw submission_status value.
+            $status = $this->itemSubmissionStatus($item);
+
+            return $status === $rawStatus;
+        });
+    }
+
+    /**
+     * Hydrate raw union rows into their source models with the relationships
+     * the resource needs. Groups by type to issue one query per type, then
+     * re-orders into the original union order so pagination stays stable.
+     */
+    private function hydrateRows(Collection $rows, int $userId): Collection
+    {
+        if ($rows->isEmpty()) {
+            return $rows;
+        }
+
+        $byType = $rows->groupBy('homework_type');
+        $models = [];
+
+        if ($byType->has('academic')) {
+            $ids = $byType['academic']->pluck('source_id')->all();
+            $sessions = AcademicSession::query()
+                ->whereIn('id', $ids)
+                ->with(['academicTeacher.user', 'academicSubscription'])
+                ->get();
+            $this->attachAcademicSubmissions($sessions, $userId);
+            $models['academic'] = $sessions->keyBy('id');
+        }
+
+        if ($byType->has('quran')) {
+            $ids = $byType['quran']->pluck('source_id')->all();
+            $models['quran'] = QuranSession::query()
+                ->whereIn('id', $ids)
+                ->with([
+                    'quranTeacher',
+                    'sessionHomework',
+                    'studentReports' => fn ($q) => $q->where('student_id', $userId),
+                ])
+                ->get()
+                ->keyBy('id');
+        }
+
+        if ($byType->has('interactive')) {
+            $ids = $byType['interactive']->pluck('source_id')->all();
+            $models['interactive'] = InteractiveCourseHomework::query()
+                ->whereIn('id', $ids)
+                ->with([
+                    'session.course.assignedTeacher.user',
+                    'submissions' => fn ($q) => $q->where('student_id', $userId),
+                ])
+                ->get()
+                ->keyBy('id');
+        }
+
+        return $rows->map(function ($row) use ($models) {
+            $type = $row->homework_type;
+            $model = $models[$type][$row->source_id] ?? null;
+
+            if ($model === null) {
+                return null;
+            }
+
+            $model->homework_type = $type;
+
+            return $model;
+        })->filter()->values();
+    }
+
+    private function classifyTab($item): string
+    {
+        $type = $item->homework_type;
+
+        return match ($type) {
+            'academic' => $this->classifyAcademic($item),
+            'quran' => $this->classifyQuran($item),
+            'interactive' => $this->classifyInteractive($item),
+        };
+    }
+
+    private function classifyAcademic(AcademicSession $session): string
+    {
+        $submission = $session->homeworkSubmissions->first();
+
+        if (! $submission) {
+            return self::TAB_UPCOMING;
+        }
+
+        $status = $this->castStatus($submission->submission_status);
+
+        return match ($status) {
+            HomeworkSubmissionStatus::DRAFT,
+            HomeworkSubmissionStatus::PENDING,
+            HomeworkSubmissionStatus::REVISION_REQUESTED => self::TAB_UPCOMING,
+            default => self::TAB_PAST,
+        };
+    }
+
+    private function classifyQuran(QuranSession $session): string
+    {
+        $report = $session->studentReports->first();
+
+        return ($report && $report->evaluated_at !== null) ? self::TAB_PAST : self::TAB_UPCOMING;
+    }
+
+    private function classifyInteractive(InteractiveCourseHomework $hw): string
+    {
+        $submission = $hw->submissions->first();
+
+        if ($submission) {
+            $status = $this->castStatus($submission->submission_status);
+
+            if ($status === HomeworkSubmissionStatus::DRAFT
+                || $status === HomeworkSubmissionStatus::REVISION_REQUESTED) {
+                return self::TAB_UPCOMING;
+            }
+
+            return self::TAB_PAST;
+        }
+
+        if ($hw->due_date && $hw->due_date->isPast() && ! $hw->allow_late_submissions) {
+            return self::TAB_PAST;
+        }
+
+        return self::TAB_UPCOMING;
+    }
+
+    private function itemSubmissionStatus($item): string
+    {
+        $type = $item->homework_type;
+
+        return match ($type) {
+            'academic' => $this->castStatus(
+                $item->homeworkSubmissions->first()?->submission_status
+            )->value,
+            'quran' => $item->studentReports->first()?->evaluated_at
+                ? HomeworkSubmissionStatus::GRADED->value
+                : HomeworkSubmissionStatus::PENDING->value,
+            'interactive' => $this->castStatus(
+                $item->submissions->first()?->submission_status
+            )->value,
+        };
+    }
+
+    private function castStatus($raw): HomeworkSubmissionStatus
+    {
+        if ($raw === null) {
+            return HomeworkSubmissionStatus::PENDING;
+        }
+
+        return $raw instanceof HomeworkSubmissionStatus
+            ? $raw
+            : HomeworkSubmissionStatus::from($raw);
+    }
+
+    private function paginationPayload(int $total, int $page, int $perPage): array
+    {
+        $lastPage = max(1, (int) ceil($total / $perPage));
+
+        return [
+            'current_page' => $page,
+            'last_page' => $lastPage,
+            'per_page' => $perPage,
+            'total' => $total,
+            'has_more' => ($page * $perPage) < $total,
+        ];
+    }
+
+    /**
+     * Stats are computed over the unfiltered base set (per the contract) so
+     * the tab counters stay correct regardless of which tab is active.
+     */
+    private function computeStats(int $userId, ?int $studentProfileId, ?string $typeFilter): array
+    {
+        $rows = $this->loadAllRows($userId, $studentProfileId, $typeFilter);
+
+        if ($rows->isEmpty()) {
+            return ['upcoming' => 0, 'past' => 0, 'total' => 0];
+        }
+
+        $items = $this->hydrateRows($rows, $userId);
+        $total = $items->count();
+        $upcoming = $items->filter(fn ($item) => $this->classifyTab($item) === self::TAB_UPCOMING)->count();
+
+        return [
+            'upcoming' => $upcoming,
+            'past' => $total - $upcoming,
+            'total' => $total,
+        ];
+    }
+
+    // ----------------------------------------------------------------------
+    // Write paths (preserved from the pre-refactor flow; not in Phase 1 scope)
+    // ----------------------------------------------------------------------
+
     public function submit(Request $request, string $type, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -435,25 +610,12 @@ class HomeworkController extends Controller
             return $this->error(__('Invalid homework type.'), 400, 'INVALID_TYPE');
         }
 
-        // Handle file uploads
-        $attachments = [];
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $path = $file->store('homework-submissions/'.$user->id, 'public');
-                $attachments[] = [
-                    'name' => $file->getClientOriginalName(),
-                    'path' => $path,
-                    'size' => $file->getSize(),
-                    'mime' => $file->getMimeType(),
-                ];
-            }
-        }
+        $attachments = $this->storeAttachments($request, $user->id, 'homework-submissions');
 
         if ($type === 'interactive') {
             return $this->submitInteractiveHomework($user, $id, $request->content, $attachments);
         }
 
-        // Academic submission
         $session = AcademicSession::where('id', $id)
             ->where('student_id', $user->id)
             ->whereNotNull('homework_description')
@@ -500,9 +662,7 @@ class HomeworkController extends Controller
         }
 
         $homework = InteractiveCourseHomework::where('id', $homeworkId)
-            ->whereHas('session.course.enrollments', function ($q) use ($studentProfileId) {
-                $q->where('student_id', $studentProfileId);
-            })
+            ->whereHas('session.course.enrollments', fn ($q) => $q->where('student_id', $studentProfileId))
             ->first();
 
         if (! $homework) {
@@ -538,9 +698,6 @@ class HomeworkController extends Controller
         ], __('Homework submitted successfully'));
     }
 
-    /**
-     * Save homework as draft.
-     */
     public function saveDraft(Request $request, string $type, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -568,7 +725,6 @@ class HomeworkController extends Controller
             return $this->notFound(__('Homework not found.'));
         }
 
-        // Check if already submitted (not a draft)
         $existingSubmission = $session->homeworkSubmissions()
             ->where('student_id', $user->id)
             ->where('submission_status', '!=', HomeworkSubmissionStatus::DRAFT)
@@ -578,21 +734,8 @@ class HomeworkController extends Controller
             return $this->error(__('Homework already submitted. Cannot save as draft.'), 400, 'ALREADY_SUBMITTED');
         }
 
-        // Handle file uploads
-        $attachments = [];
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $path = $file->store('homework-drafts/'.$user->id, 'public');
-                $attachments[] = [
-                    'name' => $file->getClientOriginalName(),
-                    'path' => $path,
-                    'size' => $file->getSize(),
-                    'mime' => $file->getMimeType(),
-                ];
-            }
-        }
+        $attachments = $this->storeAttachments($request, $user->id, 'homework-drafts');
 
-        // Find or create draft
         $draft = $session->homeworkSubmissions()
             ->where('student_id', $user->id)
             ->where('submission_status', HomeworkSubmissionStatus::DRAFT)
@@ -624,9 +767,6 @@ class HomeworkController extends Controller
         ], __('Draft saved successfully'));
     }
 
-    /**
-     * Submit homework revision.
-     */
     public function submitRevision(Request $request, string $type, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -654,7 +794,6 @@ class HomeworkController extends Controller
             return $this->notFound(__('Homework not found.'));
         }
 
-        // Check if there's a submission that needs revision
         $existingSubmission = $session->homeworkSubmissions()
             ->where('student_id', $user->id)
             ->first();
@@ -667,7 +806,6 @@ class HomeworkController extends Controller
             );
         }
 
-        // Check if revision was requested
         if ($existingSubmission->submission_status !== HomeworkSubmissionStatus::REVISION_REQUESTED) {
             return $this->error(
                 __('Revision not requested for this submission.'),
@@ -676,21 +814,8 @@ class HomeworkController extends Controller
             );
         }
 
-        // Handle file uploads
-        $attachments = [];
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $path = $file->store('homework-submissions/'.$user->id, 'public');
-                $attachments[] = [
-                    'name' => $file->getClientOriginalName(),
-                    'path' => $path,
-                    'size' => $file->getSize(),
-                    'mime' => $file->getMimeType(),
-                ];
-            }
-        }
+        $attachments = $this->storeAttachments($request, $user->id, 'homework-submissions');
 
-        // Update submission with revision
         $existingSubmission->update([
             'content' => $request->content,
             'student_files' => ! empty($attachments) ? $attachments : $existingSubmission->student_files,
@@ -709,5 +834,26 @@ class HomeworkController extends Controller
                 'revision_count' => $existingSubmission->revision_count,
             ],
         ], __('Homework revision submitted successfully'));
+    }
+
+    private function storeAttachments(Request $request, int $userId, string $folder): array
+    {
+        if (! $request->hasFile('attachments')) {
+            return [];
+        }
+
+        $attachments = [];
+
+        foreach ($request->file('attachments') as $file) {
+            $path = $file->store($folder.'/'.$userId, 'public');
+            $attachments[] = [
+                'name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'size' => $file->getSize(),
+                'mime' => $file->getMimeType(),
+            ];
+        }
+
+        return $attachments;
     }
 }

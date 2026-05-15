@@ -8,6 +8,8 @@ return [
     */
 
     'default_title' => 'واجب منزلي',
+    'quran_homework' => 'واجب قرآني',
+    'quran_subject' => 'القرآن الكريم',
 
     'types' => [
         'academic_session' => 'جلسة أكاديمية',

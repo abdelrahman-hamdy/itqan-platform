@@ -79,7 +79,7 @@ class QuizController extends Controller
             ], __('Quizzes retrieved successfully'));
         }
 
-        $query = QuizAssignment::where(function ($q) use ($assignableIds) {
+        $baseQuery = QuizAssignment::where(function ($q) use ($assignableIds) {
             foreach ($assignableIds as $type => $ids) {
                 $q->orWhere(function ($subQ) use ($type, $ids) {
                     $subQ->where('assignable_type', $type)
@@ -89,7 +89,15 @@ class QuizController extends Controller
         })
             ->whereHas('quiz', function ($q) {
                 $q->where('is_active', true);
-            })
+            });
+
+        // Load every matching assignment (with attempts + quiz) so we can
+        // classify status, then paginate AFTER filtering. The previous
+        // implementation paginated first and filtered after — which silently
+        // shrank pages and broke totals. Quiz assignments per student are
+        // bounded by their enrollments (typically dozens, not thousands), so
+        // this is safe.
+        $assignments = $baseQuery
             ->with([
                 'quiz' => function ($q) {
                     $q->select('id', 'title', 'description', 'duration_minutes', 'passing_score', 'created_at')
@@ -98,11 +106,11 @@ class QuizController extends Controller
                 'attempts' => function ($q) use ($studentId) {
                     $q->where('student_id', $studentId)->latest();
                 },
-            ]);
+            ])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        $paginator = $query->orderBy('created_at', 'desc')->paginate($perPage);
-
-        $quizzes = collect($paginator->items())->map(function ($assignment) {
+        $quizzes = $assignments->map(function ($assignment) {
             $quiz = $assignment->quiz;
             if (! $quiz) {
                 return null;
@@ -110,25 +118,29 @@ class QuizController extends Controller
 
             $latestAttempt = $assignment->attempts->first();
             $completedAttempts = $assignment->attempts->filter(fn ($a) => $a->submitted_at !== null);
-            $attemptsCount = $assignment->attempts->count();
             $completedCount = $completedAttempts->count();
 
-            // Calculate best score from completed attempts
             $bestScore = $completedAttempts->max('score');
             $hasPassed = $completedAttempts->where('passed', true)->isNotEmpty();
 
-            // Check for in-progress attempt
             $inProgressAttempt = $assignment->attempts->filter(fn ($a) => $a->submitted_at === null)->first();
 
-            // Determine status
-            $quizStatus = 'pending';
+            $maxAttempts = $assignment->max_attempts ?? 1;
+            $isOverdue = $assignment->available_until && $assignment->available_until->isPast();
+            $hasAttemptsRemaining = $completedCount < $maxAttempts;
+
+            // Lifecycle classification. Order matters:
+            //   in_progress → completed → expired (overdue with no completion
+            //   and no slots left) → available.
+            $quizStatus = 'available';
             if ($inProgressAttempt) {
                 $quizStatus = 'in_progress';
             } elseif ($completedCount > 0) {
                 $quizStatus = 'completed';
+            } elseif ($isOverdue || ! $hasAttemptsRemaining) {
+                $quizStatus = 'expired';
             }
 
-            // Get assignable name (circle, course, etc.)
             $assignableName = $this->getAssignableName($assignment->assignable);
 
             return [
@@ -141,13 +153,13 @@ class QuizController extends Controller
                 'total_questions' => $quiz->questions_count ?? 0,
                 'status' => $quizStatus,
                 'due_date' => $assignment->available_until?->toISOString(),
-                'is_overdue' => $assignment->available_until && $assignment->available_until->isPast() && $quizStatus === 'pending',
-                'attempts_allowed' => $assignment->max_attempts ?? 1,
+                'is_overdue' => $isOverdue,
+                'attempts_allowed' => $maxAttempts,
                 'attempts_used' => $completedCount,
-                'attempts_remaining' => max(0, ($assignment->max_attempts ?? 1) - $completedCount),
+                'attempts_remaining' => max(0, $maxAttempts - $completedCount),
                 'best_score' => $bestScore,
                 'has_passed' => $hasPassed,
-                'can_attempt' => $assignment->isAvailable() && $completedCount < ($assignment->max_attempts ?? 1),
+                'can_attempt' => $assignment->isAvailable() && $hasAttemptsRemaining,
                 'assignable_name' => $assignableName,
                 'assignable_type' => class_basename($assignment->assignable_type ?? ''),
                 'in_progress_attempt' => $inProgressAttempt ? [
@@ -164,25 +176,38 @@ class QuizController extends Controller
             ];
         })->filter()->values();
 
-        // Apply status filter after mapping
+        // Stats are computed across the full unfiltered set so the tab
+        // counters stay correct regardless of which status the client asked
+        // for.
+        $stats = [
+            'available' => $quizzes->where('status', 'available')->count(),
+            'in_progress' => $quizzes->where('status', 'in_progress')->count(),
+            'completed' => $quizzes->where('status', 'completed')->count(),
+            'expired' => $quizzes->where('status', 'expired')->count(),
+        ];
+
         if ($status) {
-            $quizzes = $quizzes->where('status', $status)->values();
+            // Accept `pending` as a legacy alias for `available` so older
+            // mobile builds keep working through the rollout.
+            $effectiveStatus = $status === 'pending' ? 'available' : $status;
+            $quizzes = $quizzes->where('status', $effectiveStatus)->values();
         }
 
+        $total = $quizzes->count();
+        $page = max(1, (int) $request->get('page', 1));
+        $items = $quizzes->slice(($page - 1) * $perPage, $perPage)->values();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+
         return $this->success([
-            'quizzes' => $quizzes->toArray(),
+            'quizzes' => $items->toArray(),
             'pagination' => [
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'has_more' => $paginator->hasMorePages(),
+                'current_page' => $page,
+                'last_page' => $lastPage,
+                'per_page' => $perPage,
+                'total' => $total,
+                'has_more' => ($page * $perPage) < $total,
             ],
-            'stats' => [
-                'pending' => $quizzes->where('status', 'pending')->count(),
-                'in_progress' => $quizzes->where('status', 'in_progress')->count(),
-                'completed' => $quizzes->where('status', 'completed')->count(),
-            ],
+            'stats' => $stats,
         ], __('Quizzes retrieved successfully'));
     }
 

@@ -90,6 +90,7 @@ class DashboardController extends Controller
                 'name' => $studentProfile->full_name,
                 'student_code' => $studentProfile->student_code,
                 'avatar' => $studentProfile->avatar ? asset('storage/'.$studentProfile->avatar) : null,
+                'gender' => $studentProfile->gender,
                 'grade_level' => $studentProfile->gradeLevel?->name,
             ],
             'stats' => $stats,

@@ -39,6 +39,7 @@ class DashboardController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'avatar' => $user->avatar ? asset('storage/'.$user->avatar) : null,
+                'gender' => $user->gender,
                 'is_quran_teacher' => $user->isQuranTeacher(),
                 'is_academic_teacher' => $user->isAcademicTeacher(),
             ],
