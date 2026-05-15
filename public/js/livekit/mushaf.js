@@ -453,8 +453,12 @@
                 const btn = e.target.closest('button');
                 if (!btn) return;
                 const act = btn.dataset.mushafAct;
-                if (act === 'prev') this.goToPage(this._page + 1);   // RTL: prev = next page number
-                else if (act === 'next') this.goToPage(this._page - 1); // RTL: next = previous page number
+                // prev = earlier in mushaf (smaller page number, page-1)
+                // next = later  (larger page number, page+1)
+                // The RTL chevron icons match: ri-arrow-right (visually
+                // right, "back" in RTL) → prev; ri-arrow-left → next.
+                if (act === 'prev') this.goToPage(this._page - 1);
+                else if (act === 'next') this.goToPage(this._page + 1);
                 else if (act === 'share') {
                     if (this._isShared) this._stopSharing();
                     else this._startSharing();
@@ -484,67 +488,23 @@
 
         async _renderPageInto(host) {
             if (!host) return;
-            // Try server-side per-page data first; fall back to surah catalog.
-            const data = await this._fetchPageData(this._page).catch(() => null);
-            await this._loadPageFont(this._page).catch(() => null);
+            // Kick off font + data loads in parallel. Font loads are awaited
+            // only loosely — the page may render glyphs against the loading
+            // font (browser shows fallback briefly until QPC swaps in).
+            const dataP = this._fetchPageData(this._page);
+            this._loadPageFont(this._page).catch(() => null);
+            this._loadCompanionFonts().catch(() => null);
+            const data = await dataP.catch(() => null);
 
             host.innerHTML = '';
             host.style.direction = 'rtl';
-            host.style.fontFamily = `'QPC-${this._page}', 'Amiri', serif`;
 
-            if (data && data.glyphs) {
-                // KFGQPC glyph payload (per-page font) — pixel-accurate render.
-                host.style.fontFamily = `'QPC-${this._page}', 'Amiri', serif`;
-                const inner = document.createElement('div');
-                inner.className = 'w-full h-full flex flex-col justify-evenly items-center text-[clamp(14px,2.6vw,42px)] leading-loose text-gray-900';
-                for (const line of (data.glyphs.lines || [])) {
-                    const div = document.createElement('div');
-                    div.className = 'mushaf-line w-full text-center';
-                    div.dataset.surah = String(line.surah || '');
-                    div.dataset.ayah = String(line.ayah || '');
-                    div.textContent = line.text;
-                    inner.appendChild(div);
-                }
-                host.appendChild(inner);
+            if (data && Array.isArray(data.lines)) {
+                this._renderQpcPage(host, data);
                 return;
             }
 
-            if (data && data.verses) {
-                // Verse-text fallback (Amiri font, no KFGQPC). Renders Arabic
-                // text directly — not pixel-identical to mobile but legible
-                // and accurate for memorization use.
-                host.style.fontFamily = "'Amiri', serif";
-                const inner = document.createElement('div');
-                inner.className = 'w-full h-full overflow-hidden flex flex-col items-stretch justify-start text-[clamp(13px,2.2vw,30px)] leading-[2.2] text-gray-900 px-4 py-3';
-                // Header: surah name + page number
-                const header = document.createElement('div');
-                header.className = 'shrink-0 text-center pb-2 mb-2 border-b border-gray-200 text-[clamp(11px,1.4vw,18px)] text-gray-600 font-bold';
-                header.style.fontFamily = "'Cairo', 'Tajawal', sans-serif";
-                header.textContent = (data.surah_name_ar || '') + ' — ' + tt('mushaf.page_label', 'Page') + ' ' + this._page;
-                inner.appendChild(header);
-                const body = document.createElement('div');
-                body.className = 'flex-1 overflow-hidden mushaf-verses';
-                for (const v of data.verses) {
-                    const span = document.createElement('span');
-                    span.className = 'mushaf-line';
-                    span.dataset.surah = String(v.surah);
-                    span.dataset.ayah = String(v.ayah);
-                    span.textContent = v.text + ' ۝';
-                    // Ayah number marker in tashkeel style
-                    const marker = document.createElement('span');
-                    marker.className = 'inline-block mx-1 px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[0.6em] align-middle';
-                    marker.style.fontFamily = "'Cairo', 'Tajawal', sans-serif";
-                    marker.textContent = String(v.ayah);
-                    span.appendChild(marker);
-                    span.appendChild(document.createTextNode(' '));
-                    body.appendChild(span);
-                }
-                inner.appendChild(body);
-                host.appendChild(inner);
-                return;
-            }
-
-            // Final fallback: surah catalog metadata only.
+            // Final fallback: surah catalog metadata only (no payload bundled).
             const meta = this._surahMetaForPage(this._page);
             host.style.fontFamily = "'Cairo', 'Tajawal', sans-serif";
             const fallback = document.createElement('div');
@@ -555,6 +515,110 @@
                 ${meta.juz ? `<div class="text-[clamp(10px,1.2vw,15px)] opacity-60">${tt('mushaf.juz', 'Juz')} ${meta.juz}</div>` : ''}
             `;
             host.appendChild(fallback);
+        }
+
+        /**
+         * Render a QPC v4 page from the pre-baked JSON schema. The schema
+         * has three line types: `surah_name`, `basmallah`, `ayah`. Each
+         * uses its own font:
+         *   surah_name  → 'mushaf-surah' (surah_name_naskh.ttf)
+         *   basmallah   → 'mushaf-bismillah' (vertopal.com_QCF_Bismillah-Regular.ttf)
+         *   ayah        → 'QPC-<page>' (per-page color font; this page's font)
+         *
+         * Ayah lines are rendered with `centered` line alignment iff
+         * `line.centered === 1`, mirroring the Dart QpcV4AyahLineBlock.
+         * `segments` inside each ayah line are grouped by (surah, ayah)
+         * so that highlighting a specific verse only paints the matching
+         * span — not the whole line.
+         */
+        _renderQpcPage(host, data) {
+            // Use Tailwind-only classes; layout is a fixed-height column
+            // that distributes the 15-ish lines evenly across the tile so
+            // the page looks balanced at any tile size.
+            host.style.fontFamily = '';
+            host.style.background = '#fefdf8'; // pale ivory like a real mushaf page
+
+            const inner = document.createElement('div');
+            inner.className = 'w-full h-full flex flex-col items-stretch justify-evenly px-2 py-1 leading-snug text-gray-900';
+            inner.style.fontSize = 'clamp(10px, 2.6cqi, 48px)';
+
+            for (const line of data.lines) {
+                const row = document.createElement('div');
+                row.className = 'mushaf-row w-full flex items-center';
+                row.dataset.lineN = String(line.n || '');
+                row.dataset.lineType = line.type;
+                if (line.type === 'surah_name') {
+                    row.classList.add('justify-center');
+                    const name = document.createElement('span');
+                    name.className = 'mushaf-surah-banner inline-block px-3';
+                    // surahName font ligatures convert the surah number text
+                    // into a decorative banner. Same trick the mobile package
+                    // uses (see surah_header_widget.dart line 51).
+                    name.style.fontFamily = "'mushaf-surah', serif";
+                    name.style.fontSize = '1.4em';
+                    name.style.lineHeight = '1.2';
+                    name.style.color = '#111827';
+                    name.textContent = String(line.surah || '');
+                    row.appendChild(name);
+                } else if (line.type === 'basmallah') {
+                    row.classList.add('justify-center');
+                    const span = document.createElement('span');
+                    span.className = 'mushaf-basmallah inline-block';
+                    span.style.fontFamily = "'mushaf-bismillah', serif";
+                    span.style.fontSize = '1.4em';
+                    span.style.lineHeight = '1.5';
+                    span.style.color = '#111827';
+                    // Surah-specific glyph variant (mirrors bsmallah_widget.dart).
+                    const surah = Number(line.surah) || 0;
+                    let glyph = 'ﲪﲫﲮﲴ'; // default ﲪﲫﲮﲴ
+                    if (surah === 2)                  glyph = 'ﲚﲛﲞﲤ'; // ﲚﲛﲞﲤ
+                    else if (surah === 95 || surah === 97) glyph = 'ﭗﲫﲮﲴ'; // ﭗﲫﲮﲴ
+                    span.textContent = glyph;
+                    row.appendChild(span);
+                } else {
+                    // ayah line
+                    row.classList.add(line.centered ? 'justify-center' : 'justify-between');
+                    const text = document.createElement('span');
+                    text.className = 'mushaf-ayah inline-block w-full';
+                    text.style.fontFamily = `'QPC-${this._page}', 'Amiri', serif`;
+                    text.style.color = '#0b1220';
+                    if (line.centered) {
+                        text.style.textAlign = 'center';
+                    } else {
+                        // Justify by spreading words across the line —
+                        // QPC v4 lines are designed for this.
+                        text.style.textAlign = 'justify';
+                        text.style.textAlignLast = 'justify';
+                    }
+                    // Per-segment spans so highlight + ayah marker can be
+                    // injected per (surah, ayah).
+                    for (const seg of (line.segments || [])) {
+                        const segSpan = document.createElement('span');
+                        segSpan.className = 'mushaf-line';
+                        segSpan.dataset.surah = String(seg.surah);
+                        segSpan.dataset.ayah = String(seg.ayah);
+                        segSpan.textContent = seg.text;
+                        text.appendChild(segSpan);
+                    }
+                    row.appendChild(text);
+                }
+                inner.appendChild(row);
+            }
+
+            host.appendChild(inner);
+        }
+
+        /** Lazy-load the surahName + bismillah companion fonts (once per session). */
+        _loadCompanionFonts() {
+            if (this._companionFontsP) return this._companionFontsP;
+            const surah = new FontFace('mushaf-surah', `url(/mushaf/fonts/surah-name.woff2) format('woff2')`);
+            const bism = new FontFace('mushaf-bismillah', `url(/mushaf/fonts/bismillah.woff2) format('woff2')`);
+            this._companionFontsP = Promise.all([
+                surah.load().then(() => document.fonts.add(surah)),
+                bism.load().then(() => document.fonts.add(bism)),
+            ]);
+            this._companionFontsP.catch(() => {}); // swallow — fallback renders without them
+            return this._companionFontsP;
         }
 
         _renderHighlight() {
@@ -572,10 +636,10 @@
 
         async _fetchPageData(page) {
             if (this._pageDataCache.has(page)) return this._pageDataCache.get(page);
-            // Hit the per-page JSON endpoint. Server may return 404 (no data
-            // shipped) — we cache the null so we don't retry every render.
+            // Bundled per-page payload served statically from public/mushaf/pages/.
+            // We cache the null too so a missing page doesn't refetch every render.
             try {
-                const res = await fetch(`/mushaf/page/${page}.json`, { credentials: 'same-origin' });
+                const res = await fetch(`/mushaf/pages/${page}.json`, { credentials: 'same-origin' });
                 if (!res.ok) throw new Error('no data');
                 const json = await res.json();
                 this._pageDataCache.set(page, json);
