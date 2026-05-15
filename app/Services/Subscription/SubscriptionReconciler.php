@@ -59,8 +59,15 @@ class SubscriptionReconciler
         $this->mirrorFromCycle($sub);
 
         $violations = $this->checker->check($sub);
-        if (! empty($violations)) {
-            throw new SubscriptionInvariantViolation($sub, $violations);
+        $blocking = array_values(array_filter(
+            $violations,
+            // info-severity violations are documented expected states (cleanup
+            // metadata gaps, legacy-cycle markers) and must NOT block a
+            // mutation. Only error/warning blocks.
+            fn (array $v) => ($v['severity'] ?? 'error') !== 'info',
+        ));
+        if (! empty($blocking)) {
+            throw new SubscriptionInvariantViolation($sub, $blocking);
         }
     }
 
