@@ -69,8 +69,8 @@
             'created_at' => $sub->created_at,
             'can_cancel' => $statusEnum === SessionSubscriptionStatus::PENDING && $paymentStatusEnum === SubscriptionPaymentStatus::PENDING,
             'can_delete' => in_array($statusEnum, [SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::PENDING]),
-            'can_pay' => $sub->acceptsRetryPayment(),
-            'pay_url' => $sub->acceptsRetryPayment()
+            'can_pay' => $sub->allowsPaymentRetry(),
+            'pay_url' => $sub->allowsPaymentRetry()
                 ? route('quran.subscription.payment', ['subdomain' => $subdomain, 'subscription' => $sub->id])
                 : null,
             'model' => $sub,
@@ -126,8 +126,8 @@
             'created_at' => $sub->created_at,
             'can_cancel' => $statusEnum === SessionSubscriptionStatus::PENDING && $paymentStatusEnum === SubscriptionPaymentStatus::PENDING,
             'can_delete' => in_array($statusEnum, [SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::PENDING]),
-            'can_pay' => $sub->acceptsRetryPayment(),
-            'pay_url' => $sub->acceptsRetryPayment()
+            'can_pay' => $sub->allowsPaymentRetry(),
+            'pay_url' => $sub->allowsPaymentRetry()
                 ? route('quran.subscription.payment', ['subdomain' => $subdomain, 'subscription' => $sub->id])
                 : null,
             'model' => $sub,
@@ -180,8 +180,8 @@
             'created_at' => $sub->created_at,
             'can_cancel' => $statusEnum === SessionSubscriptionStatus::PENDING && $paymentStatusEnum === SubscriptionPaymentStatus::PENDING,
             'can_delete' => in_array($statusEnum, [SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::PENDING]),
-            'can_pay' => $sub->acceptsRetryPayment(),
-            'pay_url' => $sub->acceptsRetryPayment()
+            'can_pay' => $sub->allowsPaymentRetry(),
+            'pay_url' => $sub->allowsPaymentRetry()
                 ? route('academic.subscription.payment', ['subdomain' => $subdomain, 'subscription' => $sub->id])
                 : null,
             'model' => $sub,

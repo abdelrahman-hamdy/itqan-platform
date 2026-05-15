@@ -919,6 +919,24 @@ abstract class BaseSubscription extends Model
     }
 
     /**
+     * Canonical "can the student currently pay this row?" predicate.
+     *
+     * Covers BOTH shapes that the payment route accepts:
+     *   - PENDING_FIRST_PAYMENT  (acceptsRetryPayment)
+     *   - ACTIVE_PAYMENT_DUE     (isCurrentCyclePaymentPending — the hybrid
+     *     where the queued cycle was promoted to active before payment
+     *     landed; legitimate state for the student to keep paying)
+     *
+     * UI gates the Pay button on this. Payment controllers gate the route
+     * on `SubscriptionViewState::allowsPaymentRetry()`. Both paths must agree
+     * or the student sees no button OR sees a button that 404s.
+     */
+    public function allowsPaymentRetry(): bool
+    {
+        return $this->acceptsRetryPayment() || $this->isCurrentCyclePaymentPending();
+    }
+
+    /**
      * Scope counterpart of `acceptsRetryPayment()`.
      */
     public function scopeAcceptsRetryPayment(Builder $query): Builder
