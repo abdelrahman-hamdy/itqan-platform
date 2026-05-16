@@ -57,7 +57,7 @@ class PresetSessionsReviewService
 
         $users = User::query()
             ->whereIn('id', $userIds)
-            ->get(['id', 'name'])
+            ->get(['id', 'first_name', 'last_name'])
             ->keyBy('id');
 
         $consumptionCounts = SessionConsumption::query()
