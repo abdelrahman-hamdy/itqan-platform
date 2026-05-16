@@ -12,6 +12,7 @@ use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\SessionReportShowController;
 use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\Supervisor\SupervisorAcademicLessonsController;
+use App\Http\Controllers\Supervisor\SupervisorAdminAuditController;
 use App\Http\Controllers\Supervisor\SupervisorAttendanceController;
 use App\Http\Controllers\Supervisor\SupervisorCalendarController;
 use App\Http\Controllers\Supervisor\SupervisorCertificatesController;
@@ -138,6 +139,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::delete('/interactive-courses/{course}', [SupervisorInteractiveCoursesController::class, 'destroy'])->name('interactive-courses.destroy');
         Route::post('/interactive-courses/{course}/enrollments', [SupervisorInteractiveCoursesController::class, 'addEnrollment'])->name('interactive-courses.add-enrollment');
         Route::delete('/interactive-courses/{course}/enrollments/{enrollment}', [SupervisorInteractiveCoursesController::class, 'removeEnrollment'])->name('interactive-courses.remove-enrollment');
+
+        // Admin Audit (temporary cleanup tool — gated by canManageSubscriptions inside the controller)
+        Route::get('/admin-audit', [SupervisorAdminAuditController::class, 'index'])->name('admin-audit.index');
+        Route::post('/admin-audit/decide', [SupervisorAdminAuditController::class, 'decide'])->name('admin-audit.decide');
 
         // Subscriptions
         Route::get('/subscriptions', [SupervisorSubscriptionsController::class, 'index'])->name('subscriptions.index');

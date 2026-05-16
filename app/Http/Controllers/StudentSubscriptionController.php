@@ -231,9 +231,13 @@ class StudentSubscriptionController extends Controller
         // controller, not this method.
         $availableOptions = $renewalService->getRenewalOptions($subscription);
         $validPackageIds = collect($availableOptions['packages'])->pluck('id')->all();
-        $packageId = $request->package_id;
+        // Cast to int — form submissions arrive as strings ("12"), but
+        // $validPackageIds is int[]. Strict in_array below treats "12" !== 12
+        // and rejects every renewal. Regression introduced 2026-05-14 in the
+        // v2 simplify pass; surfaced by sub 720 (student 683) on 2026-05-16.
+        $packageId = $request->filled('package_id') ? (int) $request->package_id : null;
         $previousPackageId = $availableOptions['current']['package_id'] ?? null;
-        $previousIsActive = $previousPackageId !== null && in_array($previousPackageId, $validPackageIds, true);
+        $previousIsActive = $previousPackageId !== null && in_array((int) $previousPackageId, $validPackageIds, true);
 
         if ($packageId) {
             if (! in_array($packageId, $validPackageIds, true)) {

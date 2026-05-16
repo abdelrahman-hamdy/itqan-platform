@@ -7,7 +7,9 @@ use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
+use App\Models\SubscriptionAuditLog;
 use App\Notifications\SubscriptionExpiredNotification;
+use App\Support\Subscriptions\SubscriptionSnapshot;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -86,6 +88,13 @@ class ExpireActiveSubscriptions extends Command
                         }
 
                         try {
+                            // Capture pre-pause snapshot for the audit log so the
+                            // before/after diff is recorded. The actual pause runs
+                            // inside the transaction below; audit write happens
+                            // after the commit (non-fatal — see record()).
+                            $before = SubscriptionSnapshot::capture($subscription);
+                            $startedAt = microtime(true);
+
                             DB::transaction(function () use ($subscription) {
                                 // Stamp `pause_reason = END_OF_PERIOD` so admins (and the
                                 // Filament Resume action's `->visible()` predicate) can tell
@@ -107,6 +116,35 @@ class ExpireActiveSubscriptions extends Command
                             });
 
                             $stats[$type]++;
+
+                            // Audit row so the pause is traceable in
+                            // subscription_audit_log alongside manual pauses
+                            // (which go through SubscriptionLifecycle::pause).
+                            // Without this, all 13+ daily auto-pauses produced
+                            // zero audit entries — the gap caught in the
+                            // 2026-05-16 review (sub 706 et al.).
+                            try {
+                                $subscription->refresh();
+                                $after = SubscriptionSnapshot::capture($subscription);
+                                SubscriptionAuditLog::record([
+                                    'subscription' => $subscription,
+                                    'cycle_id' => $subscription->current_cycle_id,
+                                    'action' => 'auto_pause_end_of_period',
+                                    'source' => 'cron',
+                                    'actor_user_id' => null,
+                                    'before_state' => $before,
+                                    'after_state' => $after,
+                                    'view_state_before' => null,
+                                    'view_state_after' => null,
+                                    'invariant_violations' => [],
+                                    'latency_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                                ]);
+                            } catch (\Throwable $auditError) {
+                                Log::warning('Failed to record auto-pause audit log row', [
+                                    'subscription_id' => $subscription->id,
+                                    'error' => $auditError->getMessage(),
+                                ]);
+                            }
 
                             Log::info('Subscription auto-paused at end-of-cycle', [
                                 'subscription_id' => $subscription->id,

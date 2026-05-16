@@ -568,9 +568,12 @@ class SubscriptionController extends Controller
         // when none was picked AND the previous package is retired.
         $availableOptions = $renewalService->getRenewalOptions($subscription);
         $validPackageIds = collect($availableOptions['packages'])->pluck('id')->all();
-        $packageId = $request->package_id;
+        // Cast to int — request input arrives as string, $validPackageIds is
+        // int[], strict in_array below would reject every renewal. Same
+        // regression as StudentSubscriptionController; fixed 2026-05-16.
+        $packageId = $request->filled('package_id') ? (int) $request->package_id : null;
         $previousPackageId = $availableOptions['current']['package_id'] ?? null;
-        $previousIsActive = $previousPackageId !== null && in_array($previousPackageId, $validPackageIds, true);
+        $previousIsActive = $previousPackageId !== null && in_array((int) $previousPackageId, $validPackageIds, true);
 
         if ($packageId) {
             if (! in_array($packageId, $validPackageIds, true)) {

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -27,7 +28,7 @@ use Illuminate\Support\Facades\Log;
  */
 class SubscriptionCycle extends Model
 {
-    use HasFactory, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     public const STATE_QUEUED = 'queued';
 

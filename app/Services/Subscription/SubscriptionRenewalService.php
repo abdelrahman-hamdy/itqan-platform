@@ -505,6 +505,16 @@ class SubscriptionRenewalService
             'package_price_monthly' => $pricing['price_fields']['package_price_monthly'] ?? $subscription->package_price_monthly,
             'package_price_quarterly' => $pricing['price_fields']['package_price_quarterly'] ?? $subscription->package_price_quarterly,
             'package_price_yearly' => $pricing['price_fields']['package_price_yearly'] ?? $subscription->package_price_yearly,
+            // Sync the package's session duration onto the parent sub row so
+            // a renewal-onto-a-different-package doesn't leave the sub-row
+            // stale. Without this, sub.session_duration_minutes drifts on
+            // every package change and cascades into the linked circle and
+            // newly-scheduled sessions (root cause behind the 13-sub
+            // duration-mismatch incident on 2026-05-16). Falls back to the
+            // existing value so non-package renewal options (which leave
+            // pricing.session_duration_minutes null) preserve current state.
+            'session_duration_minutes' => $pricing['session_duration_minutes']
+                ?? $subscription->session_duration_minutes,
         ];
 
         // Clear subscription-level grace period metadata (cycle is freshly paid)
