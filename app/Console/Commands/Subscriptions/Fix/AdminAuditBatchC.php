@@ -22,17 +22,20 @@ use Illuminate\Support\Facades\DB;
  * current cycle (if active), and applies per-sub extras (cycle number
  * swap, cycle soft-delete, sessions_used adjustment, archive-only mode).
  *
- * DEFERRED to the admin audit page for a second-round answer:
- *   - sub 453 (consumption 8/8 — admin needs to pick the 8th session)
- *   - sub 553 (paid 150 ≠ pkg 13 price 300, pkg may be wrong)
- *   - sub 961 (cycle 731 has a completed payment — can't safely delete)
+ * Second-round answers received 2026-05-16:
+ *   - sub 453: expire + archive, "ignore consumption" — suspended sessions
+ *     left as-is.
+ *   - sub 553: expire + archive + keep pkg 13; treat the paid-vs-package
+ *     gap as an admin-given discount (total_price=300, discount=150,
+ *     final_price stays at 150).
+ *   - sub 961: handled in Batch F (cycle advance, not expire).
  */
 class AdminAuditBatchC extends Command
 {
     protected $signature = 'subscriptions:fix-admin-audit-batch-c-expire
                             {--apply : Actually perform the writes (default is dry-run)}';
 
-    protected $description = 'Admin-audit Batch C: flip 10 paused subs to EXPIRED + per-sub cycle ops.';
+    protected $description = 'Admin-audit Batch C: flip 12 paused subs to EXPIRED + per-sub cycle ops.';
 
     private const BUG_ID = 'admin-audit-batch-c';
 
@@ -96,6 +99,26 @@ class AdminAuditBatchC extends Command
             'expected_current_cycle' => 587,
             'mode' => 'expire_and_archive',
         ],
+        // Second-round answers (2026-05-16)
+        453 => [
+            'case_key' => 'paused_no_audit_corrupt:sub:453',
+            'expected_current_cycle' => 120,
+            'mode' => 'expire_and_archive',
+            // admin: "ignore consumption" — no sessions_used change.
+        ],
+        553 => [
+            'case_key' => 'paused_no_audit_corrupt:sub:553',
+            'expected_current_cycle' => 190,
+            'mode' => 'expire_and_archive',
+            // Admin-given discount: keep pkg 13 (12/mo × 60min, monthly=360
+            // sale=300), recognize the 150 paid as 300 - 150 discount. The
+            // sub was admin-created, so an arbitrary discount is allowed.
+            'extra_cycle_updates' => [
+                'total_price' => 300.00,
+                'discount_amount' => 150.00,
+                'pricing_override_reason' => 'admin_created_with_discount_2026_05_16',
+            ],
+        ],
     ];
 
     public function handle(): int
@@ -149,6 +172,7 @@ class AdminAuditBatchC extends Command
             if (! empty($p['cfg']['cycle_sessions_used'])) $extras[] = "sessions_used={$p['cfg']['cycle_sessions_used']}";
             if (! empty($p['cfg']['swap_cycle_numbers'])) $extras[] = 'swap_nums(' . implode(',', array_map(fn ($k, $v) => "$k=>$v", array_keys($p['cfg']['swap_cycle_numbers']), $p['cfg']['swap_cycle_numbers'])) . ')';
             if (! empty($p['cfg']['soft_delete_cycle'])) $extras[] = "soft_delete_cyc#{$p['cfg']['soft_delete_cycle']}";
+            if (! empty($p['cfg']['extra_cycle_updates'])) $extras[] = 'cycle_set(' . implode(',', array_keys($p['cfg']['extra_cycle_updates'])) . ')';
             $rows[] = [
                 $p['sub_id'],
                 $p['mode'],
@@ -219,6 +243,23 @@ class AdminAuditBatchC extends Command
                     'archived_at' => $cycle->archived_at ?: $now,
                     'updated_at' => $now,
                 ]);
+        }
+
+        // 1b. Arbitrary cycle column updates (e.g. discount fields for sub 553)
+        if (! empty($cfg['extra_cycle_updates'])) {
+            BackfillLog::create([
+                'bug_id' => self::BUG_ID,
+                'table_name' => 'subscription_cycles',
+                'row_id' => $cycle->id,
+                'column_name' => implode(',', array_keys($cfg['extra_cycle_updates'])),
+                'original_value' => json_encode($cycle->only(array_keys($cfg['extra_cycle_updates'])), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'new_value' => json_encode($cfg['extra_cycle_updates'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'backfill_command' => 'subscriptions:fix-admin-audit-batch-c-expire',
+                'ran_at' => $now,
+            ]);
+            DB::table('subscription_cycles')
+                ->where('id', $cycle->id)
+                ->update(array_merge($cfg['extra_cycle_updates'], ['updated_at' => $now]));
         }
 
         // 2. Adjust sessions_used if requested
