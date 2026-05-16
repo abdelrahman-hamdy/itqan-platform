@@ -142,7 +142,12 @@ class RestoreMisCancelledStuckSessions extends Command
                         ->whereNull('reversed_at')
                         ->exists();
 
-                    if (! $hasConsumption && $session->quran_subscription_id) {
+                    // session_consumption.cycle_id is NOT NULL, so we can only
+                    // materialize a row when the session's cycle anchor is
+                    // present. Sessions with a sub but no cycle (legacy data)
+                    // get their status restored but join the orphan-drift pool
+                    // for the next legacy-counting-drift run.
+                    if (! $hasConsumption && $session->quran_subscription_id && $session->subscription_cycle_id) {
                         $consumption = SessionConsumption::create([
                             'session_id' => $session->id,
                             'session_type' => 'quran_session',
