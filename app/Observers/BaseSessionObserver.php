@@ -216,8 +216,18 @@ class BaseSessionObserver
             // flip OUT of COMPLETED on a counted session must give the cycle's
             // session back. Covers CANCELLED, SUSPENDED, ABSENT-via-status, and
             // a flip back to a pre-completion state.
-            if ($oldStatusEnum === SessionStatus::COMPLETED
-                && $newStatusEnum !== SessionStatus::COMPLETED
+            //
+            // ALSO reverse on any transition into CANCELLED while subscription_counted
+            // is still true, even from a pre-completion state. The legacy counter could
+            // be set on a SCHEDULED/READY row by an out-of-band writer (admin SQL, old
+            // migration, prior bug), and cancelling without reversing would leave the
+            // cycle slot consumed forever. 0 affected rows in prod today, defensive.
+            $flippingOutOfCompleted = $oldStatusEnum === SessionStatus::COMPLETED
+                && $newStatusEnum !== SessionStatus::COMPLETED;
+            $cancellingCountedNonCompleted = $newStatusEnum === SessionStatus::CANCELLED
+                && $oldStatusEnum !== SessionStatus::COMPLETED;
+
+            if (($flippingOutOfCompleted || $cancellingCountedNonCompleted)
                 && method_exists($session, 'isSubscriptionCounted')
                 && $session->isSubscriptionCounted()) {
                 $action = $newStatusEnum === SessionStatus::CANCELLED ? 'cancellation' : 'status_uncomplete';

@@ -433,16 +433,28 @@ abstract class BaseSession extends Model implements MeetingCapable
         }
 
         // student / parent
-        if ($studentAttendance?->counts_for_subscription === false) {
-            return 'canceled';
-        }
-
-        // attendance_status is cast to AttendanceStatus enum on MeetingAttendance.
         $attendanceStatus = $studentAttendance?->attendance_status;
         if ($attendanceStatus instanceof \App\Enums\AttendanceStatus) {
             $attendanceStatus = $attendanceStatus->value;
         }
-        if ($attendanceStatus === \App\Enums\AttendanceStatus::ABSENT->value) {
+        $isAbsent = $attendanceStatus === \App\Enums\AttendanceStatus::ABSENT->value;
+
+        // Per the no-show=paid policy, a session whose `subscription_counted`
+        // flag is true was counted from the student's perspective — render it
+        // as `completed` (with a `completed_absent` marker if the student was
+        // absent) instead of overriding to `canceled`. The legacy flag is the
+        // supervisor's historical decision; we trust it.
+        if ((bool) ($this->subscription_counted ?? false)) {
+            return $isAbsent ? 'completed_absent' : 'completed';
+        }
+
+        // Session did not count: matrix-excluded (teacher-absent) or supervisor
+        // override → show as cancelled.
+        if ($studentAttendance?->counts_for_subscription === false) {
+            return 'canceled';
+        }
+
+        if ($isAbsent) {
             return 'absent';
         }
 

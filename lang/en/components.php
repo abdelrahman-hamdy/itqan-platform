@@ -68,6 +68,9 @@ return [
             'cancelled' => 'Cancelled',
             // UI-only label for completed-but-uncounted sessions (soft "canceled").
             'canceled' => 'Canceled',
+            // UI-only label for completed sessions that counted (no-show=paid)
+            // but where the student did not attend. Softer green badge.
+            'completed_absent' => 'Completed (student absent)',
             'unscheduled' => 'Unscheduled',
             'suspended' => 'Suspended',
             'absent' => 'Absent',

@@ -75,6 +75,7 @@ class StuckScheduledSessions extends Command
                         $skipReason = $this->safetyCheck($s);
                         if ($skipReason !== null) {
                             $skipped[$skipReason]++;
+
                             continue;
                         }
                         $eligible++;
@@ -150,9 +151,14 @@ class StuckScheduledSessions extends Command
             return 'consumption_exists';
         }
 
+        // meeting_attendances stores 'individual' / 'group' / 'trial' for Quran
+        // sessions (set by preCreateAttendanceRows from QuranSession.session_type),
+        // NOT the morph class 'quran_session' that getMorphClass() returns. A previous
+        // version of this gate missed 9 attended-but-stuck sessions because of that
+        // mismatch and they were wrongly cancelled (2026-05-16 incident).
         if (MeetingAttendance::query()
             ->where('session_id', $session->id)
-            ->where('session_type', $sessionType)
+            ->whereIn('session_type', [$sessionType, 'individual', 'group', 'trial'])
             ->exists()) {
             return 'attendance_exists';
         }

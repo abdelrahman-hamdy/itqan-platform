@@ -545,8 +545,24 @@ class SessionTransitionService
             ]);
 
             // Refresh the original session instance
-            // Note: Side-effects (subscription reversal, remaining sessions update)
-            // are handled by session observers when status changes
+            // Note: Subscription reversal + earnings removal are wired through
+            // BaseSessionObserver::updated() which fires on the status flip above.
+            // Calling reverseSubscriptionUsage() here too is intentional belt-and-
+            // suspenders: it is idempotent (no-op when subscription_counted is
+            // already false), and guarantees the reversal even on code paths that
+            // bypass the observer (queue/CLI contexts where model events are off).
+            if (method_exists($lockedSession, 'isSubscriptionCounted')
+                && $lockedSession->isSubscriptionCounted()) {
+                try {
+                    $lockedSession->reverseSubscriptionUsage();
+                } catch (Exception $e) {
+                    Log::error('Defensive reverseSubscriptionUsage failed on cancellation', [
+                        'session_id' => $lockedSession->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
             $session->refresh();
 
             Log::info('Session transitioned to CANCELLED', [

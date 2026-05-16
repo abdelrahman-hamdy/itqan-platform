@@ -13,8 +13,6 @@ use App\Http\Controllers\SessionReportShowController;
 use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\Supervisor\SupervisorAcademicLessonsController;
 use App\Http\Controllers\Supervisor\SupervisorAttendanceController;
-use App\Http\Controllers\Supervisor\SupervisorLegacyCountingAuditController;
-use App\Http\Controllers\Supervisor\SupervisorPresetSessionsReviewController;
 use App\Http\Controllers\Supervisor\SupervisorCalendarController;
 use App\Http\Controllers\Supervisor\SupervisorCertificatesController;
 use App\Http\Controllers\Supervisor\SupervisorDashboardController;
@@ -22,8 +20,11 @@ use App\Http\Controllers\Supervisor\SupervisorGroupCirclesController;
 use App\Http\Controllers\Supervisor\SupervisorHomeworkController;
 use App\Http\Controllers\Supervisor\SupervisorIndividualCirclesController;
 use App\Http\Controllers\Supervisor\SupervisorInteractiveCoursesController;
+use App\Http\Controllers\Supervisor\SupervisorLegacyCountingAuditController;
+use App\Http\Controllers\Supervisor\SupervisorOverflowReviewController;
 use App\Http\Controllers\Supervisor\SupervisorParentsController;
 use App\Http\Controllers\Supervisor\SupervisorPaymentsController;
+use App\Http\Controllers\Supervisor\SupervisorPresetSessionsReviewController;
 use App\Http\Controllers\Supervisor\SupervisorProfileController;
 use App\Http\Controllers\Supervisor\SupervisorQuizzesController;
 use App\Http\Controllers\Supervisor\SupervisorRecordedCoursesController;
@@ -147,6 +148,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Preset sessions review (admin-wizard pre-platform offset restoration — sub-1153 incident remediation)
         Route::get('/preset-sessions-review', [SupervisorPresetSessionsReviewController::class, 'index'])->name('preset-sessions-review.index');
         Route::post('/preset-sessions-review/{sub}/record', [SupervisorPresetSessionsReviewController::class, 'record'])->name('preset-sessions-review.record');
+
+        // Overflow cycles review (legacy-counting drift that would exceed total_sessions — Phase 4 cleanup)
+        Route::get('/overflow-cycles-review', [SupervisorOverflowReviewController::class, 'index'])->name('overflow-cycles-review.index');
+        Route::post('/overflow-cycles-review/{cycle}/record', [SupervisorOverflowReviewController::class, 'record'])->name('overflow-cycles-review.record');
 
         // Subscriptions
         Route::get('/subscriptions', [SupervisorSubscriptionsController::class, 'index'])->name('subscriptions.index');
