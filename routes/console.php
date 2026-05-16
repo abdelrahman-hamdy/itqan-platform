@@ -179,14 +179,16 @@ Schedule::command('recordings:check-webhook-sla')
 // ════════════════════════════════════════════════════════════════
 
 // Expire active subscriptions past their end date
-// Runs hourly to transition ACTIVE → EXPIRED for subscriptions where ends_at < now()
-Schedule::command('subscriptions:expire-active --force')
+// Runs hourly to transition ACTIVE → EXPIRED for subscriptions where ends_at < now().
+// Skips subs with a queued+paid cycle (advance-cycles handles those) or an
+// active admin-granted grace extension.
+Schedule::command('subscriptions:expire-active')
     ->name('expire-active-subscriptions')
     ->hourly()
     ->withoutOverlapping()
     ->runInBackground()
     ->onFailure($pageOnFail('subscriptions:expire-active'))
-    ->description('Pause active subscriptions past their end date (respects queued cycles + grace)');
+    ->description('Expire active subscriptions past their end date (skips queued+paid + admin grace)');
 
 // Advance queued subscription cycles into active state when the current cycle ends
 // Runs hourly so the student never sees a gap between cycles
