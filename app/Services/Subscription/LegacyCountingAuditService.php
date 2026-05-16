@@ -261,10 +261,11 @@ class LegacyCountingAuditService
         }
 
         $earnings = TeacherEarning::query()
+            ->withoutGlobalScopes()
             ->whereIn('session_id', $sessionIds)
             ->where('session_type', 'quran_session')
             ->whereNull('deleted_at')
-            ->get(['id', 'session_id', 'session_type', 'teacher_id', 'amount', 'currency', 'created_at']);
+            ->get(['id', 'session_id', 'session_type', 'teacher_id', 'amount', 'created_at']);
 
         $sessionsById = QuranSession::query()
             ->withoutGlobalScopes()
@@ -284,7 +285,7 @@ class LegacyCountingAuditService
                 'academy_id' => $s?->academy_id,
                 'teacher_id' => $e->teacher_id,
                 'amount' => $e->amount,
-                'currency' => $e->currency,
+                'currency' => 'SAR',
                 'earning_created' => $e->created_at?->toDateTimeString(),
                 'risk' => 'high',
                 'risk_reason' => 'session stuck in scheduled status BUT teacher earning was already created — possible payout',
