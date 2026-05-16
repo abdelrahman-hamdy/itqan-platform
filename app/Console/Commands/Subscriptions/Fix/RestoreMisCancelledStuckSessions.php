@@ -186,8 +186,16 @@ class RestoreMisCancelledStuckSessions extends Command
                         ->with('currentCycle')
                         ->find((int) $session->quran_subscription_id);
                     if ($sub) {
-                        $reconciler->sync($sub);
-                        $reconciledSubs[(int) $sub->id] = true;
+                        try {
+                            $reconciler->sync($sub);
+                            $reconciledSubs[(int) $sub->id] = true;
+                        } catch (\Throwable $reconcileError) {
+                            $this->warn(sprintf(
+                                'session #%d: status restored, reconciler deferred: %s',
+                                $session->id,
+                                $reconcileError->getMessage(),
+                            ));
+                        }
                     }
                 }
             } catch (\Throwable $e) {

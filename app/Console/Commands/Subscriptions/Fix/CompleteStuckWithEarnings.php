@@ -63,6 +63,7 @@ class CompleteStuckWithEarnings extends Command
             'teacher_absent' => 0,
             'no_earning' => 0,
             'no_subscription' => 0,
+            'no_cycle' => 0,
         ];
         $errors = 0;
         $reconciledSubs = [];
@@ -127,6 +128,16 @@ class CompleteStuckWithEarnings extends Command
 
                         if (! $s->quran_subscription_id) {
                             $skipped['no_subscription']++;
+
+                            continue;
+                        }
+
+                        // session_consumption.cycle_id is NOT NULL — skip rows
+                        // missing a cycle anchor. The session is still legacy-
+                        // counted (subscription_counted=true) but won't get a
+                        // canonical consumption row until the cycle is assigned.
+                        if (! $s->subscription_cycle_id) {
+                            $skipped['no_cycle'] = ($skipped['no_cycle'] ?? 0) + 1;
 
                             continue;
                         }
@@ -215,8 +226,24 @@ class CompleteStuckWithEarnings extends Command
                             ->with('currentCycle')
                             ->find((int) $s->quran_subscription_id);
                         if ($sub) {
-                            $reconciler->sync($sub);
-                            $reconciledSubs[(int) $sub->id] = true;
+                            try {
+                                $reconciler->sync($sub);
+                                $reconciledSubs[(int) $sub->id] = true;
+                            } catch (\Throwable $reconcileError) {
+                                // The consumption row IS the source of truth
+                                // (INV-B2). The reconciler may refuse to mirror
+                                // it into the cycle counters when doing so
+                                // would violate INV-B4 (sessions_remaining < 0)
+                                // — that's exactly the overflow case the
+                                // /manage/overflow-cycles-review UI handles.
+                                // Log and continue; the session-level state is
+                                // already correct.
+                                $this->warn(sprintf(
+                                    'session #%d: consumption written, reconciler deferred: %s',
+                                    $s->id,
+                                    $reconcileError->getMessage(),
+                                ));
+                            }
                         }
                     } catch (\Throwable $e) {
                         $errors++;
