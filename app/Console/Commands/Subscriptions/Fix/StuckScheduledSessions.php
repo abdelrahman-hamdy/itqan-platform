@@ -64,6 +64,7 @@ class StuckScheduledSessions extends Command
         $this->newLine();
 
         QuranSession::query()
+            ->withoutGlobalScopes()
             ->where('status', SessionStatus::SCHEDULED->value)
             ->where('scheduled_at', '<', now()->subMinutes(5))
             ->orderBy('id')
@@ -95,6 +96,7 @@ class StuckScheduledSessions extends Command
                             ]);
 
                             QuranSession::query()
+                                ->withoutGlobalScopes()
                                 ->whereKey($s->id)
                                 ->update(['status' => SessionStatus::CANCELLED->value]);
 
