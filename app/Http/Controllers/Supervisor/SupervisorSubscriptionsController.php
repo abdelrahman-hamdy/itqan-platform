@@ -219,38 +219,66 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         ]);
         $subscriptionCycles = $subscription->cycles;
 
-        // Session cycle filter
-        // "Current cycle" now follows subscription_cycle_id (canonical post-2026-05-04)
-        // and falls back to the starts_at/ends_at window for historical rows where the
-        // FK is NULL. Eager-load meetingAttendances so the view can derive per-student
-        // counted-status without N+1.
+        // Session tab filters.
+        //
+        // "Current cycle" — paid window only: subscription_cycle_id matches
+        //   the current cycle AND scheduled_at <= ends_at. Fallback to date-
+        //   range filter for legacy rows with NULL FK.
+        //
+        // "Extension period" — admin grace: subscription_cycle_id matches
+        //   the current cycle AND scheduled_at > ends_at. Tab is only
+        //   surfaced when the cycle has an active extension
+        //   (grace_period_ends_at IS NOT NULL AND now > ends_at).
+        //
+        // "All sessions" — everything attached to the sub.
         $cycle = $request->query('cycle', 'current');
         $currentCycleId = $subscription->current_cycle_id;
+        $currentCycle = $subscription->relationLoaded('currentCycle')
+            ? $subscription->currentCycle
+            : ($currentCycleId ? $subscription->currentCycle()->first() : null);
+        $graceEndsAt = $currentCycle?->grace_period_ends_at;
+        $hasActiveExtension = $graceEndsAt !== null
+            && $subscription->ends_at !== null
+            && now()->greaterThan($subscription->ends_at);
+
+        $currentCycleFilter = function ($q) use ($currentCycleId, $subscription) {
+            if ($currentCycleId) {
+                $q->where(function ($inner) use ($currentCycleId, $subscription) {
+                    $inner->where('subscription_cycle_id', $currentCycleId);
+                    if ($subscription->starts_at && $subscription->ends_at) {
+                        $inner->orWhere(function ($qq) use ($subscription) {
+                            $qq->whereNull('subscription_cycle_id')
+                                ->whereBetween('scheduled_at', [$subscription->starts_at, $subscription->ends_at]);
+                        });
+                    }
+                });
+                if ($subscription->ends_at) {
+                    $q->where('scheduled_at', '<=', $subscription->ends_at);
+                }
+            } elseif ($subscription->starts_at && $subscription->ends_at) {
+                $q->whereBetween('scheduled_at', [$subscription->starts_at, $subscription->ends_at]);
+            } else {
+                $q->whereRaw('1=0');
+            }
+        };
+
+        $extensionFilter = function ($q) use ($currentCycleId, $subscription) {
+            if (! $currentCycleId || ! $subscription->ends_at) {
+                $q->whereRaw('1=0');
+                return;
+            }
+            $q->where('subscription_cycle_id', $currentCycleId)
+                ->where('scheduled_at', '>', $subscription->ends_at);
+        };
 
         $sessionsQuery = $subscription->sessions()
             ->with('meetingAttendances')
             ->latest('scheduled_at');
 
-        $currentCycleFilter = function ($q) use ($currentCycleId, $subscription) {
-            if ($currentCycleId) {
-                $q->where('subscription_cycle_id', $currentCycleId);
-                if ($subscription->starts_at && $subscription->ends_at) {
-                    $q->orWhere(function ($qq) use ($subscription) {
-                        $qq->whereNull('subscription_cycle_id')
-                            ->whereBetween('scheduled_at', [$subscription->starts_at, $subscription->ends_at]);
-                    });
-                }
-            } elseif ($subscription->starts_at && $subscription->ends_at) {
-                $q->whereBetween('scheduled_at', [$subscription->starts_at, $subscription->ends_at]);
-            } else {
-                // No cycle anchor at all — return nothing for the "current" tab
-                // rather than the full history.
-                $q->whereRaw('1=0');
-            }
-        };
-
         if ($cycle === 'current') {
             $sessionsQuery->where($currentCycleFilter);
+        } elseif ($cycle === 'extension' && $hasActiveExtension) {
+            $sessionsQuery->where($extensionFilter);
         }
 
         $sessions = $sessionsQuery->paginate(30);
@@ -274,9 +302,12 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         }
         $countedSessionIds = array_flip($countedSessionIds);
 
-        // Count sessions per cycle for tabs (mirrors the filter above)
+        // Count sessions per tab (mirrors the filters above)
         $allSessionsCount = $subscription->sessions()->count();
         $currentCycleCount = $subscription->sessions()->where($currentCycleFilter)->count();
+        $extensionCount = $hasActiveExtension
+            ? $subscription->sessions()->where($extensionFilter)->count()
+            : 0;
 
         // Get teacher user for avatar
         $teacherUser = null;
@@ -303,6 +334,9 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'cycle' => $cycle,
             'currentCycleCount' => $currentCycleCount,
             'allSessionsCount' => $allSessionsCount,
+            'extensionCount' => $extensionCount,
+            'hasActiveExtension' => $hasActiveExtension,
+            'graceEndsAt' => $graceEndsAt,
             'countedSessionIds' => $countedSessionIds,
             'teacherUser' => $teacherUser,
             'renewedBy' => $renewedBy,

@@ -328,6 +328,11 @@ class SubscriptionMaintenanceService
 
             if ($justReactivated) {
                 $updateData['status'] = SessionSubscriptionStatus::ACTIVE;
+                // Clear the stale paused_at timestamp so admin views + audit
+                // dumps don't carry the previous pause forward. Pause reason
+                // is left in place — historical reads still see why the sub
+                // was paused before the admin extended it.
+                $updateData['paused_at'] = null;
             }
 
             $subscription->update($updateData);

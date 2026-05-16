@@ -1145,10 +1145,17 @@ abstract class BaseSubscription extends Model
     /**
      * Restore sessions that were suspended due to subscription pause/expiry.
      *
-     * Scoped to the CURRENT cycle window: a SUSPENDED session whose date falls
-     * outside `[starts_at, ends_at]` belongs to a previous cycle and must NOT
-     * be flipped back to SCHEDULED — that would be cross-cycle interpolation.
-     * Out-of-window suspended sessions stay suspended (effectively forfeited).
+     * Scoped to the CURRENT cycle window — paid period + any admin-granted
+     * grace extension: upper bound is `max(sub.ends_at, cycle.grace_period_ends_at)`,
+     * lower bound is `starts_at`. Suspended sessions outside this window
+     * belong to a previous cycle and stay suspended (forfeited).
+     *
+     * Only FUTURE-dated sessions are restored — past-dated suspended rows
+     * are ghosts (the student never had access during the suspension; the
+     * session can't happen now) and are left alone here. The
+     * `subscriptions:fix-orphan-suspended-sessions` cleanup command sweeps
+     * those up separately (soft-delete if a duplicate completed in the
+     * same slot, otherwise CANCELLED).
      */
     public function restoreSuspendedSessions(): void
     {
@@ -1156,14 +1163,23 @@ abstract class BaseSubscription extends Model
             return;
         }
 
+        $upperBound = $this->ends_at;
+        $cycleGrace = $this->relationLoaded('currentCycle')
+            ? $this->currentCycle?->grace_period_ends_at
+            : ($this->current_cycle_id ? $this->currentCycle()->first()?->grace_period_ends_at : null);
+        if ($cycleGrace && (! $upperBound || $cycleGrace->gt($upperBound))) {
+            $upperBound = $cycleGrace;
+        }
+
         $query = $this->sessions()
-            ->where('status', \App\Enums\SessionStatus::SUSPENDED->value);
+            ->where('status', \App\Enums\SessionStatus::SUSPENDED->value)
+            ->where('scheduled_at', '>', now());
 
         if ($this->starts_at) {
             $query->where('scheduled_at', '>=', $this->starts_at);
         }
-        if ($this->ends_at) {
-            $query->where('scheduled_at', '<=', $this->ends_at);
+        if ($upperBound) {
+            $query->where('scheduled_at', '<=', $upperBound);
         }
 
         $query->update(['status' => \App\Enums\SessionStatus::SCHEDULED->value]);
