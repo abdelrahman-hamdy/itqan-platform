@@ -45,11 +45,56 @@ class LegacyCountingAuditService
     {
         return [
             'summary' => $this->buildSummary(),
+            'totals' => $this->buildTotalDriftCounts(),
             'drift_legacy_not_consumption' => $this->legacyCountedWithoutConsumption(),
             'drift_consumption_not_legacy' => $this->consumptionWithoutLegacyFlag(),
             'attendance_drift' => $this->attendanceCountedWithoutConsumption(),
             'cycles_pending_v2_migration' => $this->cyclesPendingV2Migration(),
             'stuck_with_earnings' => $this->stuckSessionsWithEarnings(),
+        ];
+    }
+
+    /**
+     * Total drift counts (unlimited) so admin sees "X of Y displayed" labels.
+     *
+     * @return array<string, int>
+     */
+    private function buildTotalDriftCounts(): array
+    {
+        $quranDrift = QuranSession::query()
+            ->withoutGlobalScopes()
+            ->where('subscription_counted', true)
+            ->whereNotIn('id', function ($sub) {
+                $sub->select('session_id')
+                    ->from('session_consumption')
+                    ->where('session_type', 'quran_session')
+                    ->whereNull('reversed_at');
+            })
+            ->count();
+
+        $academicDrift = AcademicSession::query()
+            ->withoutGlobalScopes()
+            ->where('subscription_counted', true)
+            ->whereNotIn('id', function ($sub) {
+                $sub->select('session_id')
+                    ->from('session_consumption')
+                    ->where('session_type', 'academic_session')
+                    ->whereNull('reversed_at');
+            })
+            ->count();
+
+        $attendanceDrift = MeetingAttendance::query()
+            ->whereNotNull('subscription_counted_at')
+            ->whereNotIn(DB::raw('CONCAT(session_id,":",session_type)'), function ($sub) {
+                $sub->select(DB::raw('CONCAT(session_id,":",session_type)'))
+                    ->from('session_consumption')
+                    ->whereNull('reversed_at');
+            })
+            ->count();
+
+        return [
+            'drift_legacy_not_consumption_total' => $quranDrift + $academicDrift,
+            'attendance_drift_total' => $attendanceDrift,
         ];
     }
 

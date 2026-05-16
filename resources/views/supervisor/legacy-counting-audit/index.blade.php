@@ -108,7 +108,7 @@
     {{-- ============= LEGACY COUNTED, NO CONSUMPTION ROW — HIGH RISK ============= --}}
     <div class="bg-white shadow rounded-lg p-6 mb-6 border-r-4 border-red-500">
         <h2 class="text-lg font-semibold mb-2 text-red-700">
-            🔴 حصص subscription_counted=true بدون صف consumption ({{ count($driftLegacyNotConsumption) }})
+            🔴 حصص subscription_counted=true بدون صف consumption — إجمالي: {{ number_format($totals['drift_legacy_not_consumption_total']) }} (عرض أول {{ count($driftLegacyNotConsumption) }})
         </h2>
         <p class="text-sm text-gray-600 mb-4">
             النظام القديم يقول "هذه الحصة عُدّت" لكن الجدول الجديد (المرجع الموثّق) لا يحتوي على صف
@@ -153,7 +153,7 @@
     {{-- ============= ATTENDANCE DRIFT — MEDIUM RISK ============= --}}
     <div class="bg-white shadow rounded-lg p-6 mb-6 border-r-4 border-orange-500">
         <h2 class="text-lg font-semibold mb-2 text-orange-700">
-            ⚠️ meeting_attendances counted_at مع غياب صف consumption ({{ count($attendanceDrift) }})
+            ⚠️ meeting_attendances counted_at مع غياب صف consumption — إجمالي: {{ number_format($totals['attendance_drift_total']) }} (عرض أول {{ count($attendanceDrift) }})
         </h2>
         <p class="text-sm text-gray-600 mb-4">
             صف الحضور علَّم نفسه على أنه "مُحتسَب" لكن لا يوجد صف consumption مطابق.
