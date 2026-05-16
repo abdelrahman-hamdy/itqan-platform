@@ -231,7 +231,6 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         //   (grace_period_ends_at IS NOT NULL AND now > ends_at).
         //
         // "All sessions" — everything attached to the sub.
-        $cycle = $request->query('cycle', 'current');
         $currentCycleId = $subscription->current_cycle_id;
         $currentCycle = $subscription->relationLoaded('currentCycle')
             ? $subscription->currentCycle
@@ -240,6 +239,12 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $hasActiveExtension = $graceEndsAt !== null
             && $subscription->ends_at !== null
             && now()->greaterThan($subscription->ends_at);
+
+        // When the sub has an active extension, default to that tab — the
+        // post-ends_at sessions are the actionable ones for admin/teacher.
+        // The "Current cycle" tab is still reachable explicitly.
+        $defaultTab = $hasActiveExtension ? 'extension' : 'current';
+        $cycle = $request->query('cycle', $defaultTab);
 
         $currentCycleFilter = function ($q) use ($currentCycleId, $subscription) {
             if ($currentCycleId) {

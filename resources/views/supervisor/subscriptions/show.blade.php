@@ -242,15 +242,10 @@
             </div>
         </div>
 
-        {{-- Additional Info --}}
+        {{-- Additional Info — grace-period notice moved to the sessions
+             section banner so the admin sees it adjacent to the
+             "Extension Period" tab instead of duplicated up here. --}}
         <div class="p-5 text-sm space-y-2">
-            @if($subscription->isInGracePeriod())
-                @php $graceEnd = $subscription->getGracePeriodEndsAt(); @endphp
-                <div class="flex items-center gap-2 text-orange-700 bg-orange-50 p-2 rounded-lg">
-                    <i class="ri-timer-line"></i>
-                    {{ __('supervisor.subscriptions.grace_period_until', ['date' => $graceEnd?->format('Y-m-d')]) }}
-                </div>
-            @endif
             @if($renewedBy)
                 <div class="flex items-center gap-2 text-gray-600">
                     <i class="ri-links-line"></i>
@@ -349,17 +344,19 @@
             </div>
         @endif
 
-        {{-- Tab Header --}}
+        {{-- Tab Header — when an extension is active the Extension Period tab
+             leads (and is the default landing tab), since those are the
+             actionable post-ends_at sessions. --}}
         <div class="px-5 pt-4 pb-0 border-b border-gray-200">
             <div class="flex gap-4 flex-wrap">
-                <a href="?cycle=current" class="pb-3 text-sm font-medium border-b-2 {{ $cycle === 'current' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
-                    {{ __('supervisor.subscriptions.tab_current_cycle') }} <span class="text-xs bg-gray-100 px-1.5 py-0.5 rounded-full">{{ $currentCycleCount }}</span>
-                </a>
                 @if($hasActiveExtension ?? false)
                     <a href="?cycle=extension" class="pb-3 text-sm font-medium border-b-2 {{ $cycle === 'extension' ? 'border-amber-600 text-amber-700' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
                         {{ __('supervisor.subscriptions.tab_extension_period') }} <span class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{{ $extensionCount }}</span>
                     </a>
                 @endif
+                <a href="?cycle=current" class="pb-3 text-sm font-medium border-b-2 {{ $cycle === 'current' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
+                    {{ __('supervisor.subscriptions.tab_current_cycle') }} <span class="text-xs bg-gray-100 px-1.5 py-0.5 rounded-full">{{ $currentCycleCount }}</span>
+                </a>
                 <a href="?cycle=all" class="pb-3 text-sm font-medium border-b-2 {{ $cycle === 'all' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
                     {{ __('supervisor.subscriptions.tab_all_sessions') }} <span class="text-xs bg-gray-100 px-1.5 py-0.5 rounded-full">{{ $allSessionsCount }}</span>
                 </a>
