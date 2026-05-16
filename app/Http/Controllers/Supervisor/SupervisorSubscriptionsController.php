@@ -369,17 +369,18 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $subscription = $this->resolveSubscription($type, $id);
         $this->ensureSubscriptionInScope($subscription, $type);
 
-        // Delegate to the model so paused_at + pause_reason are stamped and
-        // canPause()/transition gating fires. The previous raw-update path
-        // left 40+ subs in PAUSED status with paused_at=null, which broke
-        // resume()'s ends_at time compensation.
+        // Route through the canonical lifecycle writer so the action lands
+        // in subscription_audit_log alongside the Filament admin pause.
+        // The legacy `$subscription->pause()` path bypassed the audit log
+        // (third PAUSED writer flagged 2026-05-16).
         $reason = trim((string) $request->input('pause_reason', ''));
         if ($reason === '') {
             $reason = __('supervisor.subscriptions.pause_reason_manual_default');
         }
 
         try {
-            $subscription->pause($reason);
+            app(\App\Services\Subscription\SubscriptionLifecycle::class)
+                ->pause($subscription, $request->user(), $reason);
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }

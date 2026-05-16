@@ -24,7 +24,8 @@ use Illuminate\Support\Facades\Log;
  * AcademicSubscription Model
  *
  * Handles subscriptions for academic tutoring (private lessons).
- * Extends BaseSubscription for common functionality and uses HandlesSubscriptionRenewal
+ * Extends BaseSubscription for common functionality. Renewal is owned by
+ * SubscriptionRenewalService — there is no longer a per-model renewal hook.
  * for auto-renewal capabilities.
  *
  * KEY CONCEPTS:
@@ -614,60 +615,6 @@ class AcademicSubscription extends BaseSubscription
         ]);
 
         return $this;
-    }
-
-    /**
-     * Extend sessions on renewal (called by HandlesSubscriptionRenewal trait)
-     */
-    protected function extendSessionsOnRenewal(): void
-    {
-        // Calculate how many new sessions to create for the new billing cycle
-        $sessionsPerMonth = $this->sessions_per_month ?? 8;
-        $billingCycleMultiplier = $this->billing_cycle->sessionMultiplier();
-        $totalNewSessions = $sessionsPerMonth * $billingCycleMultiplier;
-
-        // Get the current highest session number (includes deleted sessions to never reuse)
-        $lastSessionNumber = AcademicSession::withTrashed()
-            ->where('academic_subscription_id', $this->id)
-            ->max('session_number') ?? 0;
-
-        Log::info('Creating sessions for renewed subscription', [
-            'subscription_id' => $this->id,
-            'sessions_per_month' => $sessionsPerMonth,
-            'billing_cycle' => $this->billing_cycle->value,
-            'billing_cycle_multiplier' => $billingCycleMultiplier,
-            'total_new_sessions' => $totalNewSessions,
-            'starting_from_session' => $lastSessionNumber + 1,
-        ]);
-
-        // Create new unscheduled sessions for the renewed period
-        for ($i = 1; $i <= $totalNewSessions; $i++) {
-            $sessionNumber = $lastSessionNumber + $i;
-
-            AcademicSession::create([
-                'academy_id' => $this->academy_id,
-                'academic_teacher_id' => $this->teacher_id,
-                'academic_subscription_id' => $this->id,
-                'student_id' => $this->student_id,
-                'session_code' => 'AS-'.$this->id.'-'.str_pad($sessionNumber, 3, '0', STR_PAD_LEFT),
-                'session_type' => 'individual',
-                'status' => SessionStatus::UNSCHEDULED,
-                'session_number' => $sessionNumber,
-                'title' => __('sessions.naming.academic_session', ['n' => $sessionNumber, 'subject' => $this->subject_name]),
-                'description' => "جلسة في مادة {$this->subject_name} - {$this->grade_level_name}",
-                'duration_minutes' => $this->session_duration_minutes ?? 60,
-                'created_by' => $this->student_id,
-            ]);
-        }
-
-        // Update subscription totals using Eloquent increment method
-        $this->increment('total_sessions_scheduled', $totalNewSessions);
-
-        Log::info('Renewal session creation complete', [
-            'subscription_id' => $this->id,
-            'new_sessions_created' => $totalNewSessions,
-            'total_sessions_now' => $this->total_sessions_scheduled + $totalNewSessions,
-        ]);
     }
 
     // ========================================

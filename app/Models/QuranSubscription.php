@@ -24,8 +24,8 @@ use Illuminate\Support\Facades\Log;
  * QuranSubscription Model
  *
  * Handles subscriptions for Quran memorization programs (individual and group).
- * Extends BaseSubscription for common functionality and uses HandlesSubscriptionRenewal
- * for auto-renewal capabilities.
+ * Extends BaseSubscription for common functionality. Renewal is owned by
+ * SubscriptionRenewalService — there is no longer a per-model renewal hook.
  *
  * KEY CONCEPTS:
  * - Session-based: Subscriptions track total_sessions_scheduled/completed/missed
@@ -569,24 +569,6 @@ class QuranSubscription extends BaseSubscription
         ]);
 
         return $this;
-    }
-
-    /**
-     * Extend sessions on renewal (called by HandlesSubscriptionRenewal trait)
-     */
-    protected function extendSessionsOnRenewal(): void
-    {
-        $sessionsPerMonth = $this->sessions_per_month ?? 4;
-        $multiplier = $this->billing_cycle?->sessionMultiplier() ?? 1;
-        $newSessions = $sessionsPerMonth * $multiplier;
-
-        $this->update([
-            'total_sessions' => $this->total_sessions + $newSessions,
-            'sessions_remaining' => $this->sessions_remaining + $newSessions,
-        ]);
-
-        // Update individual circle if exists
-        $this->updateIndividualCircle();
     }
 
     // ========================================
