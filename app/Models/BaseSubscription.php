@@ -684,19 +684,47 @@ abstract class BaseSubscription extends Model
     /**
      * Check whether this subscription is schedulable right now.
      *
-     *   - ACTIVE + PAID  → schedulable
-     *   - ACTIVE + PENDING + grace period active → schedulable
-     *   - ACTIVE + PENDING + no grace → NOT schedulable (unpaid renewal,
-     *     admin must Extend first to grant scheduling access)
+     *   - ACTIVE + cycle PAID  → schedulable
+     *   - ACTIVE + cycle PENDING + grace period active → schedulable
+     *   - ACTIVE + cycle PENDING + no grace → NOT schedulable (unpaid
+     *     renewal, admin must Extend first to grant scheduling access)
      *   - PAUSED / PENDING / CANCELLED → NOT schedulable
+     *
+     * Delegates to {@see hasActiveAccess()} so scheduling + consumption
+     * gates share the same authoritative predicate (reads cycle state
+     * directly, not the mirrored sub-level columns).
      */
     public function isSchedulable(): bool
+    {
+        return $this->hasActiveAccess();
+    }
+
+    /**
+     * Authoritative access predicate (Phase 3 — "pending = no access").
+     *
+     * Returns true only when:
+     *   - subscription.status is ACTIVE, AND
+     *   - the current cycle is PAID, OR an admin has extended grace.
+     *
+     * Pending/unpaid cycles refuse access — scheduling and consumption
+     * gate on this. Admin extend (cycle.grace_period_ends_at) is the only
+     * way to grant access during a pending cycle.
+     */
+    public function hasActiveAccess(): bool
     {
         if ($this->status !== SessionSubscriptionStatus::ACTIVE) {
             return false;
         }
 
-        if ($this->payment_status === SubscriptionPaymentStatus::PAID) {
+        $cycle = $this->relationLoaded('currentCycle')
+            ? $this->currentCycle
+            : $this->currentCycle()->first();
+
+        if (! $cycle instanceof SubscriptionCycle) {
+            return false;
+        }
+
+        if ($cycle->payment_status === SubscriptionCycle::PAYMENT_PAID) {
             return true;
         }
 

@@ -94,9 +94,16 @@ class SubscriptionPresentation
                     : SubscriptionViewState::PAUSED_END_OF_PERIOD;
             }
 
-            // PAYMENT_PENDING (hybrid / lie-state today).
+            // PAYMENT_PENDING — was the "lie-state" (in-window pending with
+            // access). Now routes to PENDING_PAYMENT (no access) unless an
+            // admin extended grace, which is checked at step 7 below.
             if ($currentCycle->payment_status === SubscriptionCycle::PAYMENT_PENDING) {
-                return SubscriptionViewState::ACTIVE_PAYMENT_DUE;
+                $graceEndsAt = $currentCycle->grace_period_ends_at;
+                if ($graceEndsAt !== null && $now->lt($graceEndsAt)) {
+                    return SubscriptionViewState::GRACE_ADMIN;
+                }
+
+                return SubscriptionViewState::PENDING_PAYMENT;
             }
         }
 
@@ -149,12 +156,20 @@ class SubscriptionPresentation
             [SubscriptionViewState::ACTIVE_PAID, UserType::STUDENT] => null,
             [SubscriptionViewState::ACTIVE_PAID, UserType::PARENT] => null,
 
-            // active_payment_due — pay outstanding
+            // active_payment_due — pay outstanding (legacy; no longer
+            // emitted by viewStateFor — see PENDING_PAYMENT below)
             [SubscriptionViewState::ACTIVE_PAYMENT_DUE, UserType::STUDENT] => 'pay',
             [SubscriptionViewState::ACTIVE_PAYMENT_DUE, UserType::PARENT] => 'pay',
             [SubscriptionViewState::ACTIVE_PAYMENT_DUE, UserType::SUPERVISOR] => 'confirm_cash',
             [SubscriptionViewState::ACTIVE_PAYMENT_DUE, UserType::ADMIN] => 'pay',
             [SubscriptionViewState::ACTIVE_PAYMENT_DUE, UserType::SUPER_ADMIN] => 'pay',
+
+            // pending_payment — pay outstanding; no access until paid
+            [SubscriptionViewState::PENDING_PAYMENT, UserType::STUDENT] => 'pay',
+            [SubscriptionViewState::PENDING_PAYMENT, UserType::PARENT] => 'pay',
+            [SubscriptionViewState::PENDING_PAYMENT, UserType::SUPERVISOR] => 'confirm_cash',
+            [SubscriptionViewState::PENDING_PAYMENT, UserType::ADMIN] => 'pay',
+            [SubscriptionViewState::PENDING_PAYMENT, UserType::SUPER_ADMIN] => 'pay',
 
             // grace_admin — renew
             [SubscriptionViewState::GRACE_ADMIN, UserType::STUDENT] => 'renew',

@@ -35,20 +35,27 @@ use Illuminate\Support\Facades\Log;
  *
  * Renewal always activates. There is no "renew with pending payment" path — the
  * user-initiated "pay later but keep scheduling" scenario is handled via the
- * Extend action (grace period on the current cycle).
+ * admin Extend action (writes `cycle.grace_period_ends_at`). See P12 / INV-A9.
  *
- * Carryover policy (Rule 3): leftover sessions from a cycle that EXPIRED
- * (ends_at < now()) without exhaustion roll into the next cycle's quota
- * — the student paid for them and the cycle window simply elapsed before
- * they could be used. Early renewal of a still-active cycle does NOT
- * carry over (would let students extend coverage past package terms by
- * renewing aggressively). Renewing an exhausted subscription has nothing
- * to carry. See `shouldCarryOverLeftovers()` for the predicate.
+ * Carryover policy (P13 — replaces the original P2, 2026-05-16):
+ *   - The student paid for those sessions; vaporising them on renewal is
+ *     incorrect. Leftover sessions ALWAYS roll forward.
+ *   - Replace-now path computes `remaining = total - used` at creation and
+ *     bumps `newCycle.total_sessions` / stamps `carryover_sessions`.
+ *   - Queue path defers the computation entirely. It does NOT bake carryover
+ *     into the queued row at creation; `SubscriptionLifecycle::advanceCycle()`
+ *     computes it at the moment of promotion, where the figure reflects real
+ *     consumption between renewal click and the cycle boundary.
  *
- * The new cycle's `total_sessions` = packageQuota + carryover. Only the
- * one cycle that received carryover is bumped; subsequent renewals fall
- * back to packageQuota. The `carryover_sessions` column on the new cycle
- * row records the inherited count for audit.
+ * Anti-orphan rule (P13.b / INV-B7): the replace-now path cancels every
+ * SCHEDULED/SUSPENDED future session still anchored to the archiving cycle
+ * (no consumption reversal — by precondition they never ran). The queue
+ * path runs the same sweep inside `advanceCycle()`.
+ *
+ * Renewals from `pending_payment` (or the legacy `active_payment_due`) are
+ * blocked at the Lifecycle layer with `RenewBlockedByPendingPayment` — the
+ * controller redirects those clicks to the existing pay route (P14
+ * "always-allow renewal" only applies once the cycle being paid is settled).
  */
 class SubscriptionRenewalService
 {
@@ -156,17 +163,19 @@ class SubscriptionRenewalService
             }
             $newEndsAt = $billingCycle->calculateEndDate($newStartsAt);
 
-            // Rule 3: carry leftover sessions from a cycle that EXPIRED
-            // (ends_at < now()) into the new cycle's quota. Early renewal of
-            // a still-active cycle does not carry over. See class docblock
-            // and shouldCarryOverLeftovers() for rationale.
-            $carryover = $this->shouldCarryOverLeftovers($subscription, $currentCycle)
+            // P13: replace-now path computes carryover at creation; queue path
+            // defers to SubscriptionLifecycle::advanceCycle() so the count
+            // reflects real consumption at promotion time.
+            $carryover = ($replaceNow && $this->shouldCarryOverLeftovers($currentCycle))
                 ? max(0, (int) $currentCycle->total_sessions - (int) $currentCycle->sessions_used)
                 : 0;
             $totalWithCarryover = $totalSessions + $carryover;
 
-            // Archive the current cycle if replacing
-            if ($replaceNow) {
+            // Archive the current cycle if replacing. P13.b anti-orphan sweep
+            // is shared with the cron-promotion path on SubscriptionLifecycle.
+            if ($replaceNow && $currentCycle !== null) {
+                SubscriptionLifecycle::cancelCycleAnchoredFutureSessions($subscription, $currentCycle);
+
                 $currentCycle->update([
                     'cycle_state' => SubscriptionCycle::STATE_ARCHIVED,
                     'archived_at' => now(),
@@ -442,27 +451,13 @@ class SubscriptionRenewalService
     }
 
     /**
-     * Decide whether leftover sessions on the previous cycle roll into the
-     * new cycle's quota. Triggered only when the previous cycle ELAPSED
-     * (ends_at past) with sessions still uncon­sumed — those are sessions
-     * the student paid for but the time window expired before they used
-     * them. Early renewal of an active cycle does NOT carry over: the
-     * student keeps the active cycle and a fresh next-cycle quota is
-     * sized strictly to the package, no inheritance.
+     * P13: paid-but-unused sessions always carry forward. Only the
+     * replace-now path calls this; the queue path defers the decision
+     * to SubscriptionLifecycle::advanceCycle().
      */
-    private function shouldCarryOverLeftovers(
-        BaseSubscription $subscription,
-        ?SubscriptionCycle $cycle,
-    ): bool {
-        if (! $cycle || $subscription->is_sessions_exhausted) {
-            return false;
-        }
-
-        if ($this->remainingSessionsOnCycle($cycle) <= 0) {
-            return false;
-        }
-
-        return $cycle->ends_at !== null && $cycle->ends_at->isPast();
+    private function shouldCarryOverLeftovers(?SubscriptionCycle $cycle): bool
+    {
+        return $cycle !== null && $this->remainingSessionsOnCycle($cycle) > 0;
     }
 
     /**

@@ -565,7 +565,10 @@ class SubscriptionLifecycle
         $presentation = app(SubscriptionPresentation::class);
         $state = $presentation->viewStateFor($sub);
 
-        if ($state === SubscriptionViewState::ACTIVE_PAYMENT_DUE) {
+        if (in_array($state, [
+            SubscriptionViewState::ACTIVE_PAYMENT_DUE,
+            SubscriptionViewState::PENDING_PAYMENT,
+        ], true)) {
             $pendingCycle = $sub->pendingPaymentCycle() ?? $sub->currentCycle;
             throw new RenewBlockedByPendingPayment($sub, $pendingCycle);
         }
@@ -785,6 +788,21 @@ class SubscriptionLifecycle
      * INV-B6 — counters are NOT reset on promotion. The queued cycle
      * already carries its own (zeroed) counters from materialisation; we
      * only flip the state, archive the previous cycle, and re-mirror.
+     *
+     * P13 / INV-B7 — **carryover-at-promotion.** Before archiving, the
+     * remaining sessions on the outgoing cycle
+     * (`max(0, total_sessions - sessions_used)`) are bumped into the
+     * promoting cycle's `total_sessions` and stamped onto
+     * `carryover_sessions`. The renewal service intentionally does NOT
+     * bake carryover into the queued row at creation — that snapshot
+     * goes stale if the student attends sessions between renewal click
+     * and the cycle boundary.
+     *
+     * P13.b — **anti-orphan sweep.** Any SCHEDULED/SUSPENDED session
+     * still anchored to the archiving cycle whose `scheduled_at > now()`
+     * is flipped to CANCELLED here (no consumption reversal — by
+     * precondition they never ran). Closes the sub-796 class of
+     * orphan-suspended sessions surviving into the new cycle's window.
      */
     public function advanceCycle(
         BaseSubscription $sub,
@@ -806,6 +824,24 @@ class SubscriptionLifecycle
                             // Nothing to advance — surface as a no-op so
                             // the audit row records the cron tick.
                             return $sub->fresh(['currentCycle']);
+                        }
+
+                        // Compute carryover from the archiving cycle and
+                        // roll any remaining quota into the queued cycle
+                        // BEFORE archiving the old one. Captures real
+                        // consumption right up to promotion, not stale
+                        // figures from when the queue was created.
+                        if ($currentCycle !== null) {
+                            $remaining = max(
+                                0,
+                                (int) $currentCycle->total_sessions - (int) $currentCycle->sessions_used,
+                            );
+                            if ($remaining > 0) {
+                                $queuedCycle->total_sessions = (int) $queuedCycle->total_sessions + $remaining;
+                                $queuedCycle->carryover_sessions = (int) ($queuedCycle->carryover_sessions ?? 0) + $remaining;
+                            }
+
+                            self::cancelCycleAnchoredFutureSessions($sub, $currentCycle);
                         }
 
                         // Archive the previous cycle if it's still active.
@@ -967,6 +1003,30 @@ class SubscriptionLifecycle
                 ]);
             }
         }
+    }
+
+    /**
+     * P13.b anti-orphan sweep. Both the cron-promotion path and the
+     * replace-now renewal path call this when archiving a cycle so future
+     * SCHEDULED/SUSPENDED rows don't survive into the next window. By
+     * precondition these sessions never ran, so no consumption reversal.
+     */
+    public static function cancelCycleAnchoredFutureSessions(
+        BaseSubscription $sub,
+        SubscriptionCycle $cycle,
+    ): void {
+        if (! method_exists($sub, 'sessions')) {
+            return;
+        }
+
+        $sub->sessions()
+            ->where('subscription_cycle_id', $cycle->getKey())
+            ->whereIn('status', [
+                \App\Enums\SessionStatus::SCHEDULED->value,
+                \App\Enums\SessionStatus::SUSPENDED->value,
+            ])
+            ->where('scheduled_at', '>', now())
+            ->update(['status' => \App\Enums\SessionStatus::CANCELLED->value]);
     }
 
     // ========================================================================

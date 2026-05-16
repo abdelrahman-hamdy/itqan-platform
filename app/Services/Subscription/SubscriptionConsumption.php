@@ -124,6 +124,27 @@ class SubscriptionConsumption
                         ->lockForUpdate()
                         ->first();
 
+                    // Phase 3 — "pending = no access". Refuse fresh
+                    // consumption writes on a sub that has no active
+                    // access (unpaid cycle, no admin grace). Existing
+                    // rows are allowed through so reversals / promotions
+                    // still work for cycles paid after consumption was
+                    // recorded.
+                    if ($existing === null && ! $sub->hasActiveAccess()) {
+                        Log::warning('consumption.refused_no_active_access', [
+                            'session_id' => $session->getKey(),
+                            'session_type' => $sessionType,
+                            'subscription_id' => $sub->getKey(),
+                            'subscription_type' => $subscriptionType,
+                            'cycle_id' => $cycle->getKey(),
+                            'cycle_payment_status' => $cycle->payment_status,
+                            'source' => $source,
+                            'source_user_id' => $sourceUser?->getKey(),
+                        ]);
+
+                        return null;
+                    }
+
                     $incomingPrecedence = SessionConsumption::precedenceFor($source);
 
                     if ($existing === null) {

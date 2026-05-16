@@ -5,6 +5,7 @@ namespace App\Services\Subscription;
 use App\Enums\SubscriptionViewState;
 use App\Models\BaseSubscription;
 use App\Models\Payment;
+use App\Models\SessionConsumption;
 use App\Models\SubscriptionCycle;
 use App\Models\User;
 use App\Services\Subscription\Concerns\RecordsSubscriptionAudit;
@@ -28,6 +29,13 @@ use Illuminate\Support\Facades\Log;
  * `expired` view-state, it routes through `SubscriptionLifecycle::resubscribe()`
  * instead of just marking the cycle paid. That's P4 — "supervisor cash on
  * expired sub = reactivate with today's date".
+ *
+ * `markCyclePaid()` carries the P11 / INV-A8 late-payment date shift: when a
+ * cycle's payment lands after its `starts_at` AND no sessions have been
+ * consumed on the cycle, the writer shifts `starts_at` to now and advances
+ * `ends_at` by the same delta so the student gets the full window they paid
+ * for. Idempotent on duplicate-webhook replays (the wasUnpaid gate short-
+ * circuits the second-time-through path).
  *
  * Reconciler invocation is non-negotiable: the cycle write changes
  * `payment_status`, which the subscription row mirrors. The reconciler
@@ -83,6 +91,37 @@ class SubscriptionPayment
                         $shouldActivate = $locked->cycle_state === SubscriptionCycle::STATE_QUEUED
                             && $locked->starts_at !== null
                             && $locked->starts_at->lte(now());
+
+                        // P11/INV-A8: late-pay shift. Skip on duplicate webhooks
+                        // (cycle already paid) and on cycles where a session has
+                        // already run (can't move dates under their feet).
+                        $isFirstPaidTransition = $locked->payment_status !== SubscriptionCycle::PAYMENT_PAID;
+                        $startsInPast = $locked->starts_at !== null && $locked->starts_at->isPast();
+                        $shouldShiftWindow = $isFirstPaidTransition
+                            && $startsInPast
+                            && $locked->ends_at !== null
+                            && ! SessionConsumption::query()
+                                ->where('cycle_id', $locked->getKey())
+                                ->whereNull('reversed_at')
+                                ->exists();
+
+                        if ($shouldShiftWindow) {
+                            $originalStartsAt = $locked->starts_at;
+                            $originalEndsAt = $locked->ends_at;
+                            $duration = $originalStartsAt->diffInSeconds($originalEndsAt);
+                            $locked->starts_at = now();
+                            $locked->ends_at = now()->addSeconds($duration);
+
+                            Log::info('subscription.cycle_window_shifted_late_payment', [
+                                'subscription_id' => $sub->getKey(),
+                                'subscription_type' => $sub->getMorphClass(),
+                                'cycle_id' => $locked->getKey(),
+                                'original_starts_at' => $originalStartsAt->toIso8601String(),
+                                'original_ends_at' => $originalEndsAt->toIso8601String(),
+                                'new_starts_at' => $locked->starts_at->toIso8601String(),
+                                'new_ends_at' => $locked->ends_at->toIso8601String(),
+                            ]);
+                        }
 
                         $locked->fill([
                             'payment_status' => SubscriptionCycle::PAYMENT_PAID,

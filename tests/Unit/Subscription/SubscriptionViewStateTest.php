@@ -120,7 +120,10 @@ test('case ACTIVE_PAID — within window, paid, quota remaining', function () {
         ->toBe(SubscriptionViewState::ACTIVE_PAID);
 });
 
-test('case ACTIVE_PAYMENT_DUE — within window but cycle payment PENDING (hybrid)', function () {
+test('case PENDING_PAYMENT — within window but cycle payment PENDING (legacy lie-state)', function () {
+    // Pre-Phase-3 this would have been ACTIVE_PAYMENT_DUE (in-window pending
+    // with full access). Phase 3 routes the same shape to PENDING_PAYMENT so
+    // scheduling/consumption refuse access until paid (or admin grace).
     $sub = makeSub(
         [
             'status' => SessionSubscriptionStatus::ACTIVE,
@@ -139,7 +142,7 @@ test('case ACTIVE_PAYMENT_DUE — within window but cycle payment PENDING (hybri
     );
 
     expect($this->presentation->viewStateFor($sub))
-        ->toBe(SubscriptionViewState::ACTIVE_PAYMENT_DUE);
+        ->toBe(SubscriptionViewState::PENDING_PAYMENT);
 });
 
 test('case PAUSED_END_OF_PERIOD — within window, paid, quota exhausted', function () {

@@ -25,10 +25,19 @@ enum SubscriptionViewState: string
     case ACTIVE_PAID = 'active_paid';
 
     /**
-     * Current cycle ACTIVE in dates, payment_status PENDING (hybrid / lie-state
-     * today). Access granted but payment owed. Action: Pay.
+     * Current cycle ACTIVE in dates, payment_status PENDING. Legacy "lie-state"
+     * — formerly returned for in-window-pending cycles, now superseded by
+     * {@see self::PENDING_PAYMENT} (no access). Retained for backwards
+     * compatibility with historical readers / tests.
      */
     case ACTIVE_PAYMENT_DUE = 'active_payment_due';
+
+    /**
+     * Current cycle within its dates but payment_status is PENDING. No access
+     * — scheduling and consumption refuse this state. Only the admin Extend
+     * verb (grace period) opens a window to attend before paying. Action: Pay.
+     */
+    case PENDING_PAYMENT = 'pending_payment';
 
     /** Sub past `ends_at` but `grace_period_ends_at` > now. Action: Renew. */
     case GRACE_ADMIN = 'grace_admin';
@@ -90,6 +99,7 @@ enum SubscriptionViewState: string
             self::PENDING_FIRST_PAYMENT => 'warning',
             self::ACTIVE_PAID => 'success',
             self::ACTIVE_PAYMENT_DUE => 'warning',
+            self::PENDING_PAYMENT => 'warning',
             self::GRACE_ADMIN => 'warning',
             self::PAUSED_ADMIN => 'info',
             self::PAUSED_END_OF_PERIOD => 'primary',
@@ -151,7 +161,8 @@ enum SubscriptionViewState: string
     {
         return match ($this) {
             self::PENDING_FIRST_PAYMENT,
-            self::ACTIVE_PAYMENT_DUE => true,
+            self::ACTIVE_PAYMENT_DUE,
+            self::PENDING_PAYMENT => true,
             default => false,
         };
     }

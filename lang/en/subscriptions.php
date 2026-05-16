@@ -344,6 +344,10 @@ return [
             'label' => 'Payment due',
             'helper' => 'Subscription is active but payment is overdue — please pay',
         ],
+        'pending_payment' => [
+            'label' => 'Payment required',
+            'helper' => 'Payment required — sessions resume once payment is recorded',
+        ],
         'grace_admin' => [
             'label' => 'Grace period',
             'helper' => 'In grace period — renew before :grace_date',
