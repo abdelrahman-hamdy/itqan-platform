@@ -13,12 +13,29 @@
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" dir="rtl">
 
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">مراجعة قرارات الاشتراكات</h1>
-        <p class="text-sm text-gray-600 mt-1">
-            صفحة مؤقتة لجمع قرارات الإدارة على الحالات التي تحتاج تدخل بشري.
-            القرارات تُحفظ في قاعدة البيانات للمعالجة لاحقاً.
-        </p>
+    <div class="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">مراجعة قرارات الاشتراكات</h1>
+            <p class="text-sm text-gray-600 mt-1">
+                صفحة مؤقتة لجمع قرارات الإدارة على الحالات التي تحتاج تدخل بشري.
+                القرارات تُحفظ في قاعدة البيانات للمعالجة لاحقاً.
+            </p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            @if(($appliedCount ?? 0) > 0)
+                @if($includeApplied ?? false)
+                    <a href="{{ url()->current() }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200">
+                        <i class="ri-eye-off-line"></i>
+                        إخفاء الحالات المُطبَّقة ({{ $appliedCount }})
+                    </a>
+                @else
+                    <a href="{{ url()->current() }}?show_applied=1" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                        <i class="ri-history-line"></i>
+                        إظهار الحالات المُطبَّقة ({{ $appliedCount }})
+                    </a>
+                @endif
+            @endif
+        </div>
     </div>
 
     @if(session('success'))

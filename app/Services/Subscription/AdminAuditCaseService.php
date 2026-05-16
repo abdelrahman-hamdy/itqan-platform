@@ -33,9 +33,12 @@ use Illuminate\Support\Collection;
 class AdminAuditCaseService
 {
     /**
+     * @param  bool  $includeApplied  If false (default), cases whose admin
+     *                                decision has been stamped applied_at
+     *                                are filtered out — they're done.
      * @return array<string, array<int, array<string, mixed>>> keyed by case_type
      */
-    public function buildAllCases(): array
+    public function buildAllCases(bool $includeApplied = false): array
     {
         $cases = [
             'inv_d2_drift_payment_mismatch' => $this->buildDriftPaymentMismatch(),
@@ -52,11 +55,18 @@ class AdminAuditCaseService
             ->keyBy('case_key');
 
         foreach ($cases as &$bucket) {
-            foreach ($bucket as &$case) {
-                $case['decision'] = $decisions->get($case['case_key']);
+            $next = [];
+            foreach ($bucket as $case) {
+                $decision = $decisions->get($case['case_key']);
+                $case['decision'] = $decision;
+                if (! $includeApplied && $decision?->applied_at !== null) {
+                    continue;
+                }
+                $next[] = $case;
             }
+            $bucket = $next;
         }
-        unset($bucket, $case);
+        unset($bucket);
         return $cases;
     }
 
@@ -319,6 +329,7 @@ class AdminAuditCaseService
         $cases = [];
         $paused = QuranSubscription::query()
             ->withoutGlobalScopes()
+            ->whereNull('deleted_at')
             ->where('status', 'paused')
             ->with(['package', 'student', 'quranTeacher'])
             ->get();

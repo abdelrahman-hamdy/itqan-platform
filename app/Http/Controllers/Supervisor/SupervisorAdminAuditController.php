@@ -26,17 +26,27 @@ class SupervisorAdminAuditController extends BaseSupervisorWebController
             abort(403);
         }
 
-        $cases = $service->buildAllCases();
+        $includeApplied = (bool) $request->query('show_applied', false);
+        $cases = $service->buildAllCases($includeApplied);
 
         $totals = collect($cases)->map(fn ($bucket) => count($bucket))->all();
         $decided = collect($cases)
             ->map(fn ($bucket) => collect($bucket)->filter(fn ($c) => $c['decision'] !== null)->count())
             ->all();
 
+        // Applied count (across all buckets) for the toggle pill.
+        $appliedAll = $service->buildAllCases(includeApplied: true);
+        $appliedCount = collect($appliedAll)
+            ->flatten(1)
+            ->filter(fn ($c) => $c['decision']?->applied_at !== null)
+            ->count();
+
         return view('supervisor.admin-audit.index', [
             'cases' => $cases,
             'totals' => $totals,
             'decided' => $decided,
+            'includeApplied' => $includeApplied,
+            'appliedCount' => $appliedCount,
         ]);
     }
 
