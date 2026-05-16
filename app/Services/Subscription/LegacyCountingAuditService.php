@@ -109,7 +109,7 @@ class LegacyCountingAuditService
                 })
                 ->orderBy('id')
                 ->limit(200)
-                ->get(['id', 'status', 'scheduled_at', 'subscription_counted_at', 'subscription_cycle_id', 'academy_id']);
+                ->get(['id', 'status', 'scheduled_at', 'subscription_cycle_id', 'academy_id']);
 
             foreach ($records as $r) {
                 $rows[] = [
@@ -117,7 +117,7 @@ class LegacyCountingAuditService
                     'session_id' => $r->id,
                     'status' => $r->status instanceof \BackedEnum ? $r->status->value : $r->status,
                     'scheduled_at' => $r->scheduled_at?->toDateTimeString(),
-                    'subscription_counted_at' => $r->subscription_counted_at?->toDateTimeString(),
+                    'subscription_counted_at' => null,
                     'cycle_id' => $r->subscription_cycle_id,
                     'academy_id' => $r->academy_id,
                     'risk' => 'high',
