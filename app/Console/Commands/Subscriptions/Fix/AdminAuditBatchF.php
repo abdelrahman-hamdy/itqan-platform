@@ -50,22 +50,38 @@ class AdminAuditBatchF extends Command
         $this->newLine();
 
         $sub = QuranSubscription::withoutGlobalScopes()->find(961);
-        $currentCycle = SubscriptionCycle::withTrashed()->find(575);
-        $queuedCycle = SubscriptionCycle::withTrashed()->find(731);
+        $oldCycle = SubscriptionCycle::withTrashed()->find(575);
+        $newCycle = SubscriptionCycle::withTrashed()->find(731);
 
-        $skips = [];
-        if (! $sub) {
-            $skips[] = 'sub#961 missing';
-        }
-        if (! $currentCycle) {
-            $skips[] = 'cycle#575 missing';
-        }
-        if (! $queuedCycle) {
-            $skips[] = 'cycle#731 missing';
-        }
-        if (! empty($skips)) {
-            foreach ($skips as $s) $this->error("  SKIP: {$s}");
+        if (! $sub || ! $oldCycle || ! $newCycle) {
+            $this->error('  SKIP: required sub or cycles missing');
             return self::FAILURE;
+        }
+
+        // Fast-path: AdvanceSubscriptionCycles cron may have already advanced
+        // the sub (cycle 575 → archived, cycle 731 → active) once admin
+        // resumed it. If so, just stamp the decision and exit.
+        $alreadyAdvanced = (int) $sub->current_cycle_id === 731
+            && $oldCycle->cycle_state === 'archived'
+            && $newCycle->cycle_state === 'active';
+
+        if ($alreadyAdvanced) {
+            $this->info('  sub#961 already advanced (cycle 575 archived, cycle 731 active, sub.current_cycle_id=731)');
+            if (! $apply) {
+                $this->newLine();
+                $this->comment('DRY-RUN. Re-run with --apply to mark the admin decision applied.');
+                return self::SUCCESS;
+            }
+            $now = Carbon::now();
+            SubscriptionAdminAuditDecision::query()
+                ->where('case_key', 'paused_no_audit_corrupt:sub:961')
+                ->whereNull('applied_at')
+                ->update([
+                    'applied_at' => $now,
+                    'applied_outcome' => 'self_advanced_by_cron_after_admin_resume',
+                ]);
+            $this->info('APPLIED (decision-only).');
+            return self::SUCCESS;
         }
 
         if ($sub->status?->value !== 'active') {
@@ -76,24 +92,24 @@ class AdminAuditBatchF extends Command
             $this->error("  SKIP: sub#961 current_cycle_id drifted ({$sub->current_cycle_id}) — expected 575");
             return self::FAILURE;
         }
-        if ($currentCycle->cycle_state !== 'active') {
-            $this->error("  SKIP: cycle#575 state drifted ({$currentCycle->cycle_state}) — expected active");
+        if ($oldCycle->cycle_state !== 'active') {
+            $this->error("  SKIP: cycle#575 state drifted ({$oldCycle->cycle_state}) — expected active");
             return self::FAILURE;
         }
-        if ($queuedCycle->cycle_state !== 'queued') {
-            $this->error("  SKIP: cycle#731 state drifted ({$queuedCycle->cycle_state}) — expected queued");
+        if ($newCycle->cycle_state !== 'queued') {
+            $this->error("  SKIP: cycle#731 state drifted ({$newCycle->cycle_state}) — expected queued");
             return self::FAILURE;
         }
-        if ($queuedCycle->payment_status !== 'paid') {
-            $this->error("  SKIP: cycle#731 payment_status drifted ({$queuedCycle->payment_status}) — expected paid");
+        if ($newCycle->payment_status !== 'paid') {
+            $this->error("  SKIP: cycle#731 payment_status drifted ({$newCycle->payment_status}) — expected paid");
             return self::FAILURE;
         }
 
         $this->line('  sub#961 status=active current_cycle=575');
-        $this->line('  cycle#575 (active → archived)  ends_at='.$currentCycle->ends_at);
-        $this->line('  cycle#731 (queued → active)    ends_at='.$queuedCycle->ends_at);
+        $this->line('  cycle#575 (active → archived)  ends_at='.$oldCycle->ends_at);
+        $this->line('  cycle#731 (queued → active)    ends_at='.$newCycle->ends_at);
         $this->line('  sub.current_cycle_id 575 → 731');
-        $this->line('  sub.ends_at '.$sub->ends_at.' → '.$queuedCycle->ends_at);
+        $this->line('  sub.ends_at '.$sub->ends_at.' → '.$newCycle->ends_at);
 
         if (! $apply) {
             $this->newLine();
@@ -102,27 +118,27 @@ class AdminAuditBatchF extends Command
         }
 
         $now = Carbon::now();
-        DB::transaction(function () use ($sub, $currentCycle, $queuedCycle, $now) {
+        DB::transaction(function () use ($sub, $oldCycle, $newCycle, $now) {
             // Archive current cycle
             BackfillLog::create([
                 'bug_id' => self::BUG_ID,
                 'table_name' => 'subscription_cycles',
-                'row_id' => $currentCycle->id,
+                'row_id' => $oldCycle->id,
                 'column_name' => 'cycle_state+archived_at',
-                'original_value' => json_encode($currentCycle->only(['cycle_state', 'archived_at']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'original_value' => json_encode($oldCycle->only(['cycle_state', 'archived_at']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 'new_value' => json_encode(['cycle_state' => 'archived', 'archived_at' => $now->toDateTimeString()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 'backfill_command' => 'subscriptions:fix-admin-audit-batch-f',
                 'ran_at' => $now,
             ]);
             DB::table('subscription_cycles')
-                ->where('id', $currentCycle->id)
+                ->where('id', $oldCycle->id)
                 ->update(['cycle_state' => 'archived', 'archived_at' => $now, 'updated_at' => $now]);
 
             // Promote queued cycle
             BackfillLog::create([
                 'bug_id' => self::BUG_ID,
                 'table_name' => 'subscription_cycles',
-                'row_id' => $queuedCycle->id,
+                'row_id' => $newCycle->id,
                 'column_name' => 'cycle_state',
                 'original_value' => 'queued',
                 'new_value' => 'active',
@@ -130,7 +146,7 @@ class AdminAuditBatchF extends Command
                 'ran_at' => $now,
             ]);
             DB::table('subscription_cycles')
-                ->where('id', $queuedCycle->id)
+                ->where('id', $newCycle->id)
                 ->update(['cycle_state' => 'active', 'updated_at' => $now]);
 
             // Repoint sub + extend ends_at
@@ -140,15 +156,15 @@ class AdminAuditBatchF extends Command
                 'row_id' => $sub->id,
                 'column_name' => 'current_cycle_id+ends_at',
                 'original_value' => json_encode($sub->only(['current_cycle_id', 'ends_at']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-                'new_value' => json_encode(['current_cycle_id' => $queuedCycle->id, 'ends_at' => $queuedCycle->ends_at?->toDateTimeString()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'new_value' => json_encode(['current_cycle_id' => $newCycle->id, 'ends_at' => $newCycle->ends_at?->toDateTimeString()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 'backfill_command' => 'subscriptions:fix-admin-audit-batch-f',
                 'ran_at' => $now,
             ]);
             DB::table('quran_subscriptions')
                 ->where('id', $sub->id)
                 ->update([
-                    'current_cycle_id' => $queuedCycle->id,
-                    'ends_at' => $queuedCycle->ends_at,
+                    'current_cycle_id' => $newCycle->id,
+                    'ends_at' => $newCycle->ends_at,
                     'updated_at' => $now,
                 ]);
 
