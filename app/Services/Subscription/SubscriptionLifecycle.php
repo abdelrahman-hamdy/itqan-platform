@@ -689,6 +689,12 @@ class SubscriptionLifecycle
      *
      * Otherwise the standard expiry transition runs: cycle ARCHIVED,
      * sub.status → EXPIRED.
+     *
+     * Either path also flips the linked education-unit's `is_active` flag
+     * to false (matches the OLD ExpireActiveSubscriptions cron behaviour
+     * that the 2026-05-16 rewrite folded in here so every caller of
+     * expire() — cron, StaleExpiredSubs fix command, future admin actions —
+     * stays consistent).
      */
     public function expire(
         BaseSubscription $sub,
@@ -728,6 +734,22 @@ class SubscriptionLifecycle
                         }
 
                         $this->reconciler->sync($sub);
+
+                        // Flip the linked circle/lesson off so the student
+                        // dashboard + teacher views stop surfacing it as
+                        // active. Failure is non-fatal — the canonical sub
+                        // state has already been written.
+                        if (method_exists($sub, 'syncLinkedEducationUnitActiveFlag')) {
+                            try {
+                                $sub->syncLinkedEducationUnitActiveFlag(false);
+                            } catch (Throwable $unitError) {
+                                Log::warning('subscription.expire_unit_sync_failed', [
+                                    'subscription_id' => $sub->getKey(),
+                                    'subscription_type' => $sub->getMorphClass(),
+                                    'error' => $unitError->getMessage(),
+                                ]);
+                            }
+                        }
 
                         if ($isHybridExpire) {
                             // G7.b: P8 hybrid-expire path — student's last

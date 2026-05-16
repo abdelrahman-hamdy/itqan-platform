@@ -2,7 +2,6 @@
 
 namespace App\Filament\Shared\Resources;
 
-use App\Constants\PauseReason;
 use App\Enums\SessionDuration;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -306,11 +305,13 @@ abstract class BaseSubscriptionResource extends Resource
 
     /**
      * Banner shown at the top of the infolist when a subscription was
-     * auto-paused at end-of-period (`pause_reason === END_OF_PERIOD`).
+     * auto-paused at end-of-period.
      *
-     * Directs the admin to Extend (grace days) or Renew (full new cycle)
-     * rather than Resume, which would silently extend the paid window.
-     * See docs/subscription-behavior-spec.md §1.3.
+     * RETIRED 2026-05-16: end-of-period now goes straight to EXPIRED via
+     * SubscriptionLifecycle::expire(). The banner stays in place but its
+     * visibility is permanently false — kept only so the method is callable
+     * from any infolist layouts that still reference it; will be deleted in
+     * the next legacy-code sweep along with the END_OF_PERIOD enum case.
      */
     protected static function getEndOfPeriodPauseBannerSection(): Section
     {
@@ -323,9 +324,7 @@ abstract class BaseSubscriptionResource extends Resource
                     ->state(__('subscriptions.end_of_period_pause_body'))
                     ->columnSpanFull(),
             ])
-            ->visible(fn ($record) => $record !== null
-                && $record->status === SessionSubscriptionStatus::PAUSED
-                && $record->pause_reason === PauseReason::END_OF_PERIOD);
+            ->visible(false);
     }
 
     // Shared extension history infolist section

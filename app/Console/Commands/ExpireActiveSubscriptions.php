@@ -2,43 +2,46 @@
 
 namespace App\Console\Commands;
 
-use App\Constants\PauseReason;
-use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
-use App\Models\SubscriptionAuditLog;
 use App\Notifications\SubscriptionExpiredNotification;
-use App\Support\Subscriptions\SubscriptionSnapshot;
+use App\Services\Subscription\SubscriptionLifecycle;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * ExpireActiveSubscriptions Command
+ * ExpireActiveSubscriptions cron — flips ACTIVE subs whose `ends_at` has
+ * passed into the canonical EXPIRED state via SubscriptionLifecycle::expire().
  *
- * New lifecycle: transitions ACTIVE subscriptions to PAUSED (not EXPIRED) when
- * their ends_at date has passed and no queued cycle exists to advance into.
+ * Policy clarified 2026-05-16: end-of-period is a terminal transition, NOT
+ * an automatic grace window.
  *
- * Respects per-cycle and legacy metadata grace periods — subscriptions with an
- * active grace period are skipped. If the grace period has also lapsed without
- * payment, the subscription is paused.
+ * Pause is reserved for explicit teacher/admin holds. The previous
+ * implementation auto-paused with `pause_reason = END_OF_PERIOD`; that
+ * coupled three different concerns (renewal due, sub-still-accessible,
+ * pause-as-state) and was retired together with all UI predicates that
+ * branched on END_OF_PERIOD.
  *
- * The separate `subscriptions:advance-cycles` command handles the happy path
- * where a queued cycle exists and should be promoted when the current ends.
+ * Skips:
+ *   - subs in an active admin-granted grace window (cycle.grace_period_ends_at > now)
+ *   - subs whose queued cycle is paid (AdvanceSubscriptionCycles will
+ *     promote it instead — different verb entirely)
+ *
+ * Failure path: per-sub transaction inside expire(). One failure logs +
+ * skips that sub and increments the failure counter; the batch continues.
  */
 class ExpireActiveSubscriptions extends Command
 {
     protected $signature = 'subscriptions:expire-active
-                            {--dry-run : Preview changes without making them}
-                            {--force : Skip confirmation prompt}';
+                            {--dry-run : Preview changes without making them}';
 
-    protected $description = 'Pause active subscriptions whose paid window has ended and no grace/queued cycle remains';
+    protected $description = 'Expire ACTIVE subscriptions whose paid window has ended (no queued+paid cycle, no admin grace).';
 
-    public function handle(): int
+    public function handle(SubscriptionLifecycle $lifecycle): int
     {
-        $dryRun = $this->option('dry-run');
+        $dryRun = (bool) $this->option('dry-run');
 
         $this->info('Scanning for active subscriptions past their end date...');
         $this->newLine();
@@ -64,96 +67,76 @@ class ExpireActiveSubscriptions extends Command
                 ->whereNotNull('ends_at')
                 ->where('ends_at', '<', $now)
                 ->with(['student', 'currentCycle', 'queuedCycle'])
-                ->chunkById(100, function ($subscriptions) use ($dryRun, $now, &$stats, $type) {
+                ->chunkById(100, function ($subscriptions) use ($dryRun, $lifecycle, &$stats, $type) {
                     foreach ($subscriptions as $subscription) {
-                        // 1. Skip if still in an active grace period (cycle or legacy metadata)
-                        if ($this->isInGracePeriod($subscription, $now)) {
+                        // 1. Skip if still in an active admin-granted grace
+                        //    window. Cycle.grace_period_ends_at is only set
+                        //    by SubscriptionMaintenanceService::extend() now;
+                        //    the cron itself never writes it.
+                        if ($this->isInGracePeriod($subscription)) {
                             $stats['skipped_grace']++;
 
                             continue;
                         }
 
-                        // 2. Skip if a queued next cycle exists — AdvanceSubscriptionCycles will handle it
-                        if ($subscription->queuedCycle !== null) {
+                        // 2. Skip if the next cycle is already paid + queued
+                        //    — AdvanceSubscriptionCycles will promote it
+                        //    instead of expiring the sub.
+                        $queued = $subscription->queuedCycle;
+                        if ($queued !== null && $queued->payment_status === 'paid') {
                             $stats['skipped_queued']++;
 
                             continue;
                         }
 
                         if ($dryRun) {
-                            $this->line("  [DRY RUN] Would pause {$type} subscription #{$subscription->id} (ends_at: {$subscription->ends_at})");
+                            $this->line("  [DRY RUN] Would expire {$type} subscription #{$subscription->id} (ends_at: {$subscription->ends_at})");
                             $stats[$type]++;
 
                             continue;
                         }
 
                         try {
-                            // Capture pre-pause snapshot for the audit log so the
-                            // before/after diff is recorded. The actual pause runs
-                            // inside the transaction below; audit write happens
-                            // after the commit (non-fatal — see record()).
-                            $before = SubscriptionSnapshot::capture($subscription);
-                            $startedAt = microtime(true);
+                            // The canonical expire path handles:
+                            //  - cycle.cycle_state → ARCHIVED (+ payment FAILED on hybrid)
+                            //  - sub.status → EXPIRED
+                            //  - SubscriptionLock + audit-log row
+                            //  - reconciler->sync (counters, invariants)
+                            //  - linked education-unit is_active → false
+                            //  - SubscriptionExpiredUnpaid notification (hybrid path)
+                            $expired = $lifecycle->expire($subscription, source: 'cron');
 
-                            DB::transaction(function () use ($subscription) {
-                                // Stamp `pause_reason = END_OF_PERIOD` so admins (and the
-                                // Filament Resume action's `->visible()` predicate) can tell
-                                // this from a manual mid-period pause. Manual pauses use
-                                // Resume to recover lost time; auto-paused subscriptions
-                                // need Extend or Renew instead.
-                                $subscription->update([
-                                    'status' => SessionSubscriptionStatus::PAUSED,
-                                    'paused_at' => now(),
-                                    'pause_reason' => PauseReason::END_OF_PERIOD,
-                                ]);
-
-                                $subscription->syncLinkedEducationUnitActiveFlag(false);
-                                $this->suspendFutureSessions($subscription);
-
-                                if ($subscription->student) {
-                                    $subscription->student->notify(new SubscriptionExpiredNotification($subscription));
+                            // The clean-expire path (cycle was PAID, just
+                            // ran out of dates) doesn't notify from inside
+                            // expire(). Match the legacy cron's UX —
+                            // student gets a "your subscription ended"
+                            // ping with a renew CTA.
+                            $wasHybrid = $subscription->currentCycle?->payment_status === 'pending'
+                                || $subscription->currentCycle?->payment_status === 'failed';
+                            if (! $wasHybrid && $subscription->student) {
+                                try {
+                                    $subscription->student->notify(
+                                        new SubscriptionExpiredNotification($subscription)
+                                    );
+                                } catch (\Throwable $notifyError) {
+                                    Log::warning('subscription.expire_notify_failed', [
+                                        'subscription_id' => $subscription->id,
+                                        'error' => $notifyError->getMessage(),
+                                    ]);
                                 }
-                            });
+                            }
 
                             $stats[$type]++;
 
-                            // Audit row so the pause is traceable in
-                            // subscription_audit_log alongside manual pauses
-                            // (which go through SubscriptionLifecycle::pause).
-                            // Without this, all 13+ daily auto-pauses produced
-                            // zero audit entries — the gap caught in the
-                            // 2026-05-16 review (sub 706 et al.).
-                            try {
-                                $subscription->refresh();
-                                $after = SubscriptionSnapshot::capture($subscription);
-                                SubscriptionAuditLog::record([
-                                    'subscription' => $subscription,
-                                    'cycle_id' => $subscription->current_cycle_id,
-                                    'action' => 'auto_pause_end_of_period',
-                                    'source' => 'cron',
-                                    'actor_user_id' => null,
-                                    'before_state' => $before,
-                                    'after_state' => $after,
-                                    'view_state_before' => null,
-                                    'view_state_after' => null,
-                                    'invariant_violations' => [],
-                                    'latency_ms' => (int) round((microtime(true) - $startedAt) * 1000),
-                                ]);
-                            } catch (\Throwable $auditError) {
-                                Log::warning('Failed to record auto-pause audit log row', [
-                                    'subscription_id' => $subscription->id,
-                                    'error' => $auditError->getMessage(),
-                                ]);
-                            }
-
-                            Log::info('Subscription auto-paused at end-of-cycle', [
+                            Log::info('subscription.auto_expired_at_end_of_cycle', [
                                 'subscription_id' => $subscription->id,
                                 'type' => $type,
                                 'ends_at' => $subscription->ends_at->toDateTimeString(),
+                                'hybrid' => $wasHybrid,
                             ]);
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
                             $stats['errors']++;
-                            Log::error('Failed to pause subscription', [
+                            Log::error('subscription.auto_expire_failed', [
                                 'subscription_id' => $subscription->id,
                                 'type' => $type,
                                 'error' => $e->getMessage(),
@@ -167,13 +150,13 @@ class ExpireActiveSubscriptions extends Command
         $total = $stats['quran'] + $stats['academic'];
 
         if ($total === 0 && $stats['skipped_grace'] === 0 && $stats['skipped_queued'] === 0) {
-            $this->info('No subscriptions to pause.');
+            $this->info('No subscriptions to expire.');
 
             return Command::SUCCESS;
         }
 
         $this->table(
-            ['Type', 'Paused'],
+            ['Type', 'Expired'],
             [
                 ['Quran', $stats['quran']],
                 ['Academic', $stats['academic']],
@@ -182,10 +165,10 @@ class ExpireActiveSubscriptions extends Command
         );
 
         if ($stats['skipped_grace'] > 0) {
-            $this->line("  Skipped (grace period): {$stats['skipped_grace']}");
+            $this->line("  Skipped (admin grace extension active): {$stats['skipped_grace']}");
         }
         if ($stats['skipped_queued'] > 0) {
-            $this->line("  Skipped (queued cycle exists): {$stats['skipped_queued']}");
+            $this->line("  Skipped (queued+paid cycle — advance-cycles will promote): {$stats['skipped_queued']}");
         }
 
         if ($stats['errors'] > 0) {
@@ -195,46 +178,19 @@ class ExpireActiveSubscriptions extends Command
         if ($dryRun) {
             $this->warn('Dry run mode — no changes made.');
         } else {
-            $this->info("Paused {$total} subscription(s).");
+            $this->info("Expired {$total} subscription(s).");
         }
 
         return $stats['errors'] > 0 ? Command::FAILURE : Command::SUCCESS;
     }
 
     /**
-     * Suspend future scheduled/unscheduled sessions (recoverable on reactivation).
-     *
-     * Subscription isolation: sessions belong to THIS subscription. Do NOT
-     * auto-rebind to a different active subscription (e.g. another active sub
-     * for the same student/teacher) — that would violate the rule that each
-     * subscription is a self-contained unit. Restoration happens symmetrically
-     * via SubscriptionMaintenanceService::extend() / BaseSubscription::resume()
-     * / SubscriptionRenewalService — within the same subscription only.
+     * Grace-period check: respects the cycle-level grace_period_ends_at and
+     * the legacy metadata keys. NOTE — the cron itself never writes these;
+     * the only writer is `SubscriptionMaintenanceService::extend()`, which
+     * is the admin manual extend action.
      */
-    private function suspendFutureSessions($subscription): void
-    {
-        if (! method_exists($subscription, 'sessions')) {
-            return;
-        }
-
-        $subscription->sessions()
-            ->whereIn('status', [
-                SessionStatus::SCHEDULED->value,
-                SessionStatus::UNSCHEDULED->value,
-                SessionStatus::READY->value,
-            ])
-            ->where(function ($q) {
-                $q->where('scheduled_at', '>', now())
-                    ->orWhereNull('scheduled_at');
-            })
-            ->update(['status' => SessionStatus::SUSPENDED->value]);
-    }
-
-    /**
-     * Grace-period check: honors the cycle-level value first, then the legacy
-     * metadata keys. Keeps behavior consistent with BaseSubscription::isInGracePeriod().
-     */
-    private function isInGracePeriod($subscription, Carbon $now): bool
+    private function isInGracePeriod($subscription): bool
     {
         if (method_exists($subscription, 'isInGracePeriod')) {
             return $subscription->isInGracePeriod();
@@ -248,6 +204,6 @@ class ExpireActiveSubscriptions extends Command
             return false;
         }
 
-        return Carbon::parse($metadata[$key])->isAfter($now);
+        return Carbon::parse($metadata[$key])->isAfter(now());
     }
 }
