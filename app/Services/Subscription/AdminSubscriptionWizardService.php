@@ -241,6 +241,21 @@ class AdminSubscriptionWizardService
             'progress_percentage' => round(($consumed / $subscription->total_sessions) * 100, 2),
         ]);
 
+        // Persist the pre-platform offset onto the current cycle so the
+        // reconciler honors it (sub-1153 / sub-556 regression). Without this
+        // stamp, the next mirrorFromCycle() recount from session_consumption
+        // silently wipes sessions_used back to zero.
+        $cycle = $subscription->currentCycle()->first();
+        if ($cycle !== null) {
+            $metadata = (array) ($cycle->metadata ?? []);
+            $metadata['pre_platform_consumption_preserved'] = true;
+            $metadata['preserved_value'] = $consumed;
+            $metadata['preserved_at'] = now()->toDateTimeString();
+            $cycle->metadata = $metadata;
+            $cycle->sessions_used = $consumed;
+            $cycle->save();
+        }
+
         // Sync circle's sessions_remaining so calendar scheduling sees the correct count
         if ($subscription instanceof QuranSubscription) {
             $circle = $subscription->individualCircle;

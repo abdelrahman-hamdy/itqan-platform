@@ -313,7 +313,34 @@ class SubscriptionCycle extends Model
             'archived_at' => $state === self::STATE_ARCHIVED ? ($source->ends_at ?? now()) : null,
         ];
 
-        return self::create(array_merge($defaults, $overrides));
+        $merged = array_merge($defaults, $overrides);
+
+        // Defense-in-depth (sub-1153 regression): if the source row already
+        // carries pre-platform consumption (sessions_used > 0) and no
+        // session_consumption rows back it up yet, stamp the preserved-offset
+        // metadata so the reconciler honors it. AdminSubscriptionWizardService
+        // stamps this explicitly too; this catches any other caller path.
+        $sourceUsed = (int) ($source->sessions_used ?? 0);
+        if ($isFirstCycle && $sourceUsed > 0) {
+            $existingConsumption = SessionConsumption::query()
+                ->where('subscription_id', $owner->getKey())
+                ->where('subscription_type', $owner->getMorphClass())
+                ->whereNull('reversed_at')
+                ->count();
+
+            if ($existingConsumption === 0) {
+                $metadata = (array) ($merged['metadata'] ?? []);
+                if (empty($metadata['pre_platform_consumption_preserved'])) {
+                    $metadata['pre_platform_consumption_preserved'] = true;
+                    $metadata['preserved_value'] = $sourceUsed;
+                    $metadata['preserved_at'] = now()->toDateTimeString();
+                    $metadata['preserved_source'] = 'materializeFromSubscription:defense_in_depth';
+                    $merged['metadata'] = $metadata;
+                }
+            }
+        }
+
+        return self::create($merged);
     }
 
     /**
