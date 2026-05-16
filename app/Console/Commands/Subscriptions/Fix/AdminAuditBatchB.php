@@ -323,8 +323,8 @@ class AdminAuditBatchB extends Command
                     'bug_id' => self::BUG_ID,
                     'table_name' => 'quran_sessions',
                     'row_id' => $sid,
-                    'column_name' => 'session_duration_minutes',
-                    'original_value' => (string) DB::table('quran_sessions')->where('id', $sid)->value('session_duration_minutes'),
+                    'column_name' => 'duration_minutes',
+                    'original_value' => (string) DB::table('quran_sessions')->where('id', $sid)->value('duration_minutes'),
                     'new_value' => (string) $plan['cascade_session_dur'],
                     'backfill_command' => 'subscriptions:fix-admin-audit-batch-b',
                     'ran_at' => $now,
@@ -333,7 +333,7 @@ class AdminAuditBatchB extends Command
             if (! empty($sessionIds)) {
                 DB::table('quran_sessions')
                     ->whereIn('id', $sessionIds)
-                    ->update(['session_duration_minutes' => $plan['cascade_session_dur'], 'updated_at' => $now]);
+                    ->update(['duration_minutes' => $plan['cascade_session_dur'], 'updated_at' => $now]);
             }
         }
     }
