@@ -33,7 +33,7 @@ use Illuminate\Support\Facades\DB;
  */
 class OverflowCyclesReviewService
 {
-    private const BUG_ID = 'overflow-cycles-review-2026-05-17';
+    private const BUG_ID = 'overflow-review-2026-05-17';
 
     public function __construct(
         private readonly SubscriptionReconciler $reconciler,

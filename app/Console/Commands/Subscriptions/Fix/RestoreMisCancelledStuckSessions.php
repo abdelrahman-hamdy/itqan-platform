@@ -43,7 +43,7 @@ class RestoreMisCancelledStuckSessions extends Command
 
     protected $description = 'Restore quran sessions wrongly cancelled by the 2026-05-16 stuck-scheduled fix (morph-name gate bug).';
 
-    private const BUG_ID = 'stuck-scheduled-restore-2026-05-17';
+    private const BUG_ID = 'restore-mis-canceled-2026-05-17';
 
     private const SOURCE_BUG_ID = 'stuck-scheduled-2026-05-16';
 

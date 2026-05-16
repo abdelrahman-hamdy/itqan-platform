@@ -44,7 +44,7 @@ class CompleteStuckWithEarnings extends Command
 
     protected $description = 'Complete stuck-scheduled quran sessions that already have teacher_earnings (companion to fix-stuck-scheduled-sessions).';
 
-    private const BUG_ID = 'complete-stuck-with-earnings-2026-05-17';
+    private const BUG_ID = 'complete-stuck-earnings-26-05-17';
 
     public function handle(SubscriptionReconciler $reconciler): int
     {
