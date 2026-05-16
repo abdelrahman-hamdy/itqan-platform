@@ -14,6 +14,7 @@ use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\Supervisor\SupervisorAcademicLessonsController;
 use App\Http\Controllers\Supervisor\SupervisorAttendanceController;
 use App\Http\Controllers\Supervisor\SupervisorLegacyCountingAuditController;
+use App\Http\Controllers\Supervisor\SupervisorPresetSessionsReviewController;
 use App\Http\Controllers\Supervisor\SupervisorCalendarController;
 use App\Http\Controllers\Supervisor\SupervisorCertificatesController;
 use App\Http\Controllers\Supervisor\SupervisorDashboardController;
@@ -142,6 +143,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Legacy counting columns audit (temporary cleanup tool — gated by canManageSubscriptions inside the controller)
         Route::get('/legacy-counting-audit', [SupervisorLegacyCountingAuditController::class, 'index'])->name('legacy-counting-audit.index');
+
+        // Preset sessions review (admin-wizard pre-platform offset restoration — sub-1153 incident remediation)
+        Route::get('/preset-sessions-review', [SupervisorPresetSessionsReviewController::class, 'index'])->name('preset-sessions-review.index');
+        Route::post('/preset-sessions-review/{sub}/record', [SupervisorPresetSessionsReviewController::class, 'record'])->name('preset-sessions-review.record');
 
         // Subscriptions
         Route::get('/subscriptions', [SupervisorSubscriptionsController::class, 'index'])->name('subscriptions.index');
