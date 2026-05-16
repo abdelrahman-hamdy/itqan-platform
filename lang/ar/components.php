@@ -70,10 +70,6 @@ return [
             // slot for this student. Different word from "cancelled" (the
             // status enum) — written in colloquial form to feel softer.
             'canceled' => 'ملغاة',
-            // UI-only label: session was completed and counted (no-show=paid
-            // policy applies) but the student did not attend. Shown as a
-            // softer green badge so students know the slot was consumed.
-            'completed_absent' => 'مكتملة (لم يحضر الطالب)',
             'unscheduled' => 'غير مجدولة',
             'suspended' => 'موقوفة',
             'absent' => 'غائب',

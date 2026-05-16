@@ -432,30 +432,20 @@ abstract class BaseSession extends Model implements MeetingCapable
             return $this->counts_for_teacher ? 'completed' : 'absent';
         }
 
-        // student / parent
+        // student / parent — absent attendance always renders red, even when
+        // counts_for_subscription is false. The previous order returned
+        // 'canceled' (gray) for those rows and conflicted with the student's
+        // circle-page experience where the same row showed red 'absent'.
         $attendanceStatus = $studentAttendance?->attendance_status;
         if ($attendanceStatus instanceof \App\Enums\AttendanceStatus) {
             $attendanceStatus = $attendanceStatus->value;
         }
-        $isAbsent = $attendanceStatus === \App\Enums\AttendanceStatus::ABSENT->value;
-
-        // Per the no-show=paid policy, a session whose `subscription_counted`
-        // flag is true was counted from the student's perspective — render it
-        // as `completed` (with a `completed_absent` marker if the student was
-        // absent) instead of overriding to `canceled`. The legacy flag is the
-        // supervisor's historical decision; we trust it.
-        if ((bool) ($this->subscription_counted ?? false)) {
-            return $isAbsent ? 'completed_absent' : 'completed';
+        if ($attendanceStatus === \App\Enums\AttendanceStatus::ABSENT->value) {
+            return 'absent';
         }
 
-        // Session did not count: matrix-excluded (teacher-absent) or supervisor
-        // override → show as cancelled.
         if ($studentAttendance?->counts_for_subscription === false) {
             return 'canceled';
-        }
-
-        if ($isAbsent) {
-            return 'absent';
         }
 
         return 'completed';

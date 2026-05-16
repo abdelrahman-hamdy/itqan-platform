@@ -29,14 +29,6 @@
                 'icon' => 'ri-check-circle-line',
                 'label' => __('components.sessions.status.completed'),
             ],
-            // Session counted (per no-show=paid policy) but the student was
-            // absent. Show as completed with a discreet absence marker so
-            // students don't think the slot was forfeited.
-            'completed_absent' => [
-                'classes' => 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200',
-                'icon' => 'ri-check-circle-line',
-                'label' => __('components.sessions.status.completed_absent'),
-            ],
             'absent' => $role === 'teacher'
                 ? [
                     'classes' => 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 border border-gray-300',
