@@ -72,9 +72,9 @@ class PresetFromBackup extends Command
 
         $scanned = 0;
         $restored = 0;
+        $zeroStamped = 0;
         $skipped = [
             'not_in_backup' => 0,
-            'preset_zero' => 0,
             'preset_exceeds_total' => 0,
             'used_exceeds_total' => 0,
             'cycle_already_has_metadata' => 0,
@@ -91,8 +91,8 @@ class PresetFromBackup extends Command
             }
 
             $preset = (int) ($entry['preset'] ?? 0);
-            if ($preset <= 0) {
-                $skipped['preset_zero']++;
+            if ($preset < 0) {
+                $skipped['not_in_backup']++;
                 continue;
             }
 
@@ -147,14 +147,19 @@ class PresetFromBackup extends Command
 
                 if (! $apply) {
                     $this->line(sprintf(
-                        '  would restore sub #%d: preset=%d, active=%d, cycle.used %d→%d',
+                        '  would %s sub #%d: preset=%d, active=%d, cycle.used %d→%d',
+                        $preset > 0 ? 'restore' : 'mark-zero',
                         $subId,
                         $preset,
                         $activeConsumption,
                         (int) $cycle->sessions_used,
                         $newCycleUsed,
                     ));
-                    $restored++;
+                    if ($preset > 0) {
+                        $restored++;
+                    } else {
+                        $zeroStamped++;
+                    }
                     continue;
                 }
 
@@ -166,7 +171,7 @@ class PresetFromBackup extends Command
                     $metadata['pre_platform_consumption_preserved'] = true;
                     $metadata['preserved_value'] = $preset;
                     $metadata['preserved_at'] = now()->toDateTimeString();
-                    $metadata['preserved_source'] = 'backup_restore_2026-05-15';
+                    $metadata['preserved_source'] = $entry['source'] ?? 'backup_restore_2026-05-15';
                     $metadata['preserved_backup_sub_used'] = $entry['backup_sub_used'] ?? null;
                     $metadata['preserved_backup_cycle_used'] = $entry['backup_cycle_used'] ?? null;
 
@@ -194,8 +199,13 @@ class PresetFromBackup extends Command
                     $reconciler->sync($sub->fresh(['currentCycle']));
                 });
 
-                $restored++;
-                $this->line(sprintf('  ✓ restored sub #%d (preset=%d)', $subId, $preset));
+                if ($preset > 0) {
+                    $restored++;
+                    $this->line(sprintf('  ✓ restored sub #%d (preset=%d)', $subId, $preset));
+                } else {
+                    $zeroStamped++;
+                    $this->line(sprintf('  ✓ marked sub #%d preset=0 (off the review list)', $subId));
+                }
             } catch (\Throwable $e) {
                 $errors++;
                 $this->warn(sprintf('sub #%d ERROR: %s', $subId, $e->getMessage()));
@@ -204,10 +214,11 @@ class PresetFromBackup extends Command
 
         $this->newLine();
         $this->info(sprintf(
-            '%s: scanned=%d restored=%d errors=%d',
+            '%s: scanned=%d restored=%d zero_stamped=%d errors=%d',
             $apply ? 'APPLIED' : 'DRY-RUN —',
             $scanned,
             $restored,
+            $zeroStamped,
             $errors,
         ));
 
