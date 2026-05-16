@@ -253,7 +253,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             $sessionsQuery->where($currentCycleFilter);
         }
 
-        $sessions = $sessionsQuery->paginate(15);
+        $sessions = $sessionsQuery->paginate(30);
 
         // Pre-fetch the set of session IDs that have an active (non-reversed)
         // SessionConsumption row for this subscription's student. Keyed by
