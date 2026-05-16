@@ -150,7 +150,7 @@ class LegacyCountingDrift extends Command
             try {
                 DB::transaction(function () use ($subId, $rows, &$createdRows) {
                     foreach ($rows as $r) {
-                        $consumedAt = $r->completed_at ?: $r->scheduled_at ?: now();
+                        $consumedAt = $r->ended_at ?: $r->scheduled_at ?: now();
 
                         $consumption = SessionConsumption::create([
                             'session_id' => $r->session_id,
@@ -239,7 +239,7 @@ class LegacyCountingDrift extends Command
                    qs.subscription_cycle_id AS cycle_id,
                    qs.student_id AS student_id,
                    qs.scheduled_at,
-                   qs.completed_at
+                   qs.ended_at
             FROM quran_sessions qs
             WHERE qs.subscription_counted = 1
               AND qs.deleted_at IS NULL
