@@ -36,7 +36,7 @@ class UndeservedPendingSessions extends Command
 
     protected $description = 'One-off cleanup for the 7 lie-state subs from 2026-05-16: cancel future scheduled sessions anchored to unpaid/saturated cycles; re-anchor 3 paid-quota sessions on sub 903.';
 
-    private const BUG_ID = 'undeserved-pending-sessions-2026-05-16';
+    private const BUG_ID = 'undeserved-pending-2026-05-16';
 
     /** @var array<int, array{sub:int, cycle:int}> */
     private const CANCEL_TARGETS = [
