@@ -364,31 +364,70 @@
                             $session instanceof \App\Models\AcademicSession => 'academic',
                             default => 'quran',
                         };
-                        $isLive = in_array($session->status, [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING]);
+                        $statusValue = is_object($session->status) ? $session->status->value : $session->status;
+                        $isLive = in_array($statusValue, [
+                            \App\Enums\SessionStatus::READY->value,
+                            \App\Enums\SessionStatus::ONGOING->value,
+                        ]);
+
+                        // Per-student attendance — the subscription is single-student,
+                        // so we derive a "student-perspective" status (completed /
+                        // absent / canceled) the same way circle session cards do.
+                        $studentAttendance = $session->attendanceFor((int) $subscription->student_id);
+                        $displayStatus = $statusValue === \App\Enums\SessionStatus::COMPLETED->value
+                            ? $session->displayStatusFor('student', $studentAttendance)
+                            : null;
+
+                        // "Counted toward student" — true when there is a
+                        // non-reversed session_consumption row for this student on
+                        // this session (canonical post-v2-flip). We fall back to
+                        // MeetingAttendance's `counts_for_subscription` flag for
+                        // historical sessions that never reached the v2 table.
+                        // Forward-looking sessions (not yet completed) hide the
+                        // badge entirely — the question is not yet meaningful.
+                        $isCompleted = $statusValue === \App\Enums\SessionStatus::COMPLETED->value;
+                        $consumed = isset($countedSessionIds[$session->id]);
+                        if ($isCompleted) {
+                            $countedForStudent = $consumed || ($studentAttendance?->counts_for_subscription === true);
+                            $showCountedBadge = true;
+                        } else {
+                            $countedForStudent = false;
+                            $showCountedBadge = false;
+                        }
                     @endphp
                     <a href="{{ route('manage.sessions.show', ['subdomain' => $subdomain, 'sessionType' => $sessionType, 'sessionId' => $session->id]) }}"
-                       class="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition-colors">
+                       class="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition-colors {{ ($showCountedBadge && ! $countedForStudent) || $displayStatus === 'canceled' ? 'opacity-80' : '' }}">
                         {{-- Status --}}
                         <div class="flex items-center gap-1.5">
                             @if($isLive)<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>@endif
-                            @php
-                                $sessionBadge = match($session->status->color()) {
-                                    'success' => 'bg-green-100 text-green-800',
-                                    'danger' => 'bg-red-100 text-red-800',
-                                    'warning' => 'bg-amber-100 text-amber-800',
-                                    'info' => 'bg-blue-100 text-blue-800',
-                                    'primary' => 'bg-cyan-100 text-cyan-800',
-                                    default => 'bg-gray-100 text-gray-600',
-                                };
-                            @endphp
-                            <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {{ $sessionBadge }}">
-                                {{ $session->status->label() }}
-                            </span>
+                            <x-sessions.status-badge
+                                :status="$session->status"
+                                :session="$session"
+                                :displayStatus="$displayStatus"
+                                role="student"
+                                size="sm" />
                         </div>
 
                         {{-- Session Info --}}
                         <div class="flex-1 min-w-0">
-                            <div class="text-sm font-medium text-gray-900 truncate">{{ $session->title ?? $session->name ?? $session->session_code ?? '#'.$session->id }}</div>
+                            <div class="flex items-center gap-2">
+                                <div class="text-sm font-medium text-gray-900 truncate">{{ $session->title ?? $session->name ?? $session->session_code ?? '#'.$session->id }}</div>
+                                @if($showCountedBadge)
+                                    @if($countedForStudent)
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap"
+                                              title="{{ __('supervisor.sessions.counted') }}">
+                                            <i class="ri-check-line"></i>
+                                            {{ __('supervisor.sessions.counted') }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] rounded-full bg-gray-50 text-gray-500 border border-gray-200 whitespace-nowrap"
+                                              title="{{ __('supervisor.sessions.not_counted') }}">
+                                            <i class="ri-close-line"></i>
+                                            {{ __('supervisor.sessions.not_counted') }}
+                                        </span>
+                                    @endif
+                                @endif
+                            </div>
                             <div class="text-xs text-gray-500">{{ $session->session_duration_minutes ?? $subscription->session_duration_minutes ?? '-' }} {{ __('supervisor.subscriptions.minutes') }}</div>
                         </div>
 

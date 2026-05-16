@@ -220,23 +220,63 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
         $subscriptionCycles = $subscription->cycles;
 
         // Session cycle filter
+        // "Current cycle" now follows subscription_cycle_id (canonical post-2026-05-04)
+        // and falls back to the starts_at/ends_at window for historical rows where the
+        // FK is NULL. Eager-load meetingAttendances so the view can derive per-student
+        // counted-status without N+1.
         $cycle = $request->query('cycle', 'current');
-        $sessionsQuery = $subscription->sessions()->latest('scheduled_at');
+        $currentCycleId = $subscription->current_cycle_id;
 
-        if ($cycle === 'current' && $subscription->starts_at && $subscription->ends_at) {
-            $sessionsQuery->whereBetween('scheduled_at', [$subscription->starts_at, $subscription->ends_at]);
+        $sessionsQuery = $subscription->sessions()
+            ->with('meetingAttendances')
+            ->latest('scheduled_at');
+
+        $currentCycleFilter = function ($q) use ($currentCycleId, $subscription) {
+            if ($currentCycleId) {
+                $q->where('subscription_cycle_id', $currentCycleId);
+                if ($subscription->starts_at && $subscription->ends_at) {
+                    $q->orWhere(function ($qq) use ($subscription) {
+                        $qq->whereNull('subscription_cycle_id')
+                            ->whereBetween('scheduled_at', [$subscription->starts_at, $subscription->ends_at]);
+                    });
+                }
+            } elseif ($subscription->starts_at && $subscription->ends_at) {
+                $q->whereBetween('scheduled_at', [$subscription->starts_at, $subscription->ends_at]);
+            } else {
+                // No cycle anchor at all — return nothing for the "current" tab
+                // rather than the full history.
+                $q->whereRaw('1=0');
+            }
+        };
+
+        if ($cycle === 'current') {
+            $sessionsQuery->where($currentCycleFilter);
         }
 
         $sessions = $sessionsQuery->paginate(15);
 
-        // Count sessions per cycle for tabs
-        $currentCycleCount = 0;
-        $allSessionsCount = $subscription->sessions()->count();
-        if ($subscription->starts_at && $subscription->ends_at) {
-            $currentCycleCount = $subscription->sessions()
-                ->whereBetween('scheduled_at', [$subscription->starts_at, $subscription->ends_at])
-                ->count();
+        // Pre-fetch the set of session IDs that have an active (non-reversed)
+        // SessionConsumption row for this subscription's student. Keyed by
+        // session ID so the view can answer "counted?" in O(1) per row.
+        $sessionIdsOnPage = $sessions->getCollection()->pluck('id')->all();
+        $countedSessionIds = [];
+        if (! empty($sessionIdsOnPage) && $subscription->student_id) {
+            $sessionMorph = $sessions->getCollection()->first()?->getMorphClass();
+            if ($sessionMorph) {
+                $countedSessionIds = \App\Models\SessionConsumption::query()
+                    ->whereIn('session_id', $sessionIdsOnPage)
+                    ->where('session_type', $sessionMorph)
+                    ->where('student_user_id', $subscription->student_id)
+                    ->whereNull('reversed_at')
+                    ->pluck('session_id')
+                    ->all();
+            }
         }
+        $countedSessionIds = array_flip($countedSessionIds);
+
+        // Count sessions per cycle for tabs (mirrors the filter above)
+        $allSessionsCount = $subscription->sessions()->count();
+        $currentCycleCount = $subscription->sessions()->where($currentCycleFilter)->count();
 
         // Get teacher user for avatar
         $teacherUser = null;
@@ -263,6 +303,7 @@ class SupervisorSubscriptionsController extends BaseSupervisorWebController
             'cycle' => $cycle,
             'currentCycleCount' => $currentCycleCount,
             'allSessionsCount' => $allSessionsCount,
+            'countedSessionIds' => $countedSessionIds,
             'teacherUser' => $teacherUser,
             'renewedBy' => $renewedBy,
             'canManage' => $this->canManageSubscriptions(),
