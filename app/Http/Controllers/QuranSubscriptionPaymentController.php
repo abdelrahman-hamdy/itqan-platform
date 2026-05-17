@@ -57,6 +57,29 @@ class QuranSubscriptionPaymentController extends Controller
         // Get available gateways for this academy, filtered by the student's country.
         $gateways = $this->gatewayFactory->getAvailableGatewaysForAcademy($academy, Auth::user());
 
+        // TEMP DEBUG: trace why Palestinian students still see Tap.
+        // Remove after the live verification confirms the fix.
+        try {
+            $authUser = Auth::user();
+            $sp = $authUser?->studentProfile;
+            Log::info('quran.subscription.payment.create trace', [
+                'subscription_id' => $subscription->id,
+                'academy_id' => $academy->id,
+                'auth_user_id' => $authUser?->id,
+                'u_phone_country' => $authUser?->phone_country,
+                'u_phone_country_code' => $authUser?->phone_country_code,
+                'sp_id' => $sp?->id,
+                'sp_phone_country' => $sp?->phone_country,
+                'sp_phone_country_code' => $sp?->phone_country_code,
+                'sp_nationality' => $sp?->nationality,
+                'resolved_country' => app(\App\Services\Payment\UserCountryResolver::class)->resolve($authUser, $academy),
+                'gateway_count' => count($gateways),
+                'gateway_keys' => array_keys($gateways),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('quran.subscription.payment.create trace failed', ['error' => $e->getMessage()]);
+        }
+
         if (count($gateways) === 0) {
             return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
                 ->with('error', __('payments.gateway_selection.no_gateways'));
