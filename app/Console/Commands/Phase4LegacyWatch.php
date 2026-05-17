@@ -128,6 +128,7 @@ class Phase4LegacyWatch extends Command
 
         $cutoff = now()->subDay();
         $hits = 0;
+        $inWindow = false; // tracks whether the most-recent header line is within the 24h window
         $matchers = [
             'BadMethodCallException',
             'isSubscriptionCounted',
@@ -141,15 +142,21 @@ class Phase4LegacyWatch extends Command
         }
 
         while (($line = fgets($handle)) !== false) {
+            // Header line carries the timestamp. Stack-trace + continuation
+            // lines inherit the most-recent header's in-window status —
+            // otherwise we'd match the body of a stack trace from a months-
+            // old entry whose header was already filtered out.
             if (preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]/', $line, $m)) {
                 try {
                     $ts = \Carbon\Carbon::parse($m[1]);
+                    $inWindow = $ts->gte($cutoff);
                 } catch (\Throwable $e) {
-                    continue;
+                    $inWindow = false;
                 }
-                if ($ts->lt($cutoff)) {
-                    continue;
-                }
+            }
+
+            if (! $inWindow) {
+                continue;
             }
 
             foreach ($matchers as $needle) {
