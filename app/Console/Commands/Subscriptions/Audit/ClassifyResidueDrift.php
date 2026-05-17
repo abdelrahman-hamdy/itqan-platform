@@ -195,8 +195,9 @@ class ClassifyResidueDrift extends Command
             ->first(['id', 'attendance_status', 'counts_for_subscription']);
 
         $hasMa = $ma !== null;
+        $maStatus = $hasMa ? $this->stringify($ma->attendance_status) : null;
         if ($hasMa) {
-            $evidence[] = sprintf('ma.status=%s', $ma->attendance_status);
+            $evidence[] = sprintf('ma.status=%s', $maStatus ?? '');
             $evidence[] = sprintf('ma.counts=%d', (int) $ma->counts_for_subscription);
         }
 
@@ -263,7 +264,7 @@ class ClassifyResidueDrift extends Command
         // ── rule 4: AUTO_BACKFILL — sub+cycle set, MA implies session ran ──
         $matrixSaysConsumes = $hasMa
             && (int) $ma->counts_for_subscription !== 0
-            && in_array($ma->attendance_status, ['attended', 'late', 'left', 'absent'], true);
+            && in_array($maStatus, ['attended', 'late', 'left', 'absent', 'partially_attended'], true);
 
         if ($counted === 1 && ! $hasActiveConsumption && $matrixSaysConsumes) {
             // Backup cross-reference (optional): warn if baseline disagrees
@@ -407,6 +408,25 @@ class ClassifyResidueDrift extends Command
                 $e->getMessage(),
             ));
         }
+    }
+
+    /**
+     * Coerce an enum/string/null to its plain string value so sprintf and
+     * in_array work consistently regardless of model casts.
+     */
+    private function stringify(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        if ($value instanceof \BackedEnum) {
+            return (string) $value->value;
+        }
+        if ($value instanceof \UnitEnum) {
+            return $value->name;
+        }
+
+        return (string) $value;
     }
 
     /**
