@@ -98,6 +98,20 @@ class AcademicSubscriptionPaymentController extends Controller
                 ->with('error', __('payments.academic_payment.not_found'));
         }
 
+        // Server-side allowlist check — see the matching block in
+        // QuranSubscriptionPaymentController::store(). A stale browser tab
+        // or direct POST must not be able to bypass the country-based
+        // gateway filtering performed when the page was rendered.
+        $allowed = $this->gatewayFactory->getAvailableGatewaysForAcademy($academy, Auth::user());
+        if (! array_key_exists($request->payment_gateway, $allowed)) {
+            return redirect()
+                ->route('academic.subscription.payment', [
+                    'subdomain' => $academy->subdomain,
+                    'subscription' => $subscription->id,
+                ])
+                ->with('error', __('payments.gateway_selection.no_gateways'));
+        }
+
         return $this->processAndRedirect($academy, $subscription, $request->payment_gateway);
     }
 

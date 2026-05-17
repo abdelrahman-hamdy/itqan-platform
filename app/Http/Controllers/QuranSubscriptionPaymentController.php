@@ -98,6 +98,21 @@ class QuranSubscriptionPaymentController extends Controller
                 ->with('error', __('payments.academic_payment.not_found'));
         }
 
+        // Server-side allowlist check. A stale browser tab or a direct POST
+        // can submit a gateway that's no longer offered for this user's
+        // resolved country (e.g. Tap for a Palestinian student after the
+        // profile is corrected). Trust only the live filtered list, not the
+        // value rendered into the page at an earlier point in time.
+        $allowed = $this->gatewayFactory->getAvailableGatewaysForAcademy($academy, Auth::user());
+        if (! array_key_exists($request->payment_gateway, $allowed)) {
+            return redirect()
+                ->route('quran.subscription.payment', [
+                    'subdomain' => $academy->subdomain,
+                    'subscription' => $subscription->id,
+                ])
+                ->with('error', __('payments.gateway_selection.no_gateways'));
+        }
+
         return $this->processAndRedirect($academy, $subscription, $request->payment_gateway);
     }
 
