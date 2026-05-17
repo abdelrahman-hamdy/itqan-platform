@@ -104,11 +104,15 @@ class Phase4LegacyWatch extends Command
             '%isLegacyConsumptionCycle%',
         ];
 
+        $columns = ['before_state', 'after_state', 'invariant_violations'];
+
         $query = DB::table('subscription_audit_log')
             ->where('created_at', '>', now()->subDay())
-            ->where(function ($q) use ($patterns) {
-                foreach ($patterns as $p) {
-                    $q->orWhere('payload', 'like', $p);
+            ->where(function ($q) use ($patterns, $columns) {
+                foreach ($columns as $col) {
+                    foreach ($patterns as $p) {
+                        $q->orWhere($col, 'like', $p);
+                    }
                 }
             });
 
