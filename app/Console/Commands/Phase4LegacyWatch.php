@@ -36,11 +36,13 @@ class Phase4LegacyWatch extends Command
     private const DRIFT_CSV = 'audit/MASTER-decisions.csv';
 
     /**
-     * Set this to the row count captured at Step 0 of the runbook (the
-     * baseline drift count from `subscriptions:audit-all-subs --reset-csv`).
-     * The watch upgrades to `crit` if the live count rises above this.
+     * Baseline drift count from `storage/audit/MASTER-decisions.csv` —
+     * measured on prod 2026-05-17 right after PR 2 deploy. The watch
+     * upgrades to `crit` if the live count rises above this. Bump after
+     * an intentional sweep that legitimately grows the CSV; otherwise
+     * any rise indicates new drift surfaced after the cleanup.
      */
-    private const DRIFT_BASELINE = 176;
+    private const DRIFT_BASELINE = 728;
 
     public function handle(): int
     {
