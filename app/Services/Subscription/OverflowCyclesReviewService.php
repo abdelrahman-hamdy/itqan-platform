@@ -5,8 +5,10 @@ namespace App\Services\Subscription;
 use App\Models\BackfillLog;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
+use App\Models\SessionConsumption;
 use App\Models\SubscriptionCycle;
 use App\Models\User;
+use App\Support\Subscriptions\CycleDriftClassifier;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -113,6 +115,8 @@ class OverflowCyclesReviewService
                 ? trim(($users[$sub->quran_teacher_id]->first_name ?? '').' '.($users[$sub->quran_teacher_id]->last_name ?? ''))
                 : null;
 
+            $verdict = $sub ? $this->classifierVerdict($sub, $cycle, $drift) : null;
+
             $overflow[] = [
                 'cycle_id' => (int) $cycleId,
                 'sub_id' => $sub?->id,
@@ -131,12 +135,90 @@ class OverflowCyclesReviewService
                 'total' => $total,
                 'overflow_by' => $wouldBe - $total,
                 'drift_session_ids' => $rows->pluck('session_id')->map(fn ($id) => (int) $id)->all(),
+                // C.1: classifier-driven default for the supervisor's action
+                // dropdown. RE_DRIFT / CONFIRMED_BUG → bump_total (the drift
+                // is real and the cycle simply needs more headroom).
+                // FORGIVING_UNDERCOUNT / PRESET_SUSPECT / SOFT_DELETED_EXPLAINED
+                // → forgive_n (the drift is double-counting). Everything else
+                // defaults to defer so a human picks.
+                'classifier_class' => $verdict['class'] ?? null,
+                'classifier_reason_ar' => $verdict['reason_ar'] ?? null,
+                'classifier_evidence' => $verdict['evidence'] ?? [],
+                'recommended_action' => $this->recommendedAction($verdict['class'] ?? null),
             ];
         }
 
         usort($overflow, fn ($a, $b) => $b['overflow_by'] <=> $a['overflow_by']);
 
         return $overflow;
+    }
+
+    /**
+     * Run the deterministic CycleDriftClassifier on the overflow cycle and
+     * surface its verdict so the supervisor sees a default action +
+     * Arabic explanation without leaving the page.
+     *
+     * @return array{class:string,gap:int,evidence:list<string>,reason_ar:string}
+     */
+    private function classifierVerdict(QuranSubscription $sub, SubscriptionCycle $cycle, int $drift): array
+    {
+        $actualCounted = SessionConsumption::query()
+            ->where('cycle_id', $cycle->id)
+            ->whereNull('reversed_at')
+            ->count();
+
+        $softDeleted = QuranSession::query()
+            ->withoutGlobalScopes()
+            ->where('subscription_cycle_id', $cycle->id)
+            ->where('subscription_counted', true)
+            ->whereNotNull('deleted_at')
+            ->count();
+
+        $priorRepairs = BackfillLog::query()
+            ->where('table_name', 'subscription_cycles')
+            ->where('row_id', $cycle->id)
+            ->whereNotIn('bug_id', ['overflow-review-2026-05-17'])
+            ->count();
+
+        $metadata = (array) ($sub->metadata ?? []);
+        $shownExhausted = (bool) ($metadata['sessions_exhausted'] ?? false);
+
+        return CycleDriftClassifier::classify([
+            'stored_used' => (int) $cycle->sessions_used + $drift,
+            'actual_counted' => $actualCounted,
+            'soft_deleted_counted' => $softDeleted,
+            'prior_repairs' => $priorRepairs,
+            'shown_exhausted' => $shownExhausted,
+            'purchase_source' => $sub->purchase_source ?? '',
+            'cycle_number' => (int) ($cycle->cycle_number ?? 1),
+            'cycle_state' => $cycle->cycle_state,
+            'cycle_created_at' => $cycle->created_at,
+        ]);
+    }
+
+    /**
+     * Map a classifier verdict to the supervisor-form's default action.
+     *
+     * The mapping mirrors the plan's intent:
+     *   - RE_DRIFT / CONFIRMED_BUG: the drift IS real consumption that the
+     *     cycle never made room for → bump the total.
+     *   - PRESET_SUSPECT / FORGIVING_UNDERCOUNT / SOFT_DELETED_EXPLAINED:
+     *     the drift is over-counting → forgive N from the legacy flag.
+     *   - Everything else (PRE_REFACTOR_AMBIGUOUS, ARCHIVED_NOISE,
+     *     NEEDS_REVIEW): defer so a human picks.
+     */
+    private function recommendedAction(?string $class): string
+    {
+        return match ($class) {
+            CycleDriftClassifier::CLASS_RE_DRIFT,
+            CycleDriftClassifier::CLASS_CONFIRMED_BUG => 'bump_total',
+
+            CycleDriftClassifier::CLASS_PRESET_SUSPECT,
+            CycleDriftClassifier::CLASS_FORGIVING_UNDERCOUNT,
+            CycleDriftClassifier::CLASS_SOFT_DELETED_EXPLAINED => 'forgive_n',
+
+            default => 'defer',
+        };
     }
 
     /**

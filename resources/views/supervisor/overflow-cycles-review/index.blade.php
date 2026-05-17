@@ -97,6 +97,33 @@
                                 <strong>يبدأ:</strong> {{ $row['starts_at'] ?? '—' }}
                                 &nbsp;·&nbsp; <strong>ينتهي:</strong> {{ $row['ends_at'] ?? '—' }}
                             </div>
+
+                            {{-- C.1: classifier verdict + recommended action --}}
+                            @if (! empty($row['classifier_class']))
+                                <div class="mt-2 p-2 bg-indigo-50 border border-indigo-200 rounded text-xs">
+                                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                        <span class="font-semibold text-indigo-900">تصنيف تلقائي:</span>
+                                        <span class="inline-block px-2 py-0.5 rounded bg-indigo-200 text-indigo-900 font-mono">
+                                            {{ $row['classifier_class'] }}
+                                        </span>
+                                        <span class="inline-block px-2 py-0.5 rounded bg-green-100 text-green-800">
+                                            موصى به:
+                                            {{ [
+                                                'bump_total' => 'زيادة الإجمالي',
+                                                'forgive_n' => 'إعفاء N',
+                                                'defer' => 'تأجيل',
+                                            ][$row['recommended_action']] ?? $row['recommended_action'] }}
+                                        </span>
+                                        @foreach (($row['classifier_evidence'] ?? []) as $tag)
+                                            <span class="text-[10px] text-gray-600 font-mono">{{ $tag }}</span>
+                                        @endforeach
+                                    </div>
+                                    @if (! empty($row['classifier_reason_ar']))
+                                        <div class="text-gray-700">{{ $row['classifier_reason_ar'] }}</div>
+                                    @endif
+                                </div>
+                            @endif
+
                             <div class="mt-2 flex flex-wrap gap-2">
                                 @if ($row['sub_id'])
                                     <a href="{{ route('manage.subscriptions.show', ['subdomain' => $subdomain, 'type' => 'quran', 'subscription' => $row['sub_id']]) }}"
@@ -120,7 +147,7 @@
                         <form method="POST"
                               action="{{ route('manage.overflow-cycles-review.record', ['subdomain' => $subdomain, 'cycle' => $row['cycle_id']]) }}"
                               class="flex flex-col gap-2 min-w-[280px]"
-                              x-data="{ action: 'bump_total' }">
+                              x-data="{ action: '{{ $row['recommended_action'] ?? 'bump_total' }}' }">
                             @csrf
                             <label class="text-xs text-gray-700 font-semibold">الإجراء:</label>
                             <select name="action" x-model="action"
