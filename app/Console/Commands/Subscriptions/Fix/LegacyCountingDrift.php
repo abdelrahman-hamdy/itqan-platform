@@ -229,6 +229,17 @@ class LegacyCountingDrift extends Command
      * Fetch all quran sessions with legacy_counted=true and no matching
      * active consumption row.
      *
+     * IMPORTANT: skip rows where the student's MeetingAttendance has
+     * counts_for_subscription = 0. That flag is the supervisor's matrix
+     * override saying "do NOT charge the student for this session". The
+     * trait sets `session.subscription_counted = true` on matrix-excluded
+     * sessions only as a stop-retries marker — useSession() is never
+     * called, so creating a consumption row here would over-charge.
+     *
+     * (Bug discovered via sub #1081 on 2026-05-17. See
+     * `subscriptions:fix-reverse-matrix-excluded-backfills` for the
+     * one-time cleanup of historical wrong rows.)
+     *
      * @return list<\stdClass>
      */
     private function fetchDriftSessions(): array
@@ -248,6 +259,14 @@ class LegacyCountingDrift extends Command
                   WHERE sc.session_id = qs.id
                     AND sc.session_type = 'quran_session'
                     AND sc.reversed_at IS NULL
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM meeting_attendances ma
+                  WHERE ma.session_id = qs.id
+                    AND ma.session_type IN ('individual', 'group', 'trial')
+                    AND ma.user_id = qs.student_id
+                    AND ma.user_type = 'student'
+                    AND ma.counts_for_subscription = 0
               )
         ");
     }
