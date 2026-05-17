@@ -39,11 +39,6 @@ return [
         'recorded_courses' => 'الدورات المسجلة',
         'support_tickets' => 'تقارير المشاكل',
         'recording_management' => 'إدارة التسجيلات',
-        'subscription_cleanup' => 'تنظيف الاشتراكات',
-        'residue_review' => 'الحالات المتبقية',
-        'overflow_cycles_review' => 'الدورات المتجاوزة',
-        'preset_sessions_review' => 'الحصص المسبقة',
-        'legacy_counting_audit' => 'تدقيق العدّ القديم',
     ],
 
     'dashboard' => [

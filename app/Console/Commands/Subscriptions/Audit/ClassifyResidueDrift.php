@@ -52,8 +52,8 @@ use Illuminate\Support\Facades\Storage;
  *
  *   - NEEDS_REVIEW           — multiple subs match, missing both MA and
  *                              earning while counted=1, or any other
- *                              ambiguity. Surfaced to /manage/residue-review
- *                              for supervisor decision (C.2).
+ *                              ambiguity. Cleared in bulk by the Step 3
+ *                              sweep (`subscriptions:fix-final-counted-flip`).
  *
  * Output: CSV at storage/app/audit/residue-classification-{date}.csv with
  * one row per session: session_id, verdict, sub_id, cycle_id, evidence,

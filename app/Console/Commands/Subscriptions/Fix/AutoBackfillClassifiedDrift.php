@@ -27,8 +27,8 @@ use Illuminate\Support\Facades\Storage;
  * Sessions whose insert would push the cycle over total_sessions raise
  * OverConsumptionAttempt (INV-B4 enforced in SubscriptionConsumption);
  * we catch it, attribute the failure to the cycle, and append the session
- * to a "would-overflow" bucket that is reported at end-of-run and added
- * to the supervisor's /manage/overflow-cycles-review queue.
+ * to a "would-overflow" bucket that is reported at end-of-run for operator
+ * review (resolve via `subscriptions:fix-final-counted-flip`).
  *
  * Dry-run by default; pass --apply to write.
  *
@@ -174,7 +174,7 @@ class AutoBackfillClassifiedDrift extends Command
         if (! empty($overflow)) {
             $this->newLine();
             $this->warn(sprintf(
-                'Would-overflow bucket (%d rows) — visible at /manage/overflow-cycles-review for supervisor decision:',
+                'Would-overflow bucket (%d rows) — sessions that would push their cycle past total_sessions. Resolve via `subscriptions:fix-final-counted-flip --apply`:',
                 count($overflow),
             ));
             $byCycle = collect($overflow)->groupBy('cycle_id');

@@ -230,7 +230,7 @@ class PresetFromBackup extends Command
                     $this->line(sprintf('  %s: %d', $reason, $n));
                 }
             }
-            $this->line('  → these subs remain on /manage/preset-sessions-review for supervisor input.');
+            $this->line('  → resolve manually with `subscriptions:fix-preset-from-backup --apply` after capturing the preset value.');
         }
 
         if (! $apply) {
@@ -242,9 +242,8 @@ class PresetFromBackup extends Command
     }
 
     /**
-     * Same predicate used by PresetSessionsReviewService::atRiskSubs(): the
-     * 77 admin-wizard subs whose current cycle is missing the preserved-offset
-     * metadata flag.
+     * Predicate for the 77 admin-wizard subs whose current cycle is missing
+     * the preserved-offset metadata flag (`pre_platform_consumption_preserved`).
      *
      * @return list<int>
      */

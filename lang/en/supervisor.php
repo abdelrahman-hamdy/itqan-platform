@@ -39,11 +39,6 @@ return [
         'recorded_courses' => 'Recorded Courses',
         'support_tickets' => 'Support Tickets',
         'recording_management' => 'Recording Management',
-        'subscription_cleanup' => 'Subscription Cleanup',
-        'residue_review' => 'Residue Review',
-        'overflow_cycles_review' => 'Overflow Cycles Review',
-        'preset_sessions_review' => 'Preset Sessions Review',
-        'legacy_counting_audit' => 'Legacy Counting Audit',
     ],
 
     'dashboard' => [

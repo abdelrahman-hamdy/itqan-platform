@@ -233,9 +233,7 @@ class CompleteStuckWithEarnings extends Command
                                 // The consumption row IS the source of truth
                                 // (INV-B2). The reconciler may refuse to mirror
                                 // it into the cycle counters when doing so
-                                // would violate INV-B4 (sessions_remaining < 0)
-                                // — that's exactly the overflow case the
-                                // /manage/overflow-cycles-review UI handles.
+                                // would violate INV-B4 (sessions_remaining < 0).
                                 // Log and continue; the session-level state is
                                 // already correct.
                                 $this->warn(sprintf(

@@ -211,32 +211,6 @@
           :active="request()->routeIs('manage.support-tickets.*')" />
       </x-sidebar.nav-section>
 
-      @if($canAccessSubscriptions)
-      <!-- Subscription Cleanup (admin-only data-hygiene queues) -->
-      <x-sidebar.nav-section :title="__('supervisor.sidebar.subscription_cleanup')">
-        <x-sidebar.nav-item
-          :href="route('manage.residue-review.index', ['subdomain' => $subdomain])"
-          :label="__('supervisor.sidebar.residue_review')"
-          icon="ri-list-check-2"
-          :active="request()->routeIs('manage.residue-review.*')" />
-        <x-sidebar.nav-item
-          :href="route('manage.overflow-cycles-review.index', ['subdomain' => $subdomain])"
-          :label="__('supervisor.sidebar.overflow_cycles_review')"
-          icon="ri-alert-line"
-          :active="request()->routeIs('manage.overflow-cycles-review.*')" />
-        <x-sidebar.nav-item
-          :href="route('manage.preset-sessions-review.index', ['subdomain' => $subdomain])"
-          :label="__('supervisor.sidebar.preset_sessions_review')"
-          icon="ri-history-line"
-          :active="request()->routeIs('manage.preset-sessions-review.*')" />
-        <x-sidebar.nav-item
-          :href="route('manage.legacy-counting-audit.index', ['subdomain' => $subdomain])"
-          :label="__('supervisor.sidebar.legacy_counting_audit')"
-          icon="ri-search-eye-line"
-          :active="request()->routeIs('manage.legacy-counting-audit.*')" />
-      </x-sidebar.nav-section>
-      @endif
-
     </div>
   </nav>
 
