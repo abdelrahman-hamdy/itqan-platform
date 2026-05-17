@@ -87,18 +87,17 @@ class SessionCountingService
 
             $studentId = $attendance->student_id ?? $attendance->user_id;
 
-            // Check both tracking systems: MeetingAttendance.subscription_counted_at
-            // (group sessions) and session.subscription_counted (individual sessions).
-            // Individual sessions set subscription_counted on the session, NOT
-            // subscription_counted_at on MeetingAttendance.
-            $wasCountedOnAttendance = (bool) $attendance->subscription_counted_at;
-            $wasCountedOnSession = (bool) $session->subscription_counted;
-            $wasCounted = $wasCountedOnAttendance || $wasCountedOnSession;
+            $wasCounted = SessionConsumption::query()
+                ->where('session_id', $session->getKey())
+                ->where('session_type', $session->getMorphClass())
+                ->where('student_user_id', $studentId)
+                ->whereNull('reversed_at')
+                ->exists();
 
             if ($counts && ! $wasCounted) {
                 $this->applySubscriptionForStudent($attendance, $session, $studentId);
             } elseif (! $counts && $wasCounted) {
-                $this->reverseSubscriptionForStudent($attendance, $session, $studentId);
+                $this->reverseSubscriptionForStudent($session, $studentId);
             }
 
             Log::info('SessionCountingService: counts_for_subscription updated', [
@@ -126,46 +125,33 @@ class SessionCountingService
         }
 
         try {
-            // Charge the cycle the attendance was minted under so supervisor
-            // edits on archived-cycle rows can't bleed into the active cycle.
-            $cycleAnchor = $attendance->subscription_cycle_id
-                ?? ($session->subscription_cycle_id ?? null);
+            $student = User::find($studentId);
+            if (! $student instanceof User) {
+                Log::warning('SessionCountingService: Student user missing for consumption', [
+                    'session_id' => $session->id,
+                    'student_id' => $studentId,
+                ]);
 
-            // Tier 3 / G5 — when the v2 consumption flag is on, every manual
-            // override routes through SubscriptionConsumption::record so the
-            // lock + audit + reconciler invariants all stay coherent. The
-            // legacy useSession path is the fallback while the flag is off.
-            if (config('subscriptions.v2_consumption_enabled')) {
-                $student = User::find($studentId);
-                if ($student instanceof User) {
-                    $consumptionType = AttendanceConsumptionMapper::consumptionTypeFor(
-                        $attendance->attendance_status,
-                        countsForSubscription: true,
-                    ) ?? SessionConsumption::TYPE_ATTENDED;
-
-                    app(SubscriptionConsumption::class)->record(
-                        $session,
-                        $student,
-                        $subscription,
-                        source: SessionConsumption::SOURCE_ADMIN_MANUAL,
-                        sourceUser: auth()->user(),
-                        consumptionType: $consumptionType,
-                    );
-                }
-            } else {
-                $subscription->useSession($cycleAnchor);
+                return;
             }
 
-            $attendance->update(['subscription_counted_at' => now()]);
+            $consumptionType = AttendanceConsumptionMapper::consumptionTypeFor(
+                $attendance->attendance_status,
+                countsForSubscription: true,
+            ) ?? SessionConsumption::TYPE_ATTENDED;
 
-            if (! $session->subscription_counted) {
-                $session->update(['subscription_counted' => true]);
-            }
+            app(SubscriptionConsumption::class)->record(
+                $session,
+                $student,
+                $subscription,
+                source: SessionConsumption::SOURCE_ADMIN_MANUAL,
+                sourceUser: auth()->user(),
+                consumptionType: $consumptionType,
+            );
 
             Log::info('SessionCountingService: Subscription decremented', [
                 'subscription_id' => $subscription->id,
                 'student_id' => $studentId,
-                'cycle_id' => $cycleAnchor,
             ]);
         } catch (Exception $e) {
             Log::error('SessionCountingService: Failed to apply subscription', [
@@ -178,7 +164,7 @@ class SessionCountingService
     /**
      * Reverse subscription usage for a specific student.
      */
-    private function reverseSubscriptionForStudent(Model $attendance, BaseSession $session, int $studentId): void
+    private function reverseSubscriptionForStudent(BaseSession $session, int $studentId): void
     {
         $subscription = $this->findSubscriptionForStudent($session, $studentId);
         if (! $subscription) {
@@ -186,58 +172,36 @@ class SessionCountingService
         }
 
         try {
-            // Reverse on the same cycle the attendance was charged against.
-            $cycleAnchor = $attendance->subscription_cycle_id
-                ?? ($session->subscription_cycle_id ?? null);
+            // INV-B1: the consumption row is uniquely identified by
+            // (session_id, session_type, subscription_id, subscription_type)
+            // — cycle_id is NOT part of the unique key.
+            $existing = SessionConsumption::query()
+                ->where('session_id', $session->getKey())
+                ->where('session_type', $session->getMorphClass())
+                ->where('subscription_id', $subscription->getKey())
+                ->where('subscription_type', $subscription->getMorphClass())
+                ->whereNull('reversed_at')
+                ->first();
 
-            if (config('subscriptions.v2_consumption_enabled')) {
-                // INV-B1: the consumption row is uniquely identified by
-                // (session_id, session_type, subscription_id, subscription_type)
-                // — cycle_id is NOT part of the unique key. Filtering on
-                // $cycleAnchor here diverges from the record path (which writes
-                // `sub.current_cycle_id` when `session.subscription_cycle_id`
-                // is NULL) and would silently miss the row, leaving it active
-                // while the legacy flags get cleared. $cycleAnchor stays in
-                // scope only for the legacy `returnSession()` fallback below.
-                $existing = SessionConsumption::query()
-                    ->where('session_id', $session->getKey())
-                    ->where('session_type', $session->getMorphClass())
-                    ->where('subscription_id', $subscription->getKey())
-                    ->where('subscription_type', $subscription->getMorphClass())
-                    ->whereNull('reversed_at')
-                    ->first();
-
-                if ($existing instanceof SessionConsumption) {
-                    $reverser = auth()->user();
-                    if ($reverser instanceof User) {
-                        app(SubscriptionConsumption::class)->reverse(
-                            $existing,
-                            'admin_manual_override',
-                            $reverser,
-                        );
-                    } else {
-                        // CLI / cron path — no auth context. Fall back to
-                        // legacy returnSession so a row still gets reversed;
-                        // a proper actor is required for the audited v2 path.
-                        $subscription->returnSession($cycleAnchor);
-                    }
-                }
-            } else {
-                $subscription->returnSession($cycleAnchor);
+            if (! $existing instanceof SessionConsumption) {
+                return;
             }
 
-            $attendance->update(['subscription_counted_at' => null]);
+            $reverser = auth()->user();
+            if (! $reverser instanceof User) {
+                Log::warning('SessionCountingService: No actor available to reverse consumption', [
+                    'session_id' => $session->id,
+                    'student_id' => $studentId,
+                ]);
 
-            if ($session->subscription_counted) {
-                $session->update(['subscription_counted' => false]);
+                return;
             }
 
-            // The freed quota is represented purely by the incremented
-            // sessions_remaining on the subscription. We deliberately do NOT
-            // create a replacement UNSCHEDULED session — those caused data
-            // hygiene problems. Lesson-level counts (sessions_scheduled /
-            // _completed / _remaining on AcademicIndividualLesson) are
-            // unaffected by this toggle since no session row state changed.
+            app(SubscriptionConsumption::class)->reverse(
+                $existing,
+                'admin_manual_override',
+                $reverser,
+            );
 
             Log::info('SessionCountingService: Subscription reversed', [
                 'subscription_id' => $subscription->id,

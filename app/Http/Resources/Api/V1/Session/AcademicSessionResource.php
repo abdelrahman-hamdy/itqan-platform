@@ -70,9 +70,6 @@ class AcademicSessionResource extends SessionResource
                     'label' => $this->academicSubscription?->status?->label(),
                 ],
             ]),
-
-            // Subscription counting
-            'subscription_counted' => $this->subscription_counted,
         ]);
     }
 

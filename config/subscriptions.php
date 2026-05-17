@@ -182,23 +182,6 @@ return [
     // then, legacy stays canonical. Phase A.5 default: false.
     'v2_payment_canonical' => env('SUBSCRIPTIONS_V2_PAYMENT_CANONICAL', false),
 
-    // Tier 3 attendance cutover: when true, auto-attendance + manual
-    // counting paths funnel through SubscriptionConsumption::record /
-    // ::reverse instead of legacy updateSubscriptionUsage / returnSession.
-    // Direct cutover (no shadow) — legacy is untouched when false.
-    'v2_consumption_enabled' => env('SUBSCRIPTIONS_V2_CONSUMPTION_ENABLED', false),
-
-    // E1 reconciler gate — ISO timestamp of the moment v2 was flipped on in
-    // production. Cycles created BEFORE this timestamp whose
-    // `v2_consumption_complete` flag is still false are treated as legacy
-    // (legacy attendance writer never produced session_consumption rows for
-    // them). The reconciler skips the INV-B3 recount for these cycles so
-    // legitimate stored aggregates are preserved.
-    //
-    // Leave unset in dev/test contexts — every cycle is post-v2 by
-    // construction and should reconcile from session_consumption.
-    'v2_flip_cutoff' => env('SUBSCRIPTIONS_V2_FLIP_CUTOFF'),
-
     // When true, SubscriptionRowGuard throws UnreconciledSubscriptionWrite
     // on any direct write to derived subscription columns (payment_status,
     // sessions_used, sessions_remaining, total_sessions, starts_at,

@@ -125,19 +125,3 @@ it('records a session_consumption row + bumps cycle counter + audits via v2 serv
         ->where('action', 'consumption.record')
         ->count())->toBe(1);
 });
-
-it('keeps legacy useSession() path when the v2_consumption_enabled flag is off', function () {
-    config(['subscriptions.v2_consumption_enabled' => false]);
-
-    // Confirm the legacy path still increments via useSession.
-    $beforeUsed = (int) $this->sub->fresh()->sessions_used;
-    $this->sub->useSession($this->cycle->id);
-    $afterUsed = (int) $this->sub->fresh()->sessions_used;
-
-    expect($afterUsed - $beforeUsed)->toBe(1);
-
-    // No session_consumption row when the legacy path runs (v2 is off).
-    expect(SessionConsumption::query()
-        ->where('subscription_id', $this->sub->id)
-        ->count())->toBe(0);
-});

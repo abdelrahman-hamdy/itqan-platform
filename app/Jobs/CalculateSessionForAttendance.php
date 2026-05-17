@@ -305,23 +305,7 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                 'matrix_enabled' => $matrixEnabled,
             ]);
 
-            // Tier 3 / G2 — gated cutover. When the v2 flag is on we route
-            // through SubscriptionConsumption::record so the lock + audit +
-            // reconciler invariants stay aligned. When off, the legacy
-            // updateSubscriptionUsage walks per-student counts_for_subscription
-            // flags as it always has.
-            if (config('subscriptions.v2_consumption_enabled')) {
-                $this->recordV2Consumption($session);
-            } elseif (method_exists($session, 'updateSubscriptionUsage')) {
-                try {
-                    $session->updateSubscriptionUsage();
-                } catch (Exception $e) {
-                    Log::error('CalculateSessionForAttendance: Failed to update subscription usage', [
-                        'session_id' => $session->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
+            $this->recordV2Consumption($session);
 
             // Dispatch earnings now that counts_for_teacher is set.
             dispatch(new CalculateSessionEarningsJob($session));
@@ -334,22 +318,16 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
     }
 
     /**
-     * Tier 3 v2 path — for each student MeetingAttendance row on this
-     * session whose `counts_for_subscription` is not explicitly false, route
-     * the consumption write through SubscriptionConsumption::record so
+     * For each student MeetingAttendance row on this session whose
+     * `counts_for_subscription` is not explicitly false, route the
+     * consumption write through SubscriptionConsumption::record so
      * INV-B3 / INV-B4 / the SubscriptionAuditLog all stay coherent.
-     *
-     * The legacy `subscription_counted` flag is still stamped to keep
-     * downstream callers (Filament UI, reconcile crons) backwards-compatible
-     * during the cutover window.
+     * SubscriptionConsumption::record is itself idempotent per
+     * (session, student) so a repeat call after a recompute is a no-op.
      */
     private function recordV2Consumption($session): void
     {
         if (! method_exists($session, 'meetingAttendances')) {
-            return;
-        }
-
-        if (($session->subscription_counted ?? false) === true) {
             return;
         }
 
@@ -417,14 +395,6 @@ class CalculateSessionForAttendance implements ShouldBeUnique, ShouldQueue
                     'error' => $e->getMessage(),
                 ]);
             }
-        }
-
-        // Stamp subscription_counted so the legacy reconcile cron + Filament
-        // UI continue to see the session as accounted-for.
-        try {
-            $session->update(['subscription_counted' => true]);
-        } catch (Throwable) {
-            // Best-effort — the v2 audit log is canonical.
         }
     }
 

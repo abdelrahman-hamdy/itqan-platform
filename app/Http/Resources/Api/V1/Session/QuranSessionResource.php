@@ -76,8 +76,6 @@ class QuranSessionResource extends SessionResource
                 ],
             ]),
 
-            // Subscription counting
-            'subscription_counted' => $this->resource->subscription_counted,
             'monthly_session_number' => $this->resource->monthly_session_number,
         ]);
     }
