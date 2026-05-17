@@ -4,9 +4,13 @@
 ])
 
 @php
+    use App\Enums\SubscriptionViewState;
+    use App\Models\BaseSubscription;
+    use App\Models\SubscriptionCycle;
     use App\Services\QuranSubscriptionDetailsService;
     use App\Services\AcademicSubscriptionDetailsService;
     use App\Services\CourseSubscriptionDetailsService;
+    use App\Services\Subscription\SubscriptionPresentation;
 
     $isTeacher = $viewType === 'teacher';
 
@@ -80,6 +84,58 @@
         'academic_individual' => 'text-purple-900',
         default => 'text-blue-900',
     };
+
+    // Inline-renew block: surface renew on the per-circle page so students
+    // don't have to bounce back to /student/subscriptions. The Rule 1 vs
+    // Rule 2 mode mirrors SubscriptionRenewalService::
+    // shouldReplaceImmediately() so the modal copy lines up with what
+    // the engine will actually do.
+    $renewSubscription = $subscription instanceof BaseSubscription ? $subscription : null;
+    $renewViewState = ($renewSubscription && !$isTeacher)
+        ? app(SubscriptionPresentation::class)->viewStateFor($renewSubscription)
+        : null;
+    $renewCurrentCycle = $renewSubscription?->currentCycle;
+    $renewRemaining = $renewCurrentCycle
+        ? max(0, (int) $renewCurrentCycle->total_sessions - (int) $renewCurrentCycle->sessions_used)
+        : 0;
+    $renewCycleEnded = $renewCurrentCycle?->ends_at?->isPast() ?? false;
+    $renewWillReplaceNow = ($renewCurrentCycle && $renewRemaining <= 0)
+        || $renewCycleEnded
+        || $renewViewState !== SubscriptionViewState::ACTIVE_PAID;
+    $renewEndsAtFormatted = $renewCurrentCycle?->ends_at
+        ? $renewCurrentCycle->ends_at->locale(app()->getLocale())->isoFormat('LL')
+        : '';
+    $renewHasPaidQueuedCycle = $renewSubscription
+        && $renewSubscription->queuedCycle()
+            ->where('payment_status', SubscriptionCycle::PAYMENT_PAID)
+            ->exists();
+    $renewCanShow = !$isTeacher
+        && $renewSubscription
+        && $renewSubscription->canRenew()
+        && !$renewHasPaidQueuedCycle;
+    $renewKey = $renewWillReplaceNow ? 'rule_immediate' : 'rule_queued';
+    $renewType = $renewSubscription instanceof \App\Models\AcademicSubscription
+        ? 'academic'
+        : 'quran';
+    $renewSubdomain = request()->route('subdomain') ?? auth()->user()?->academy?->subdomain;
+    $renewUrl = ($renewCanShow && $renewSubscription)
+        ? route('student.subscriptions.renew', [
+            'subdomain' => $renewSubdomain,
+            'type' => $renewType,
+            'id' => $renewSubscription->id,
+        ])
+        : null;
+    $renewModalPayload = [
+        'title' => __('subscriptions.renew_modal.' . $renewKey . '.title'),
+        'message' => trans('subscriptions.renew_modal.' . $renewKey . '.body', [
+            'count' => $renewRemaining,
+            'date' => $renewEndsAtFormatted,
+        ]),
+        'confirmText' => __('subscriptions.renew_modal.confirm'),
+        'cancelText' => __('subscriptions.renew_modal.cancel'),
+        'theme' => $renewWillReplaceNow ? 'green' : 'amber',
+        'icon' => $renewWillReplaceNow ? 'ri-refresh-line' : 'ri-time-line',
+    ];
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -238,18 +294,46 @@
                         <i class="ri-information-line text-yellow-600 text-lg ms-2 rtl:ms-2 ltr:me-2 mt-0.5"></i>
                         <p class="text-sm text-yellow-800">{{ $renewalMessage }}</p>
                     </div>
-                    @if($subscription && ($subscription->canRenew() || $subscription->is_sessions_exhausted))
-                        @php
-                            $renewType = $subscription instanceof \App\Models\QuranSubscription ? 'quran' : 'academic';
-                            $renewSubdomain = request()->route('subdomain') ?? auth()->user()->academy?->subdomain;
-                        @endphp
-                        <a href="{{ route('student.subscriptions.renew', ['subdomain' => $renewSubdomain, 'type' => $renewType, 'id' => $subscription->id]) }}"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap flex-shrink-0">
+                    @if($renewCanShow && $renewUrl)
+                        <button type="button"
+                                onclick="confirmAction({
+                                    title: @js($renewModalPayload['title']),
+                                    message: @js($renewModalPayload['message']),
+                                    confirmText: @js($renewModalPayload['confirmText']),
+                                    cancelText: @js($renewModalPayload['cancelText']),
+                                    theme: @js($renewModalPayload['theme']),
+                                    icon: @js($renewModalPayload['icon']),
+                                    onConfirm: () => { window.location = @js($renewUrl); }
+                                })"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap flex-shrink-0">
                             <i class="ri-refresh-line"></i>
                             {{ __('student.subscriptions.renew_now') }}
-                        </a>
+                        </button>
                     @endif
                 </div>
+            </div>
+        @endif
+
+        {{-- Standalone Renew CTA — surfaces on ACTIVE_PAID with sessions remaining
+             (where $renewalMessage is null) so students can early-renew without
+             navigating away. The will-replace-now copy + theme follow §4 of the
+             plan; the engine handles archive-vs-queue at the service layer. --}}
+        @if(!$isTeacher && $renewCanShow && $renewUrl && !$renewalMessage)
+            <div class="mt-6">
+                <button type="button"
+                        onclick="confirmAction({
+                            title: @js($renewModalPayload['title']),
+                            message: @js($renewModalPayload['message']),
+                            confirmText: @js($renewModalPayload['confirmText']),
+                            cancelText: @js($renewModalPayload['cancelText']),
+                            theme: @js($renewModalPayload['theme']),
+                            icon: @js($renewModalPayload['icon']),
+                            onConfirm: () => { window.location = @js($renewUrl); }
+                        })"
+                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+                    <i class="{{ $renewWillReplaceNow ? 'ri-refresh-line' : 'ri-time-line' }}"></i>
+                    {{ __('subscriptions.renew_modal.' . ($renewWillReplaceNow ? 'cta_immediate' : 'cta_queued')) }}
+                </button>
             </div>
         @endif
 

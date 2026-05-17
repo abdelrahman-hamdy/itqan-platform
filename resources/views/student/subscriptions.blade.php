@@ -2,8 +2,10 @@
 @php
     use App\Enums\SessionSubscriptionStatus;
     use App\Enums\SubscriptionPaymentStatus;
+    use App\Enums\SubscriptionViewState;
     use App\Enums\UserType;
     use App\Models\BaseSubscription;
+    use App\Models\SubscriptionCycle;
 
     $academy = auth()->user()->academy;
     $subdomain = request()->route('subdomain') ?? $academy->subdomain ?? 'itqan-academy';
@@ -397,6 +399,41 @@
                     $primaryAction = ($subscriptionModel instanceof BaseSubscription)
                         ? $presentation->primaryActionFor($subscriptionModel, $studentRole)
                         : null;
+
+                    // Decide whether renewal will replace-now (Rule 1) or
+                    // queue (Rule 2) — mirrors SubscriptionRenewalService::
+                    // shouldReplaceImmediately() so the modal copy matches
+                    // what the engine will actually do.
+                    $currentCycle = $subscriptionModel instanceof BaseSubscription
+                        ? $subscriptionModel->currentCycle
+                        : null;
+                    $remaining = $currentCycle
+                        ? max(0, (int) $currentCycle->total_sessions - (int) $currentCycle->sessions_used)
+                        : 0;
+                    $cycleExhausted = $currentCycle && $remaining <= 0;
+                    $cycleEnded = $currentCycle?->ends_at?->isPast() ?? false;
+                    $willReplaceNow = $cycleExhausted
+                        || $cycleEnded
+                        || $viewState !== SubscriptionViewState::ACTIVE_PAID;
+                    $endsAtFormatted = $currentCycle?->ends_at
+                        ? $currentCycle->ends_at->locale(app()->getLocale())->isoFormat('LL')
+                        : '';
+                    $hasPaidQueuedCycle = $subscriptionModel instanceof BaseSubscription
+                        && $subscriptionModel->queuedCycle()
+                            ->where('payment_status', SubscriptionCycle::PAYMENT_PAID)
+                            ->exists();
+                    $renewKey = $willReplaceNow ? 'rule_immediate' : 'rule_queued';
+                    $renewModalPayload = [
+                        'title' => __('subscriptions.renew_modal.' . $renewKey . '.title'),
+                        'message' => trans('subscriptions.renew_modal.' . $renewKey . '.body', [
+                            'count' => $remaining,
+                            'date' => $endsAtFormatted,
+                        ]),
+                        'confirmText' => __('subscriptions.renew_modal.confirm'),
+                        'cancelText' => __('subscriptions.renew_modal.cancel'),
+                        'theme' => $willReplaceNow ? 'green' : 'amber',
+                        'icon' => $willReplaceNow ? 'ri-refresh-line' : 'ri-time-line',
+                    ];
                 @endphp
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
                     @php
@@ -473,20 +510,48 @@
                                      'cancel' (P3 / INV-G1). --}}
                                 @if(!$isParent && $primaryAction === 'pay' && ($subscription['pay_url'] ?? null))
                                     <a href="{{ $subscription['pay_url'] }}"
-                                       class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-primary text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+                                       class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-primary text-white rounded-xl md:rounded-lg text-sm font-medium hover:opacity-90 active:opacity-80 transition-opacity">
                                         <i class="ri-secure-payment-line ms-2"></i>
                                         {{ __('subscriptions.primary_actions.pay') }}
                                     </a>
                                 @elseif(!$isParent && $primaryAction === 'renew' && isset($subscription['renew_url']))
-                                    <a href="{{ $subscription['renew_url'] }}"
-                                       class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-indigo-600 text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+                                    <button type="button"
+                                            onclick="confirmAction({
+                                                title: @js($renewModalPayload['title']),
+                                                message: @js($renewModalPayload['message']),
+                                                confirmText: @js($renewModalPayload['confirmText']),
+                                                cancelText: @js($renewModalPayload['cancelText']),
+                                                theme: @js($renewModalPayload['theme']),
+                                                icon: @js($renewModalPayload['icon']),
+                                                onConfirm: () => { window.location = @js($subscription['renew_url']); }
+                                            })"
+                                            class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-indigo-600 text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
                                         <i class="ri-refresh-line ms-2"></i>
                                         {{ __('subscriptions.primary_actions.renew') }}
-                                    </a>
+                                    </button>
+                                @elseif(!$isParent && $viewState === SubscriptionViewState::ACTIVE_PAID && !$hasPaidQueuedCycle && isset($subscription['renew_url']))
+                                    {{-- Early-renew CTA for active+paid subs (covers Rule 1 when
+                                         the cycle is sessions-exhausted, and Rule 2 when it isn't).
+                                         The primary-action matrix doesn't surface 'renew' for
+                                         ACTIVE_PAID, so we render this as a secondary action. --}}
+                                    <button type="button"
+                                            onclick="confirmAction({
+                                                title: @js($renewModalPayload['title']),
+                                                message: @js($renewModalPayload['message']),
+                                                confirmText: @js($renewModalPayload['confirmText']),
+                                                cancelText: @js($renewModalPayload['cancelText']),
+                                                theme: @js($renewModalPayload['theme']),
+                                                icon: @js($renewModalPayload['icon']),
+                                                onConfirm: () => { window.location = @js($subscription['renew_url']); }
+                                            })"
+                                            class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-indigo-600 text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+                                        <i class="{{ $willReplaceNow ? 'ri-refresh-line' : 'ri-time-line' }} ms-2"></i>
+                                        {{ __('subscriptions.renew_modal.' . ($willReplaceNow ? 'cta_immediate' : 'cta_queued')) }}
+                                    </button>
                                 @elseif(!$isParent && !$viewState && ($subscription['can_pay'] ?? false) && $subscription['pay_url'])
                                     {{-- Legacy fallback for course enrollments not yet on BaseSubscription. --}}
                                     <a href="{{ $subscription['pay_url'] }}"
-                                       class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-primary text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+                                       class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-primary text-white rounded-xl md:rounded-lg text-sm font-medium hover:opacity-90 active:opacity-80 transition-opacity">
                                         <i class="ri-secure-payment-line ms-2"></i>
                                         {{ __('student.subscriptions.pay_now') }}
                                     </a>

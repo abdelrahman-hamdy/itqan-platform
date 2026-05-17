@@ -198,6 +198,21 @@ return [
         'create_new' => 'Start new subscription',
     ],
 
+    'renew_modal' => [
+        'rule_immediate' => [
+            'title' => 'Renew subscription',
+            'body' => 'Your new subscription starts now after payment. Currently scheduled sessions are unaffected.',
+        ],
+        'rule_queued' => [
+            'title' => 'Renew in advance',
+            'body' => 'You still have :count sessions. The new subscription will start on :date after your current one ends.',
+        ],
+        'confirm' => 'Continue to payment',
+        'cancel' => 'Cancel',
+        'cta_immediate' => 'Renew subscription',
+        'cta_queued' => 'Renew in advance',
+    ],
+
     // Type labels
     'types' => [
         'academic_private' => 'Private Academic Lessons',

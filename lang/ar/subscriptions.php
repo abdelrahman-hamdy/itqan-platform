@@ -204,6 +204,25 @@ return [
         'create_new' => 'اشتراك جديد',
     ],
 
+    // Confirmation copy shown when a student clicks "Renew" on a sub. Picks
+    // `rule_immediate` when the renewal engine will archive the current
+    // cycle and start a new one today, `rule_queued` when the new cycle
+    // will be queued to start after the current one ends.
+    'renew_modal' => [
+        'rule_immediate' => [
+            'title' => 'تجديد الاشتراك',
+            'body' => 'سيبدأ الاشتراك الجديد الآن بعد إتمام الدفع. لن تتأثر الجلسات الحالية.',
+        ],
+        'rule_queued' => [
+            'title' => 'تجديد مسبق',
+            'body' => 'ما زال لديك :count جلسة. سيبدأ الاشتراك الجديد بتاريخ :date بعد انتهاء الاشتراك الحالي.',
+        ],
+        'confirm' => 'متابعة الدفع',
+        'cancel' => 'إلغاء',
+        'cta_immediate' => 'تجديد الاشتراك',
+        'cta_queued' => 'تجديد مسبق',
+    ],
+
     // Type labels
     'types' => [
         'academic_private' => 'دروس أكاديمية خاصة',
