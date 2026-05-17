@@ -62,7 +62,10 @@ class QuranSubscriptionPaymentController extends Controller
         try {
             $authUser = Auth::user();
             $sp = $authUser?->studentProfile;
-            Log::info('quran.subscription.payment.create trace', [
+            // Using Log::error because prod has LOG_LEVEL=error (info-level
+            // is silently dropped). Severity is wrong on purpose for a temp
+            // probe — remove this whole block after we've collected the trace.
+            Log::error('quran.subscription.payment.create trace', [
                 'subscription_id' => $subscription->id,
                 'academy_id' => $academy->id,
                 'auth_user_id' => $authUser?->id,
