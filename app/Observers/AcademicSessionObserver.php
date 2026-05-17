@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
+use App\Models\SessionConsumption;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
 use Exception;
@@ -30,7 +31,7 @@ class AcademicSessionObserver
 
             if ($previousStatus === SessionStatus::COMPLETED
                 && $newStatus !== SessionStatus::COMPLETED
-                && $session->isSubscriptionCounted()) {
+                && $this->hasActiveConsumption($session)) {
                 $this->cleanupLessonOnUncomplete($session);
             }
         }
@@ -53,9 +54,18 @@ class AcademicSessionObserver
      */
     public function deleted(AcademicSession $session): void
     {
-        if ($session->isSubscriptionCounted()) {
+        if ($this->hasActiveConsumption($session)) {
             $this->cleanupLessonOnUncomplete($session);
         }
+    }
+
+    private function hasActiveConsumption(AcademicSession $session): bool
+    {
+        return SessionConsumption::query()
+            ->where('session_id', $session->id)
+            ->where('session_type', $session->getMorphClass())
+            ->whereNull('reversed_at')
+            ->exists();
     }
 
     private function cleanupLessonOnUncomplete(AcademicSession $session): void

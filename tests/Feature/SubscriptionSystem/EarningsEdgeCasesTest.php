@@ -6,8 +6,10 @@ use App\Enums\SessionStatus;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
+use App\Models\SessionConsumption;
 use App\Models\TeacherEarning;
 use App\Services\EarningsCalculationService;
+use App\Services\Subscription\SubscriptionConsumption;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -94,9 +96,16 @@ describe('F1 — soft-delete cascade', function () {
         $earning = app(EarningsCalculationService::class)->calculateSessionEarnings($session);
         expect($earning)->not->toBeNull('precondition — earning must be created');
 
-        // Mark the session subscription_counted=true so the observer's
-        // reverse path fires on status change. Then soft-delete.
-        $session->update(['subscription_counted' => true]);
+        // Drive the reverse-precondition through the canonical writer so
+        // the observer's reverse path fires on soft-delete.
+        app(SubscriptionConsumption::class)->record(
+            $session,
+            test()->student,
+            test()->sub,
+            source: SessionConsumption::SOURCE_AUTO_ATTENDANCE,
+            sourceUser: null,
+            consumptionType: SessionConsumption::TYPE_ATTENDED,
+        );
         $session->delete();
 
         // CORRECT: after soft-delete, the earning is either soft-deleted or

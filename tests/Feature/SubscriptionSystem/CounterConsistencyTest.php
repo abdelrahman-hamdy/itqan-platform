@@ -5,19 +5,18 @@ declare(strict_types=1);
 use App\Enums\SessionStatus;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
+use App\Models\SessionConsumption;
 use App\Models\SubscriptionCycle;
+use App\Services\Subscription\SubscriptionConsumption;
 
 /**
  * Counter-consistency invariants for the subscription↔session counting layer.
- * Asserts the CORRECT expected behavior — tests should fail if the bugs
- * reported in `docs/subscription-bugs-found.md` (#4 and #8) are real.
+ * Post-Phase-4: the canonical record is `session_consumption` (INV-B1+B3), so
+ * the invariant collapses to:
  *
- * The core invariant under test:
- *   cycle.sessions_used == COUNT(session WHERE session.subscription_cycle_id = cycle.id
- *                                       AND session.subscription_counted = 1)
- *
- * AND mirror for the subscription row:
- *   sub.sessions_used == cycle.sessions_used  (when cycle is the active cycle)
+ *   cycle.sessions_used == COUNT(session_consumption WHERE cycle_id=?
+ *                                  AND reversed_at IS NULL)
+ *   sub.sessions_used   == cycle.sessions_used  (when cycle is current)
  *
  * The invariant must hold across:
  *  - COMPLETED → CANCELLED (with reverse) (Bug #4 hypothesis)
@@ -53,30 +52,39 @@ function counterSub(\App\Models\User $student, \App\Models\User $teacher, int $t
     return [$sub->fresh(), $cycle->fresh()];
 }
 
+/** Record canonical consumption for a session via the v2 writer. */
+function counterRecord(QuranSession $session, \App\Models\User $student, QuranSubscription $sub): void
+{
+    app(SubscriptionConsumption::class)->record(
+        $session,
+        $student,
+        $sub,
+        source: SessionConsumption::SOURCE_AUTO_ATTENDANCE,
+        sourceUser: null,
+        consumptionType: SessionConsumption::TYPE_ATTENDED,
+    );
+}
+
 /** Asserts the cycle-counter invariant for a given subscription. */
 function assertCounterInvariant(QuranSubscription $sub): void
 {
     $cycle = SubscriptionCycle::find($sub->current_cycle_id);
     expect($cycle)->not->toBeNull();
 
-    $countedSessionsInCycle = QuranSession::query()
-        ->where('quran_subscription_id', $sub->id)
-        ->where('subscription_counted', true)
-        ->where(function ($q) use ($cycle) {
-            $q->where('subscription_cycle_id', $cycle->id)
-                ->orWhereNull('subscription_cycle_id');
-        })
+    $activeConsumption = SessionConsumption::query()
+        ->where('cycle_id', $cycle->id)
+        ->whereNull('reversed_at')
         ->count();
 
-    expect($cycle->sessions_used)->toBe($countedSessionsInCycle, sprintf(
-        'cycle.sessions_used=%d but COUNT(session.counted=1)=%d (drift!)',
+    expect($cycle->sessions_used)->toBe($activeConsumption, sprintf(
+        'cycle.sessions_used=%d but COUNT(active session_consumption)=%d (drift!)',
         $cycle->sessions_used,
-        $countedSessionsInCycle
+        $activeConsumption
     ));
-    expect($sub->fresh()->sessions_used)->toBe($countedSessionsInCycle, sprintf(
-        'sub.sessions_used=%d but COUNT(session.counted=1)=%d (drift!)',
+    expect($sub->fresh()->sessions_used)->toBe($activeConsumption, sprintf(
+        'sub.sessions_used=%d but COUNT(active session_consumption)=%d (drift!)',
         $sub->fresh()->sessions_used,
-        $countedSessionsInCycle
+        $activeConsumption
     ));
 }
 
@@ -84,7 +92,6 @@ describe('Bug #4 — cancel-after-complete drift', function () {
     it('B4-1 — COMPLETED → CANCELLED reverses the cycle counter cleanly', function () {
         [$sub, $cycle] = counterSub($this->student, $this->teacher, 8);
 
-        // Step 1: create + count one session via the observer path
         $session = QuranSession::factory()->create([
             'academy_id' => $this->academy->id,
             'student_id' => $this->student->id,
@@ -95,20 +102,17 @@ describe('Bug #4 — cancel-after-complete drift', function () {
             'status' => SessionStatus::SCHEDULED,
         ]);
 
-        // Mark COMPLETED — observer should fire useSession via job, but we
-        // call updateSubscriptionUsage directly to keep the test deterministic.
+        // Mark COMPLETED + write the canonical consumption row through the v2 writer.
         $session->update(['status' => SessionStatus::COMPLETED]);
-        $session = $session->fresh();
-        $session->updateSubscriptionUsage();
-        $session = $session->fresh();
+        counterRecord($session->fresh(), $this->student, $sub);
         expect($sub->fresh()->sessions_used)->toBe(1);
         expect($cycle->fresh()->sessions_used)->toBe(1);
         assertCounterInvariant($sub->fresh());
 
-        // Step 2: flip to CANCELLED — observer reverses via reverseSubscriptionAndEarnings
-        $session->update(['status' => SessionStatus::CANCELLED]);
+        // Flip to CANCELLED — observer reverses via reverseSubscriptionAndEarnings
+        // (which now iterates active SessionConsumption rows).
+        $session->fresh()->update(['status' => SessionStatus::CANCELLED]);
 
-        // Invariant must hold: 0 counted sessions, 0 used on cycle and sub
         assertCounterInvariant($sub->fresh());
         expect($sub->fresh()->sessions_used)->toBe(0);
         expect($cycle->fresh()->sessions_used)->toBe(0);
@@ -127,18 +131,13 @@ describe('Bug #4 — cancel-after-complete drift', function () {
             'status' => SessionStatus::SCHEDULED,
         ]);
 
-        // COMPLETED the original (reload between steps to mirror production)
         $original->update(['status' => SessionStatus::COMPLETED]);
-        $original = $original->fresh();
-        $original->updateSubscriptionUsage();
-        $original = $original->fresh();
+        counterRecord($original->fresh(), $this->student, $sub);
         expect($cycle->fresh()->sessions_used)->toBe(1);
 
-        // CANCEL it — reverse fires via observer
-        $original->update(['status' => SessionStatus::CANCELLED]);
+        $original->fresh()->update(['status' => SessionStatus::CANCELLED]);
         expect($cycle->fresh()->sessions_used)->toBe(0);
 
-        // Schedule a make-up + complete it
         $makeup = QuranSession::factory()->create([
             'academy_id' => $this->academy->id,
             'student_id' => $this->student->id,
@@ -149,20 +148,17 @@ describe('Bug #4 — cancel-after-complete drift', function () {
             'status' => SessionStatus::SCHEDULED,
         ]);
         $makeup->update(['status' => SessionStatus::COMPLETED]);
-        $makeup = $makeup->fresh();
-        $makeup->updateSubscriptionUsage();
+        counterRecord($makeup->fresh(), $this->student, $sub);
 
-        // Invariant: only 1 counted session in the cycle, so cycle.used must equal 1
         assertCounterInvariant($sub->fresh());
         expect($cycle->fresh()->sessions_used)->toBe(1);
         expect($sub->fresh()->sessions_used)->toBe(1);
     });
 
     it('B4-3 — reverse path handles NULL subscription_cycle_id correctly (legacy sessions)', function () {
-        // Simulates Sub 1024's prod state: legacy sessions with NULL cycle_id
-        // were created before the cycle column was populated. The reverse
-        // path uses subscription_cycle_id ?? current_cycle_id — which can
-        // target the wrong cycle if the sub has rolled forward.
+        // Simulates Sub 1024's prod state: legacy sessions with NULL cycle_id.
+        // The reverse path is now agnostic to cycle_id on the session row
+        // because the consumption row carries its own cycle anchor (INV-B1).
         [$sub, $cycle] = counterSub($this->student, $this->teacher, 8);
 
         $session = QuranSession::factory()->create([
@@ -176,15 +172,11 @@ describe('Bug #4 — cancel-after-complete drift', function () {
         ]);
 
         $session->update(['status' => SessionStatus::COMPLETED]);
-        $session = $session->fresh();
-        $session->updateSubscriptionUsage();
-        $session = $session->fresh();
+        counterRecord($session->fresh(), $this->student, $sub);
         expect($sub->fresh()->sessions_used)->toBe(1);
 
-        // Cancel — reverse fires with cycleId=NULL → falls back to current_cycle_id
-        $session->update(['status' => SessionStatus::CANCELLED]);
+        $session->fresh()->update(['status' => SessionStatus::CANCELLED]);
 
-        // Invariant must hold even with legacy session
         assertCounterInvariant($sub->fresh());
     });
 });
@@ -201,15 +193,12 @@ describe('Bug #8 — admin toggle path drift', function () {
             'subscription_cycle_id' => $cycle->id,
             'scheduled_at' => now()->subMinutes(30),
             'status' => SessionStatus::COMPLETED,
-            'subscription_counted' => false,
         ]);
 
-        // Count it the canonical way
-        $session->fresh()->updateSubscriptionUsage();
+        counterRecord($session->fresh(), $this->student, $sub);
         expect($sub->fresh()->sessions_used)->toBe(1);
         assertCounterInvariant($sub->fresh());
 
-        // Simulate admin toggle uncount: build attendance + call the service
         $attendance = $session->meetingAttendances()->firstOrCreate(
             ['user_id' => $this->student->id, 'user_type' => 'student'],
             [
@@ -218,7 +207,6 @@ describe('Bug #8 — admin toggle path drift', function () {
                 'attendance_status' => 'attended',
                 'counts_for_subscription' => true,
                 'total_duration_minutes' => 30,
-                'subscription_counted_at' => now(),
             ]
         );
 
@@ -232,7 +220,6 @@ describe('Bug #8 — admin toggle path drift', function () {
         assertCounterInvariant($sub->fresh());
         expect($sub->fresh()->sessions_used)->toBe(0);
 
-        // Toggle recount
         app(\App\Services\SessionCountingService::class)->setCountsForSubscription(
             $attendance->fresh(),
             $session->fresh(),
@@ -259,21 +246,17 @@ describe('Bug #8 — admin toggle path drift', function () {
 
         // Trip 1: SCHEDULED → COMPLETED
         $session->update(['status' => SessionStatus::COMPLETED]);
-        $session = $session->fresh();
-        $session->updateSubscriptionUsage();
-        $session = $session->fresh();
+        counterRecord($session->fresh(), $this->student, $sub);
         expect($sub->fresh()->sessions_used)->toBe(1);
 
-        // Trip 2: COMPLETED → SCHEDULED (observer should reverse)
-        $session->update(['status' => SessionStatus::SCHEDULED]);
+        // Trip 2: COMPLETED → SCHEDULED (observer reverses the consumption row)
+        $session->fresh()->update(['status' => SessionStatus::SCHEDULED]);
         expect($sub->fresh()->sessions_used)->toBe(0);
         assertCounterInvariant($sub->fresh());
 
-        // Trip 3: SCHEDULED → COMPLETED again (observer should re-count)
-        $session->update(['status' => SessionStatus::COMPLETED]);
-        $session = $session->fresh();
-        $session->updateSubscriptionUsage();
-        $session = $session->fresh();
+        // Trip 3: SCHEDULED → COMPLETED again — re-record via v2 writer
+        $session->fresh()->update(['status' => SessionStatus::COMPLETED]);
+        counterRecord($session->fresh(), $this->student, $sub);
         expect($sub->fresh()->sessions_used)->toBe(1);
         assertCounterInvariant($sub->fresh());
     });

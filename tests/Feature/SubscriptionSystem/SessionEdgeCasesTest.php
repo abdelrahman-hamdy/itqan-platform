@@ -90,12 +90,14 @@ describe('E6 — supervisor resume restores SUSPENDED sessions inside the window
     });
 });
 
-describe('E7 — make-up session must NOT inherit subscription_counted=1', function () {
-    it('E7 — a make-up session created for a cancelled parent does NOT have subscription_counted=1', function () {
-        // The hypothesis from Bug #8: a make-up session creation path
-        // copies subscription_counted from the parent. CORRECT behavior:
-        // make-up starts fresh with subscription_counted=0 (false), so
-        // it goes through useSession() when it completes.
+describe('E7 — make-up session must NOT inherit consumption from parent', function () {
+    it('E7 — a make-up session created for a cancelled parent has no SessionConsumption row at creation', function () {
+        // Post-Phase-4 invariant: a freshly-created SCHEDULED session must
+        // have ZERO active session_consumption rows. Consumption is only
+        // recorded when CalculateSessionForAttendance runs on COMPLETED.
+        // If the make-up creation path were copying any state from the
+        // parent, an active consumption row would appear at creation time
+        // — that would be Bug #8's drift origin.
         $sub = QuranSubscription::factory()
             ->forStudent($this->student)
             ->forTeacher($this->teacher)
@@ -108,7 +110,7 @@ describe('E7 — make-up session must NOT inherit subscription_counted=1', funct
         $sub->ensureCurrentCycle();
 
         // Parent session: was completed, counted, then cancelled (refunded).
-        $parent = QuranSession::withoutEvents(fn () => QuranSession::factory()->create([
+        QuranSession::withoutEvents(fn () => QuranSession::factory()->create([
             'academy_id' => $this->academy->id,
             'student_id' => $this->student->id,
             'quran_teacher_id' => $this->teacher->id,
@@ -117,13 +119,10 @@ describe('E7 — make-up session must NOT inherit subscription_counted=1', funct
             'scheduled_at' => now()->subDays(3),
             'status' => SessionStatus::CANCELLED,
             'cancelled_at' => now()->subDay(),
-            'subscription_counted' => false, // reversed on cancellation
         ]));
 
-        // Simulate make-up creation: a new SCHEDULED session is minted as
-        // a replacement. The fixture intentionally inserts via the factory
-        // without specifying subscription_counted so the column default is
-        // exercised.
+        // Simulate make-up creation: a new SCHEDULED session minted as a
+        // replacement.
         $makeUp = QuranSession::withoutEvents(fn () => QuranSession::factory()->create([
             'academy_id' => $this->academy->id,
             'student_id' => $this->student->id,
@@ -132,14 +131,16 @@ describe('E7 — make-up session must NOT inherit subscription_counted=1', funct
             'subscription_cycle_id' => $sub->fresh()->current_cycle_id,
             'scheduled_at' => now()->addDays(2),
             'status' => SessionStatus::SCHEDULED,
-            // No subscription_counted specified — let the DB default apply.
         ]));
 
-        // CORRECT: a freshly-created SCHEDULED session must start with
-        // subscription_counted=false (or null, equivalent). If the factory
-        // / DB default is `true`, that's the Bug #8 drift origin.
-        expect((bool) $makeUp->subscription_counted)->toBeFalse(
-            'make-up / new sessions must start with subscription_counted=false — setting it directly is the Bug #8 drift origin'
+        $activeConsumption = \App\Models\SessionConsumption::query()
+            ->where('session_id', $makeUp->id)
+            ->where('session_type', $makeUp->getMorphClass())
+            ->whereNull('reversed_at')
+            ->count();
+
+        expect($activeConsumption)->toBe(0,
+            'make-up / new sessions must start with zero active consumption rows — Bug #8 drift origin'
         );
     });
 });
@@ -194,9 +195,8 @@ describe('E8 — group circle: 5-student attendance has per-student counting', f
             ]);
         }
 
-        // CORRECT: per-student flags are independent. The session's
-        // own subscription_counted is one bit; the 5 students each have
-        // their own bit.
+        // CORRECT: per-student flags are independent — each of the 5
+        // students has their own counts_for_subscription bit.
         $perStudent = DB::table('meeting_attendances')
             ->where('session_id', $session->id)
             ->where('user_type', 'student')

@@ -390,8 +390,8 @@ abstract class BaseAcademicSessionResource extends BaseResource
                     'actual_duration_minutes' => now()->diffInMinutes($record->started_at),
                     'attendance_status' => AttendanceStatus::ATTENDED->value,
                 ]);
-                // Update subscription usage
-                $record->updateSubscriptionUsage();
+                // Subscription consumption is recorded async by
+                // CalculateSessionForAttendance via the observer.
             });
     }
 

@@ -8,6 +8,7 @@ use App\Models\BackfillLog;
 use App\Models\BaseSubscription;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
+use App\Models\SessionConsumption;
 use App\Models\SubscriptionCycle;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -23,13 +24,11 @@ use Illuminate\Support\Facades\Log;
  * can review the dry-run output and fix one subscription at a time.
  *
  * The "expected" count for a cycle is:
- *   COUNT(sessions WHERE subscription_cycle_id = cycle.id
- *                  AND status = COMPLETED
- *                  AND subscription_counted = true)
+ *   COUNT(session_consumption WHERE cycle_id = cycle.id
+ *                              AND reversed_at IS NULL)
  *
- * Sessions whose counts_for_subscription = false are excluded — they were
- * intentionally marked non-counting by the matrix. Other states (cancelled,
- * scheduled, etc.) are excluded by definition because they don't count.
+ * This matches the v2 canonical writer (SubscriptionConsumption::record)
+ * and the reconciler's recount path (INV-B3).
  */
 class AuditCycleCounts extends Command
 {
@@ -97,7 +96,6 @@ class AuditCycleCounts extends Command
                     ->groupBy(fn ($c) => (int) $c->subscribable_id);
 
                 $expectedByCycle = $this->loadExpectedCountsForCycles(
-                    $cfg['session'],
                     $cyclesBySub->flatten(1)->pluck('id')->all(),
                 );
 
@@ -156,21 +154,20 @@ class AuditCycleCounts extends Command
     }
 
     /**
-     * @return array<int, int>  cycle_id => count
+     * @return array<int, int> cycle_id => count of active SessionConsumption rows
      */
-    private function loadExpectedCountsForCycles(string $sessionClass, array $cycleIds): array
+    private function loadExpectedCountsForCycles(array $cycleIds): array
     {
         if (empty($cycleIds)) {
             return [];
         }
 
-        return $sessionClass::query()
-            ->whereIn('subscription_cycle_id', $cycleIds)
-            ->where('status', \App\Enums\SessionStatus::COMPLETED)
-            ->where('subscription_counted', true)
-            ->groupBy('subscription_cycle_id')
-            ->selectRaw('subscription_cycle_id, COUNT(*) as total')
-            ->pluck('total', 'subscription_cycle_id')
+        return SessionConsumption::query()
+            ->whereIn('cycle_id', $cycleIds)
+            ->whereNull('reversed_at')
+            ->groupBy('cycle_id')
+            ->selectRaw('cycle_id, COUNT(*) as total')
+            ->pluck('total', 'cycle_id')
             ->map(fn ($v) => (int) $v)
             ->all();
     }

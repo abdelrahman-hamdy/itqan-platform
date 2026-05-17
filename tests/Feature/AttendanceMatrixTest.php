@@ -74,7 +74,6 @@ function buildMatrixScenario(
         'session_type' => 'individual',
         'counts_for_teacher' => null,
         'counts_for_teacher_set_by' => null,
-        'subscription_counted' => false,
     ]);
 
     $teacherMinutes = (int) round(($teacherPercent / 100) * $durationMinutes);

@@ -244,7 +244,6 @@ final class SubscriptionSnapshot
             'ends_at' => self::toIso8601OrNull($cycle->getAttribute('ends_at')),
             'grace_period_ends_at' => self::toIso8601OrNull($cycle->getAttribute('grace_period_ends_at')),
             'archived_at' => self::toIso8601OrNull($cycle->getAttribute('archived_at')),
-            'v2_consumption_complete' => (bool) $cycle->getAttribute('v2_consumption_complete'),
         ];
     }
 
@@ -278,7 +277,6 @@ final class SubscriptionSnapshot
         $columns = self::filterExistingColumns($table, [
             'id', 'status', 'scheduled_at', 'started_at', 'completed_at',
             'subscription_cycle_id', $foreignKey, 'student_id',
-            'subscription_counted', 'subscription_counted_at',
             'created_at', 'updated_at',
         ]);
 
@@ -417,16 +415,11 @@ final class SubscriptionSnapshot
             'completed_at' => self::toIso8601OrNull($row['completed_at'] ?? null),
             'cycle_id' => self::toIntOrNull($row['cycle_id'] ?? null),
             'student_id' => self::toIntOrNull($row['student_id'] ?? null),
-            'legacy_subscription_counted' => array_key_exists('subscription_counted', $row)
-                ? (bool) $row['subscription_counted']
-                : null,
-            'legacy_subscription_counted_at' => self::toIso8601OrNull($row['subscription_counted_at'] ?? null),
             'attendance' => $attendance->map(fn (MeetingAttendance $a) => [
                 'id' => (int) $a->getKey(),
                 'user_id' => self::toIntOrNull($a->user_id),
                 'attendance_status' => self::stringify($a->attendance_status),
                 'duration_minutes' => self::toIntOrNull($a->duration_minutes),
-                'subscription_counted_at' => self::toIso8601OrNull($a->getAttribute('subscription_counted_at')),
             ])->all(),
             'reports' => $reports->map(fn ($r) => [
                 'id' => (int) $r->id,

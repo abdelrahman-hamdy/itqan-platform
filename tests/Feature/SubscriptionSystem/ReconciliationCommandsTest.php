@@ -6,17 +6,16 @@ use App\Enums\SessionStatus;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
+use App\Models\SessionConsumption;
 use App\Models\TeacherEarning;
+use App\Services\Subscription\SubscriptionConsumption;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * Reconciliation cron coverage — Scenarios D1–D5.
+ * Reconciliation cron coverage — Scenarios D2–D5.
  *
- *   D1 — `subscriptions:reconcile-missed` increments cycle.sessions_used for
- *        a COMPLETED session that was missed by the observer (the safety
- *        net for queue failures).
  *   D2 — `subscriptions:audit-cycle-counts` dry-run posture — reports drift
  *        but does NOT mutate rows.
  *   D3 — `subscriptions:audit-cycle-counts --apply` corrects the mismatched
@@ -25,6 +24,11 @@ use Illuminate\Support\Facades\Notification;
  *        for COMPLETED sessions that have no TeacherEarning row yet.
  *   D5 — `teachers:recalculate-counters` rebuilds total_students /
  *        total_sessions on the teacher profile from actual session data.
+ *
+ * D1 (`subscriptions:reconcile-missed`) was deleted with the legacy
+ * counting path in Phase 4: there is no longer a "completed but
+ * subscription_counted=false" state to detect. Auto-attendance now drives
+ * SubscriptionConsumption::record directly on every COMPLETED transition.
  *
  * Tenant context is set in beforeEach because the cron paths apply global
  * scopes; without context, the commands would walk zero rows.
@@ -50,10 +54,13 @@ beforeEach(function () {
     $this->sub->ensureCurrentCycle();
 });
 
-/** Build a completed session with subscription_counted=false (the safety-net target). */
-function uncountedSession(int $subId, ?int $cycleId): QuranSession
+/**
+ * Build a completed session + canonical consumption row (the post-Phase-4
+ * equivalent of the legacy "session.subscription_counted=true" fixture).
+ */
+function recordedSession(int $subId, ?int $cycleId): QuranSession
 {
-    return QuranSession::withoutEvents(fn () => QuranSession::factory()->create([
+    $session = QuranSession::withoutEvents(fn () => QuranSession::factory()->create([
         'academy_id' => test()->academy->id,
         'student_id' => test()->student->id,
         'quran_teacher_id' => test()->teacher->id,
@@ -65,68 +72,31 @@ function uncountedSession(int $subId, ?int $cycleId): QuranSession
         'duration_minutes' => 30,
         'actual_duration_minutes' => 30,
         'counts_for_teacher' => true,
-        'subscription_counted' => false,
     ]));
+
+    app(SubscriptionConsumption::class)->record(
+        $session,
+        test()->student,
+        test()->sub,
+        source: SessionConsumption::SOURCE_AUTO_ATTENDANCE,
+        sourceUser: null,
+        consumptionType: SessionConsumption::TYPE_ATTENDED,
+    );
+
+    return $session->fresh();
 }
-
-describe('D1 — subscriptions:reconcile-missed', function () {
-    it('D1 — completed session with subscription_counted=false is reconciled and flag flips to true', function () {
-        $session = uncountedSession($this->sub->id, $this->sub->fresh()->current_cycle_id);
-        // Backdate ended_at past the cron's --minutes=10 default so it's
-        // eligible.
-        DB::table('quran_sessions')->where('id', $session->id)->update([
-            'ended_at' => now()->subMinutes(30),
-        ]);
-
-        Artisan::call('subscriptions:reconcile-missed');
-
-        // CORRECT: the cron flips subscription_counted=true after
-        // calling updateSubscriptionUsage. The subscription's sessions_used
-        // counter increments via useSession.
-        $freshSession = $session->fresh();
-        expect($freshSession->subscription_counted)->toBeTrue(
-            'reconcile-missed must flip subscription_counted=true after successful count'
-        );
-    });
-
-    it('D1b — recent completion (within --minutes window) is NOT reconciled', function () {
-        $session = uncountedSession($this->sub->id, $this->sub->fresh()->current_cycle_id);
-        // Override ended_at to NOW so the session is under the
-        // 10-minute window default and shouldn't be picked up.
-        DB::table('quran_sessions')->where('id', $session->id)->update([
-            'ended_at' => now(),
-        ]);
-
-        Artisan::call('subscriptions:reconcile-missed');
-
-        // CORRECT: recent sessions are left for the primary path to handle
-        // first; the cron only kicks in for stale stragglers (>= 10 min old).
-        expect($session->fresh()->subscription_counted)->toBeFalse();
-    });
-});
 
 describe('D2/D3 — subscriptions:audit-cycle-counts', function () {
     it('D2 — dry-run (default) reports drift but does NOT mutate rows', function () {
         $cycle = $this->sub->fresh()->currentCycle;
-        // Manufacture drift: 3 sessions are COMPLETED+counted, but
-        // cycle.sessions_used = 5.
-        $cycle->update(['sessions_used' => 5, 'sessions_completed' => 5]);
+        // Manufacture drift: 3 sessions recorded, but cycle.sessions_used = 5.
         for ($i = 0; $i < 3; $i++) {
-            QuranSession::withoutEvents(fn () => QuranSession::factory()->create([
-                'academy_id' => $this->academy->id,
-                'student_id' => $this->student->id,
-                'quran_teacher_id' => $this->teacher->id,
-                'quran_subscription_id' => $this->sub->id,
-                'subscription_cycle_id' => $cycle->id,
-                'status' => SessionStatus::COMPLETED,
-                'subscription_counted' => true,
-                'scheduled_at' => now()->subHours($i + 2),
-                'ended_at' => now()->subHours($i + 1),
-                'duration_minutes' => 30,
-                'actual_duration_minutes' => 30,
-                'counts_for_teacher' => true,
-            ]));
+            recordedSession($this->sub->id, $cycle->id);
         }
+        DB::table('subscription_cycles')->where('id', $cycle->id)->update([
+            'sessions_used' => 5,
+            'sessions_completed' => 5,
+        ]);
 
         // Run WITHOUT --apply.
         Artisan::call('subscriptions:audit-cycle-counts');
@@ -136,26 +106,16 @@ describe('D2/D3 — subscriptions:audit-cycle-counts', function () {
         expect((int) $cycle->fresh()->sessions_used)->toBe(5, 'dry-run must NOT correct drift');
     });
 
-    it('D3 — --apply corrects the cycle counter to the actual counted-session count', function () {
+    it('D3 — --apply corrects the cycle counter to the actual recorded count', function () {
         $cycle = $this->sub->fresh()->currentCycle;
-        $cycle->update(['sessions_used' => 7, 'sessions_completed' => 7]);
-        // 2 sessions actually counted.
+        // 2 sessions actually recorded.
         for ($i = 0; $i < 2; $i++) {
-            QuranSession::withoutEvents(fn () => QuranSession::factory()->create([
-                'academy_id' => $this->academy->id,
-                'student_id' => $this->student->id,
-                'quran_teacher_id' => $this->teacher->id,
-                'quran_subscription_id' => $this->sub->id,
-                'subscription_cycle_id' => $cycle->id,
-                'status' => SessionStatus::COMPLETED,
-                'subscription_counted' => true,
-                'scheduled_at' => now()->subHours($i + 2),
-                'ended_at' => now()->subHours($i + 1),
-                'duration_minutes' => 30,
-                'actual_duration_minutes' => 30,
-                'counts_for_teacher' => true,
-            ]));
+            recordedSession($this->sub->id, $cycle->id);
         }
+        DB::table('subscription_cycles')->where('id', $cycle->id)->update([
+            'sessions_used' => 7,
+            'sessions_completed' => 7,
+        ]);
 
         Artisan::call('subscriptions:audit-cycle-counts', ['--apply' => true]);
 
@@ -173,7 +133,7 @@ describe('D4 — earnings:calculate-missed', function () {
             'session_price_individual' => 50,
         ]);
 
-        $session = QuranSession::withoutEvents(fn () => QuranSession::factory()->create([
+        QuranSession::withoutEvents(fn () => QuranSession::factory()->create([
             'academy_id' => $this->academy->id,
             'student_id' => $this->student->id,
             'quran_teacher_id' => $this->teacher->id,
@@ -185,7 +145,6 @@ describe('D4 — earnings:calculate-missed', function () {
             'duration_minutes' => 30,
             'actual_duration_minutes' => 30,
             'counts_for_teacher' => true,
-            'subscription_counted' => true,
             'session_type' => 'individual',
         ]));
 

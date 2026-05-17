@@ -6,7 +6,6 @@ use App\Contracts\RecordingCapable;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
-use App\Models\Traits\CountsTowardsSubscription;
 use App\Models\Traits\HasRecording;
 use App\Services\AcademyContextService;
 use App\Services\LiveKitService;
@@ -27,7 +26,7 @@ use Illuminate\Support\Facades\Log;
  *
  * ARCHITECTURE PATTERNS:
  * - Inherits from BaseSession (polymorphic base class)
- * - Uses CountsTowardsSubscription trait for subscription logic
+ * - Subscription counting recorded in `session_consumption` (INV-B1)
  * - Constructor merges parent fillable/casts to avoid duplication
  *
  * SESSION TYPES:
@@ -41,9 +40,10 @@ use Illuminate\Support\Facades\Log;
  * - student: Direct student relationship for individual sessions
  *
  * SUBSCRIPTION COUNTING:
- * - Individual sessions count against QuranSubscription when completed/absent
- * - Uses trait's updateSubscriptionUsage() with transaction locking
- * - Prevents double-counting via subscription_counted flag
+ * - Individual + group sessions count against the linked subscription
+ *   when status flips to COMPLETED; reversal happens on the way out.
+ * - The canonical record is a SessionConsumption row written by
+ *   SubscriptionConsumption::record (INV-B1+B3).
  *
  * QURAN PROGRESS TRACKING:
  * - Quality metrics tracked via sessionHomework relationship
@@ -55,7 +55,6 @@ use Illuminate\Support\Facades\Log;
  * @property int|null $individual_circle_id
  * @property int|null $student_id
  * @property string $session_type 'individual', 'group', or 'trial'
- * @property bool $subscription_counted Flag to prevent double-counting
  * @property string|null $lesson_content
  * @property bool|null $homework_assigned
  * @property string|null $homework_details
@@ -71,11 +70,9 @@ use Illuminate\Support\Facades\Log;
  * @method HasMany meetingAttendances()
  *
  * @see BaseSession Parent class with common session fields
- * @see CountsTowardsSubscription Trait for subscription logic
  */
 class QuranSession extends BaseSession implements RecordingCapable
 {
-    use CountsTowardsSubscription;
     use HasRecording;
 
     /**
@@ -410,8 +407,9 @@ class QuranSession extends BaseSession implements RecordingCapable
             // Record attendance for students
             $session->recordSessionAttendance(AttendanceStatus::ATTENDED->value);
 
-            // Update subscription usage (this also uses transactions internally)
-            $session->updateSubscriptionUsage();
+            // Subscription consumption is written async by
+            // CalculateSessionForAttendance (dispatched from
+            // BaseSessionObserver on the status flip above).
 
             // Refresh the current instance
             $this->refresh();
@@ -505,8 +503,8 @@ class QuranSession extends BaseSession implements RecordingCapable
                 $session->individualCircle->updateProgress();
             }
 
-            // Update subscription usage (absent sessions count towards subscription)
-            $session->updateSubscriptionUsage();
+            // Subscription consumption (ABSENT still counts) is recorded
+            // async by CalculateSessionForAttendance via the observer.
 
             return true;
         });
@@ -611,7 +609,11 @@ class QuranSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * Get the subscription instance for counting (required by CountsTowardsSubscription trait)
+     * Get the subscription instance for counting.
+     *
+     * Used by SessionCountingService when an admin toggles a per-student
+     * counts_for_subscription flag and by CalculateSessionForAttendance when
+     * resolving which subscription to route a SessionConsumption row through.
      *
      * Subscription isolation: a session always counts against the subscription
      * it was created under (its own quran_subscription_id FK), never against
@@ -652,23 +654,6 @@ class QuranSession extends BaseSession implements RecordingCapable
         }
 
         return null;
-    }
-
-    /**
-     * Get enrollments for group subscription counting.
-     *
-     * For group/circle sessions, returns all active enrollments so each student's
-     * subscription can be decremented individually. Returns null for individual/trial sessions.
-     */
-    protected function getGroupEnrollmentsForCounting()
-    {
-        if ($this->session_type !== 'group' || ! $this->circle_id) {
-            return null;
-        }
-
-        return QuranCircleEnrollment::where('circle_id', $this->circle_id)
-            ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
-            ->get();
     }
 
     // getStatusDisplayData() is inherited from BaseSession
@@ -964,8 +949,6 @@ class QuranSession extends BaseSession implements RecordingCapable
             ], $sessionData);
 
             $session->update($updateData);
-
-            $session->updateSubscriptionUsage();
 
             if ($session->circle) {
                 $session->circle->increment('sessions_completed');

@@ -7,6 +7,8 @@ use App\Enums\SubscriptionPaymentStatus;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
+use App\Models\SessionConsumption;
+use App\Services\Subscription\SubscriptionConsumption;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -48,6 +50,7 @@ beforeEach(function () {
 function dedupSession(array $extra = []): QuranSession
 {
     $sub = test()->sub;
+
     return QuranSession::factory()->create(array_merge([
         'academy_id' => $sub->academy_id,
         'student_id' => $sub->student_id,
@@ -134,16 +137,23 @@ describe('Bug #5 — earnings deduplication invariant', function () {
         expect($survivor->session_type)->toBe('quran_session');
     });
 
-    it('B5-3 — reverseSubscriptionAndEarnings cleanup uses get_class() (FQCN) not morph alias', function () {
-        // Documents the exact line of the bug at BaseSessionObserver:428.
-        // Build a session with an alias-form earning, then flip COMPLETED→CANCELLED.
-        // Observer's cleanup will try to delete via FQCN and miss the alias row.
+    it('B5-3 — reverseSubscriptionAndEarnings cleanup uses morph alias not FQCN', function () {
+        // Documents the exact line of the bug at BaseSessionObserver:443.
+        // Build a session with an alias-form earning + an active consumption
+        // row, then flip COMPLETED→CANCELLED. Observer's cleanup must use
+        // the morph alias to find and delete the row.
         $session = dedupSession();
         $earningId = insertEarning($session, $this->profileId, 'quran_session');
 
-        // Manually mark the session as subscription_counted so the reverse
-        // path fires (observer condition: isSubscriptionCounted=true).
-        $session->update(['subscription_counted' => true]);
+        // Drive the reversal precondition through the canonical writer.
+        app(SubscriptionConsumption::class)->record(
+            $session,
+            $this->student,
+            $this->sub,
+            source: SessionConsumption::SOURCE_AUTO_ATTENDANCE,
+            sourceUser: null,
+            consumptionType: SessionConsumption::TYPE_ATTENDED,
+        );
         $session = $session->fresh();
 
         // Flip to CANCELLED — observer's reverseSubscriptionAndEarnings fires.
@@ -154,11 +164,11 @@ describe('Bug #5 — earnings deduplication invariant', function () {
             ->whereNull('deleted_at')
             ->exists();
 
-        // CORRECT behavior: cleanup must use the morph alias to find and
-        // delete the row. Current: cleanup uses FQCN, doesn't match alias
-        // row, so the earning survives the cancellation.
+        // Cleanup must use the morph alias to find and delete the row.
+        // Previously cleanup used FQCN, didn't match alias row, so the
+        // earning survived the cancellation (Bug #5).
         expect($earningStillAlive)->toBeFalse(
-            'after CANCELLED, the alias-form earning must be cleaned up (Bug #5 — uses FQCN, misses alias)'
+            'after CANCELLED, the alias-form earning must be cleaned up'
         );
     });
 });

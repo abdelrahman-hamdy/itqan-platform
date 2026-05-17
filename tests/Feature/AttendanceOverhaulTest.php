@@ -296,29 +296,15 @@ it('allows admin to override counts_for_teacher', function () {
 
 // ============================================
 // F. Subscription Counting Integration
+//
+// The post-Phase-4 truth is the `session_consumption` table written by
+// SubscriptionConsumption::record from the observer's COMPLETED transition.
+// Eligibility-by-status is covered by CounterConsistencyTest +
+// AttendanceMatrixTest (which assert via consumption rows on a full sub/cycle
+// fixture). The bare-session predicate tested here used to live on the now-
+// deleted `CountsTowardsSubscription` trait; it has no replacement at the
+// session level.
 // ============================================
-
-it('counts completed sessions towards subscription', function () {
-    $session = QuranSession::factory()->create([
-        'academy_id' => $this->academy->id,
-        'quran_teacher_id' => $this->teacher->id,
-        'student_id' => $this->student->id,
-        'status' => SessionStatus::COMPLETED,
-    ]);
-
-    expect($session->countsTowardsSubscription())->toBeTrue();
-});
-
-it('does not count cancelled sessions towards subscription', function () {
-    $session = QuranSession::factory()->create([
-        'academy_id' => $this->academy->id,
-        'quran_teacher_id' => $this->teacher->id,
-        'student_id' => $this->student->id,
-        'status' => SessionStatus::CANCELLED,
-    ]);
-
-    expect($session->countsTowardsSubscription())->toBeFalse();
-});
 
 // ============================================
 // G. Earnings Eligibility

@@ -333,10 +333,9 @@ class SessionController extends Controller
                 );
             }
 
-            // Update subscription usage
-            if (method_exists($session, 'updateSubscriptionUsage')) {
-                $session->updateSubscriptionUsage();
-            }
+            // Subscription consumption is written async by
+            // CalculateSessionForAttendance (dispatched from the observer
+            // on the status flip to COMPLETED above).
 
             DB::commit();
 

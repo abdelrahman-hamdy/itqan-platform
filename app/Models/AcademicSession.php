@@ -6,7 +6,6 @@ use App\Contracts\RecordingCapable;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserType;
-use App\Models\Traits\CountsTowardsSubscription;
 use App\Models\Traits\HasRecording;
 use App\Services\NotificationService;
 use Carbon\Carbon;
@@ -26,7 +25,7 @@ use Illuminate\Support\Facades\Log;
  *
  * ARCHITECTURE PATTERNS:
  * - Inherits from BaseSession (polymorphic base class)
- * - Uses CountsTowardsSubscription trait for subscription logic
+ * - Subscription counting recorded in `session_consumption` (INV-B1)
  * - Constructor merges parent fillable/casts to avoid duplication
  * - Auto-generates unique session codes with transaction locking
  *
@@ -41,9 +40,9 @@ use Illuminate\Support\Facades\Log;
  * - student: The student attending (for individual sessions)
  *
  * SUBSCRIPTION COUNTING:
- * - Individual sessions count against AcademicSubscription when completed/absent
- * - Uses trait's updateSubscriptionUsage() with transaction locking
- * - Prevents double-counting via subscription_counted flag
+ * - Individual sessions count against AcademicSubscription when COMPLETED
+ *   (ABSENT still consumes). The canonical record is a SessionConsumption
+ *   row written by SubscriptionConsumption::record (INV-B1+B3).
  *
  * ACADEMIC FEATURES:
  * - Homework management: homework_description, homework_file, homework_assigned
@@ -60,7 +59,6 @@ use Illuminate\Support\Facades\Log;
  * @property int|null $academic_individual_lesson_id
  * @property int|null $student_id
  * @property string $session_type 'individual' or 'group'
- * @property bool $subscription_counted Flag to prevent double-counting
  * @property string|null $lesson_content
  * @property string|null $homework_description
  * @property string|null $homework_file
@@ -72,11 +70,10 @@ use Illuminate\Support\Facades\Log;
  * @method HasMany meetingAttendances()
  *
  * @see BaseSession Parent class with common session fields
- * @see CountsTowardsSubscription Trait for subscription logic
  */
 class AcademicSession extends BaseSession implements RecordingCapable
 {
-    use CountsTowardsSubscription, HasRecording;
+    use HasRecording;
 
     /**
      * Academic-specific fillable fields (merged with parent in constructor)
@@ -117,7 +114,6 @@ class AcademicSession extends BaseSession implements RecordingCapable
         'meeting_auto_generated' => true,
         'attendance_status' => AttendanceStatus::ABSENT->value,  // Fixed: 'scheduled' is not a valid attendance status
         'participants_count' => 0,
-        'subscription_counted' => false,
         'recording_enabled' => false,
     ];
 
@@ -706,8 +702,9 @@ class AcademicSession extends BaseSession implements RecordingCapable
 
             $session->update($updateData);
 
-            // Update subscription usage (deduct session count)
-            $session->updateSubscriptionUsage();
+            // Subscription consumption is written async by
+            // CalculateSessionForAttendance (dispatched from the observer
+            // on the status flip to COMPLETED).
 
             // Refresh the model
             $this->refresh();
@@ -798,8 +795,8 @@ class AcademicSession extends BaseSession implements RecordingCapable
                 'cancellation_reason' => $reason, // Store absence reason in cancellation_reason field
             ]);
 
-            // Absent sessions still count towards subscription
-            $session->updateSubscriptionUsage();
+            // Subscription consumption (ABSENT still counts) is recorded
+            // async by CalculateSessionForAttendance via the observer.
 
             return true;
         });
@@ -853,9 +850,12 @@ class AcademicSession extends BaseSession implements RecordingCapable
     // ========================================
     // SUBSCRIPTION COUNTING LOGIC (Aligned with QuranSession)
     // ========================================
-    // Note: countsTowardsSubscription() and updateSubscriptionUsage() are now provided by the CountsTowardsSubscription trait
     /**
-     * Get the subscription instance for counting (required by CountsTowardsSubscription trait)
+     * Get the subscription instance for counting.
+     *
+     * Used by SessionCountingService when an admin toggles a per-student
+     * counts_for_subscription flag and by CalculateSessionForAttendance when
+     * resolving which subscription to route a SessionConsumption row through.
      *
      * Subscription isolation: anchor to the session's own `academic_subscription_id`
      * FK whenever it's set so a counted session always charges the subscription

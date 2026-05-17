@@ -125,16 +125,12 @@ final class SubscriptionManifestService
         }
 
         $sessionsPerCycle = [];
-        $legacyCountedPerCycle = [];
         foreach ($manifest['sessions'] ?? [] as $session) {
             $cid = (int) ($session['cycle_id'] ?? 0);
             if ($cid === 0) {
                 continue;
             }
             $sessionsPerCycle[$cid] = ($sessionsPerCycle[$cid] ?? 0) + 1;
-            if (! empty($session['legacy_subscription_counted'])) {
-                $legacyCountedPerCycle[$cid] = ($legacyCountedPerCycle[$cid] ?? 0) + 1;
-            }
         }
 
         $drift = [];
@@ -142,25 +138,17 @@ final class SubscriptionManifestService
             $cycleSessionsUsed = (int) ($cycle['sessions_used'] ?? 0);
             $consumptionCount = $consumptionsPerCycle[$cid] ?? 0;
             $sessionCount = $sessionsPerCycle[$cid] ?? 0;
-            $legacyCount = $legacyCountedPerCycle[$cid] ?? 0;
 
             $drift[] = [
                 'cycle_id' => $cid,
                 'cycle_number' => $cycle['cycle_number'],
                 'cycle_state' => $cycle['cycle_state'],
-                'v2_consumption_complete' => $cycle['v2_consumption_complete'] ?? false,
                 'cycle_sessions_used' => $cycleSessionsUsed,
                 'consumption_rows' => $consumptionCount,
                 'sessions_on_cycle' => $sessionCount,
-                'legacy_counted_sessions' => $legacyCount,
                 'aggregate_minus_consumption_diff' => $cycleSessionsUsed - $consumptionCount,
                 'is_drifting' => $cycleSessionsUsed !== $consumptionCount,
-                'kind' => $this->classifyCycleDrift(
-                    $cycleSessionsUsed,
-                    $consumptionCount,
-                    $legacyCount,
-                    (bool) ($cycle['v2_consumption_complete'] ?? false),
-                ),
+                'kind' => $this->classifyCycleDrift($cycleSessionsUsed, $consumptionCount),
             ];
         }
 
@@ -171,17 +159,10 @@ final class SubscriptionManifestService
      * Coarse classification of cycle drift kinds. Phase 2/2b fix scripts
      * dispatch off this label.
      */
-    private function classifyCycleDrift(
-        int $cycleUsed,
-        int $consumptions,
-        int $legacyCounted,
-        bool $v2ConsumptionComplete,
-    ): string {
+    private function classifyCycleDrift(int $cycleUsed, int $consumptions): string
+    {
         if ($cycleUsed === $consumptions) {
             return 'IN_SYNC';
-        }
-        if ($consumptions === 0 && $cycleUsed > 0 && $legacyCounted >= $cycleUsed) {
-            return 'LEGACY_AGGREGATE_NO_ROWS';
         }
         if ($consumptions === 0 && $cycleUsed > 0) {
             return 'AGGREGATE_NO_EVIDENCE';
@@ -193,6 +174,6 @@ final class SubscriptionManifestService
             return 'ROWS_GREATER_THAN_AGGREGATE';
         }
 
-        return $v2ConsumptionComplete ? 'V2_COMPLETE_BUT_DRIFTING' : 'MIXED_DRIFT';
+        return 'MIXED_DRIFT';
     }
 }

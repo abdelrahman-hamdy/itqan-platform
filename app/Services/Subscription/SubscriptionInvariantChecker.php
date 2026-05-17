@@ -11,7 +11,6 @@ use App\Models\CourseSubscription;
 use App\Models\SessionConsumption;
 use App\Models\SubscriptionAuditLog;
 use App\Models\SubscriptionCycle;
-use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -303,12 +302,15 @@ class SubscriptionInvariantChecker
 
         // INV-B2: orphan `subscription_counted` flags — sessions marked counted
         // on the legacy boolean but with NO active session_consumption row.
-        // Best-effort: only run when the legacy column exists (migration window).
+        // Best-effort: only run while the legacy column still exists in the
+        // schema (the column drop ships in Phase 4 / PR 3; this block goes
+        // away entirely with it).
         //
-        // Softening: orphans on cycles already marked v2_consumption_complete
-        // are EXPECTED (the cleanup scripts deliberately accepted the gap via
-        // --cap-to-aggregate; see docs/cleanup/final-summary-2026-05-15.md).
-        // Real orphans (cycle is still v2-pending) keep severity=error.
+        // Softening: a session whose cycle metadata documents an offset
+        // (`unaccounted_sessions_used` from Pattern A, or
+        // `pre_platform_consumption_preserved` from Pattern C) is an EXPECTED
+        // orphan — the consumption row was never going to exist for those
+        // sessions. Anything else stays severity=error.
         $sessionsRel = method_exists($sub, 'sessions') ? $sub->sessions() : null;
         if ($sessionsRel !== null) {
             $sessionsTable = $sessionsRel->getRelated()->getTable();
@@ -339,15 +341,24 @@ class SubscriptionInvariantChecker
                                 ->values()
                                 ->all();
 
-                            $v2CompleteCycleIds = SubscriptionCycle::query()
+                            $documentedGapCycleIds = SubscriptionCycle::query()
                                 ->whereIn('id', $missingCycleIds)
-                                ->where('v2_consumption_complete', true)
+                                ->get()
+                                ->filter(function (SubscriptionCycle $cycle) {
+                                    $metadata = $cycle->metadata ?? [];
+                                    if (! is_array($metadata)) {
+                                        return false;
+                                    }
+
+                                    return ! empty($metadata['unaccounted_sessions_used'])
+                                        || ! empty($metadata['pre_platform_consumption_preserved']);
+                                })
                                 ->pluck('id')
                                 ->all();
 
                             $unexpectedOrphans = $flaggedRows
                                 ->whereIn('id', $missing->all())
-                                ->filter(fn ($row) => ! in_array((int) $row->subscription_cycle_id, $v2CompleteCycleIds, true))
+                                ->filter(fn ($row) => ! in_array((int) $row->subscription_cycle_id, $documentedGapCycleIds, true))
                                 ->pluck('id')
                                 ->values();
 
@@ -356,7 +367,7 @@ class SubscriptionInvariantChecker
                             if ($unexpectedOrphans->isNotEmpty()) {
                                 $violations[] = $this->violation(
                                     'INV-B2',
-                                    'Sessions flagged subscription_counted=true with no active session_consumption row (cycle not yet v2-finalised).',
+                                    'Sessions flagged subscription_counted=true with no active session_consumption row.',
                                     [
                                         'subscription_id' => $subscriptionId,
                                         'session_type' => $sessionMorph,
@@ -368,7 +379,7 @@ class SubscriptionInvariantChecker
                             if ($expectedOrphans > 0) {
                                 $violations[] = $this->violation(
                                     'INV-B2',
-                                    'Orphan subscription_counted=true flags on v2-finalised cycles — expected (cap-to-aggregate path).',
+                                    'Orphan subscription_counted=true flags on cycles with documented metadata gap (cap-to-aggregate / pre-platform).',
                                     [
                                         'subscription_id' => $subscriptionId,
                                         'session_type' => $sessionMorph,
@@ -403,42 +414,31 @@ class SubscriptionInvariantChecker
                 ->whereNull('reversed_at')
                 ->count();
 
-            // INV-B3 — softened in two cases:
-            //   1. legacy cycle (pre-v2-flip, never backfilled) → warning
-            //   2. cycle v2_consumption_complete=true AND metadata records
-            //      either an unaccounted-aggregate shortfall or a cap-to-
-            //      aggregate decision → info (deliberate, documented gap)
-            //   Everything else → error (real drift).
+            // INV-B3 — softened only when cycle metadata records a documented
+            // gap (Pattern A `unaccounted_sessions_used` shortfall, or
+            // Pattern C `pre_platform_consumption_preserved` preset). Real
+            // drift stays severity=error.
             if ((int) $cycle->sessions_used !== $actualActive) {
-                $isLegacy = $this->isLegacyConsumptionCycle($cycle);
                 $metadata = $cycle->metadata ?? [];
-                $hasDocumentedGap = $cycle->v2_consumption_complete
+                $hasDocumentedGap = is_array($metadata)
                     && (
                         ! empty($metadata['unaccounted_sessions_used'])
                         || ! empty($metadata['pre_platform_consumption_preserved'])
                     );
 
-                $severity = match (true) {
-                    $hasDocumentedGap => 'info',
-                    $isLegacy => 'warning',
-                    default => 'error',
-                };
-
                 $violations[] = $this->violation(
                     'INV-B3',
                     $hasDocumentedGap
-                        ? 'cycle.sessions_used vs. session_consumption drift is expected (v2-finalised with documented metadata gap).'
+                        ? 'cycle.sessions_used vs. session_consumption drift is expected (documented metadata gap).'
                         : 'cycle.sessions_used does not equal COUNT(session_consumption WHERE cycle_id=? AND reversed_at IS NULL).',
                     [
                         'subscription_id' => $subscriptionId,
                         'cycle_id' => $cycle->getKey(),
                         'cycle_sessions_used' => (int) $cycle->sessions_used,
                         'active_consumption_count' => $actualActive,
-                        'legacy_cycle' => $isLegacy,
-                        'v2_consumption_complete' => (bool) $cycle->v2_consumption_complete,
                         'documented_gap' => $hasDocumentedGap,
                     ],
-                    severity: $severity,
+                    severity: $hasDocumentedGap ? 'info' : 'error',
                 );
             }
 
@@ -725,12 +725,10 @@ class SubscriptionInvariantChecker
             // old final_price), so we only flag when the package_id is null
             // for a 'package'-sourced cycle (means we lost the snapshot link).
             //
-            // Softened to severity=warning for legacy cycles: the
-            // 2026_05_14 pricing_trust migration defaulted pricing_source
-            // to 'package' across the historical population without
-            // backfilling package_id. Until 2026_05_15_000002 backfill runs,
-            // these are EXPECTED to NULL out — flagging error would drown
-            // the inspector in noise.
+            // Stricter posture after the Phase 4 legacy-cycle gate removal:
+            // the 2026_05_15_000002 backfill is complete on prod, so any
+            // remaining NULL package_id on a `package`-sourced cycle is a
+            // real bug worth surfacing.
             if ($pricingSource === 'package' && $cycle->package_id === null) {
                 $violations[] = $this->violation(
                     'INV-D4',
@@ -738,9 +736,7 @@ class SubscriptionInvariantChecker
                     [
                         'subscription_id' => $sub->getKey(),
                         'cycle_id' => $cycle->getKey(),
-                        'legacy_cycle' => $this->isLegacyConsumptionCycle($cycle),
                     ],
-                    severity: $this->isLegacyConsumptionCycle($cycle) ? 'warning' : 'error',
                 );
             }
         }
@@ -1203,38 +1199,6 @@ class SubscriptionInvariantChecker
         }
 
         return $status;
-    }
-
-    /**
-     * Mirrors {@see SubscriptionReconciler::isLegacyConsumptionCycle}: a cycle
-     * is "legacy" if it predates the v2 flip cutoff AND has not yet had its
-     * legacy attendance backfilled into session_consumption. We use this here
-     * to soften INV-B3 + INV-D4 from `error` to `warning` so the supervisor
-     * inspector doesn't drown in expected-shape noise on pre-flip cycles.
-     */
-    private function isLegacyConsumptionCycle(SubscriptionCycle $cycle): bool
-    {
-        if ($cycle->v2_consumption_complete) {
-            return false;
-        }
-
-        $cutoffRaw = config('subscriptions.v2_flip_cutoff');
-        if (! is_string($cutoffRaw) || $cutoffRaw === '') {
-            return false;
-        }
-
-        try {
-            $cutoff = Carbon::parse($cutoffRaw);
-        } catch (Throwable) {
-            return false;
-        }
-
-        $createdAt = $cycle->created_at;
-        if (! $createdAt instanceof CarbonInterface) {
-            return false;
-        }
-
-        return $createdAt->lt($cutoff);
     }
 
     private function isInPendingState(BaseSubscription $sub): bool

@@ -16,11 +16,16 @@ $pageOnFail = static fn (string $cmd): \Closure => static function () use ($cmd)
     alert_telegram('crit', 'schedule-fail', "{$cmd} failed");
 };
 
+// CONVENTION: every withoutOverlapping(N) below passes an explicit minute TTL.
+// Bare withoutOverlapping() defaults to a 24h lock; a crashed run would freeze
+// the schedule for a full day (this happened to sessions:update-statuses on
+// 2026-04-20 — 8h freeze). See MEMORY.md → feedback_schedule_mutex_short_ttl.
+
 // LiveKit meeting management
 // Create meetings for upcoming sessions (backup for observer-based creation)
 $createMeetingsCommand = Schedule::command('meetings:create-scheduled')
     ->name('create-scheduled-meetings')
-    ->withoutOverlapping()
+    ->withoutOverlapping(10)
     ->runInBackground()
     ->description('Create video meetings for scheduled sessions');
 
@@ -30,7 +35,7 @@ $createMeetingsCommand->everyFiveMinutes();
 // Cleanup expired meetings
 $cleanupMeetingsCommand = Schedule::command('meetings:cleanup-expired')
     ->name('cleanup-expired-meetings')
-    ->withoutOverlapping()
+    ->withoutOverlapping(15)
     ->runInBackground()
     ->description('End expired video meetings and cleanup resources');
 
@@ -59,7 +64,7 @@ $updateStatusesCommand->everyMinute();
 // Enhanced session meeting management (replaces individual commands above)
 $sessionMeetingCommand = Schedule::command('sessions:manage-meetings')
     ->name('manage-session-meetings')
-    ->withoutOverlapping()
+    ->withoutOverlapping(10)
     ->runInBackground()
     ->description('Comprehensive session meeting management - create, update, cleanup');
 
@@ -75,14 +80,14 @@ Schedule::command('sessions:manage-meetings --force')
     ->name('session-meeting-maintenance')
     ->hourly()
     ->between('0:00', '6:00')
-    ->withoutOverlapping()
+    ->withoutOverlapping(30)
     ->runInBackground()
     ->description('Session management maintenance during off-hours');
 
 // Academic session meeting management
 $academicSessionMeetingCommand = Schedule::command('academic-sessions:manage-meetings')
     ->name('manage-academic-session-meetings')
-    ->withoutOverlapping()
+    ->withoutOverlapping(10)
     ->runInBackground()
     ->description('Comprehensive academic session meeting management - create, update, cleanup');
 
@@ -98,19 +103,19 @@ Schedule::command('academic-sessions:manage-meetings --force')
     ->name('academic-session-meeting-maintenance')
     ->hourly()
     ->between('0:00', '6:00')
-    ->withoutOverlapping()
+    ->withoutOverlapping(30)
     ->runInBackground()
     ->description('Academic session management maintenance during off-hours');
 
 // Reconcile orphaned attendance events (missed webhooks)
 Schedule::job(new \App\Jobs\ReconcileOrphanedAttendanceEvents)
     ->hourly()
-    ->withoutOverlapping()
+    ->withoutOverlapping(30)
     ->description('Close attendance events orphaned by missed webhooks');
 
 // Calculate attendance for completed sessions (post-meeting)
 $calculateAttendanceJob = Schedule::job(new \App\Jobs\CalculateSessionAttendance)
-    ->withoutOverlapping()
+    ->withoutOverlapping(5)
     ->description('Calculate final attendance from webhook events after sessions end');
 
 // Run every 10 seconds in local for fast testing, every minute in production as safety net
@@ -136,7 +141,7 @@ Schedule::command('recordings:stop-expired')
 Schedule::command('recordings:cleanup --days=7')
     ->name('cleanup-expired-recordings')
     ->dailyAt('03:00')
-    ->withoutOverlapping()
+    ->withoutOverlapping(60)
     ->runInBackground()
     ->onFailure($pageOnFail('recordings:cleanup'))
     ->description('Delete session recordings older than 7 days');
@@ -185,7 +190,7 @@ Schedule::command('recordings:check-webhook-sla')
 Schedule::command('subscriptions:expire-active')
     ->name('expire-active-subscriptions')
     ->hourly()
-    ->withoutOverlapping()
+    ->withoutOverlapping(30)
     ->runInBackground()
     ->onFailure($pageOnFail('subscriptions:expire-active'))
     ->description('Expire active subscriptions past their end date (skips queued+paid + admin grace)');
@@ -195,7 +200,7 @@ Schedule::command('subscriptions:expire-active')
 Schedule::command('subscriptions:advance-cycles')
     ->name('advance-subscription-cycles')
     ->hourly()
-    ->withoutOverlapping()
+    ->withoutOverlapping(30)
     ->runInBackground()
     ->onFailure($pageOnFail('subscriptions:advance-cycles'))
     ->description('Promote queued subscription cycles to active when the current cycle ends');
@@ -206,7 +211,7 @@ Schedule::command('subscriptions:send-expiry-reminders')
     ->name('send-expiry-reminders')
     ->dailyAt('08:00')
     ->timezone('Asia/Riyadh')
-    ->withoutOverlapping()
+    ->withoutOverlapping(60)
     ->runInBackground()
     ->description('Send expiry reminders for subscriptions expiring soon');
 
@@ -216,7 +221,7 @@ Schedule::command('subscriptions:send-expiry-reminders')
 Schedule::command('subscriptions:cleanup-expired-pending --force')
     ->name('cleanup-expired-pending-subscriptions')
     ->everyTwoHours()
-    ->withoutOverlapping()
+    ->withoutOverlapping(30)
     ->runInBackground()
     ->description('Cancel pending subscriptions not paid within the configured time limit');
 
@@ -242,7 +247,7 @@ Schedule::command('subscriptions:cleanup-abandoned-queued')
 Schedule::command('trials:send-reminders')
     ->name('send-trial-reminders')
     ->hourly()
-    ->withoutOverlapping()
+    ->withoutOverlapping(30)
     ->runInBackground()
     ->description('Send reminder notifications for trial sessions starting in 1 hour');
 
@@ -256,7 +261,7 @@ Schedule::command('trials:send-reminders')
 Schedule::command('quizzes:send-deadline-reminders')
     ->name('send-quiz-deadline-reminders')
     ->everyThirtyMinutes()
-    ->withoutOverlapping()
+    ->withoutOverlapping(25)
     ->runInBackground()
     ->description('Send reminder notifications for quiz deadlines (24h and 1h before)');
 
@@ -270,22 +275,9 @@ Schedule::command('quizzes:send-deadline-reminders')
 Schedule::command('earnings:calculate-missed --days=7')
     ->name('calculate-missed-earnings')
     ->weeklyOn(1, '04:00')  // Every Monday at 4:00 AM
-    ->withoutOverlapping()
+    ->withoutOverlapping(60)
     ->runInBackground()
     ->description('Backup: Calculate earnings for sessions that missed observer dispatch');
-
-// ════════════════════════════════════════════════════════════════
-// SUBSCRIPTION COUNT RECONCILIATION (SAFETY NET)
-// ════════════════════════════════════════════════════════════════
-
-// Catch completed/absent sessions where subscription_counted = false
-// Handles cases where the queued FinalizeAttendanceListener failed
-Schedule::command('subscriptions:reconcile-missed')
-    ->name('reconcile-subscription-counts')
-    ->everyTenMinutes()
-    ->withoutOverlapping()
-    ->runInBackground()
-    ->description('Safety net: count subscriptions for completed sessions that were missed');
 
 // Daily drift audit between subscription_cycles.sessions_used and the actual
 // counted sessions per cycle. Dry-run only — repair is operator-triggered
@@ -335,13 +327,28 @@ Schedule::command('subscriptions:audit-daily-report --telegram')
     ->runInBackground()
     ->description('Daily summary of subscription_audit_log; Telegram page on new invariant violations');
 
+// Phase 4 cleanup 7-day watch — TEMPORARY. Telegram-pages crit when any
+// legacy surface re-emerges after the PR 2 deletion (subscription_counted /
+// v2_consumption_complete / isLegacyConsumptionCycle in audit_log; or
+// BadMethodCallException / Undefined method on the removed call sites in
+// laravel.log) OR when drift CSV grows past the Step-0 baseline. REMOVE
+// WITH PR 3 along with the command file.
+Schedule::command('phase4:legacy-watch')
+    ->name('phase4-legacy-watch')
+    ->dailyAt('05:00')
+    ->timezone('Asia/Riyadh')
+    ->onOneServer()
+    ->withoutOverlapping(15)
+    ->runInBackground()
+    ->description('Phase 4 cleanup 7-day watch — REMOVE WITH PR 3');
+
 // Recalculate denormalized teacher profile counters (total_students, total_sessions)
 // Required because total_students/total_sessions are excluded from $fillable for security
 // and no observer/listener currently maintains them. Runs as safety net every 15 minutes.
 Schedule::command('teachers:recalculate-counters')
     ->name('recalculate-teacher-counters')
     ->everyFifteenMinutes()
-    ->withoutOverlapping()
+    ->withoutOverlapping(10)
     ->runInBackground()
     ->description('Recalculate total_students/total_sessions on teacher profiles from actual session data');
 
@@ -355,7 +362,7 @@ Schedule::command('teachers:recalculate-counters')
 Schedule::command('data:cleanup-soft-deleted --force')
     ->name('cleanup-soft-deleted-data')
     ->weeklyOn(0, '02:00')  // Every Sunday at 2:00 AM
-    ->withoutOverlapping()
+    ->withoutOverlapping(60)
     ->runInBackground()
     ->description('Permanently delete old soft-deleted records to prevent database bloat');
 
@@ -365,7 +372,7 @@ Schedule::command('data:cleanup-soft-deleted --force')
 Schedule::command('data:validate-integrity')
     ->name('validate-data-integrity')
     ->dailyAt('03:00')
-    ->withoutOverlapping()
+    ->withoutOverlapping(30)
     ->runInBackground()
     ->description('Validate data integrity and report inconsistencies');
 
@@ -394,7 +401,7 @@ Schedule::call(function () {
 Schedule::command('payments:send-missed-notifications')
     ->name('send-missed-notifications')
     ->everyFifteenMinutes()
-    ->withoutOverlapping()
+    ->withoutOverlapping(10)
     ->runInBackground()
     ->onFailure($pageOnFail('payments:send-missed-notifications'))
     ->description('Send notifications for successful payments that missed webhook delivery');
@@ -408,7 +415,7 @@ Schedule::command('payments:send-missed-notifications')
 Schedule::command('exchange-rates:refresh')
     ->name('refresh-exchange-rates')
     ->dailyAt('06:30')
-    ->withoutOverlapping()
+    ->withoutOverlapping(15)
     ->runInBackground()
     ->description('Fetch latest SAR→EGP exchange rates and persist to database');
 
@@ -438,7 +445,7 @@ Schedule::command('notifications:purge --days=90')
     ->weekly()
     ->sundays()
     ->at('02:00')
-    ->withoutOverlapping()
+    ->withoutOverlapping(30)
     ->runInBackground()
     ->description('Purge read notifications older than 90 days');
 
@@ -448,6 +455,6 @@ Schedule::command('device-tokens:cleanup --days=90')
     ->weekly()
     ->sundays()
     ->at('02:30')
-    ->withoutOverlapping()
+    ->withoutOverlapping(30)
     ->runInBackground()
     ->description('Remove device tokens not used in 90+ days');

@@ -10,11 +10,13 @@ use App\Jobs\CalculateSessionForAttendance;
 use App\Jobs\CreateSessionMeetingJob;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendance;
+use App\Models\SessionConsumption;
 use App\Models\TeacherEarning;
 use App\Models\User;
 use App\Services\Notification\NotificationUrlBuilder;
 use App\Services\NotificationService;
 use App\Services\SessionTransitionService;
+use App\Services\Subscription\SubscriptionConsumption;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -212,24 +214,19 @@ class BaseSessionObserver
             $newStatusEnum = is_string($newStatus) ? SessionStatus::from($newStatus) : $newStatus;
             $oldStatusEnum = is_string($oldStatus) ? SessionStatus::tryFrom($oldStatus) : $oldStatus;
 
-            // countsTowardsSubscription() returns true only for COMPLETED, so any
-            // flip OUT of COMPLETED on a counted session must give the cycle's
-            // session back. Covers CANCELLED, SUSPENDED, ABSENT-via-status, and
-            // a flip back to a pre-completion state.
-            //
-            // ALSO reverse on any transition into CANCELLED while subscription_counted
-            // is still true, even from a pre-completion state. The legacy counter could
-            // be set on a SCHEDULED/READY row by an out-of-band writer (admin SQL, old
-            // migration, prior bug), and cancelling without reversing would leave the
-            // cycle slot consumed forever. 0 affected rows in prod today, defensive.
+            // Counting is recorded in `session_consumption` (INV-B1+B3). Any
+            // flip OUT of COMPLETED on a session with an active consumption
+            // row must give the cycle's slot back. Also reverse on a
+            // transition into CANCELLED while consumption is still active
+            // even from a pre-completion state (defensive — covers stale
+            // rows written by older out-of-band paths).
             $flippingOutOfCompleted = $oldStatusEnum === SessionStatus::COMPLETED
                 && $newStatusEnum !== SessionStatus::COMPLETED;
             $cancellingCountedNonCompleted = $newStatusEnum === SessionStatus::CANCELLED
                 && $oldStatusEnum !== SessionStatus::COMPLETED;
 
             if (($flippingOutOfCompleted || $cancellingCountedNonCompleted)
-                && method_exists($session, 'isSubscriptionCounted')
-                && $session->isSubscriptionCounted()) {
+                && $this->sessionHasActiveConsumption($session)) {
                 $action = $newStatusEnum === SessionStatus::CANCELLED ? 'cancellation' : 'status_uncomplete';
                 $this->reverseSubscriptionAndEarnings($session, $action);
             }
@@ -423,16 +420,31 @@ class BaseSessionObserver
     /**
      * Reverse the subscription-side and teacher-earning side effects of a
      * counted session. Used when a session flips out of COMPLETED or is
-     * (force-)deleted while still counted. Type-specific cleanup
-     * (individual circle counts, academicIndividualLesson hooks) lives in
-     * the child observers so they only run for their own subclass.
+     * (force-)deleted while there is at least one active consumption row.
+     * Type-specific cleanup (individual circle counts, academicIndividualLesson
+     * hooks) lives in the child observers so they only run for their own
+     * subclass.
      */
     protected function reverseSubscriptionAndEarnings(BaseSession $session, string $action): void
     {
         try {
-            DB::transaction(function () use ($session) {
-                if (method_exists($session, 'isSubscriptionCounted') && $session->isSubscriptionCounted()) {
-                    $session->reverseSubscriptionUsage();
+            DB::transaction(function () use ($session, $action) {
+                $active = SessionConsumption::query()
+                    ->where('session_id', $session->id)
+                    ->where('session_type', $session->getMorphClass())
+                    ->whereNull('reversed_at')
+                    ->get();
+
+                if ($active->isNotEmpty()) {
+                    $service = app(SubscriptionConsumption::class);
+                    $actor = auth()->user();
+                    foreach ($active as $row) {
+                        $service->reverse(
+                            $row,
+                            'session_'.$action,
+                            $actor instanceof User ? $actor : null,
+                        );
+                    }
                 }
 
                 // Earnings are written with the morph alias
@@ -463,13 +475,26 @@ class BaseSessionObserver
     }
 
     /**
+     * True when the session has at least one active SessionConsumption row
+     * (the canonical "did this session count?" predicate post-Phase-4).
+     */
+    protected function sessionHasActiveConsumption(BaseSession $session): bool
+    {
+        return SessionConsumption::query()
+            ->where('session_id', $session->id)
+            ->where('session_type', $session->getMorphClass())
+            ->whereNull('reversed_at')
+            ->exists();
+    }
+
+    /**
      * Handle the BaseSession "deleted" event — fires for both soft and force
      * deletes. Subscription/earning reversal is handled here so child
      * observers can stay focused on type-specific tails.
      */
     public function deleted(BaseSession $session): void
     {
-        if (method_exists($session, 'isSubscriptionCounted') && $session->isSubscriptionCounted()) {
+        if ($this->sessionHasActiveConsumption($session)) {
             $this->reverseSubscriptionAndEarnings($session, 'deleted');
         }
     }

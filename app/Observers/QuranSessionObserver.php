@@ -7,6 +7,7 @@ use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
+use App\Models\SessionConsumption;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
 use App\Services\TrialRequestSyncService;
@@ -58,7 +59,7 @@ class QuranSessionObserver
             // include the now-uncounted session.
             if ($previousStatus === SessionStatus::COMPLETED
                 && $newStatus !== SessionStatus::COMPLETED
-                && $quranSession->isSubscriptionCounted()) {
+                && $this->hasActiveConsumption($quranSession)) {
                 $this->cleanupCircleCountsOnUncomplete($quranSession);
             }
 
@@ -174,7 +175,7 @@ class QuranSessionObserver
             ]);
         }
 
-        if ($quranSession->isSubscriptionCounted()) {
+        if ($this->hasActiveConsumption($quranSession)) {
             $this->cleanupCircleCountsOnUncomplete($quranSession);
         }
 
@@ -232,5 +233,14 @@ class QuranSessionObserver
     public function forceDeleted(QuranSession $quranSession): void
     {
         //
+    }
+
+    private function hasActiveConsumption(QuranSession $session): bool
+    {
+        return SessionConsumption::query()
+            ->where('session_id', $session->id)
+            ->where('session_type', $session->getMorphClass())
+            ->whereNull('reversed_at')
+            ->exists();
     }
 }
