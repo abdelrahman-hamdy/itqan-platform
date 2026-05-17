@@ -180,7 +180,6 @@
                             :required="false"
                             countryCodeField="phone_country_code"
                             countryField="phone_country"
-                            initialCountry="sa"
                             :value="old('phone')"
                             :error="$errors->first('phone')"
                         />

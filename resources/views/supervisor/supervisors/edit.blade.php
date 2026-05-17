@@ -186,7 +186,7 @@
                             :required="false"
                             countryCodeField="phone_country_code"
                             countryField="phone_country"
-                            :initialCountry="strtolower($supervisor->phone_country ?: (\App\Helpers\CountryList::dialCodeToIso($supervisor->phone_country_code) ?? 'SA'))"
+                            :initialCountry="strtolower($supervisor->phone_country ?: (\App\Helpers\CountryList::dialCodeToIso($supervisor->phone_country_code) ?? ''))"
                             :value="old('phone', $supervisor->phone)"
                             :error="$errors->first('phone')"
                         />

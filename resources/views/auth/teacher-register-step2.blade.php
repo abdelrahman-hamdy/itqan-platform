@@ -75,7 +75,6 @@
                 :required="true"
                 countryCodeField="phone_country_code"
                 countryField="phone_country"
-                initialCountry="sa"
                 placeholder="{{ __('auth.register.teacher.step2.phone_placeholder') }}"
                 :value="old('phone')"
                 :error="$errors->first('phone')"

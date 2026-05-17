@@ -180,7 +180,7 @@
                             :required="false"
                             countryCodeField="phone_country_code"
                             countryField="phone_country"
-                            :initialCountry="strtolower($student->phone_country ?: (\App\Helpers\CountryList::dialCodeToIso($student->phone_country_code) ?? 'SA'))"
+                            :initialCountry="strtolower($student->phone_country ?: (\App\Helpers\CountryList::dialCodeToIso($student->phone_country_code) ?? ''))"
                             :value="old('phone', $student->phone)"
                             :error="$errors->first('phone')"
                         />
@@ -279,7 +279,7 @@
                         :required="false"
                         countryCodeField="parent_phone_country_code"
                         countryField="parent_phone_country"
-                        :initialCountry="strtolower($profile?->parent_phone_country ?: (\App\Helpers\CountryList::dialCodeToIso($profile?->parent_phone_country_code) ?? 'SA'))"
+                        :initialCountry="strtolower($profile?->parent_phone_country ?: (\App\Helpers\CountryList::dialCodeToIso($profile?->parent_phone_country_code) ?? ''))"
                         :value="old('parent_phone', $profile?->parent_phone)"
                         :error="$errors->first('parent_phone')"
                     />

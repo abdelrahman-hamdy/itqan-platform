@@ -241,10 +241,14 @@ abstract class BaseResource extends Resource
         string $label = 'رقم الهاتف',
         ?string $countryStatePath = 'phone_country',
     ): PhoneInput {
+        $academyCountry = AcademyContextService::getCurrentAcademy()?->country?->value ?? 'SA';
+        $academyCountryUpper = strtoupper($academyCountry);
+        $academyCountryLower = strtolower($academyCountry);
+
         $input = PhoneInput::make($name)
             ->label($label)
-            ->defaultCountry('SA')
-            ->initialCountry('sa')
+            ->defaultCountry($academyCountryUpper)
+            ->initialCountry($academyCountryLower)
             ->excludeCountries(['il'])
             ->countryOrder(static::PHONE_PREFERRED_COUNTRIES)
             ->separateDialCode(true)

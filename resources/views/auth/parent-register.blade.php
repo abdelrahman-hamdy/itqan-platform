@@ -84,7 +84,7 @@
                 :required="true"
                 countryCodeField="parent_phone_country_code"
                 countryField="parent_phone_country"
-                initialCountry="{{ old('parent_phone_country') ? strtolower(old('parent_phone_country')) : 'sa' }}"
+                @if(old('parent_phone_country')) initialCountry="{{ strtolower(old('parent_phone_country')) }}" @endif
                 :placeholder="__('auth.register.parent.step1.phone_placeholder')"
                 :value="old('parent_phone')"
                 :error="$errors->first('parent_phone')"

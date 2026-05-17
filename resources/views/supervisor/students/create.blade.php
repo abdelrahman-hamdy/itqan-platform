@@ -180,7 +180,6 @@
                             :required="false"
                             countryCodeField="phone_country_code"
                             countryField="phone_country"
-                            initialCountry="sa"
                             :value="old('phone')"
                             :error="$errors->first('phone')"
                         />
@@ -277,7 +276,6 @@
                         :required="false"
                         countryCodeField="parent_phone_country_code"
                         countryField="parent_phone_country"
-                        initialCountry="sa"
                         :value="old('parent_phone')"
                         :error="$errors->first('parent_phone')"
                     />

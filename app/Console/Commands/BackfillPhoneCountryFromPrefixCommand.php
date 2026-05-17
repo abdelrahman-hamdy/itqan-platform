@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Helpers\CountryList;
+use App\Helpers\PhonePrefixResolver;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -67,7 +68,7 @@ class BackfillPhoneCountryFromPrefixCommand extends Command
             ->orderBy('id')
             ->chunkById(500, function ($rows) use ($table, $dry, &$isoCount, &$dialCount) {
                 foreach ($rows as $row) {
-                    $iso = $this->isoFromExplicitPrefix($row->phone);
+                    $iso = PhonePrefixResolver::isoFromExplicitPrefix($row->phone);
                     if ($iso === null) {
                         continue;
                     }
@@ -90,15 +91,5 @@ class BackfillPhoneCountryFromPrefixCommand extends Command
             });
 
         return [$isoCount, $dialCount];
-    }
-
-    private function isoFromExplicitPrefix(string $phone): ?string
-    {
-        $trimmed = ltrim($phone);
-        if (! str_starts_with($trimmed, '+') && ! str_starts_with($trimmed, '00')) {
-            return null;
-        }
-
-        return CountryList::dialCodeToIso($trimmed);
     }
 }

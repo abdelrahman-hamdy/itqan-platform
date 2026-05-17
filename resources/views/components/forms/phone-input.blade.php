@@ -8,12 +8,22 @@
     'error' => null,
     'countryCodeField' => 'phone_country_code',
     'countryField' => 'phone_country',
-    'initialCountry' => 'sa',
+    'initialCountry' => null,
 ])
 
 @php
     $displayLabel = $label ?? __('components.forms.phone_input.label');
     $inputId = 'phone_' . Str::random(8);
+
+    // Fall back to the current academy's country when the caller didn't
+    // pass an explicit `initialCountry`. Prevents the legacy 'sa' default
+    // from silently labelling non-Saudi students as Saudi when JS is slow.
+    if ($initialCountry === null || $initialCountry === '') {
+        $academyCountry = \App\Services\AcademyContextService::getCurrentAcademy()?->country?->value;
+        $initialCountry = strtolower($academyCountry ?: 'sa');
+    } else {
+        $initialCountry = strtolower($initialCountry);
+    }
 
     // Phone format hints by country
     $phoneFormats = [

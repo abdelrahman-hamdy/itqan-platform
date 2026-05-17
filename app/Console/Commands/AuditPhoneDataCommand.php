@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Helpers\CountryList;
+use App\Helpers\PhonePrefixResolver;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -121,7 +122,7 @@ class AuditPhoneDataCommand extends Command
     private function detectFlags(?string $phone, ?string $dialCode, ?string $iso, ?string $nationality): array
     {
         $flags = [];
-        $phoneIsoFromPrefix = $this->phoneIsoFromExplicitPrefix($phone);
+        $phoneIsoFromPrefix = PhonePrefixResolver::isoFromExplicitPrefix($phone);
 
         // 1. Stored dial code is the old '+966' default but the phone carries
         //    an explicit international prefix that resolves to a different ISO.
@@ -157,31 +158,11 @@ class AuditPhoneDataCommand extends Command
     }
 
     /**
-     * Resolve an ISO from a phone string ONLY when it has an explicit
-     * international prefix (`+` or leading `00`). A bare `509150788` is
-     * almost certainly a Saudi mobile number — not Haiti — so we return
-     * null in that case rather than guessing.
-     */
-    private function phoneIsoFromExplicitPrefix(?string $phone): ?string
-    {
-        if ($phone === null || $phone === '') {
-            return null;
-        }
-
-        $trimmed = ltrim($phone);
-        if (! str_starts_with($trimmed, '+') && ! str_starts_with($trimmed, '00')) {
-            return null;
-        }
-
-        return CountryList::dialCodeToIso($trimmed);
-    }
-
-    /**
      * @return array{0: ?string, 1: ?string}
      */
     private function suggestFromPhone(?string $phone, ?string $dialCode): array
     {
-        $iso = $this->phoneIsoFromExplicitPrefix($phone) ?? CountryList::dialCodeToIso($dialCode);
+        $iso = PhonePrefixResolver::isoFromExplicitPrefix($phone) ?? CountryList::dialCodeToIso($dialCode);
         if ($iso === null) {
             return [null, null];
         }

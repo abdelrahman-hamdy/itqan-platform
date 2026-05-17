@@ -222,7 +222,7 @@
                             :required="true"
                             countryCodeField="phone_country_code"
                             countryField="phone_country"
-                            :initialCountry="strtolower($teacher->phone_country ?: (\App\Helpers\CountryList::dialCodeToIso($teacher->phone_country_code) ?? 'SA'))"
+                            :initialCountry="strtolower($teacher->phone_country ?: (\App\Helpers\CountryList::dialCodeToIso($teacher->phone_country_code) ?? ''))"
                             :value="old('phone', $teacher->phone)"
                             :error="$errors->first('phone')"
                         />
