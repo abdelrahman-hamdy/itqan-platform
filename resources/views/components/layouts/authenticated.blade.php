@@ -66,6 +66,10 @@
     <!-- Unified Toast Notification System (handles session flash messages automatically) -->
     <x-ui.toast-container />
 
+    <!-- Global confirmation modal — registers window.confirmAction() used by
+         inline onclick handlers across student/parent pages on this layout. -->
+    <x-ui.confirmation-modal />
+
     @livewireScripts
 
     @stack('scripts')
