@@ -453,7 +453,19 @@
                                     @endif
                                 @endif
                             </div>
-                            <div class="text-xs text-gray-500">{{ $session->session_duration_minutes ?? $subscription->session_duration_minutes ?? '-' }} {{ __('supervisor.subscriptions.minutes') }}</div>
+                            @php
+                                // Per-session duration. A subscription can mix
+                                // durations after a package change (sub 826
+                                // case: pre-change 60-min sessions + post-change
+                                // 30-min sessions in the same list), so we
+                                // resolve from the session row first and only
+                                // fall back to the subscription default when
+                                // the session itself has no value.
+                                $sessionDuration = $session->actual_duration_minutes
+                                    ?: $session->duration_minutes
+                                    ?: $subscription->session_duration_minutes;
+                            @endphp
+                            <div class="text-xs text-gray-500">{{ $sessionDuration ?? '-' }} {{ __('supervisor.subscriptions.minutes') }}</div>
                         </div>
 
                         {{-- Date --}}
