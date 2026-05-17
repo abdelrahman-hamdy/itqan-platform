@@ -57,6 +57,19 @@
         $toggleTeacherUrl = route('manage.sessions.toggle-counts-teacher', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
         $toggleStudentUrl = $studentMeeting ? route('manage.sessions.toggle-counts-subscription', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id, 'attendanceId' => $studentMeeting->id]) : null;
     }
+
+    // Derive the student-perspective status (absent/canceled/completed) for
+    // single-student sessions so the badge matches what the student sees on
+    // their own circle/session pages — a no-show shows red 'absent', not
+    // green 'completed'.
+    $displayStatus = null;
+    $isGroupSession = $type === 'quran' && ($session->session_type ?? null) === 'group';
+    $isMultiStudent = $isGroupSession || $type === 'interactive';
+    if ($isCompleted && ! $isMultiStudent) {
+        $studentAttendanceForBadge = $studentMeeting
+            ?? ($session->student_id ? $session->attendanceFor((int) $session->student_id) : null);
+        $displayStatus = $session->displayStatusFor('student', $studentAttendanceForBadge);
+    }
 @endphp
 
 <div onclick="window.location.href='{{ $showUrl }}'" class="block bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md cursor-pointer {{ $isLive ? 'ring-2 ring-green-200' : '' }}"
@@ -80,7 +93,7 @@
             </div>
         </div>
         <div class="flex items-center gap-1.5 flex-shrink-0">
-            <x-sessions.status-badge :status="$status" size="sm" />
+            <x-sessions.status-badge :status="$status" :displayStatus="$displayStatus" role="student" size="sm" />
         </div>
     </div>
 

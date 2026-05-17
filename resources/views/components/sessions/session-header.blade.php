@@ -8,15 +8,31 @@ use App\Enums\SessionStatus;
     $isTeacher = in_array($viewType, ['teacher', 'admin', 'supervisor']);
 
     // Derive UI-only display status (completed / absent / canceled).
+    // Supervisors also get the derived label for single-student sessions so
+    // a no-show shows up as red 'absent' instead of green 'completed'.
     $statusValue = is_object($session->status) ? $session->status->value : $session->status;
     $displayStatus = null;
     $displayRole = null;
-    if (! in_array($viewType, ['supervisor', 'admin'], true) && $statusValue === SessionStatus::COMPLETED->value) {
-        $displayRole = $viewType === 'teacher' ? 'teacher' : 'student';
-        $studentAttendance = $displayRole === 'student' && auth()->check()
-            ? $session->attendanceFor(auth()->id())
-            : null;
-        $displayStatus = $session->displayStatusFor($displayRole, $studentAttendance);
+    if ($statusValue === SessionStatus::COMPLETED->value) {
+        $isSingleStudent = ! ($session instanceof \App\Models\QuranSession && ($session->session_type ?? null) === 'group')
+            && ! ($session instanceof \App\Models\InteractiveCourseSession);
+
+        if ($viewType === 'teacher') {
+            $displayRole = 'teacher';
+            $displayStatus = $session->displayStatusFor('teacher');
+        } else {
+            $displayRole = 'student';
+            $studentUserId = null;
+            if (in_array($viewType, ['student', 'parent'], true) && auth()->check()) {
+                $studentUserId = auth()->id();
+            } elseif ($isSingleStudent && $session->student_id) {
+                $studentUserId = (int) $session->student_id;
+            }
+            $studentAttendance = $studentUserId ? $session->attendanceFor($studentUserId) : null;
+            if ($studentAttendance || $isSingleStudent) {
+                $displayStatus = $session->displayStatusFor('student', $studentAttendance);
+            }
+        }
     }
 
     // Detect session type - check if it's an AcademicSession or QuranSession

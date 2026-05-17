@@ -58,6 +58,17 @@
         $toggleTeacherUrl = route('manage.sessions.toggle-counts-teacher', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id]);
         $toggleStudentUrl = $studentMeeting ? route('manage.sessions.toggle-counts-subscription', ['subdomain' => $subdomain, 'sessionType' => $type, 'sessionId' => $session->id, 'attendanceId' => $studentMeeting->id]) : null;
     }
+
+    // Same student-perspective derivation as _session-card so the row's badge
+    // shows red 'absent' for no-show single-student sessions.
+    $displayStatus = null;
+    $isGroupSession = $type === 'quran' && ($session->session_type ?? null) === 'group';
+    $isMultiStudent = $isGroupSession || $type === 'interactive';
+    if ($isCompleted && ! $isMultiStudent) {
+        $studentAttendanceForBadge = $studentMeeting
+            ?? ($session->student_id ? $session->attendanceFor((int) $session->student_id) : null);
+        $displayStatus = $session->displayStatusFor('student', $studentAttendanceForBadge);
+    }
 @endphp
 
 <tr class="hover:bg-gray-50 cursor-pointer transition-colors {{ $isLive ? 'bg-green-50/50' : '' }}"
@@ -70,7 +81,7 @@
             @if($isLive)
                 <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
             @endif
-            <x-sessions.status-badge :status="$status" size="sm" />
+            <x-sessions.status-badge :status="$status" :displayStatus="$displayStatus" role="student" size="sm" />
         </div>
     </td>
 

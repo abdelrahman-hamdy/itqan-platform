@@ -14,16 +14,32 @@ use App\Enums\SessionStatus;
 
     $statusValue = $getStatusValue($session);
 
-    // Supervisors see the raw status; everyone else sees the derived
-    // completed / absent / canceled label so a no-show doesn't render green.
+    // Derive the completed / absent / canceled label so a no-show never
+    // renders green. Supervisors also get the derived label for single-student
+    // sessions — they need to see "absent" red when the student didn't show
+    // up, matching the student/parent experience.
     $displayStatus = null;
     $displayRole = null;
-    if ($viewType !== 'supervisor' && $statusValue === SessionStatus::COMPLETED->value) {
-        $displayRole = $viewType === 'teacher' ? 'teacher' : 'student';
-        $studentAttendance = $displayRole === 'student' && auth()->check()
-            ? $session->attendanceFor(auth()->id())
-            : null;
-        $displayStatus = $session->displayStatusFor($displayRole, $studentAttendance);
+    if ($statusValue === SessionStatus::COMPLETED->value) {
+        $isSingleStudent = ! ($session instanceof \App\Models\QuranSession && ($session->session_type ?? null) === 'group')
+            && ! ($session instanceof \App\Models\InteractiveCourseSession);
+
+        if ($viewType === 'teacher') {
+            $displayRole = 'teacher';
+            $displayStatus = $session->displayStatusFor('teacher');
+        } else {
+            $displayRole = 'student';
+            $studentUserId = null;
+            if (in_array($viewType, ['student', 'parent'], true) && auth()->check()) {
+                $studentUserId = auth()->id();
+            } elseif ($isSingleStudent && $session->student_id) {
+                $studentUserId = (int) $session->student_id;
+            }
+            $studentAttendance = $studentUserId ? $session->attendanceFor($studentUserId) : null;
+            if ($studentAttendance || $isSingleStudent) {
+                $displayStatus = $session->displayStatusFor('student', $studentAttendance);
+            }
+        }
     }
 
     // Check if session is in preparation phase
